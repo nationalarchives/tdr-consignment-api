@@ -22,20 +22,14 @@ object Tags {
     override def validate(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
       val token = ctx.ctx.accessToken
 
-      val isAdmin: Boolean = token.roles.contains("tdr_admin")
-
       val bodyArg: String = ctx.arg("body")
+      val bodyFromToken: String = token.transferringBody.getOrElse("")
 
-      if(!isAdmin) {
-        val bodyFromToken: String = token.transferringBody.getOrElse("")
-        if(bodyFromToken != bodyArg) {
-          val msg = s"Body for user ${token.userId.getOrElse("")} was ${bodyArg} in the query and $bodyFromToken in the token"
-          throw AuthorisationException(msg)
-        }
-        continue
-      } else {
-        continue
+      if(bodyFromToken != bodyArg) {
+        val msg = s"Body for user ${token.userId.getOrElse("")} was ${bodyArg} in the query and $bodyFromToken in the token"
+        throw AuthorisationException(msg)
       }
+      continue
     }
   }
 
