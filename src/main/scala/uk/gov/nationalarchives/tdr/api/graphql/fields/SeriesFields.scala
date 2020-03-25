@@ -14,7 +14,7 @@ object SeriesFields {
   implicit val SeriesType: ObjectType[Unit, Series] = deriveObjectType[Unit, Series]()
   implicit val AddSeriesInputType: InputObjectType[AddSeriesInput] = deriveInputObjectType[AddSeriesInput]()
 
-  val BodyArg = Argument("body", OptionInputType(StringType))
+  val BodyArg = Argument("body", StringType)
 
   private val SeriesInputArg = Argument("addSeriesInput", AddSeriesInputType)
 

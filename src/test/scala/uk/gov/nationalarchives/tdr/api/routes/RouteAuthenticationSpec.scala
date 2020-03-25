@@ -31,7 +31,7 @@ class RouteAuthenticationSpec extends AnyFlatSpec with Matchers with ScalatestRo
   }
 
   "The api" should "return a valid response with a valid token" in {
-    val query: String = """{"query":"{getSeries{seriesid}}"}"""
+    val query: String = """{"query":"{getSeries(body:\"Body\"){seriesid}}"}"""
     Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }

@@ -1,1 +1,0 @@
-{"data":null,"errors":[{"message":"Body for user 4ab14990-ed63-4615-8336-56fbb9960300 was  in the query and Body in the token","path":["getSeries"],"locations":[{"column":2,"line":1}]}]}

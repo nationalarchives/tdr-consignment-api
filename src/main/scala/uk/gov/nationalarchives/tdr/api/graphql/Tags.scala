@@ -24,12 +24,12 @@ object Tags {
 
       val isAdmin: Boolean = token.roles.contains("tdr_admin")
 
-      val bodyArg: Option[String] = ctx.argOpt("body")
+      val bodyArg: String = ctx.arg("body")
 
       if(!isAdmin) {
         val bodyFromToken: String = token.transferringBody.getOrElse("")
-        if(bodyFromToken != bodyArg.getOrElse("")) {
-          val msg = s"Body for user ${token.userId.getOrElse("")} was ${bodyArg.getOrElse("")} in the query and $bodyFromToken in the token"
+        if(bodyFromToken != bodyArg) {
+          val msg = s"Body for user ${token.userId.getOrElse("")} was ${bodyArg} in the query and $bodyFromToken in the token"
           throw AuthorisationException(msg)
         }
         continue

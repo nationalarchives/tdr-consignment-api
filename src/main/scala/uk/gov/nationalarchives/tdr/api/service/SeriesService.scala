@@ -8,16 +8,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class SeriesService(seriesRepository: SeriesRepository)(implicit val executionContext: ExecutionContext) {
 
-  def getSeries(bodyOption: Option[String]): Future[Seq[Series]] = {
-    val series = if(bodyOption.isDefined) {
-      seriesRepository.getSeries(bodyOption.get)
-    } else {
-      seriesRepository.getSeries()
-    }
+  def getSeries(body: String): Future[Seq[Series]] = {
+    val series = seriesRepository.getSeries(body)
     series.map(seriesRows =>
       seriesRows.map(s => Series(s.seriesid.get, s.bodyid, s.name, s.code, s.description)
       ))
-    }
+  }
 
   def addSeries(input: AddSeriesInput): Future[Series] = {
     val newSeries = SeriesRow(input.bodyid, input.code, input.name, input.description)
