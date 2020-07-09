@@ -99,7 +99,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers
     val consignmentService: ConsignmentService = new ConsignmentService(consignmentRepoMock, FixedTimeSource, fixedUuidSource)
     val response: Boolean = consignmentService.consignmentHasFiles(fixedConsignmentUUID).futureValue
 
-    response should be(true)
+    response should be (false)
   }
 
   "consignmentHasFiles" should "return false when no files associated with provided consignment id" in {
