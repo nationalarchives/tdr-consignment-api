@@ -32,7 +32,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.2",
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-  "de.heikoseeberger" %% "akka-http-circe" % "1.30.0",
+  "de.heikoseeberger" %% "akka-http-circe" % "1.35.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml"        % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-stream"          % "2.6.3",
