@@ -56,7 +56,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala-scalatest" % "1.6.3" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % "10.1.11" % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.3" % Test,
-  "com.tngtech.keycloakmock" % "mock" % "0.2.0" % Test,
+  "com.tngtech.keycloakmock" % "mock" % "0.6.0" % Test,
   "com.h2database" % "h2" % "1.4.200" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.21",
   "io.github.hakky54" % "logcaptor" % "2.1.0" % Test
