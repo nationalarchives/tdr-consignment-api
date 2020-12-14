@@ -1,1 +1,1 @@
-{"query":"mutation {addTransferAgreement(addTransferAgreementInput: {allEnglish: true, allDigital: true, allCrownCopyright: true, allPublicRecords: true, appraisalSelectionSignedOff: true, sensitivityReviewSignedOff: true}) {transferAgreementId, consignmentId, allEnglish}}"}
+{"query":"mutation {addTransferAgreement(addTransferAgreementInput: {allEnglish: true, allCrownCopyright: true, allPublicRecords: true, appraisalSelectionSignedOff: true, sensitivityReviewSignedOff: true}) {transferAgreementId, consignmentId, allEnglish}}"}
