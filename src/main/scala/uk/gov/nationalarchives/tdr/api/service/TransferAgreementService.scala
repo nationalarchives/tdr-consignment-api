@@ -31,7 +31,7 @@ class TransferAgreementService(transferAgreementRepository: TransferAgreementRep
   private def agreed(field: Option[Boolean]) = field.isDefined && field.get
 
   private def isAgreementComplete(ta: TransferagreementRow): Boolean = {
-    val fields = List(ta.allcrowncopyright, ta.alldigital, ta.allenglish, ta.allpublicrecords, ta.appraisalselectionsignedoff, ta.sensitivityreviewsignedoff)
+    val fields = List(ta.allcrowncopyright, ta.allenglish, ta.allpublicrecords, ta.appraisalselectionsignedoff, ta.sensitivityreviewsignedoff)
     fields.forall(agreed)
   }
 
