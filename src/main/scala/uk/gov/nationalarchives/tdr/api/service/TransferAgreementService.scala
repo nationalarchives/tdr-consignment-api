@@ -16,6 +16,9 @@ class TransferAgreementService(transferAgreementRepository: TransferAgreementRep
       input.allPublicRecords,
       input.allCrownCopyright,
       input.allEnglish,
+      //temporarily add default allDigital value until column dropped from Db
+      //required as otherwise Db row is not filled in correctly
+      //leading to incorrect behaviour of isAgreementComplete function
       Some(true),
       input.appraisalSelectionSignedOff,
       input.sensitivityReviewSignedOff)
@@ -40,7 +43,6 @@ class TransferAgreementService(transferAgreementRepository: TransferAgreementRep
       row.allpublicrecords,
       row.allcrowncopyright,
       row.allenglish,
-      row.alldigital,
       row.appraisalselectionsignedoff,
       row.sensitivityreviewsignedoff,
       Some(row.transferagreementid),
