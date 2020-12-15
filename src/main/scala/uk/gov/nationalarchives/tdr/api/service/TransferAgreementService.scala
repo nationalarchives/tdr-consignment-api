@@ -16,6 +16,8 @@ class TransferAgreementService(transferAgreementRepository: TransferAgreementRep
       input.allPublicRecords,
       input.allCrownCopyright,
       input.allEnglish,
+      //temporarily add default allDigital value to decouple from frontend input until column dropped from Db
+      //required as otherwise Db row is not filled in correctly
       Some(true),
       input.appraisalSelectionSignedOff,
       input.sensitivityReviewSignedOff)
