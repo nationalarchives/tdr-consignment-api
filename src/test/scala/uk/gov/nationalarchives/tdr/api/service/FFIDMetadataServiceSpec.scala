@@ -96,7 +96,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     consignmentIdCaptor.getValue should equal(consignmentId)
   }
 
-  "getFFIDMetadata" should "return the correct values" in {
+  "getFFIDMetadata" should "return multiple rows and matches for multiple files" in {
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val consignmentId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
