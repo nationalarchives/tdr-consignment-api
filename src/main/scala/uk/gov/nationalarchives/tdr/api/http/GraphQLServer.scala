@@ -84,12 +84,14 @@ object GraphQLServer {
     val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)
     val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository, uuidSource, timeSource)
-    val fileService = new FileService(fileRepository, consignmentRepository, fileMetadataRepository, ffidMetadataRepository, ffidMetadataMatchesRepository,
-      antivirusMetadataRepository, new CurrentTimeSource, uuidSource)
-    val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
+
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, timeSource, uuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, new FFIDMetadataMatchesRepository(db), timeSource, uuidSource)
+    val fileService = new FileService(
+      fileRepository, consignmentRepository, fileMetadataService, ffidMetadataService, antivirusMetadataService, new CurrentTimeSource, uuidSource
+    )
+    val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository)
 
     ConsignmentApiContext(

@@ -1,9 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import uk.gov
+import uk.gov.nationalarchives
+import uk.gov.nationalarchives.Tables
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, FileRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -15,6 +19,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
+
+  def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
+    val now = Timestamp.from(timeSource.now)
+    val fileMetadataRows = for {
+      staticMetadata <- staticMetadataProperties
+      fileId <- files.map(_.fileid)
+    } yield FilemetadataRow(uuidSource.uuid, fileId, staticMetadata.value, now, userId, staticMetadata.name)
+    fileMetadataRepository.addFileMetadata(fileMetadataRows)
+  }
 
   def addFileMetadata(addFileMetadataInput: AddFileMetadataInput, userId: UUID): Future[FileMetadata] = {
 
