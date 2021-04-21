@@ -75,6 +75,7 @@ object GraphQLServer {
     val fileMetadataRepository = new FileMetadataRepository(db)
     val fileRepository = new FileRepository(db)
     val ffidMetadataRepository = new FFIDMetadataRepository(db)
+    val ffidMetadataMatchesRepository = new FFIDMetadataMatchesRepository(db)
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentService = new ConsignmentService(consignmentRepository, fileMetadataRepository, fileRepository,
       ffidMetadataRepository, timeSource, uuidSource)
@@ -82,12 +83,11 @@ object GraphQLServer {
     val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)
     val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository, uuidSource, timeSource)
-    val fileService = new FileService(fileRepository, consignmentRepository, fileMetadataRepository, ffidMetadataRepository,
-      new CurrentTimeSource, uuidSource)
-    val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
-    val antivirusMetadataService = new AntivirusMetadataService(new AntivirusMetadataRepository(db))
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, timeSource, uuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, new FFIDMetadataMatchesRepository(db), timeSource, uuidSource)
+    val fileService = new FileService(fileRepository, consignmentRepository, fileMetadataService, ffidMetadataService, new CurrentTimeSource, uuidSource)
+    val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
+    val antivirusMetadataService = new AntivirusMetadataService(new AntivirusMetadataRepository(db))
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository)
 
     ConsignmentApiContext(

@@ -1,9 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import uk.gov
+import uk.gov.nationalarchives
+import uk.gov.nationalarchives.Tables
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, FileRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -14,6 +18,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
+
+  def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
+    val now = Timestamp.from(timeSource.now)
+    val fileMetadataRows = for {
+      staticMetadata <- staticMetadataProperties
+      fileId <- files.map(_.fileid)
+    } yield FilemetadataRow(uuidSource.uuid, fileId, staticMetadata.value, now, userId, staticMetadata.name)
+    fileMetadataRepository.addFileMetadata(fileMetadataRows)
+  }
 
   def addFileMetadata(addFileMetadataInput: AddFileMetadataInput, userId: UUID): Future[FileMetadata] = {
 
@@ -34,6 +47,26 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
         }
       case _ => Future.failed(InputDataException(s"$filePropertyName found. We are only expecting checksum updates for now"))
     }
+  }
+
+  def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId).map {
+    rows =>
+      rows.groupBy(_.fileid).map {
+        case (fileId, fileMetadata) =>
+          val propertyNameMap: Map[String, String] = fileMetadata.groupBy(_.propertyname)
+            .transform((_, value) => value.head.value)
+          fileId -> FileMetadataValues(
+            propertyNameMap.get(SHA256ClientSideChecksum),
+            propertyNameMap.get(ClientSideOriginalFilepath),
+            propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+            propertyNameMap.get(ClientSideFileSize).map(_.toLong),
+            propertyNameMap.get(RightsCopyright.name),
+            propertyNameMap.get(LegalStatus.name),
+            propertyNameMap.get(HeldBy.name),
+            propertyNameMap.get(Language.name),
+            propertyNameMap.get(FoiExemptionCode.name)
+          )
+      }
   }
 }
 

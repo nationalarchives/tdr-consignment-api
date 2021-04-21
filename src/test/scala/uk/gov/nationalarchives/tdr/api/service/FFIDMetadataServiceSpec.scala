@@ -1,15 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import org.mockito.ArgumentMatchers.any
+
 import java.sql.Timestamp
 import java.util.UUID
-
 import org.mockito.{ArgumentCaptor, MockitoSugar}
+import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataInputMatches, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -79,6 +81,82 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     matches.extension.get shouldEqual "ext"
     matches.identificationBasis shouldEqual "identificationBasis"
     matches.puid.get shouldEqual "puid"
+  }
+
+  "getFFIDMetadata" should "call the repository with the correct arguments" in {
+    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+    val consignmentId = UUID.randomUUID()
+
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentIdCaptor.capture())).thenReturn(Future(Seq()))
+
+    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    service.getFFIDMetadata(consignmentId)
+
+    consignmentIdCaptor.getValue should equal(consignmentId)
+  }
+
+  "getFFIDMetadata" should "return multiple rows and matches for multiple files" in {
+    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+    val consignmentId = UUID.randomUUID()
+    val fileIdOne = UUID.randomUUID()
+    val fileIdTwo = UUID.randomUUID()
+    val metadataRowOne = FfidmetadataRow(
+      UUID.randomUUID(),
+      fileIdOne,
+      "softwareRow1",
+      "softwareVersionRow1",
+      Timestamp.from(FixedTimeSource.now),
+      "binarySignatureFileVersionRow1",
+      "containerSignatureFileVersionRow1",
+      "methodRow1"
+    )
+    val matchesRowOneMatchOne = FfidmetadatamatchesRow(UUID.randomUUID(), Option("extensionRow1Match1"), "basisRow1Match1", Option("puidRow1Match1"))
+    val matchesRowOneMatchTwo = FfidmetadatamatchesRow(UUID.randomUUID(), Option("extensionRow1Match2"), "basisRow1Match2", Option("puidRow1Match2"))
+
+    val metadataRowTwo = FfidmetadataRow(
+      UUID.randomUUID(),
+      fileIdTwo,
+      "softwareRow2",
+      "softwareVersionRow2",
+      Timestamp.from(FixedTimeSource.now),
+      "binarySignatureFileVersionRow2",
+      "containerSignatureFileVersionRow2",
+      "methodRow2"
+    )
+    val matchesRowTwoMatchOne = FfidmetadatamatchesRow(UUID.randomUUID(), Option("extensionRow2Match1"), "basisRow2Match1", Option("puidRow2Match1"))
+
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(any[UUID])).thenReturn(
+      Future(Seq(
+        (metadataRowOne,matchesRowOneMatchOne ), (metadataRowOne, matchesRowOneMatchTwo), (metadataRowTwo, matchesRowTwoMatchOne)
+      ))
+    )
+
+    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    val response = service.getFFIDMetadata(consignmentId).futureValue
+
+    val ffidMetadataRowOne = response.find(_.fileId == fileIdOne).get
+    val ffidMetadataRowTwo = response.find(_.fileId == fileIdTwo).get
+    checkMetadataRow(ffidMetadataRowOne, 1)
+    checkMetadataRow(ffidMetadataRowTwo, 2)
+
+    checkMatch(ffidMetadataRowOne.matches.head, 1, 1)
+    checkMatch(ffidMetadataRowOne.matches.last, 1, 2)
+    checkMatch(ffidMetadataRowTwo.matches.head, 2, 1)
+  }
+
+  def checkMetadataRow(ffidMetadata: FFIDMetadata, rowNumber: Int): Assertion = {
+    ffidMetadata.binarySignatureFileVersion should equal(s"binarySignatureFileVersionRow$rowNumber")
+    ffidMetadata.containerSignatureFileVersion should equal(s"containerSignatureFileVersionRow$rowNumber")
+    ffidMetadata.method should equal(s"methodRow$rowNumber")
+    ffidMetadata.software should equal(s"softwareRow$rowNumber")
+    ffidMetadata.softwareVersion should equal(s"softwareVersionRow$rowNumber")
+  }
+
+  def checkMatch(ffidMetadataMatch: FFIDMetadataMatches, rowNumber: Int, matchNumber: Int): Assertion = {
+    ffidMetadataMatch.extension.get should equal(s"extensionRow${rowNumber}Match$matchNumber")
+    ffidMetadataMatch.identificationBasis should equal(s"basisRow${rowNumber}Match$matchNumber")
+    ffidMetadataMatch.puid.get should equal(s"puidRow${rowNumber}Match$matchNumber")
   }
 
   private def getMetadataInput(fixedFileUuid: UUID) = {
