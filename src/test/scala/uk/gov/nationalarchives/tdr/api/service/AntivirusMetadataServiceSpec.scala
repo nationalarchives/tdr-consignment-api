@@ -75,7 +75,7 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       dummyTimestamp
     )))
 
-    when(avRepositoryMock.getAntivirusMetadata(any[UUID])).thenReturn(mockResponse)
+    when(avRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(mockResponse)
     val response = new AntivirusMetadataService(avRepositoryMock).getAntivirusMetadata(consignmentId).futureValue
     val antivirus = response.head
     antivirus.fileId should equal(fixedFileUuid)

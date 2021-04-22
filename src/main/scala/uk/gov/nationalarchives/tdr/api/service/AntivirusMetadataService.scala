@@ -25,7 +25,7 @@ class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRep
     antivirusMetadataRepository.addAntivirusMetadata(inputRow).map(rowToAntivirusMetadata)
   }
 
-  private def rowToAntivirusMetadata(row: AvmetadataRow) = {
+  private def rowToAntivirusMetadata(row: AvmetadataRow): AntivirusMetadata = {
     AntivirusMetadata(
       row.fileid,
       row.software,
