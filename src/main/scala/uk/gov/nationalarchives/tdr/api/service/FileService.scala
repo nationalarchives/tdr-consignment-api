@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow, FilemetadataRow}
+import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFilesInput, Files}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -14,6 +14,7 @@ class FileService(
                    consignmentRepository: ConsignmentRepository,
                    fileMetadataService: FileMetadataService,
                    ffidMetadataService: FFIDMetadataService,
+                   avMetadataService: AntivirusMetadataService,
                    timeSource: TimeSource,
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
@@ -50,10 +51,11 @@ class FileService(
     for {
       fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
+      avList <- avMetadataService.getAntivirusMetadata(consignmentId)
     } yield {
       fileMetadataList map {
         case (fileId, fileMetadata) =>
-          File(fileId, fileMetadata, ffidMetadataList.find(_.fileId == fileId))
+          File(fileId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
       }
     }.toList
   }
