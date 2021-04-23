@@ -1,15 +1,19 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import uk.gov.nationalarchives
+import uk.gov.nationalarchives.Tables
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FileRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddFileMetadataInput, FileMetadata, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,19 +32,27 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
   def addFileMetadata(addFileMetadataInput: AddFileMetadataInput, userId: UUID): Future[FileMetadata] = {
 
     val filePropertyName = addFileMetadataInput.filePropertyName
-    val row =
+    val timestamp = Timestamp.from(timeSource.now)
+    val fileMetadataRow =
       FilemetadataRow(uuidSource.uuid, addFileMetadataInput.fileId,
         addFileMetadataInput.value,
-        Timestamp.from(timeSource.now),
+        timestamp,
         userId, addFileMetadataInput.filePropertyName)
 
     filePropertyName match {
       case SHA256ServerSideChecksum =>
         (for {
           cfm <- fileMetadataRepository.getFileMetadata(addFileMetadataInput.fileId, SHA256ClientSideChecksum)
-          row <- fileMetadataRepository.addChecksumMetadata(row, cfm.headOption.map(_.value == addFileMetadataInput.value))
+          fileStatus: String = cfm.headOption match {
+            case Some(cfm) if cfm.value == addFileMetadataInput.value => Success
+            case Some(cfm) if cfm.value != addFileMetadataInput.value => Mismatch
+            case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${addFileMetadataInput.fileId}")
+          }
+          fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, addFileMetadataInput.fileId, Checksum, fileStatus, timestamp)
+          row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
         } yield FileMetadata(filePropertyName, row.fileid, row.value)) recover {
-          case e: Throwable => throw InputDataException(s"Could not find metadata for file ${addFileMetadataInput.fileId}", Some(e))
+          case e: Throwable =>
+            throw InputDataException(s"Could not find metadata for file ${addFileMetadataInput.fileId}", Some(e))
         }
       case _ => Future.failed(InputDataException(s"$filePropertyName found. We are only expecting checksum updates for now"))
     }
