@@ -5,7 +5,7 @@ import java.util.UUID
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{CurrentStatus, FileChecks, TransferringBody}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields._
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
 
 import scala.concurrent.{ExecutionContext, Future}
 

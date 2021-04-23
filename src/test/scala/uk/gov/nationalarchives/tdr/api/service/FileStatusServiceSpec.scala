@@ -6,8 +6,6 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Checksum, Mismatch, Success}
@@ -50,7 +48,4 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     val response = new FileStatusService(fileStatusRepositoryMock).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
-
-
-
 }

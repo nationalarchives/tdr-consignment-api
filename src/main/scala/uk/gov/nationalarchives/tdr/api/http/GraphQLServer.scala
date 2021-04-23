@@ -87,7 +87,7 @@ object GraphQLServer {
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository, uuidSource, timeSource)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, timeSource, uuidSource)
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, new FFIDMetadataMatchesRepository(db), timeSource, uuidSource)
+    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
     val fileService = new FileService(
       fileRepository, consignmentRepository, fileMetadataService, ffidMetadataService, antivirusMetadataService, new CurrentTimeSource, uuidSource
     )

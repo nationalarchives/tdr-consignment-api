@@ -20,21 +20,21 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(2, Seconds))
 
-  private def getFileStatusValue(fileId: UUID, statusType: String): String = {
+  private def getFileStatusValue(fileId: UUID): String = {
     val sql = s"SELECT Value FROM FileStatus where FileId = ? AND StatusType = ?"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
-    ps.setString(2, statusType)
+    ps.setString(2, "Status Type")
     val rs = ps.executeQuery()
     rs.next()
     rs.getString("Value")
   }
 
-  private def checkFileMetadataExists(fileId: UUID, fileProperty: String): Assertion = {
+  private def checkFileMetadataExists(fileId: UUID): Assertion = {
     val sql = s"SELECT COUNT(*) as count FROM FileMetadata WHERE FileId = ? AND PropertyName = ?"
     val ps = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
-    ps.setString(2, fileProperty)
+    ps.setString(2, "FileProperty")
     val rs = ps.executeQuery()
     rs.next()
     rs.getInt("count") should be(1)
@@ -135,7 +135,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val result = fileMetadataRepository.addFileMetadata(input).futureValue.head
     result.propertyname should equal("FileProperty")
     result.value should equal("value")
-    checkFileMetadataExists(fileId, "FileProperty")
+    checkFileMetadataExists(fileId)
   }
 
   "addChecksumMetadata" should "update the checksum validation field on the file table" in {
@@ -150,7 +150,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty")
     val statusInput = FilestatusRow(UUID.randomUUID(), fileId, "Status Type", "Value", Timestamp.from(Instant.now()))
     fileMetadataRepository.addChecksumMetadata(input, statusInput).futureValue
-    getFileStatusValue(fileId, "Status Type") should equal("Value")
+    getFileStatusValue(fileId) should equal("Value")
   }
 
   "getFileMetadata" should "return the correct metadata" in {

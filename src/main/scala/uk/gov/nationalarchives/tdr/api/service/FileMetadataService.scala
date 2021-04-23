@@ -1,8 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives
-import uk.gov.nationalarchives.Tables
-
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
