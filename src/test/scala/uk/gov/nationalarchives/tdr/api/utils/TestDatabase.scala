@@ -20,6 +20,7 @@ trait TestDatabase extends BeforeAndAfterEach {
   val databaseConnection: Connection = DbConnection.db.source.createConnection()
 
   override def beforeEach(): Unit = {
+    databaseConnection.prepareStatement("DELETE FROM FileStatus").execute()
     databaseConnection.prepareStatement("DELETE FROM FileMetadata").execute()
     databaseConnection.prepareStatement("DELETE FROM FileProperty").execute()
     databaseConnection.prepareStatement("DELETE FROM FFIDMetadataMatches").execute()

@@ -120,3 +120,15 @@ CREATE TABLE IF NOT EXISTS ConsignmentStatus (
     PRIMARY KEY (ConsignmentStatusId),
     FOREIGN KEY (ConsignmentId) REFERENCES Consignment(ConsignmentId)
 );
+
+CREATE TABLE IF NOT EXISTS "FileStatus"
+(
+    FileStatusId uuid NOT NULL,
+    FileId uuid NOT NULL,
+    StatusType text NOT NULL,
+    Value text NOT NULL,
+    CreatedDatetime  timestamp with time zone not null,
+    PRIMARY KEY (FileStatusId),
+    FOREIGN KEY (FileId) REFERENCES File(FileId)
+
+);
