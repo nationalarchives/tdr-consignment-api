@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.routes
 
 import java.sql.{PreparedStatement, ResultSet}
 import java.util.UUID
-
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -10,6 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{FileMetadata, SHA256ServerSideChecksum}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Checksum, Mismatch, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{GraphqlError, getDataFromFile, validBackendChecksToken, _}
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestRequest}
 
@@ -99,10 +99,14 @@ class FileMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     checkNoFileMetadataAdded()
   }
 
-  "addFileMetadata" should "add the checksum validation result if this is a checksum update" in {
-    createClientFileMetadata(defaultFileId)
+  "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum matches" in {
     runTestMutation("mutation_alldata", validBackendChecksToken("checksum"))
-    checkValidationResultExists(defaultFileId)
+    checkFileStatusResult(defaultFileId, Success)
+  }
+
+  "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum doesn't match" in {
+    runTestMutation("mutation_mismatch_checksum", validBackendChecksToken("checksum"))
+    checkFileStatusResult(defaultFileId, Mismatch)
   }
 
   "addFileMetadata" should "not add the checksum validation result if this is not a checksum update" in {
@@ -120,14 +124,6 @@ class FileMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     rs.getString("FileId") should equal(fileId.toString)
   }
 
-  private def resetDatabase(): Unit = {
-    DbConnection.db.source.createConnection().prepareStatement("DELETE FROM FileMetadata").executeUpdate()
-    DbConnection.db.source.createConnection().prepareStatement("DELETE FROM FileProperty").executeUpdate()
-    DbConnection.db.source.createConnection().prepareStatement("DELETE FROM FFIDMetadata").executeUpdate()
-    DbConnection.db.source.createConnection().prepareStatement("DELETE FROM File").executeUpdate()
-    DbConnection.db.source.createConnection().prepareStatement("DELETE FROM Consignment").executeUpdate()
-  }
-
   private def checkNoFileMetadataAdded(): Unit = {
     val sql = "select * from FileMetadata WHERE PropertyName = ?;"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
@@ -137,21 +133,23 @@ class FileMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     rs.getRow should equal(0)
   }
 
-  private def checkValidationResultExists(fileId: UUID): Unit = {
-    val sql = "select ChecksumMatches from File where FileId = ?;"
+  private def checkFileStatusResult(fileId: UUID, expectedValue: String): Unit = {
+    val sql = s"SELECT Value FROM FileStatus where FileId = ? AND StatusType = ?"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
+    ps.setString(2, Checksum)
     val rs: ResultSet = ps.executeQuery()
     rs.last()
-    Option(rs.getObject(1)).isDefined should be(true)
+    rs.getString(1) should equal(expectedValue)
   }
 
   private def checkNoValidationResultExists(fileId: UUID): Unit = {
-    val sql = "select ChecksumMatches from File where FileId = ?;"
+    val sql = s"SELECT COUNT(Value) FROM FileStatus where FileId = ? AND StatusType = ?"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
+    ps.setString(2, Checksum)
     val rs: ResultSet = ps.executeQuery()
-    rs.last()
-    Option(rs.getObject(1)).isEmpty should be(true)
+    rs.next()
+    rs.getInt(1) should be(0)
   }
 }

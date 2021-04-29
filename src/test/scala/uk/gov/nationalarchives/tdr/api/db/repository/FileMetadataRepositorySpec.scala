@@ -3,14 +3,13 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import java.sql.{PreparedStatement, Timestamp}
 import java.time.Instant
 import java.util.UUID
-
 import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -21,20 +20,21 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(2, Seconds))
 
-  private def getFileChecksumMatches(fileId: UUID): Boolean = {
-    val sql = s"SELECT ChecksumMatches FROM File where FileId = ?"
+  private def getFileStatusValue(fileId: UUID): String = {
+    val sql = s"SELECT Value FROM FileStatus where FileId = ? AND StatusType = ?"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
+    ps.setString(2, "Status Type")
     val rs = ps.executeQuery()
     rs.next()
-    rs.getBoolean("ChecksumMatches")
+    rs.getString("Value")
   }
 
-  private def checkFileMetadataExists(fileId: UUID, fileProperty: String): Assertion = {
+  private def checkFileMetadataExists(fileId: UUID): Assertion = {
     val sql = s"SELECT COUNT(*) as count FROM FileMetadata WHERE FileId = ? AND PropertyName = ?"
     val ps = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
-    ps.setString(2, fileProperty)
+    ps.setString(2, "FileProperty")
     val rs = ps.executeQuery()
     rs.next()
     rs.getInt("count") should be(1)
@@ -135,7 +135,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val result = fileMetadataRepository.addFileMetadata(input).futureValue.head
     result.propertyname should equal("FileProperty")
     result.value should equal("value")
-    checkFileMetadataExists(fileId, "FileProperty")
+    checkFileMetadataExists(fileId)
   }
 
   "addChecksumMetadata" should "update the checksum validation field on the file table" in {
@@ -148,8 +148,9 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
     createConsignment(consignmentId, userId)
     val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty")
-    fileMetadataRepository.addChecksumMetadata(input, Option(true)).futureValue
-    getFileChecksumMatches(fileId) should equal(true)
+    val statusInput = FilestatusRow(UUID.randomUUID(), fileId, "Status Type", "Value", Timestamp.from(Instant.now()))
+    fileMetadataRepository.addChecksumMetadata(input, statusInput).futureValue
+    getFileStatusValue(fileId) should equal("Value")
   }
 
   "getFileMetadata" should "return the correct metadata" in {

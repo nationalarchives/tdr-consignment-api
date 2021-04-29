@@ -13,5 +13,6 @@ case class ConsignmentApiContext(accessToken: Token,
                                  seriesService: SeriesService,
                                  transferAgreementService: TransferAgreementService,
                                  transferringBodyService: TransferringBodyService,
-                                 consignmentStatusService: ConsignmentStatusService
+                                 consignmentStatusService: ConsignmentStatusService,
+                                 fileStatusService: FileStatusService
                                  )

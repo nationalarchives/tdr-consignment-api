@@ -10,19 +10,19 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
 
-  private val insertQuery = Filemetadata returning Filemetadata.map(_.metadataid) into
+  private val insertFileMetadataQuery = Filemetadata returning Filemetadata.map(_.metadataid) into
     ((filemetadata, metadataid) => filemetadata.copy(metadataid = metadataid))
 
+  private val insertFileStatusQuery =
+    Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
+
   def addFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[FilemetadataRow]] = {
-    db.run(insertQuery ++= rows)
+    db.run(insertFileMetadataQuery ++= rows)
   }
 
-  def addChecksumMetadata(row: FilemetadataRow, validationResult: Option[Boolean]): Future[FilemetadataRow] = {
-    val checksumValidationUpdate = (for {
-      file <- File if file.fileid === row.fileid
-    } yield file.checksummatches).update(validationResult)
-    val allUpdates = DBIO.seq(insertQuery += row, checksumValidationUpdate).transactionally
-    db.run(allUpdates).map(_ => row)
+  def addChecksumMetadata(fileMetadataRow: FilemetadataRow, fileStatusRow: FilestatusRow): Future[FilemetadataRow] = {
+    val allUpdates = DBIO.seq(insertFileMetadataQuery += fileMetadataRow, insertFileStatusQuery += fileStatusRow).transactionally
+    db.run(allUpdates).map(_ => fileMetadataRow)
   }
 
   def getFileMetadata(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {

@@ -2,11 +2,10 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.time.ZonedDateTime
 import java.util.UUID
-
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
-import sangria.schema.{Argument, Field, InputObjectType, IntType, ListType, ObjectType, OptionType, StringType, fields}
+import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionType, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
@@ -65,6 +64,11 @@ object ConsignmentFields {
       Field("createdDatetime", OptionType(ZonedDateTimeType), resolve = _.value.createdDateTime),
       Field("transferInitiatedDatetime", OptionType(ZonedDateTimeType), resolve = _.value.transferInitiatedDatetime),
       Field("exportDatetime", OptionType(ZonedDateTimeType), resolve = _.value.exportDatetime),
+      Field(
+        "allChecksSucceeded",
+        BooleanType,
+        resolve = context => DeferChecksSucceeded(context.value.consignmentid)
+      ),
       Field(
         "totalFiles",
         IntType,
