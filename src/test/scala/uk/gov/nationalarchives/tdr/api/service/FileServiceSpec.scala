@@ -44,7 +44,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
 
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
@@ -77,7 +77,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
     when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
@@ -102,7 +102,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
 
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
 
     val fileService = new FileService(
@@ -153,7 +153,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileMetadataRepositoryMock.addFileMetadata(captor.capture())).thenReturn(mockFileMetadataResponse)
 
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUUIDSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUUIDSource, FixedTimeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUUIDSource)
 
     val fileService = new FileService(
@@ -210,7 +210,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
@@ -248,7 +248,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
@@ -295,7 +295,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
@@ -356,7 +356,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)

@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{FileMetadata, SHA256ServerSideChecksum}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Checksum, Mismatch, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Checksum, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{GraphqlError, getDataFromFile, validBackendChecksToken, _}
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestRequest}
 
@@ -101,12 +101,12 @@ class FileMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
 
   "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum matches" in {
     runTestMutation("mutation_alldata", validBackendChecksToken("checksum"))
-    checkFileStatusResult(defaultFileId, Success)
+    getFileStatusResult(defaultFileId, Checksum) should equal(Success)
   }
 
   "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum doesn't match" in {
     runTestMutation("mutation_mismatch_checksum", validBackendChecksToken("checksum"))
-    checkFileStatusResult(defaultFileId, Mismatch)
+    getFileStatusResult(defaultFileId, Checksum)
   }
 
   "addFileMetadata" should "not add the checksum validation result if this is not a checksum update" in {
@@ -131,16 +131,6 @@ class FileMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     val rs: ResultSet = ps.executeQuery()
     rs.last()
     rs.getRow should equal(0)
-  }
-
-  private def checkFileStatusResult(fileId: UUID, expectedValue: String): Unit = {
-    val sql = s"SELECT Value FROM FileStatus where FileId = ? AND StatusType = ?"
-    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
-    ps.setString(1, fileId.toString)
-    ps.setString(2, Checksum)
-    val rs: ResultSet = ps.executeQuery()
-    rs.last()
-    rs.getString(1) should equal(expectedValue)
   }
 
   private def checkNoValidationResultExists(fileId: UUID): Unit = {

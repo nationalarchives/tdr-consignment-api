@@ -1,13 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import java.sql.Connection
-
+import java.sql.{Connection, PreparedStatement, ResultSet}
 import org.scalatest.{BeforeAndAfterEach, Suite}
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{clientSideProperties, staticMetadataProperties}
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService.transferAgreementProperties
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.finalTransferConfirmationProperties
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{addConsignmentProperty, addFileProperty}
+
+import java.util.UUID
 
 /**
  * This trait should be mixed into specs which access the test database.
@@ -68,4 +69,15 @@ trait TestDatabase extends BeforeAndAfterEach {
       addFileProperty(propertyName)
     })
   }
+
+  def getFileStatusResult(fileId: UUID, statusType: String): String = {
+    val sql = s"SELECT Value FROM FileStatus where FileId = ? AND StatusType = ?"
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setString(1, fileId.toString)
+    ps.setString(2, statusType)
+    val rs: ResultSet = ps.executeQuery()
+    rs.last()
+    rs.getString(1)
+  }
+
 }
