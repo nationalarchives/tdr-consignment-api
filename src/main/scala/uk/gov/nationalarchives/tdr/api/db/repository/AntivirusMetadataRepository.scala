@@ -1,17 +1,21 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.Tables.{Avmetadata, AvmetadataRow, File}
+import uk.gov.nationalarchives.Tables.{Avmetadata, AvmetadataRow, File, Filestatus, FilestatusRow}
 
 import java.util.UUID
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class AntivirusMetadataRepository(db: Database) {
-  private val insertQuery = Avmetadata returning Avmetadata.map(_.fileid) into
+class AntivirusMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
+  private val insertAvMetadataQuery = Avmetadata returning Avmetadata.map(_.fileid) into
     ((antivirusMetadata, fileid) => antivirusMetadata.copy(fileid = fileid))
 
-  def addAntivirusMetadata(antivirusMetadataRow: AvmetadataRow): Future[AvmetadataRow] = {
-    db.run(insertQuery += antivirusMetadataRow)
+  private val insertFileStatusQuery = Filestatus returning Filestatus.map(_.filestatusid) into
+    ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
+
+  def addAntivirusMetadata(antivirusMetadataRow: AvmetadataRow, fileStatusRow: FilestatusRow): Future[AvmetadataRow] = {
+    val allUpdates = DBIO.seq(insertAvMetadataQuery += antivirusMetadataRow, insertFileStatusQuery += fileStatusRow).transactionally
+    db.run(allUpdates).map(_ => antivirusMetadataRow)
   }
 
   def getAntivirusMetadata(consignmentId: UUID): Future[Seq[AvmetadataRow]] = {
