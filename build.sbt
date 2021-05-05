@@ -58,7 +58,7 @@ libraryDependencies ++= Seq(
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.1.0" % Test,
   "org.mockito" %% "mockito-scala" % "1.6.3" % Test,
-  "org.mockito" %% "mockito-scala-scalatest" % "1.6.3" % Test,
+  "org.mockito" %% "mockito-scala-scalatest" % "1.7.0" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % "10.1.11" % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.2.0" % Test,
