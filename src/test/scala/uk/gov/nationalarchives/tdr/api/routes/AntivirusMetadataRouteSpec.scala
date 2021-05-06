@@ -2,13 +2,13 @@ package uk.gov.nationalarchives.tdr.api.routes
 
 import java.sql.{PreparedStatement, ResultSet}
 import java.util.UUID
-
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Success, VirusDetected}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestRequest}
 
@@ -69,6 +69,16 @@ class AntivirusMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequ
 
     response.errors.head.message should equal (expectedResponse.errors.head.message)
     checkNoAntivirusMetadataAdded()
+  }
+
+  "addAntivirusMetadata" should "set the file status to virus found when there is a virus found" in {
+    runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
+    getFileStatusResult(defaultFileId, Antivirus) should equal(VirusDetected)
+  }
+
+  "addAntivirusMetadata" should "set the file status to success when there is no virus found" in {
+    runTestMutation("mutation_noresult", validBackendChecksToken("antivirus"))
+    getFileStatusResult(defaultFileId, Antivirus) should equal(Success)
   }
 
   private def checkAntivirusMetadataExists(fileId: UUID): Unit = {
