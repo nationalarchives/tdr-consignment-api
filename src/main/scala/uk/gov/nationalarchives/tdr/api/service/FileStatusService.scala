@@ -16,7 +16,6 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val
       checksumStatus.headOption.exists(_.value == Success) &&
         avStatus.headOption.exists(_.value == Success)
   }
-
 }
 
 object FileStatusService {

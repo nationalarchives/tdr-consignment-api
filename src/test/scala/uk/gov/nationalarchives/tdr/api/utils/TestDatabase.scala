@@ -79,5 +79,4 @@ trait TestDatabase extends BeforeAndAfterEach {
     rs.last()
     rs.getString(1)
   }
-
 }

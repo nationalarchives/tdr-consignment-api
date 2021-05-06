@@ -8,7 +8,6 @@ import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.AntivirusMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AddAntivirusMetadataInput
