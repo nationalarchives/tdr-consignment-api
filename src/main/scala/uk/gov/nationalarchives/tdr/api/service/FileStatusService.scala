@@ -12,9 +12,10 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val
     for {
       checksumStatus <- fileStatusRepository.getFileStatus(consignmentId, Checksum)
       avStatus <- fileStatusRepository.getFileStatus(consignmentId, Antivirus)
-    } yield
-      checksumStatus.headOption.exists(_.value == Success) &&
-        avStatus.headOption.exists(_.value == Success)
+    } yield {
+      checksumStatus.nonEmpty && avStatus.nonEmpty &&
+        (checksumStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success)).isEmpty
+    }
   }
 }
 

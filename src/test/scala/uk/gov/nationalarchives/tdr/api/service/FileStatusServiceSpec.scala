@@ -72,4 +72,18 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     val response = new FileStatusService(fileStatusRepositoryMock).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
+
+  "allChecksSucceeded" should "return false if there are multiple checksum rows with one failure and multiple successful antivirus rows" in {
+    mockResponse(Checksum, Seq(fileStatusRow(Checksum, Mismatch), fileStatusRow(Checksum, Success)))
+    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
+    val response = new FileStatusService(fileStatusRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    response should equal(false)
+  }
+
+  "allChecksSucceeded" should "return false if there are multiple antivirus rows with one failure and multiple successful checksum rows" in {
+    mockResponse(Checksum, Seq(fileStatusRow(Checksum, Success), fileStatusRow(Checksum, Success)))
+    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, VirusDetected)))
+    val response = new FileStatusService(fileStatusRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    response should equal(false)
+  }
 }
