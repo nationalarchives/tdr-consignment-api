@@ -9,7 +9,7 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow}
+import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataInputMatches, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -28,8 +28,9 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val metadataRepository = mock[FFIDMetadataRepository]
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
 
-    val metadataCaptor: ArgumentCaptor[FfidmetadataRow] =  ArgumentCaptor.forClass(classOf[FfidmetadataRow])
-    val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] =  ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
+    val metadataCaptor: ArgumentCaptor[FfidmetadataRow] = ArgumentCaptor.forClass(classOf[FfidmetadataRow])
+    val fileStatusCaptor: ArgumentCaptor[FilestatusRow] = ArgumentCaptor.forClass(classOf[FilestatusRow])
+    val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] = ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
 
     val mockMetadataRow: FfidmetadataRow = getMockMetadataRow(fixedFileMetadataId, fixedFileUuid, Timestamp.from(FixedTimeSource.now))
     val mockMetadataMatchesRow = getMatchesRow(mockMetadataRow.ffidmetadataid)
@@ -37,7 +38,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockMetadataResponse = Future(mockMetadataRow)
     val mockMetadataMatchesResponse = Future(List(mockMetadataMatchesRow))
 
-    when(metadataRepository.addFFIDMetadata(metadataCaptor.capture())).thenReturn(mockMetadataResponse)
+    when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
     val service = new FFIDMetadataService(metadataRepository, matchesRepository, FixedTimeSource, new FixedUUIDSource())
@@ -55,6 +56,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
 
     val metadataCaptor: ArgumentCaptor[FfidmetadataRow] =  ArgumentCaptor.forClass(classOf[FfidmetadataRow])
+    val fileStatusCaptor: ArgumentCaptor[FilestatusRow] = ArgumentCaptor.forClass(classOf[FilestatusRow])
     val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] =  ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
 
     val mockMetadataRow: FfidmetadataRow = getMockMetadataRow(fixedFileMetadataId, fixedFileUuid, Timestamp.from(FixedTimeSource.now))
@@ -63,7 +65,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockMetadataResponse = Future(mockMetadataRow)
     val mockMetadataMatchesResponse = Future(List(mockMetadataMatchesRow))
 
-    when(metadataRepository.addFFIDMetadata(metadataCaptor.capture())).thenReturn(mockMetadataResponse)
+    when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
     val service = new FFIDMetadataService(metadataRepository, matchesRepository, FixedTimeSource, new FixedUUIDSource())
