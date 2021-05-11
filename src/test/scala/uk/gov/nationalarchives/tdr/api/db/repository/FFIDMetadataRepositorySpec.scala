@@ -12,6 +12,8 @@ import java.util.UUID
 
 class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
 
+  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+
   "countProcessedFfidMetadata" should "return 0 if consignment has no files" in {
     val db = DbConnection.db
     val ffidMetadataRepository = new FFIDMetadataRepository(db)

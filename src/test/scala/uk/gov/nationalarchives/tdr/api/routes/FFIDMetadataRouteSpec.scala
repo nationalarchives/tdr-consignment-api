@@ -10,6 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, PasswordProtected, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestRequest}
 
@@ -58,6 +59,21 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     checkFFIDMetadataExists(response.data.get.addFFIDMetadata.fileId)
   }
 
+  "addFFIDMetadata" should "set the file status to password protected found when a password protected file is found" in {
+    runTestMutation("mutation_password_protected", validBackendChecksToken("file_format"))
+    getFileStatusResult(defaultFileId, FFID) should equal(PasswordProtected)
+  }
+
+  "addFFIDMetadata" should "set the file status to success when there are no password protected files found" in {
+    runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
+    getFileStatusResult(defaultFileId, FFID) should equal(Success)
+  }
+
+  "addFFIDMetadata" should "set the file status to password protected found where a file has multiple matches with a password protected match" in {
+    runTestMutation("mutation_mixed_matches_password_protected", validBackendChecksToken("file_format"))
+    getFileStatusResult(defaultFileId, FFID) should equal(PasswordProtected)
+  }
+
   "addFFIDMetadata" should "not allow updating of file format metadata with incorrect authorisation" in {
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", invalidBackendChecksToken())
 
@@ -87,7 +103,6 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     response.errors.head.message should equal (expectedResponse.errors.head.message)
     checkNoFFIDMetadataAdded()
   }
-
 
   private def checkFFIDMetadataExists(fileId: UUID): Unit = {
     val sql = "select * from FFIDMetadata where FileId = ?;"
