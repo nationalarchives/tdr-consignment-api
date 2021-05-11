@@ -63,7 +63,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     response should equal(false)
   }
 
-  "allChecksSucceeded" should "return false if the antivirus status is 'VirusDetected', the checksum status is 'Mismatch' and the ffid status is 'PasswordProtected'" in {
+  "allChecksSucceeded" should "return false if antivirus status is 'VirusDetected', " +
+    "the checksum status is 'Mismatch' and the ffid status is 'PasswordProtected'" in {
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, VirusDetected)))
     mockResponse(Checksum, Seq(fileStatusRow(Checksum, Mismatch)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, PasswordProtected)))
