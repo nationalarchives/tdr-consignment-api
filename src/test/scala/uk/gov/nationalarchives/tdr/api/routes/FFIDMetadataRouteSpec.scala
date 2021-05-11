@@ -69,6 +69,11 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     getFileStatusResult(defaultFileId, FFID) should equal(Success)
   }
 
+  "addFFIDMetadata" should "set the file status to password protected found where a file has multiple matches with a password protected match" in {
+    runTestMutation("mutation_mixed_matches_password_protected", validBackendChecksToken("file_format"))
+    getFileStatusResult(defaultFileId, FFID) should equal(PasswordProtected)
+  }
+
   "addFFIDMetadata" should "not allow updating of file format metadata with incorrect authorisation" in {
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", invalidBackendChecksToken())
 

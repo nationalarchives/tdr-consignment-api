@@ -33,7 +33,7 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
     val fileStatusRow = FilestatusRow(uuidSource.uuid,
       ffidMetadata.fileId,
       FFID,
-      checkForPasswordProtectedPuids(ffidMetadata),
+      checkForInvalidPuids(ffidMetadata),
       Timestamp.from(timeSource.now))
 
     def addFFIDMetadataMatches(ffidmetadataid: UUID): Future[Seq[Tables.FfidmetadatamatchesRow]] = {
@@ -63,9 +63,9 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
     }
   }
 
-  private def checkForPasswordProtectedPuids(matchesMetadata: FFIDMetadataInput): String = {
-    matchesMetadata.matches.map(_.puid.getOrElse("")).exists(passwordProtectedPuids.contains) match {
-      case true => PasswordProtected
+  private def checkForInvalidPuids(matchesMetadata: FFIDMetadataInput): String = {
+    matchesMetadata.matches.map(_.puid.getOrElse("")) match {
+      case puids if puids.exists(passwordProtectedPuids.contains) => PasswordProtected
       case _ => Success
     }
   }
