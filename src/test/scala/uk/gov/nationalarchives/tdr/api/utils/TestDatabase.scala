@@ -70,13 +70,16 @@ trait TestDatabase extends BeforeAndAfterEach {
     })
   }
 
-  def getFileStatusResult(fileId: UUID, statusType: String): String = {
+  def getFileStatusResult(fileId: UUID, statusType: String): List[String] = {
     val sql = s"SELECT Value FROM FileStatus where FileId = ? AND StatusType = ?"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
     ps.setString(2, statusType)
     val rs: ResultSet = ps.executeQuery()
-    rs.last()
-    rs.getString(1)
+
+    new Iterator[String] {
+      def hasNext = rs.next()
+      def next() = rs.getString(1)
+    }.to(LazyList).toList
   }
 }

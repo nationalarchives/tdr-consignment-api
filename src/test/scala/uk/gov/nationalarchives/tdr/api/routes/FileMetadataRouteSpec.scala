@@ -101,7 +101,10 @@ class FileMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
 
   "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum matches" in {
     runTestMutation("mutation_alldata", validBackendChecksToken("checksum"))
-    getFileStatusResult(defaultFileId, Checksum) should equal(Success)
+
+    val result = getFileStatusResult(defaultFileId, Checksum)
+    result.size should be(1)
+    result.head should equal(Success)
   }
 
   "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum doesn't match" in {

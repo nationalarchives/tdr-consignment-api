@@ -19,6 +19,25 @@ import scala.concurrent.{ExecutionContext, Future}
 class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
+  "passwordProtectedPuids list" should "match the expected list of pronom ids for password protected files" in {
+    val expectedPuids = List("fmt/494", "fmt/754", "fmt/755")
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    service.passwordProtectedPuids should equal(expectedPuids)
+  }
+
+  "zipPuids list" should "matched the expected list of pronom ids for zip files" in {
+    val expectedPuids = List("fmt/289", "fmt/329", "fmt/484", "fmt/508", "fmt/600", "fmt/610", "fmt/613", "fmt/614", "fmt/625",
+      "fmt/626", "fmt/639", "fmt/656", "fmt/726", "fmt/842", "fmt/843", "fmt/844", "fmt/850", "fmt/866", "fmt/887", "fmt/1070",
+      "fmt/1071", "fmt/1087", "fmt/1095", "fmt/1096", "fmt/1097", "fmt/1098", "fmt/1100", "fmt/1102", "fmt/1105", "fmt/1190",
+      "fmt/1242", "fmt/1243", "fmt/1244", "fmt/1245", "fmt/1251", "fmt/1252", "fmt/1281", "fmt/1340", "fmt/1341", "fmt/1355",
+      "fmt/1361", "fmt/1399", "x-fmt/157", "x-fmt/219", "x-fmt/263", "x-fmt/265", "x-fmt/266", "x-fmt/267", "x-fmt/268", "x-fmt/269",
+      "x-fmt/412", "x-fmt/416", "x-fmt/429")
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    service.zipPuids should equal(expectedPuids)
+  }
+
   "addFFIDMetadata" should "call the repositories with the correct values" in {
     val fixedFileUuid = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
     val fixedUUIDSource = new FixedUUIDSource
@@ -29,7 +48,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
 
     val metadataCaptor: ArgumentCaptor[FfidmetadataRow] = ArgumentCaptor.forClass(classOf[FfidmetadataRow])
-    val fileStatusCaptor: ArgumentCaptor[FilestatusRow] = ArgumentCaptor.forClass(classOf[FilestatusRow])
+    val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
     val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] = ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
 
     val mockMetadataRow: FfidmetadataRow = getMockMetadataRow(fixedFileMetadataId, fixedFileUuid, Timestamp.from(FixedTimeSource.now))
@@ -56,7 +75,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
 
     val metadataCaptor: ArgumentCaptor[FfidmetadataRow] =  ArgumentCaptor.forClass(classOf[FfidmetadataRow])
-    val fileStatusCaptor: ArgumentCaptor[FilestatusRow] = ArgumentCaptor.forClass(classOf[FilestatusRow])
+    val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
     val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] =  ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
 
     val mockMetadataRow: FfidmetadataRow = getMockMetadataRow(fixedFileMetadataId, fixedFileUuid, Timestamp.from(FixedTimeSource.now))

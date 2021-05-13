@@ -73,12 +73,18 @@ class AntivirusMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequ
 
   "addAntivirusMetadata" should "set the file status to virus found when there is a virus found" in {
     runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
-    getFileStatusResult(defaultFileId, Antivirus) should equal(VirusDetected)
+
+    val result = getFileStatusResult(defaultFileId, Antivirus)
+    result.size should be(1)
+    result.head should equal(VirusDetected)
   }
 
   "addAntivirusMetadata" should "set the file status to success when there is no virus found" in {
     runTestMutation("mutation_noresult", validBackendChecksToken("antivirus"))
-    getFileStatusResult(defaultFileId, Antivirus) should equal(Success)
+
+    val result = getFileStatusResult(defaultFileId, Antivirus)
+    result.size should be(1)
+    result.head should equal(Success)
   }
 
   private def checkAntivirusMetadataExists(fileId: UUID): Unit = {
