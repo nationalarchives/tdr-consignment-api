@@ -26,7 +26,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     service.passwordProtectedPuids should equal(expectedPuids)
   }
 
-  "zipPuids list" should "matched the expected list of pronom ids for zip files" in {
+  "zipPuids list" should "match the expected list of pronom ids for zip files" in {
     val expectedPuids = List("fmt/289", "fmt/329", "fmt/484", "fmt/508", "fmt/600", "fmt/610", "fmt/613", "fmt/614", "fmt/625",
       "fmt/626", "fmt/639", "fmt/656", "fmt/726", "fmt/842", "fmt/843", "fmt/844", "fmt/850", "fmt/866", "fmt/887", "fmt/1070",
       "fmt/1071", "fmt/1087", "fmt/1095", "fmt/1096", "fmt/1097", "fmt/1098", "fmt/1100", "fmt/1102", "fmt/1105", "fmt/1190",

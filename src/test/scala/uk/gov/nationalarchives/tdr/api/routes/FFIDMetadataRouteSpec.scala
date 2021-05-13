@@ -58,7 +58,7 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     checkFFIDMetadataExists(response.data.get.addFFIDMetadata.fileId)
   }
 
-  "addFFIDMetadata" should "set the file status to success when there are no password protected or zip files are found" in {
+  "addFFIDMetadata" should "set the file status to success when there are no password protected or zip files found" in {
     runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -83,7 +83,7 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.contains(Success) should be(true)
   }
 
-  "addFFIDMetadata" should "set the file status to zip file found when a zip file file is found" in {
+  "addFFIDMetadata" should "set the file status to zip file found when a zip file is found" in {
     runTestMutation("mutation_zip_file", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
