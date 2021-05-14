@@ -1,5 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import com.typesafe.scalalogging.Logger
+import net.logstash.logback.argument.StructuredArguments._
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
@@ -16,6 +19,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
+
+  val logger: Logger = Logger("FileMetadataService")
 
   def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
     val now = Timestamp.from(timeSource.now)
@@ -46,6 +51,12 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
             case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${addFileMetadataInput.fileId}")
           }
           fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, addFileMetadataInput.fileId, Checksum, fileStatus, timestamp)
+          _ <- Future {
+            logger.info("File check {} for fileId {} completed with status {}",
+              value("fileCheck", "checksum"),
+              value("fileId", addFileMetadataInput.fileId),
+              value("fileCheckStatus", fileStatus))
+          }
           row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
         } yield FileMetadata(filePropertyName, row.fileid, row.value)) recover {
           case e: Throwable =>
