@@ -67,7 +67,7 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
 
     uniqueStatuses match {
       case s if uniqueStatuses.size == 1 =>
-        List(FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, uniqueStatuses.head, Timestamp.from(timeSource.now)))
+        List(FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, s.head, Timestamp.from(timeSource.now)))
       case _ => uniqueStatuses.filterNot(_.equals(Success)).map(
         FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, _, Timestamp.from(timeSource.now)))
     }
