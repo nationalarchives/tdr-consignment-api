@@ -58,7 +58,7 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     checkFFIDMetadataExists(response.data.get.addFFIDMetadata.fileId)
   }
 
-  "addFFIDMetadata" should "set the file status to success when there are no password protected or zip files found" in {
+  "addFFIDMetadata" should "set a single file status to success when a success match only is found" in {
     runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -66,38 +66,69 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.head should equal(Success)
   }
 
-  "addFFIDMetadata" should "set the file status to password protected found when a password protected file is found" in {
-    runTestMutation("mutation_password_protected", validBackendChecksToken("file_format"))
+  "addFFIDMetadata" should "set a single file status of success when there are multiple success matches only found" in {
+    runTestMutation("mutation_status_multiple_success", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(Success)
+  }
+
+  "addFFIDMetadata" should "set a single file status of password protected when a password protected match only is found" in {
+    runTestMutation("mutation_status_password_protected", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
     result.size should be(1)
     result.head should equal(PasswordProtected)
   }
 
-  "addFFIDMetadata" should "set multiple file statuses where a file has multiple matches including a password protected match" in {
-    runTestMutation("mutation_mixed_matches_password_protected", validBackendChecksToken("file_format"))
+  "addFFIDMetadata" should "set a single file status of password protected when multiple password protected matches are found" in {
+    runTestMutation("mutation_status_multiple_password_protected", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
-    result.size should be(2)
-    result.contains(PasswordProtected) should be(true)
-    result.contains(Success) should be(true)
+    result.size should be(1)
+    result.head should equal(PasswordProtected)
   }
 
-  "addFFIDMetadata" should "set the file status to zip file found when a zip file is found" in {
-    runTestMutation("mutation_zip_file", validBackendChecksToken("file_format"))
+  "addFFIDMetadata" should "set a single status of password protected when password protected and success matches are found" in {
+    runTestMutation("mutation_status_password_protected_success", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.contains(PasswordProtected) should be(true)
+  }
+
+  "addFFIDMetadata" should "set a single file status of zip when a zip match only is found" in {
+    runTestMutation("mutation_status_zip", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
     result.size should be(1)
     result.contains(Zip) should be(true)
   }
 
-  "addFFIDMetadata" should "set multiple file statuses where a file has multiple matches including a zip file match" in {
-    runTestMutation("mutation_mixed_matches_zip_file", validBackendChecksToken("file_format"))
+  "addFFIDMetadata" should "set a single file status of zip when multiple zip matches are found" in {
+    runTestMutation("mutation_status_multiple_zip", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(Zip)
+  }
+
+  "addFFIDMetadata" should "set a single file status of zip when zip and success matches are found" in {
+    runTestMutation("mutation_status_zip_success", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(Zip)
+  }
+
+  "addFFIDMetadata" should "set multiple file statuses when zip and password protected matches are found" in {
+    runTestMutation("mutation_status_zip_password_protected", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
     result.size should be(2)
     result.contains(Zip) should be(true)
-    result.contains(Success) should be(true)
+    result.contains(PasswordProtected) should be(true)
   }
 
   "addFFIDMetadata" should "not allow updating of file format metadata with incorrect authorisation" in {

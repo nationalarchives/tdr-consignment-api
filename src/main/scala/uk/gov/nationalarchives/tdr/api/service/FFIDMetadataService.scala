@@ -33,8 +33,7 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
       ffidMetadata.containerSignatureFileVersion,
       ffidMetadata.method)
 
-    val fileStatusRows = ffidMetadata.matches.map(ffidMatches =>
-      FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, checkForInvalidPuids(ffidMatches.puid), Timestamp.from(timeSource.now)))
+    val fileStatusRows = generateFileStatusRows(ffidMetadata)
 
     def addFFIDMetadataMatches(ffidmetadataid: UUID): Future[Seq[Tables.FfidmetadatamatchesRow]] = {
       val matchRows = ffidMetadata.matches.map(m => FfidmetadatamatchesRow(ffidmetadataid, m.extension, m.identificationBasis, m.puid))
@@ -63,7 +62,18 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
     }
   }
 
-  private def checkForInvalidPuids(puid: Option[String]): String = {
+  private def generateFileStatusRows(ffidMetadata: FFIDMetadataInput): List[FilestatusRow] = {
+    val uniqueStatuses: List[String] = ffidMetadata.matches.map(m => checkStatus(m.puid)).distinct
+
+    uniqueStatuses match {
+      case s if uniqueStatuses.size == 1 =>
+        List(FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, uniqueStatuses.head, Timestamp.from(timeSource.now)))
+      case _ => uniqueStatuses.filterNot(_.equals(Success)).map(
+        FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, _, Timestamp.from(timeSource.now)))
+    }
+  }
+
+  private def checkStatus(puid: Option[String]): String = {
     puid.getOrElse("") match {
       case p if passwordProtectedPuids.contains(p) => PasswordProtected
       case p if zipPuids.contains(p) => Zip
