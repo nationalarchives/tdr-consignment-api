@@ -31,4 +31,5 @@ object FileStatusService {
   val Mismatch = "Mismatch"
   val VirusDetected = "VirusDetected"
   val PasswordProtected = "PasswordProtected"
+  val Zip = "Zip"
 }

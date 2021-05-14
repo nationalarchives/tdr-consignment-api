@@ -1,0 +1,3 @@
+{
+  "query": "mutation { addFFIDMetadata(addFFIDMetadataInput:  { fileId: \"07a3a4bd-0281-4a6d-a4c1-8fa3239e1313\",  software: \"pronom\",  softwareVersion: \"1.8.0\", binarySignatureFileVersion: \"DROID_SignatureFile_V96.xml\", containerSignatureFileVersion: \"container-signature-20200121.xml\",method: \"pronom\"matches: [    {        extension: \"txt\", identificationBasis: \"Some basis\", puid: \"x-fmt/111\"     }, {        extension: \"txt\", identificationBasis: \"Some basis\", puid: \"x-fmt/112\"     }    ]    }) { fileId software softwareVersion binarySignatureFileVersion containerSignatureFileVersion method datetime matches {identificationBasis puid extension} } }"
+}
