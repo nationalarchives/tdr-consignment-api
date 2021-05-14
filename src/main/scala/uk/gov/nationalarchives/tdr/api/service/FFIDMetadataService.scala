@@ -3,9 +3,9 @@ package uk.gov.nationalarchives.tdr.api.service
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
-
 import java.sql.{SQLException, Timestamp}
 import java.util.UUID
+
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException

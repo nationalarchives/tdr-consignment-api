@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import net.logstash.logback.argument.StructuredArguments.value
+import net.logstash.logback.argument.StructuredArguments._
 
 import java.sql.Timestamp
 import java.time.Instant
