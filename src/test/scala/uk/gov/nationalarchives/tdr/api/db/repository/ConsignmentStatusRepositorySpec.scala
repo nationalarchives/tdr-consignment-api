@@ -3,13 +3,15 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestDatabase, TestUtils}
 
 import java.sql.Timestamp
 import java.time.Duration
+import java.time.Instant.now
 import java.util.UUID
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -42,5 +44,26 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     val consignmentUploadStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
 
     consignmentUploadStatus should be(empty)
+  }
+
+  "updateConsignmentStatusUploadComplete" should "update a consignments' status when upload is complete" in {
+    val db = DbConnection.db
+    val consignmentStatusRepository = new ConsignmentStatusRepository(db)
+    val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
+    val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
+    val statusType = "Upload"
+    val statusValue = "Complete"
+    val createdTimestamp = Timestamp.from(now)
+    val modifiedTimestamp = Timestamp.from(now)
+
+    TestUtils.createConsignment(consignmentId, userId)
+    TestUtils.createConsignmentUploadStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
+    consignmentStatusRepository.updateConsignmentStatusUploadComplete(consignmentId, statusType, statusValue, modifiedTimestamp)
+
+    val consignmentStatusRetrieved = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
+
+    consignmentStatusRetrieved.value should be(statusValue)
+    consignmentStatusRetrieved.statustype should be(statusType)
+    consignmentStatusRetrieved.modifieddatetime.get should be(modifiedTimestamp)
   }
 }

@@ -1,0 +1,22 @@
+{
+  "data": {
+    "updateConsignmentStatusUploadComplete": null
+  },
+  "errors": [
+    {
+      "message": "Invalid consignment id",
+      "path": [
+        "updateConsignmentStatusUploadComplete"
+      ],
+      "locations": [
+        {
+          "column": 5,
+          "line": 2
+        }
+      ],
+      "extensions": {
+        "code": "NOT_AUTHORISED"
+      }
+    }
+  ]
+}
