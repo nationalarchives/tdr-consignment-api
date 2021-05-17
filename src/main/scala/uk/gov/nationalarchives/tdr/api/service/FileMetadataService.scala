@@ -14,13 +14,15 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMet
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddFileMetadataInput, FileMetadata, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
+import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
 
-  val logger: Logger = Logger("FileMetadataService")
+  val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
   def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
     val now = Timestamp.from(timeSource.now)
@@ -51,12 +53,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
             case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${addFileMetadataInput.fileId}")
           }
           fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, addFileMetadataInput.fileId, Checksum, fileStatus, timestamp)
-          _ <- Future {
-            logger.info("File check {} for fileId {} completed with status {}",
-              value("fileCheck", "checksum"),
-              value("fileId", addFileMetadataInput.fileId),
-              value("fileCheckStatus", fileStatus))
-          }
+          _ <- Future(loggingUtils.logFileFormatStatus("checksum", addFileMetadataInput.fileId, fileStatus))
           row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
         } yield FileMetadata(filePropertyName, row.fileid, row.value)) recover {
           case e: Throwable =>

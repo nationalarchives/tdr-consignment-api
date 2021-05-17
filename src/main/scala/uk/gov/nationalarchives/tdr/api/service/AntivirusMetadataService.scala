@@ -12,11 +12,12 @@ import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Suc
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import com.typesafe.scalalogging.Logger
+import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
 class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRepository, uuidSource: UUIDSource, timeSource: TimeSource)
                               (implicit val executionContext: ExecutionContext) {
 
-  val logger: Logger = Logger("AntivirusMetadataService")
+  val loggingUtils: LoggingUtils = LoggingUtils(Logger("AntivirusMetadataService"))
 
   def addAntivirusMetadata(input: AddAntivirusMetadataInput): Future[AntivirusMetadata] = {
 
@@ -33,10 +34,7 @@ class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRep
     }
     val fileStatusRow = FilestatusRow(uuidSource.uuid, input.fileId, Antivirus, fileStatusValue, Timestamp.from(timeSource.now))
 
-    logger.info("File check {} for fileId {} completed with status {}",
-      value("fileCheck", "antivirus"),
-      value("fileId", input.fileId),
-      value("fileCheckStatus", fileStatusValue))
+    loggingUtils.logFileFormatStatus("antivirus", input.fileId, fileStatusValue)
 
     antivirusMetadataRepository.addAntivirusMetadata(inputRow, fileStatusRow).map(rowToAntivirusMetadata)
   }
