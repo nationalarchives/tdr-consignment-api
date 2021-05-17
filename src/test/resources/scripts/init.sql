@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS ConsignmentStatus (
     StatusType varchar(255) not null,
     Value varchar(255) not null,
     CreatedDatetime timestamp not null,
-    ModifiedDatetime  timestamp,
+    ModifiedDatetime timestamp,
     PRIMARY KEY (ConsignmentStatusId),
     FOREIGN KEY (ConsignmentId) REFERENCES Consignment(ConsignmentId)
 );
