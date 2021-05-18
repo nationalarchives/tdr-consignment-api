@@ -55,7 +55,7 @@ object ValidateSeries extends AuthorisationTag {
     val bodyResult = ctx.ctx.transferringBodyService.getBody(addConsignmentInput.seriesid)
 
     bodyResult.map(body => {
-      body.code match {
+      body.tdrCode match {
         case Some(code) if code == userBody => continue
         case Some(code) =>
           val message = s"User '${token.userId}' is from transferring body '$userBody' and does not have permission " +

@@ -27,6 +27,6 @@ class TransferringBodyServiceSpec extends AnyFlatSpec with MockitoSugar with Mat
 
     val body = service.getBody(seriesId)
 
-    body.futureValue.code.get should equal("CODE")
+    body.futureValue.tdrCode.get should equal("CODE")
   }
 }
