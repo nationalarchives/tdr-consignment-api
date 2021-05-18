@@ -40,7 +40,7 @@ class ConsignmentService(
         addConsignmentInput.seriesid,
         userId,
         Timestamp.from(now),
-        consignmentsequence = Option(sequence),
+        consignmentsequence = sequence,
         consignmentreference = consignmentRef)
       consignmentRepository.addConsignment(consignmentRow).map(
         row => convertRowToConsignment(row)

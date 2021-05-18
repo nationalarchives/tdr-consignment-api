@@ -34,7 +34,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val bodyCode: Option[String] = Option("Mock department")
   val bodyDescription: Option[String] = Option("Body description")
   //scalastyle:off magic.number
-  val consignmentSequence: Option[Long] = Option(400L)
+  val consignmentSequence: Long = 400L
   //scalastyle:on magic.number
   val consignmentReference = "TDR-2020-VB"
   val mockConsignment: ConsignmentRow = ConsignmentRow(
@@ -71,7 +71,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   }
 
   "addConsignment" should "link a consignment to the user's ID" in {
-    when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence.get))
+    when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
     when(fixedUuidSource.uuid).thenReturn(consignmentId)
     consignmentService.addConsignment(AddConsignmentInput(seriesId), userId).futureValue
