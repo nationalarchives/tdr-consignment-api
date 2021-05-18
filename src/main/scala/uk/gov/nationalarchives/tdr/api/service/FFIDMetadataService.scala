@@ -1,20 +1,25 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
+
 import java.sql.{SQLException, Timestamp}
 import java.util.UUID
-
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, PasswordProtected, Success, Zip}
+import net.logstash.logback.argument.StructuredArguments._
+import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matchesRepository: FFIDMetadataMatchesRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val executionContext: ExecutionContext) {
+
+  val loggingUtils: LoggingUtils = LoggingUtils(Logger("FFIDMetadataService"))
 
   val passwordProtectedPuids: List[String] = List("fmt/494", "fmt/754", "fmt/755")
   val zipPuids: List[String] = List("fmt/289", "fmt/329", "fmt/484", "fmt/508", "fmt/600", "fmt/610", "fmt/613",
@@ -34,6 +39,8 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
       ffidMetadata.method)
 
     val fileStatusRows = generateFileStatusRows(ffidMetadata)
+
+    loggingUtils.logFileFormatStatus("FFID", ffidMetadata.fileId, fileStatusRows.map(_.value).mkString(","))
 
     def addFFIDMetadataMatches(ffidmetadataid: UUID): Future[Seq[Tables.FfidmetadatamatchesRow]] = {
       val matchRows = ffidMetadata.matches.map(m => FfidmetadatamatchesRow(ffidmetadataid, m.extension, m.identificationBasis, m.puid))

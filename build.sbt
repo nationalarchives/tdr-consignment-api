@@ -50,6 +50,7 @@ libraryDependencies ++= Seq(
   "ch.megard" %% "akka-http-cors" % "0.4.2",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+  "net.logstash.logback" % "logstash-logback-encoder" % "6.6",
   "org.jboss.logging" % "jboss-logging" % "3.4.1.Final",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "1.1.2",
   "software.amazon.awssdk" % "rds" % "2.16.16",
