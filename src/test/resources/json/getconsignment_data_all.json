@@ -11,7 +11,7 @@
       "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
       "transferringBody": {
         "name": "Some department name",
-        "code": "consignment-body-code"
+        "tdrCode": "consignment-body-code"
       },
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",

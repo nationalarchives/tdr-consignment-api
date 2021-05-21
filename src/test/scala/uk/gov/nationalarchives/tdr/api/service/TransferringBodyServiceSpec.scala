@@ -22,11 +22,11 @@ class TransferringBodyServiceSpec extends AnyFlatSpec with MockitoSugar with Mat
     val seriesId = UUID.fromString("20e88b3c-d063-4a6e-8b61-187d8c51d11d")
     val bodyId = UUID.fromString("8a72cc59-7f2f-4e55-a263-4a4cb9f677f5")
 
-    val bodyRow = BodyRow(bodyId, Some("Some department name"), Some("CODE"))
+    val bodyRow = BodyRow(bodyId, Some("Some department name"), Some("CODE"), None, Option("CODE"))
     when(repository.getTransferringBody(seriesId)).thenReturn(Future.successful(bodyRow))
 
     val body = service.getBody(seriesId)
 
-    body.futureValue.code.get should equal("CODE")
+    body.futureValue.tdrCode.get should equal("CODE")
   }
 }

@@ -63,7 +63,7 @@ class ConsignmentService(
   def getTransferringBodyOfConsignment(consignmentId: UUID): Future[Option[TransferringBody]] = {
     val consignment: Future[Seq[BodyRow]] = consignmentRepository.getTransferringBodyOfConsignment(consignmentId)
     consignment.map(rows => rows.headOption.map(
-      transferringBody => TransferringBody(transferringBody.name, transferringBody.code)))
+      transferringBody => TransferringBody(transferringBody.name, transferringBody.tdrcode)))
   }
 
   def consignmentHasFiles(consignmentId: UUID): Future[Boolean] = {

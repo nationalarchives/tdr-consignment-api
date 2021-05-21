@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS Body (
    BodyId UUID not null DEFAULT '6e3b76c4-1745-4467-8ac5-b4dd736e1b3e',
    Name varchar(255) default null,
    Code varchar(255) default null,
+   TdrCode varchar(255) default null,
    Description varchar(255) default null,
    PRIMARY KEY (BodyId)
 );

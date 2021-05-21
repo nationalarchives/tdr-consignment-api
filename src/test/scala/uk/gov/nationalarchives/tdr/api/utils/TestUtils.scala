@@ -242,7 +242,7 @@ object TestUtils {
   }
 
   def addTransferringBody(id: UUID, name: String, code: String): Unit = {
-    val sql = s"INSERT INTO Body (BodyId, Name, Code) VALUES (?, ?, ?)"
+    val sql = s"INSERT INTO Body (BodyId, Name, TdrCode) VALUES (?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, id.toString)
     ps.setString(2, name)
