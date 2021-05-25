@@ -27,7 +27,7 @@ pipeline {
                 tdr.reportStartOfBuildToGitHub(repo, env.GIT_COMMIT)
             }
             checkout scm
-            sh 'sbt -no-colors test scalastyle test:scalastyle'
+            sh 'sbt -no-colors test scalastyle test:scalastyle `compareSchema`'
         }
     }
     stage('Post-build') {

@@ -2,6 +2,7 @@ import rocks.muki.graphql.schema.SchemaLoader
 import sbt.File
 import sbt.Keys.libraryDependencies
 
+import java.nio.file.Files
 
 
 name := "tdr-consignment-api"
@@ -18,6 +19,16 @@ resolvers ++= Seq[Resolver](
 )
 
 mainClass in (Compile, run) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
+
+val compareSchema = taskKey[Unit]("Generate the graphql schema and compares it with schema.graphql in the project root")
+
+compareSchema := {
+  val generatedSchemaString = Files.readString(graphqlSchemaGen.value.toPath)
+  val schemaString = Files.readString(baseDirectory.value.toPath.resolve("schema.graphql"))
+  if(generatedSchemaString != schemaString) {
+    throw new MessageOnlyException("Schemas do not match")
+  }
+}
 
 enablePlugins(GraphQLSchemaPlugin)
 
