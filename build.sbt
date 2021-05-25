@@ -25,9 +25,7 @@ val compareSchema = taskKey[Unit]("Generate the graphql schema and compares it w
 
 compareSchema := {
   val schemaFile = baseDirectory.value.toPath.resolve("schema.graphql").toFile
-  println(IO.readBytes(graphqlSchemaGen.value).map(_.toChar).mkString)
-  println(IO.readBytes(schemaFile).map(_.toChar).mkString)
-  if(IO.readBytes(graphqlSchemaGen.value) sameElements IO.readBytes(schemaFile)) {
+  if(!(IO.readBytes(graphqlSchemaGen.value) sameElements IO.readBytes(schemaFile))) {
     throw new MessageOnlyException("Schemas do not match")
   }
 }
