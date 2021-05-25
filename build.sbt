@@ -3,6 +3,7 @@ import sbt.File
 import sbt.Keys.libraryDependencies
 
 import java.nio.file.Files
+import scala.io.Source
 
 
 name := "tdr-consignment-api"
@@ -23,9 +24,8 @@ mainClass in (Compile, run) := Some("uk.gov.nationalarchives.tdr.api.http.ApiSer
 val compareSchema = taskKey[Unit]("Generate the graphql schema and compares it with schema.graphql in the project root")
 
 compareSchema := {
-  val generatedSchemaString = Files.readString(graphqlSchemaGen.value.toPath)
-  val schemaString = Files.readString(baseDirectory.value.toPath.resolve("schema.graphql"))
-  if(generatedSchemaString != schemaString) {
+  val schemaFile = baseDirectory.value.toPath.resolve("schema.graphql").toFile
+  if(IO.readBytes(graphqlSchemaGen.value) sameElements IO.readBytes(schemaFile)) {
     throw new MessageOnlyException("Schemas do not match")
   }
 }
