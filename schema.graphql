@@ -227,9 +227,6 @@ type TransferringBody {
 
 scalar UUID
 
-
-
-
 input UpdateExportLocationInput {
   consignmentId: UUID!
   exportLocation: String!
