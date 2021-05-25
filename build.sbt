@@ -1,9 +1,7 @@
 import rocks.muki.graphql.schema.SchemaLoader
 import sbt.File
 import sbt.Keys.libraryDependencies
-
-import java.nio.file.Files
-import scala.io.Source
+import sbt.Keys.streams
 
 
 name := "tdr-consignment-api"
@@ -28,6 +26,7 @@ compareSchema := {
   if(!(IO.readBytes(graphqlSchemaGen.value) sameElements IO.readBytes(schemaFile))) {
     throw new MessageOnlyException("Schemas do not match")
   }
+  streams.value.log.info("Generated schema and project schema match")
 }
 
 enablePlugins(GraphQLSchemaPlugin)
