@@ -41,7 +41,7 @@ class SeriesRouteSpec extends AnyFlatSpec with Matchers with TestDatabase with T
     TestUtils.addTransferringBody(bodyId, "Some body name", bodyCode)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_empty")
-    val response: GraphqlQueryData = runTestQuery("query_somedata", validUserToken(bodyCode))
+    val response: GraphqlQueryData = runTestQuery("query_somedata", validUserToken(body = bodyCode))
     response.data should equal(expectedResponse.data)
   }
 
@@ -56,7 +56,7 @@ class SeriesRouteSpec extends AnyFlatSpec with Matchers with TestDatabase with T
     TestUtils.addSeries(UUID.fromString("01d2eb57-9d35-43e8-9eff-63e539ada1f9"), otherBodyId, "series-code-3")
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
-    val response: GraphqlQueryData = runTestQuery("query_somedata", validUserToken(bodyCode))
+    val response: GraphqlQueryData = runTestQuery("query_somedata", validUserToken(body = bodyCode))
     response.data should equal(expectedResponse.data)
   }
 
@@ -72,7 +72,7 @@ class SeriesRouteSpec extends AnyFlatSpec with Matchers with TestDatabase with T
     TestUtils.addTransferringBody(bodyId, "Some body name", bodyCode)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(bodyCode))
+    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = bodyCode))
     response.data should equal(expectedResponse.data)
   }
 
