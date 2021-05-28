@@ -1,7 +1,7 @@
 import rocks.muki.graphql.schema.SchemaLoader
 import sbt.File
 import sbt.Keys.libraryDependencies
-import sbt.Keys.streams
+
 
 
 name := "tdr-consignment-api"
@@ -19,11 +19,9 @@ resolvers ++= Seq[Resolver](
 
 mainClass in (Compile, run) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
 
-val compareSchema = taskKey[Unit]("Generate the graphql schema and compares it with schema.graphql in the project root")
-
 graphqlSchemas += GraphQLSchema(
   "consignmentApi",
-  "API schema as stored in the repository",
+  "API schema from the schema.graphql file in the repository root",
   Def.task(
     GraphQLSchemaLoader
       .fromFile(baseDirectory.value.toPath.resolve("schema.graphql").toFile)
