@@ -27,7 +27,7 @@ pipeline {
                 tdr.reportStartOfBuildToGitHub(repo, env.GIT_COMMIT)
             }
             checkout scm
-            sh 'sbt -no-colors test scalastyle test:scalastyle compareSchema'
+            sh """sbt -no-colors test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"' """
         }
     }
     stage('Post-build') {

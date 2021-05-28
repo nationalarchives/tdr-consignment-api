@@ -21,13 +21,15 @@ mainClass in (Compile, run) := Some("uk.gov.nationalarchives.tdr.api.http.ApiSer
 
 val compareSchema = taskKey[Unit]("Generate the graphql schema and compares it with schema.graphql in the project root")
 
-compareSchema := {
-  val schemaFile = baseDirectory.value.toPath.resolve("schema.graphql").toFile
-  if(!(IO.readBytes(graphqlSchemaGen.value) sameElements IO.readBytes(schemaFile))) {
-    throw new MessageOnlyException("Schemas do not match")
-  }
-  streams.value.log.info("Generated schema and project schema match")
-}
+graphqlSchemas += GraphQLSchema(
+  "consignmentApi",
+  "API schema as stored in the repository",
+  Def.task(
+    GraphQLSchemaLoader
+      .fromFile(baseDirectory.value.toPath.resolve("schema.graphql").toFile)
+      .loadSchema()
+  ).taskValue
+)
 
 enablePlugins(GraphQLSchemaPlugin)
 
