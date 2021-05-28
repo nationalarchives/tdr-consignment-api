@@ -17,6 +17,7 @@ object GraphQlTypes {
       TransferAgreementFields.mutationFields ++
       ClientFileMetadataFields.mutationFields ++
       FileFields.mutationFields ++
+      ConsignmentStatusFields.mutationFields ++
       AntivirusMetadataFields.mutationFields ++
       FileMetadataFields.mutationFields ++
       FFIDMetadataFields.mutationFields ++

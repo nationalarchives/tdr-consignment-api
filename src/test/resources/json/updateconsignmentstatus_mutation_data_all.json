@@ -1,0 +1,10 @@
+{
+  "query": "mutation($uploadCompleteUpdate: UpdateConsignmentStatusInput!){updateConsignmentStatusUploadComplete(uploadCompleteUpdate: $uploadCompleteUpdate)}",
+  "variables": {
+    "uploadCompleteUpdate": {
+      "consignmentId": "c8245069-4cc6-4d98-b480-758fb49a0bb7",
+      "statusType": "Upload",
+      "statusValue": "Completed"
+    }
+  }
+}
