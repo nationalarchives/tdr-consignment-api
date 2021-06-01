@@ -18,8 +18,8 @@ class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequ
   private val transferringBodyCode = "default-transferring-body-code"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
-  case class GraphqlMutationData(data: Option[updateConsignmentStatusUploadComplete], errors: List[GraphqlError] = Nil)
-  class updateConsignmentStatusUploadComplete(updateConsignmentStatus: ConsignmentStatus)
+  case class GraphqlMutationData(data: Option[UpdateConsignmentStatusUploadComplete], errors: List[GraphqlError] = Nil)
+  case class UpdateConsignmentStatusUploadComplete(updateConsignmentStatusUploadComplete: Option[Int])
 
   case class ConsignmentStatus(consignmentStatusId: Option[UUID],
                                consignmentId: Option[UUID],
@@ -41,12 +41,28 @@ class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequ
   "updateConsignmentStatusUploadComplete" should "update consignment status" in {
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val token = validUserToken()
+    val statusType = "Upload"
+    val statusValue = "InProgress"
+    val token = validUserToken(userId)
 
     createConsignment(consignmentId, userId)
+    createConsignmentUploadStatus(consignmentId, statusType, statusValue)
 
     val expectedResponse = getDataFromFile[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_all")
     val response = runTestRequest[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_data_all", token)
-    response.data should equal(expectedResponse.data)
+
+    response.data.get.updateConsignmentStatusUploadComplete should equal(expectedResponse.data.get.updateConsignmentStatusUploadComplete)
+  }
+
+  "updateConsignmentStatusUploadComplete" should "return an error if a consignment that doesn't exist is queried" in {
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
+
+    val expectedResponse = getDataFromFile[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_no_consignment")
+    val response = runTestRequest[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_no_consignment", token)
+
+    response.data.get.updateConsignmentStatusUploadComplete should equal(expectedResponse.data.get.updateConsignmentStatusUploadComplete)
   }
 }
+
+
