@@ -1,0 +1,236 @@
+input AddAntivirusMetadataInput {
+  fileId: UUID!
+  software: String!
+  softwareVersion: String!
+  databaseVersion: String!
+  result: String!
+  datetime: Long!
+}
+
+input AddClientFileMetadataInput {
+  fileId: UUID!
+  originalPath: String
+  checksum: String
+  checksumType: String
+  lastModified: Long!
+  fileSize: Long
+  datetime: Long
+}
+
+input AddConsignmentInput {
+  seriesid: UUID!
+}
+
+input AddFileMetadataInput {
+  filePropertyName: String!
+  fileId: UUID!
+  value: String!
+}
+
+input AddFilesInput {
+  consignmentId: UUID!
+  numberOfFiles: Int!
+  parentFolder: String!
+}
+
+input AddFinalTransferConfirmationInput {
+  consignmentId: UUID!
+  finalOpenRecordsConfirmed: Boolean!
+  legalOwnershipTransferConfirmed: Boolean!
+}
+
+input AddTransferAgreementInput {
+  consignmentId: UUID!
+  allPublicRecords: Boolean!
+  allCrownCopyright: Boolean!
+  allEnglish: Boolean!
+  appraisalSelectionSignedOff: Boolean!
+  initialOpenRecords: Boolean!
+  sensitivityReviewSignedOff: Boolean!
+}
+
+type AntivirusMetadata {
+  fileId: UUID!
+  software: String!
+  softwareVersion: String!
+  databaseVersion: String!
+  result: String!
+  datetime: Long!
+}
+
+type AntivirusProgress {
+  filesProcessed: Int!
+}
+
+type ChecksumProgress {
+  filesProcessed: Int!
+}
+
+type ClientFileMetadata {
+  fileId: UUID!
+  originalPath: String
+  checksum: String
+  checksumType: String
+  lastModified: Long!
+  fileSize: Long
+}
+
+type Consignment {
+  consignmentid: UUID
+  userid: UUID!
+  seriesid: UUID!
+  createdDatetime: ZonedDateTime
+  transferInitiatedDatetime: ZonedDateTime
+  exportDatetime: ZonedDateTime
+  allChecksSucceeded: Boolean!
+  totalFiles: Int!
+  fileChecks: FileChecks!
+  parentFolder: String
+  series: Series
+  transferringBody: TransferringBody
+  files: [File!]!
+  consignmentReference: String!
+  currentStatus: CurrentStatus!
+}
+
+type CurrentStatus {
+  upload: String
+}
+
+type FFIDMetadata {
+  fileId: UUID!
+  software: String!
+  softwareVersion: String!
+  binarySignatureFileVersion: String!
+  containerSignatureFileVersion: String!
+  method: String!
+  matches: [FFIDMetadataMatches!]!
+  datetime: Long!
+}
+
+input FFIDMetadataInput {
+  fileId: UUID!
+  software: String!
+  softwareVersion: String!
+  binarySignatureFileVersion: String!
+  containerSignatureFileVersion: String!
+  method: String!
+  matches: [FFIDMetadataInputMatches!]!
+}
+
+input FFIDMetadataInputMatches {
+  extension: String
+  identificationBasis: String!
+  puid: String
+}
+
+type FFIDMetadataMatches {
+  extension: String
+  identificationBasis: String!
+  puid: String
+}
+
+type FFIDProgress {
+  filesProcessed: Int!
+}
+
+type File {
+  fileId: UUID!
+  metadata: FileMetadataValues!
+  ffidMetadata: FFIDMetadata
+  antivirusMetadata: AntivirusMetadata
+}
+
+type FileChecks {
+  antivirusProgress: AntivirusProgress!
+  checksumProgress: ChecksumProgress!
+  ffidProgress: FFIDProgress!
+}
+
+type FileMetadata {
+  filePropertyName: String!
+  fileId: UUID!
+  value: String!
+}
+
+type FileMetadataValues {
+  sha256ClientSideChecksum: String
+  clientSideOriginalFilePath: String
+  clientSideLastModifiedDate: LocalDateTime
+  clientSideFileSize: Long
+  rightsCopyright: String
+  legalStatus: String
+  heldBy: String
+  language: String
+  foiExemptionCode: String
+}
+
+type Files {
+  fileIds: [UUID!]!
+}
+
+type FinalTransferConfirmation {
+  consignmentId: UUID!
+  finalOpenRecordsConfirmed: Boolean!
+  legalOwnershipTransferConfirmed: Boolean!
+}
+
+scalar LocalDateTime
+
+"The `Long` scalar type represents non-fractional signed whole numeric values. Long can represent values between -(2^63) and 2^63 - 1."
+scalar Long
+
+type Mutation {
+  addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
+  updateTransferInitiated(consignmentid: UUID!): Int
+  updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
+  addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
+  addClientFileMetadata(addClientFileMetadataInput: [AddClientFileMetadataInput!]!): [ClientFileMetadata!]!
+  addFiles(addFilesInput: AddFilesInput!): Files!
+  addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
+  addFileMetadata(addFileMetadataInput: AddFileMetadataInput!): FileMetadata!
+  addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
+  addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
+}
+
+type Query {
+  getSeries(body: String!): [Series!]!
+  getConsignment(consignmentid: UUID!): Consignment
+  getTransferAgreement(consignmentid: UUID!): TransferAgreement
+  getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
+  getFiles(consignmentid: UUID!): Files!
+}
+
+type Series {
+  seriesid: UUID!
+  bodyid: UUID!
+  name: String
+  code: String
+  description: String
+}
+
+type TransferAgreement {
+  consignmentId: UUID!
+  allPublicRecords: Boolean!
+  allCrownCopyright: Boolean!
+  allEnglish: Boolean!
+  appraisalSelectionSignedOff: Boolean!
+  initialOpenRecords: Boolean!
+  sensitivityReviewSignedOff: Boolean!
+  isAgreementComplete: Boolean!
+}
+
+type TransferringBody {
+  name: String
+  tdrCode: String
+}
+
+scalar UUID
+
+input UpdateExportLocationInput {
+  consignmentId: UUID!
+  exportLocation: String!
+  exportDatetime: ZonedDateTime
+}
+
+scalar ZonedDateTime

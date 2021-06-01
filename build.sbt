@@ -19,6 +19,16 @@ resolvers ++= Seq[Resolver](
 
 mainClass in (Compile, run) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
 
+graphqlSchemas += GraphQLSchema(
+  "consignmentApi",
+  "API schema from the schema.graphql file in the repository root",
+  Def.task(
+    GraphQLSchemaLoader
+      .fromFile(baseDirectory.value.toPath.resolve("schema.graphql").toFile)
+      .loadSchema()
+  ).taskValue
+)
+
 enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"

@@ -35,10 +35,12 @@ If this is not set, you may see errors with the message:
 
 `Could not resolve substitution to a value: ${DB_PORT}`
 
-#### Generate Graphql Schema Locally
+#### Graphql Schema
+
+We are now storing the current Graphql schema in the `schema.graphql` file in the root of the project. If you make changes to the API which cause a schema change, you will need to update this file or the test build will fail.
 
 To generate the Graphql schema locally run the following command:
 
 `sbt graphqlSchemaGen`
 
-The generated schema file will be placed in the following location: target/sbt-graphql/schema.graphql
+The generated schema file will be placed in the following location: `target/sbt-graphql/schema.graphql`. You can copy the contents of this file into `./schema.graphql` and commit the changes to allow the build to pass.
