@@ -57,12 +57,10 @@ object ValidateSeries extends AuthorisationTag {
     bodyResult.map(body => {
       body.tdrCode match {
         case code if code == userBody => continue
-        case code if code != userBody =>
+        case code =>
           val message = s"User '${token.userId}' is from transferring body '$userBody' and does not have permission " +
             s"to create a consignment under series '$addConsignmentInput' owned by body '$code'"
           throw AuthorisationException(message)
-        // This exception can be removed when we use body IDs rather than names
-        case _ => throw new IllegalStateException("")
       }
     })
   }
