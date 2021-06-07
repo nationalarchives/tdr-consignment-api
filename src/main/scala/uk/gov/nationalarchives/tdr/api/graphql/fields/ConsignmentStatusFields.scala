@@ -14,9 +14,9 @@ object ConsignmentStatusFields {
 
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("updateConsignmentStatusUploadComplete", OptionType(IntType),
+    Field("setUploadConsignmentStatusValueToComplete", OptionType(IntType),
       arguments = ConsignmentIdArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentStatusService.updateConsignmentStatusUploadComplete(ctx.arg(ConsignmentIdArg)),
+      resolve = ctx => ctx.ctx.consignmentStatusService.setUploadConsignmentStatusValueToComplete(ctx.arg(ConsignmentIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     )
   )

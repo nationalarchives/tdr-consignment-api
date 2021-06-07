@@ -17,8 +17,8 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
     } yield CurrentStatus(upload.sortBy(t => t.createddatetime).reverse.map(_.value).headOption)
   }
 
-  def updateConsignmentStatusUploadComplete(consignmentId: UUID): Future[Int] = {
-    consignmentStatusRepository.updateConsignmentStatusUploadComplete(
+  def setUploadConsignmentStatusValueToComplete(consignmentId: UUID): Future[Int] = {
+    consignmentStatusRepository.setUploadConsignmentStatusValueToComplete(
       consignmentId,
       "Upload",
       "Completed",
