@@ -46,7 +46,7 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     consignmentUploadStatus should be(empty)
   }
 
-  "updateConsignmentStatusUploadComplete" should "update a consignments' status when upload is complete" in {
+  "setUploadConsignmentStatusValueToComplete" should "update a consignments' status when upload is complete" in {
     val db = DbConnection.db
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
@@ -58,7 +58,7 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
 
     TestUtils.createConsignment(consignmentId, userId)
     TestUtils.createConsignmentUploadStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
-    consignmentStatusRepository.updateConsignmentStatusUploadComplete(consignmentId, statusType, statusValue, modifiedTimestamp)
+    consignmentStatusRepository.setUploadConsignmentStatusValueToComplete(consignmentId, statusType, statusValue, modifiedTimestamp)
 
     val consignmentStatusRetrieved = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
 
