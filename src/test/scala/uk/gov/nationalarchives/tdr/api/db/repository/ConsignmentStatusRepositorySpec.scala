@@ -46,22 +46,23 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     consignmentUploadStatus should be(empty)
   }
 
-  "setUploadConsignmentStatusValueToComplete" should "update a consignments' status when upload is complete" in {
+  "setUploadConsignmentStatusValueToComplete" should "update a consignments' status value to 'completed'" in {
     val db = DbConnection.db
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
     val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
     val statusType = "Upload"
-    val statusValue = "Complete"
+    val statusValue = "Completed"
     val createdTimestamp = Timestamp.from(now)
     val modifiedTimestamp = Timestamp.from(now)
 
     TestUtils.createConsignment(consignmentId, userId)
     TestUtils.createConsignmentUploadStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
-    consignmentStatusRepository.setUploadConsignmentStatusValueToComplete(consignmentId, statusType, statusValue, modifiedTimestamp)
+    val response: Future[Int] = consignmentStatusRepository.setUploadConsignmentStatusValueToComplete(consignmentId, statusType, statusValue, modifiedTimestamp)
 
     val consignmentStatusRetrieved = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
 
+    response should be(1)
     consignmentStatusRetrieved.value should be(statusValue)
     consignmentStatusRetrieved.statustype should be(statusType)
     consignmentStatusRetrieved.modifieddatetime.get should be(modifiedTimestamp)
