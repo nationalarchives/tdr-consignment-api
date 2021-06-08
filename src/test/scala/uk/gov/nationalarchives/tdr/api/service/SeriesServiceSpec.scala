@@ -34,14 +34,14 @@ class SeriesServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with
   private def checkFields(series: SeriesFields.Series, seriesCheck: SeriesCheck) = {
     series.seriesid should equal(seriesCheck.seriesId)
     series.bodyid should equal(seriesCheck.bodyId)
-    series.name.get should equal(seriesCheck.name)
-    series.code.get should equal(seriesCheck.code)
+    series.name should equal(seriesCheck.name)
+    series.code should equal(seriesCheck.code)
     series.description.get should equal(seriesCheck.description)
   }
 
   private def setupSeriesResponses = {
     val fixedUuidSource = new FixedUUIDSource()
-    val seriesOne = SeriesRow(fixedUuidSource.uuid, fixedUuidSource.uuid, Option.apply("name1"), Option.apply("code1"), Option.apply("description1"))
+    val seriesOne = SeriesRow(fixedUuidSource.uuid, fixedUuidSource.uuid, "name1", "code1", Option.apply("description1"))
 
     val mockResponseOne: Future[Seq[SeriesRow]] = Future.successful(Seq(seriesOne))
 
