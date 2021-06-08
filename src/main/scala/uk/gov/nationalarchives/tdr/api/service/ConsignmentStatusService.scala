@@ -8,7 +8,8 @@ import java.util.UUID
 import java.time.Instant.now
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRepository)
+class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRepository,
+                               timeSource: TimeSource)
                               (implicit val executionContext: ExecutionContext) {
 
   def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
@@ -22,7 +23,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       consignmentId,
       "Upload",
       "Completed",
-      Timestamp.from(now)
+      Timestamp.from(timeSource.now)
     )
   }
 }

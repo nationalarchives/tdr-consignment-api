@@ -18,8 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
-  val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock)
+  val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
+  val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, FixedTimeSource)
 
   "getConsignmentStatus" should "turn repository response into current status object" in {
     val fixedUUIDSource = new FixedUUIDSource()
@@ -70,5 +70,21 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val response = consignmentService.getConsignmentStatus(consignmentId).futureValue
 
     response.upload.get should equal("InProgressNew")
+  }
+
+  "setUploadConsignmentStatusValueToComplete" should "update a consignments' status when upload is complete" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val consignmentId = fixedUUIDSource.uuid
+    val statusType = "Upload"
+    val statusValue = "Completed"
+    val modifiedTime = Timestamp.from(FixedTimeSource.now)
+
+    val mockRepoResponse: Future[Int] = Future.successful(1)
+    when(consignmentStatusRepositoryMock.setUploadConsignmentStatusValueToComplete(consignmentId, statusType, statusValue, modifiedTime))
+      .thenReturn(mockRepoResponse)
+
+    val response: Int = consignmentService.setUploadConsignmentStatusValueToComplete(consignmentId).futureValue
+
+    response should be(1)
   }
 }
