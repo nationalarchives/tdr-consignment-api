@@ -58,7 +58,8 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
 
     TestUtils.createConsignment(consignmentId, userId)
     TestUtils.createConsignmentUploadStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
-    val response: Future[Int] = consignmentStatusRepository.setUploadConsignmentStatusValueToComplete(consignmentId, statusType, statusValue, modifiedTimestamp)
+    val response: Int =
+      consignmentStatusRepository.setUploadConsignmentStatusValueToComplete(consignmentId, statusType, statusValue, modifiedTimestamp).futureValue
 
     val consignmentStatusRetrieved = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
 
