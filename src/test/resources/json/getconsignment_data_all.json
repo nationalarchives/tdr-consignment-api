@@ -113,6 +113,9 @@
         "ffidProgress": {
           "filesProcessed": 3
         }
+      },
+      "currentStatus": {
+        "upload": "Completed"
       }
     }
   }
