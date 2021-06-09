@@ -1,3 +1,4 @@
+import rocks.muki.graphql.quietError
 import rocks.muki.graphql.schema.SchemaLoader
 import sbt.File
 import sbt.Keys.libraryDependencies
@@ -34,7 +35,7 @@ val graphqlValidateSchemaTask = Def.inputTask[Unit] {
   val changes = graphqlSchemaChanges.evaluated
   if (changes.nonEmpty) {
     changes.foreach(change => log.error(s" * ${change.description}"))
-    log.error("Validation failed: Changes found")
+    quietError("Validation failed: Changes found")
   }
 }
 
