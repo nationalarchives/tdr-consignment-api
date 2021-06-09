@@ -29,6 +29,17 @@ graphqlSchemas += GraphQLSchema(
   ).taskValue
 )
 
+val graphqlValidateSchemaTask = Def.inputTask[Unit] {
+  val log = streams.value.log
+  val changes = graphqlSchemaChanges.evaluated
+  if (changes.nonEmpty) {
+    changes.foreach(change => log.error(s" * ${change.description}"))
+    log.error("Validation failed: Changes found")
+  }
+}
+
+graphqlValidateSchema := graphqlValidateSchemaTask.evaluated
+
 enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
