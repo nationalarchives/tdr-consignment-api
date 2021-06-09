@@ -80,7 +80,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val modifiedTime = Timestamp.from(FixedTimeSource.now)
 
     val mockRepoResponse: Future[Int] = Future.successful(1)
-    when(consignmentStatusRepositoryMock.setUploadConsignmentStatusValueToComplete(consignmentId, statusType, statusValue, modifiedTime))
+    when(consignmentStatusRepositoryMock.updateConsignmentStatus(consignmentId, statusType, statusValue, modifiedTime))
       .thenReturn(mockRepoResponse)
 
     val response: Int = consignmentService.setUploadConsignmentStatusValueToComplete(consignmentId).futureValue

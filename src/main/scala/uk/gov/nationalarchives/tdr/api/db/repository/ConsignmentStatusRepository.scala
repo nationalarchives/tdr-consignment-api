@@ -14,7 +14,7 @@ class ConsignmentStatusRepository(db: Database) {
     db.run(query.result)
   }
 
-  def setUploadConsignmentStatusValueToComplete(consignmentId: UUID, statusType: String, statusValue: String, modifiedTimestamp: Timestamp): Future[Int] = {
+  def updateConsignmentStatus(consignmentId: UUID, statusType: String, statusValue: String, modifiedTimestamp: Timestamp): Future[Int] = {
     val dbUpdate = Consignmentstatus.filter(_.consignmentid === consignmentId)
       .map(cs => (cs.statustype, cs.value, cs.modifieddatetime))
       .update((statusType, statusValue, Option(modifiedTimestamp)))

@@ -19,7 +19,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
   }
 
   def setUploadConsignmentStatusValueToComplete(consignmentId: UUID): Future[Int] = {
-    consignmentStatusRepository.setUploadConsignmentStatusValueToComplete(
+    consignmentStatusRepository.updateConsignmentStatus(
       consignmentId,
       "Upload",
       "Completed",
