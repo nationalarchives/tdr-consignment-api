@@ -67,7 +67,7 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
 
     val consignmentSeries = consignmentRepository.getSeriesOfConsignment(consignmentId).futureValue.head
 
-    consignmentSeries.code.get should be(seriesCode)
+    consignmentSeries.code should be(seriesCode)
   }
 
   "getTransferringBodyOfConsignment" should "get the transferring body for a consignment" in {
@@ -85,7 +85,7 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
 
     val consignmentBody = consignmentRepository.getTransferringBodyOfConsignment(consignmentId).futureValue.head
 
-    consignmentBody.name.get should be(bodyName)
+    consignmentBody.name should be(bodyName)
   }
 
   "getNextConsignmentSequence" should "get the next sequence ID number for a consignment row" in {
