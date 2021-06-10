@@ -39,7 +39,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                          parentFolder: Option[String],
                          series: Option[Series],
                          transferringBody: Option[TransferringBody],
-                         files: Option[List[File]]
+                         files: Option[List[File]],
+                         currentStatus: Option[CurrentStatus] = None
                         )
   case class FileChecks(antivirusProgress: Option[AntivirusProgress], checksumProgress: Option[ChecksumProgress], ffidProgress: Option[FfidProgress])
   case class AntivirusProgress(filesProcessed: Option[Int])
@@ -70,6 +71,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                                 method: String,
                                 matches: List[FFIDMetadataMatches],
                                 datetime: Long)
+  case class CurrentStatus(upload: Option[String])
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
@@ -178,6 +180,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
     val seriesName = "Mock series"
     addSeries(UUID.fromString(seriesId), bodyId, seriesName)
+
+    createConsignmentUploadStatus(UUID.fromString(consignmentId), "Upload", "Completed")
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
     val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = bodyCode))
