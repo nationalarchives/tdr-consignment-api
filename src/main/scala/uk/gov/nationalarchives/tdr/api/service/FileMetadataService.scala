@@ -2,10 +2,10 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
 import net.logstash.logback.argument.StructuredArguments._
-
-import java.sql.Timestamp
+import java.sql.{SQLException, Timestamp}
 import java.time.LocalDateTime
 import java.util.UUID
+
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -69,18 +69,34 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
         case (fileId, fileMetadata) =>
           val propertyNameMap: Map[String, String] = fileMetadata.groupBy(_.propertyname)
             .transform((_, value) => value.head.value)
-          fileId -> FileMetadataValues(
-            propertyNameMap.get(SHA256ClientSideChecksum),
-            propertyNameMap.get(ClientSideOriginalFilepath),
-            propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
-            propertyNameMap.get(ClientSideFileSize).map(_.toLong),
-            propertyNameMap.get(RightsCopyright.name),
-            propertyNameMap.get(LegalStatus.name),
-            propertyNameMap.get(HeldBy.name),
-            propertyNameMap.get(Language.name),
-            propertyNameMap.get(FoiExemptionCode.name)
-          )
+          fileId -> convertToFileMetadataValues(propertyNameMap)
       }
+  }
+
+  def getFileMetadata(fileId: UUID, propertyNames: String*): Future[FileMetadataValues] = {
+    fileMetadataRepository.getFileMetadata(fileId, propertyNames: _*)
+      .map(rows => {
+        val propertyNameToValue: Map[String, String] = rows.map(row => row.propertyname -> row.value).toMap
+        convertToFileMetadataValues(propertyNameToValue)
+      })
+      .recover {
+        case nse: NoSuchElementException => throw InputDataException(s"Could not find metadata for file $fileId", Some(nse))
+        case e: SQLException => throw InputDataException(e.getLocalizedMessage, Some(e))
+      }
+  }
+
+  private def convertToFileMetadataValues(propertyNameToValue: Map[String, String]): FileMetadataValues = {
+    FileMetadataValues(
+      propertyNameToValue.get(SHA256ClientSideChecksum),
+      propertyNameToValue.get(ClientSideOriginalFilepath),
+      propertyNameToValue.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+      propertyNameToValue.get(ClientSideFileSize).map(_.toLong),
+      propertyNameToValue.get(RightsCopyright.name),
+      propertyNameToValue.get(LegalStatus.name),
+      propertyNameToValue.get(HeldBy.name),
+      propertyNameToValue.get(Language.name),
+      propertyNameToValue.get(FoiExemptionCode.name)
+    )
   }
 }
 
@@ -106,6 +122,17 @@ object FileMetadataService {
   val FoiExemptionCode: StaticMetadata = StaticMetadata("FoiExemptionCode", "open")
 
   val clientSideProperties = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
+  val fileMetadataProperties = List(
+    SHA256ClientSideChecksum,
+    ClientSideOriginalFilepath,
+    ClientSideFileLastModifiedDate,
+    ClientSideFileSize,
+    RightsCopyright.name,
+    LegalStatus.name,
+    HeldBy.name,
+    Language.name,
+    FoiExemptionCode.name
+  )
   val staticMetadataProperties = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 
   case class File(fileId: UUID, metadata: FileMetadataValues, ffidMetadata: Option[FFIDMetadata], antivirusMetadata: Option[AntivirusMetadata])

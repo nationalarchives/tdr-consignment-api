@@ -19,6 +19,14 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
+  def getFileIfPassedAntivirus(filedId: UUID): Future[Seq[FileRow]] = {
+    val query = Avmetadata.join(File)
+      .on(_.fileid === _.fileid)
+      .filter(_._1.result === "")
+      .map(_._2)
+    db.run(query.result)
+  }
+
   def addFiles(fileRows: Seq[FileRow], consignmentStatusRow: ConsignmentstatusRow): Future[Seq[Tables.FileRow]] = {
     val allAdditions = DBIO.seq(insertFileQuery ++= fileRows, Consignmentstatus += consignmentStatusRow).transactionally
     db.run(allAdditions).map(_ => fileRows)

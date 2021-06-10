@@ -1,12 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow}
-import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFilesInput, Files}
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-
 import java.sql.Timestamp
 import java.util.UUID
+
+import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow}
+import uk.gov.nationalarchives.tdr.api.db.repository._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFilesInput, FileDetails, Files}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileService(
@@ -45,6 +46,13 @@ class FileService(
 
   def getFiles(consignmentId: UUID): Future[Files] = {
     fileRepository.getFilesWithPassedAntivirus(consignmentId).map(r => Files(r.map(_.fileid)))
+  }
+
+  def getFile(fileId: UUID): Future[FileDetails] = {
+    fileRepository.getFileIfPassedAntivirus(fileId).map(r => {
+      val row = r.headOption.get
+      FileDetails(row.fileid, row.consignmentid, row.userid, row.datetime.toLocalDateTime, row.checksummatches)
+    })
   }
 
   def getFileMetadata(consignmentId: UUID): Future[List[File]] = {
