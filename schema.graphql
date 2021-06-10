@@ -187,6 +187,7 @@ type Mutation {
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
   addClientFileMetadata(addClientFileMetadataInput: [AddClientFileMetadataInput!]!): [ClientFileMetadata!]!
   addFiles(addFilesInput: AddFilesInput!): Files!
+  markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataInput: AddFileMetadataInput!): FileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
