@@ -1,5 +1,5 @@
 {
-  "query": "mutation setUploadConsignmentStatusValueToComplete($consignmentId: UUID!){setUploadConsignmentStatusValueToComplete(consignmentid:$consignmentId)}",
+  "query": "mutation markUploadAsCompleted($consignmentId: UUID!){markUploadAsCompleted(consignmentid:$consignmentId)}",
   "variables": {
     "consignmentId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"
   }

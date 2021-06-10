@@ -1,5 +1,5 @@
 {
   "data": {
-    "setUploadConsignmentStatusValueToComplete": 1
+    "markUploadAsCompleted": 1
   }
 }

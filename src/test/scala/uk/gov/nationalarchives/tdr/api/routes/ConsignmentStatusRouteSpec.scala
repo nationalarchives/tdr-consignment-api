@@ -13,11 +13,11 @@ import java.util.UUID
 
 
 class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase {
-  private val setUploadConsignmentStatusValueToCompleteJsonFilePrefix: String = "json/updateconsignmentstatus_"
+  private val markUploadAsCompletedJsonFilePrefix: String = "json/updateconsignmentstatus_"
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData =
-    runTestRequest[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)
+    runTestRequest[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData =
-    getDataFromFile[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)
+    getDataFromFile[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
   private val transferringBodyId = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")
@@ -51,13 +51,13 @@ class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequ
     createConsignment(consignmentId, userId)
     createConsignmentUploadStatus(consignmentId, statusType, statusValue)
 
-    val expectedResponse = getDataFromFile[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)("data_all")
-    val response = runTestRequest[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)("mutation_data_all", token)
+    val expectedResponse = getDataFromFile[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("data_all")
+    val response = runTestRequest[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("mutation_data_all", token)
 
     response.data.get.updateConsignmentStatusUploadComplete should equal(expectedResponse.data.get.updateConsignmentStatusUploadComplete)
   }
 
-  "setUploadConsignmentStatusValueToComplete" should "not allow a user to update the consignment status of a consignment that they did not create" in {
+  "markUploadAsCompleted" should "not allow a user to update the consignment status of a consignment that they did not create" in {
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
     val statusType = "Upload"
@@ -70,18 +70,18 @@ class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequ
     val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
     val token = validUserToken(wrongUserId)
 
-    val expectedResponse = getDataFromFile[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)("data_not_owner")
-    val response = runTestRequest[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)("mutation_not_owner", token)
+    val expectedResponse = getDataFromFile[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("data_not_owner")
+    val response = runTestRequest[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("mutation_not_owner", token)
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "setUploadConsignmentStatusValueToComplete" should "return an error if a consignment that doesn't exist is queried" in {
+  "markUploadAsCompleted" should "return an error if a consignment that doesn't exist is queried" in {
     val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
     val token = validUserToken(userId)
 
-    val expectedResponse = getDataFromFile[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)("data_invalid_consignmentid")
-    val response = runTestRequest[GraphqlMutationData](setUploadConsignmentStatusValueToCompleteJsonFilePrefix)("mutation_invalid_consignmentid", token)
+    val expectedResponse = getDataFromFile[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("data_invalid_consignmentid")
+    val response = runTestRequest[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("mutation_invalid_consignmentid", token)
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
