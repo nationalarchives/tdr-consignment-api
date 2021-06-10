@@ -48,11 +48,10 @@ class FileService(
     fileRepository.getFilesWithPassedAntivirus(consignmentId).map(r => Files(r.map(_.fileid)))
   }
 
-  def getFile(fileId: UUID): Future[FileDetails] = {
-    fileRepository.getFileIfPassedAntivirus(fileId).map(r => {
-      val row = r.headOption.get
-      FileDetails(row.fileid, row.consignmentid, row.userid, row.datetime.toLocalDateTime, row.checksummatches)
-    })
+  def getFile(fileId: UUID): Future[File] = {
+    for {
+      fileMetadata <- fileMetadataService.getFileMetadata(fileId, fileMetadataProperties: _*)
+    } yield File(fileId, fileMetadata, None, None)
   }
 
   def getFileMetadata(consignmentId: UUID): Future[List[File]] = {
