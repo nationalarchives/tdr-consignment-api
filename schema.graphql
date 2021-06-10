@@ -204,8 +204,8 @@ type Query {
 type Series {
   seriesid: UUID!
   bodyid: UUID!
-  name: String
-  code: String
+  name: String!
+  code: String!
   description: String
 }
 
@@ -221,8 +221,8 @@ type TransferAgreement {
 }
 
 type TransferringBody {
-  name: String
-  tdrCode: String
+  name: String!
+  tdrCode: String!
 }
 
 scalar UUID

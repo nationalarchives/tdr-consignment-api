@@ -1,3 +1,4 @@
+import rocks.muki.graphql.quietError
 import rocks.muki.graphql.schema.SchemaLoader
 import sbt.File
 import sbt.Keys.libraryDependencies
@@ -29,6 +30,17 @@ graphqlSchemas += GraphQLSchema(
   ).taskValue
 )
 
+val graphqlValidateSchemaTask = Def.inputTask[Unit] {
+  val log = streams.value.log
+  val changes = graphqlSchemaChanges.evaluated
+  if (changes.nonEmpty) {
+    changes.foreach(change => log.error(s" * ${change.description}"))
+    quietError("Validation failed: Changes found")
+  }
+}
+
+graphqlValidateSchema := graphqlValidateSchemaTask.evaluated
+
 enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
@@ -53,7 +65,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-optics" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % circeVersion,
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.0.51",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.0.52",
   "org.postgresql" % "postgresql" % "42.2.11",
   "com.typesafe.slick" %% "slick" % "3.3.2",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2",

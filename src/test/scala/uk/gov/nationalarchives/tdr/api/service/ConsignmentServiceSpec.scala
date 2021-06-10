@@ -27,11 +27,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val userId: UUID = UUID.fromString("8d415358-f68b-403b-a90a-daab3fd60109")
   val seriesId: UUID = UUID.fromString("b6b19341-8c33-4272-8636-aafa1e3d98de")
   val consignmentId: UUID = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-  val seriesName: Option[String] = Option("Mock series")
-  val seriesCode: Option[String] = Option("Mock series")
+  val seriesName: String = "Mock series"
+  val seriesCode: String = "Mock series"
   val seriesDescription: Option[String] = Option("Series description")
-  val bodyName: Option[String] = Option("Mock department")
-  val bodyCode: Option[String] = Option("Mock department")
+  val bodyName: String = "Mock department"
+  val bodyCode: String = "Mock department"
   val bodyDescription: Option[String] = Option("Body description")
   //scalastyle:off magic.number
   val consignmentSequence: Long = 400L
@@ -200,7 +200,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   }
 
   "getTransferringBodyOfConsignment" should "return the transferring body for a given consignment" in {
-    val mockBody = Seq(BodyRow(bodyId, bodyName, bodyCode, bodyDescription))
+    val mockBody = Seq(BodyRow(bodyId, bodyName, bodyDescription, bodyCode))
     when(consignmentRepoMock.getTransferringBodyOfConsignment(consignmentId)).thenReturn(Future.successful(mockBody))
 
     val body: ConsignmentFields.TransferringBody = consignmentService.getTransferringBodyOfConsignment(consignmentId).futureValue.get

@@ -11,7 +11,7 @@ import uk.gov.nationalarchives.tdr.api.auth.ValidateBody
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 
 object SeriesFields {
-  case class Series(seriesid: UUID, bodyid: UUID, name: Option[String] = None, code: Option[String] = None, description: Option[String] = None)
+  case class Series(seriesid: UUID, bodyid: UUID, name: String, code: String, description: Option[String] = None)
 
   implicit val SeriesType: ObjectType[Unit, Series] = deriveObjectType[Unit, Series]()
 
