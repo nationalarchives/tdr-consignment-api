@@ -64,7 +64,7 @@ class Routes(val config: Config) extends Cors {
     optionalHeaderValueByType[Origin](()) { originHeader =>
       corsHandler((post & path("graphql")) {
         authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
-          respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge)) {
+          respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
             entity(as[JsValue]) { requestJson =>
               GraphQLServer.endpoint(requestJson, accessToken)
             }
