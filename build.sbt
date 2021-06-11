@@ -1,3 +1,4 @@
+import rocks.muki.graphql.quietError
 import rocks.muki.graphql.schema.SchemaLoader
 import sbt.File
 import sbt.Keys.libraryDependencies
@@ -28,6 +29,17 @@ graphqlSchemas += GraphQLSchema(
       .loadSchema()
   ).taskValue
 )
+
+val graphqlValidateSchemaTask = Def.inputTask[Unit] {
+  val log = streams.value.log
+  val changes = graphqlSchemaChanges.evaluated
+  if (changes.nonEmpty) {
+    changes.foreach(change => log.error(s" * ${change.description}"))
+    quietError("Validation failed: Changes found")
+  }
+}
+
+graphqlValidateSchema := graphqlValidateSchemaTask.evaluated
 
 enablePlugins(GraphQLSchemaPlugin)
 
