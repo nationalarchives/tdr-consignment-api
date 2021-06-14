@@ -37,7 +37,7 @@ If this is not set, you may see errors with the message:
 
 #### Graphql Schema
 
-We are now storing the current Graphql schema in the `schema.graphql` file in the root of the project. If you make changes to the API which cause a schema change, you will need to update this file or the test build will fail.
+We are now storing the current Graphql schema in the `schema.graphql` file in the root of the project. If you make changes to the API which cause a schema change, you will need to update this file with the contents of the newly generated schema, otherwise the test build will fail.
 
 To generate the Graphql schema locally run the following command:
 
