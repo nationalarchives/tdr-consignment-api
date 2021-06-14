@@ -17,6 +17,7 @@ import java.util.UUID
 class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase {
   private val addConsignmentJsonFilePrefix: String = "json/addconsignment_"
   private val getConsignmentJsonFilePrefix: String = "json/getconsignment_"
+  private val consignmentsJsonFilePrefix: String = "json/consignments_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -24,6 +25,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   private val transferringBodyCode = "default-transferring-body-code"
 
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
+  case class GraphqlConsignmentsQueryData(data: Option[Consignments], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationData(data: Option[AddConsignment], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationExportLocation(data: Option[UpdateExportLocation])
   case class GraphqlMutationTransferInitiated(data: Option[UpdateTransferInitiated])
@@ -49,6 +51,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   case class Series(seriesid: Option[UUID], bodyid: Option[UUID], name: Option[String] = None, code: Option[String] = None, description: Option[String] = None)
   case class TransferringBody(name: Option[String], tdrCode: Option[String])
   case class GetConsignment(getConsignment: Option[Consignment])
+  case class Consignments(consignments: List[Consignment])
   case class AddConsignment(addConsignment: Consignment)
   case class UpdateExportLocation(updateExportLocation: Int)
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
@@ -74,8 +77,12 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   case class CurrentStatus(upload: Option[String])
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
+  val runConsignmentsTestQuery: (String, OAuth2BearerToken) =>
+    GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
+  val expectedConsignmentQueryResponse: String =>
+    GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
 
   override def beforeEach(): Unit = {
@@ -327,6 +334,25 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     field("TransferInitiatedBy") should equal(userId.toString)
   }
 
+  "consignments" should "allow a user with reporting access to return all consignments" in {
+    createReportingData()
+    val exportAccessToken = validReportingToken("reporting")
+
+    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentQueryResponse("data_all")
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", exportAccessToken)
+    response.data.get.consignments.size should equal(2)
+  }
+
+  "consignments" should "throw an error if user does not have reporting access" in {
+    createReportingData()
+
+    val exportAccessToken = invalidReportingToken
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", exportAccessToken)
+
+    response.errors should have size 1
+    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+  }
+
   private def getConsignment(consignmentId: UUID) = {
     val sql = s"SELECT * FROM Consignment WHERE ConsignmentId = ?"
     val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
@@ -352,5 +378,12 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.setString(1, "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     ps.setString(2, bodyId.toString)
     ps.executeUpdate()
+  }
+
+  private def createReportingData(): Unit = {
+    val consignmentId1 = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
+    val consignmentId2 = UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8")
+    createConsignment(consignmentId1, userId)
+    createConsignment(consignmentId2, userId)
   }
 }

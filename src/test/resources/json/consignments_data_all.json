@@ -1,0 +1,72 @@
+{
+  "data": {
+    "consignments": [
+      {
+        "series": {
+          "code": "Mock series"
+        },
+        "exportDatetime": "2020-01-01T09:00:00Z",
+        "seriesid": "9e2e2a51-c2d0-4b99-8bef-2ca322528861",
+        "createdDatetime": "2020-01-01T09:00:00Z",
+        "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
+        "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+        "transferringBody": {
+          "name": "Some department name",
+          "tdrCode": "consignment-body-code"
+        },
+        "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
+        "consignmentReference": "TEST-TDR-2021-MTB",
+        "totalFiles": 3,
+        "files": [],
+        "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
+        "fileChecks": {
+          "antivirusProgress": {
+            "filesProcessed": 1
+          },
+          "checksumProgress": {
+            "filesProcessed": 2
+          },
+          "ffidProgress": {
+            "filesProcessed": 3
+          }
+        },
+        "currentStatus": {
+          "upload": "Completed"
+        }
+      },
+      {
+        "series": {
+          "code": "Mock series"
+        },
+        "exportDatetime": "2020-01-01T09:00:00Z",
+        "seriesid": "9e2e2a51-c2d0-4b99-8bef-2ca322528861",
+        "createdDatetime": "2020-01-01T09:00:00Z",
+        "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
+        "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+        "transferringBody": {
+          "name": "Some department name",
+          "tdrCode": "consignment-body-code"
+        },
+        "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
+        "consignmentReference": "TEST-TDR-2021-MTB",
+        "totalFiles": 3,
+        "files": [],
+        "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
+        "fileChecks": {
+          "antivirusProgress": {
+            "filesProcessed": 1
+          },
+          "checksumProgress": {
+            "filesProcessed": 2
+          },
+          "ffidProgress": {
+            "filesProcessed": 3
+          }
+        },
+        "currentStatus": {
+          "upload": "Completed"
+        }
+      }
+    ]
+  }
+}

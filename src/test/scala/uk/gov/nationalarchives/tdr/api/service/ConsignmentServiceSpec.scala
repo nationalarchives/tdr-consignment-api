@@ -207,4 +207,31 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     body.name shouldBe mockBody.head.name
   }
 
+  "getConsignments" should "return all the consignment" in {
+    val consignmentRow1 = mockConsignment
+    val consignmentRow2 = mockConsignment
+    val consignmentRow3 = mockConsignment
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(
+      consignmentRow1,
+      consignmentRow2,
+      consignmentRow3))
+    when(consignmentRepoMock.getConsignments()).thenReturn(mockResponse)
+
+    val response: Seq[ConsignmentFields.Consignment] = consignmentService.getConsignments().futureValue
+
+    verify(consignmentRepoMock, times(1)).getConsignments()
+
+    response.size should be (3)
+  }
+
+  "getConsignments" should "return empty list if no consignments" in {
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
+    when(consignmentRepoMock.getConsignments()).thenReturn(mockResponse)
+
+    val response: Seq[ConsignmentFields.Consignment] = consignmentService.getConsignments().futureValue
+
+    verify(consignmentRepoMock, times(1)).getConsignments()
+
+    response.size should be(0)
+  }
 }

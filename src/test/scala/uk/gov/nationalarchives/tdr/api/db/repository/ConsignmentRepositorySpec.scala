@@ -103,4 +103,30 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
     sequenceId should be(expectedSeq)
   }
 
+  "getConsignment" should "return the consignment given the consignment id" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentIdOne = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
+
+    TestUtils.createConsignment(consignmentIdOne, userId)
+
+    val response = consignmentRepository.getConsignment(consignmentIdOne).futureValue
+
+    response.size should be (1)
+    response.headOption.get.consignmentid should equal(consignmentIdOne)
+  }
+
+  "getConsignments" should "return all consignments" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentIdOne = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
+    val consignmentIdTwo = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+
+    TestUtils.createConsignment(consignmentIdOne, userId)
+    TestUtils.createConsignment(consignmentIdTwo, userId)
+
+    val response = consignmentRepository.getConsignments().futureValue
+
+    response.size should be (2)
+  }
 }

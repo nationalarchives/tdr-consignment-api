@@ -54,6 +54,14 @@ class ConsignmentService(
       row => convertRowToConsignment(row)))
   }
 
+  def getConsignments(): Future[Seq[Consignment]] = {
+    consignmentRepository.getConsignments().map(rows =>
+      rows.map(row => {
+        convertRowToConsignment(row)}
+      )
+    )
+  }
+
   def getSeriesOfConsignment(consignmentId: UUID): Future[Option[Series]] = {
     val consignment: Future[Seq[SeriesRow]] = consignmentRepository.getSeriesOfConsignment(consignmentId)
     consignment.map(rows => rows.headOption.map(

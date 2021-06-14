@@ -6,7 +6,7 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionType, StringType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
+import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateSeries, ValidateUserHasAccessToConsignment, ValidateHasReportingAccess}
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
@@ -53,7 +53,6 @@ object ConsignmentFields {
   }
   implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
     deriveObjectType[Unit, CurrentStatus]()
-
 
   implicit val ConsignmentType: ObjectType[Unit, Consignment] = ObjectType(
     "Consignment",
@@ -124,6 +123,11 @@ object ConsignmentFields {
       arguments = ConsignmentIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.getConsignment(ctx.arg(ConsignmentIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
+    ),
+    Field("consignments", ListType(ConsignmentType),
+      arguments = Nil,
+      resolve = ctx => ctx.ctx.consignmentService.getConsignments(),
+      tags = List(ValidateHasReportingAccess)
     )
   )
 
