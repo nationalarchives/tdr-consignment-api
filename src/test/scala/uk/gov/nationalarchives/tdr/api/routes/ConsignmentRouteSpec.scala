@@ -404,5 +404,5 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.setString(7, "TEST-TDR-2021-MTB")
     ps.executeUpdate()
   }
-  //scalastyle:off magic.number
+  //scalastyle:on magic.number
 }

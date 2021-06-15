@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 import scala.io.Source.fromResource
 
 object TestUtils {
-
+  //scalastyle:off number.of.methods
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
 
   private val tdrPort: Int = 8000
