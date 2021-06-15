@@ -2,17 +2,23 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.time.ZonedDateTime
 import java.util.UUID
+
+import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
+import sangria.relay.util.Base64
+import sangria.relay.{Connection, ConnectionDefinition, DefaultConnection, Edge, PageInfo}
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionType, StringType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateSeries, ValidateUserHasAccessToConsignment, ValidateHasReportingAccess}
+import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
 
-object ConsignmentFields {
+import scala.concurrent.ExecutionContext.Implicits.global
 
+object ConsignmentFields {
+  case class PaginatedResult[T](totalCount: Int, entities: List[T])
   case class Consignment(consignmentid: UUID,
                          userid: UUID,
                          seriesid: UUID,
@@ -21,6 +27,8 @@ object ConsignmentFields {
                          exportDatetime: Option[ZonedDateTime],
                          consignmentReference: String
                         )
+
+  case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
   case class AddConsignmentInput(seriesid: UUID)
 
@@ -53,6 +61,19 @@ object ConsignmentFields {
   }
   implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
     deriveObjectType[Unit, CurrentStatus]()
+
+
+
+  private val LimitArg = Argument("limit", IntType)
+  private val CurrentCursorArg = Argument("currentCursor", StringType)
+  private val PageNumberArg = Argument("pageNumber", IntType)
+
+  private def decode(value: String) = {
+    Base64.decode(value) match {
+      case Some(s) => s
+      case None => throw new IllegalArgumentException("Invalid cursor: " + value)
+    }
+  }
 
   implicit val ConsignmentType: ObjectType[Unit, Consignment] = ObjectType(
     "Consignment",
@@ -111,6 +132,12 @@ object ConsignmentFields {
     )
   )
 
+  implicit private val ConnectionDefinition(_, consignmentConnections) =
+    Connection.definition[RequestContext, Connection, Consignment](
+      name = "Consignment",
+      nodeType = ConsignmentType
+    )
+
   implicit val AddConsignmentInputType: InputObjectType[AddConsignmentInput] = deriveInputObjectType[AddConsignmentInput]()
   implicit val UpdateExportLocationInputType: InputObjectType[UpdateExportLocationInput] = deriveInputObjectType[UpdateExportLocationInput]()
 
@@ -127,6 +154,31 @@ object ConsignmentFields {
     Field("consignments", ListType(ConsignmentType),
       arguments = Nil,
       resolve = ctx => ctx.ctx.consignmentService.getConsignments(),
+      tags = List(ValidateHasReportingAccess)
+    ),
+    Field("consignmentsPaginated", consignmentConnections,
+      arguments = List(LimitArg, CurrentCursorArg),
+      resolve = ctx => {
+        val limit: Int = ctx.args.arg("limit")
+        val currentCursor: String = ctx.args.arg("currentCursor")
+        //val decodedCurrentCursor: String = decode(currentCursor)
+        ctx.ctx.consignmentService.getConsignmentsPaginated(limit, currentCursor)
+          .map(r => {
+            val nextCursor = r._1
+            val edges = r._2
+            val firstEdge = edges.headOption
+            DefaultConnection(
+              PageInfo(
+                startCursor = firstEdge.map(_.cursor),
+                endCursor = Option(nextCursor),
+                hasNextPage = !nextCursor.isEmpty,
+                hasPreviousPage = !currentCursor.isEmpty
+              ),
+              edges
+            )
+          }
+        )
+      },
       tags = List(ValidateHasReportingAccess)
     )
   )

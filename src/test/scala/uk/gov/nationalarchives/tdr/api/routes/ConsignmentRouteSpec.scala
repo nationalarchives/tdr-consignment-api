@@ -346,7 +346,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   "consignments" should "throw an error if user does not have reporting access" in {
     createReportingData()
 
-    val exportAccessToken = invalidReportingToken
+    val exportAccessToken = invalidReportingToken()
     val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", exportAccessToken)
 
     response.errors should have size 1

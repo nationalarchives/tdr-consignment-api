@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.{LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.UUID
+import sangria.relay.util.Base64
 
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -62,6 +63,17 @@ class ConsignmentService(
     )
   }
 
+  def getConsignmentsPaginated(limit: Int = 1000, currentCursor: String): Future[(String, Seq[ConsignmentEdge])] = {
+    for {
+      //Limit increased by one to get the value of the next cursor
+      response <- consignmentRepository.getConsignmentsPaginated(limit + 1, currentCursor)
+      hasNextPage =  response.size > limit
+      nextCursor = if (hasNextPage) response.last.consignmentreference else ""
+      pageConsignmentRows = if(hasNextPage) response.dropRight(1) else response
+      paginatedConsignments = mapToEdges(pageConsignmentRows)
+    } yield (nextCursor, paginatedConsignments)
+  }
+
   def getSeriesOfConsignment(consignmentId: UUID): Future[Option[Series]] = {
     val consignment: Future[Seq[SeriesRow]] = consignmentRepository.getSeriesOfConsignment(consignmentId)
     consignment.map(rows => rows.headOption.map(
@@ -99,5 +111,10 @@ class ConsignmentService(
       row.transferinitiateddatetime.map(ts => ts.toZonedDateTime),
       row.exportdatetime.map(ts => ts.toZonedDateTime),
       row.consignmentreference)
+  }
+
+  private def mapToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
+    consignmentRows.map(cr => convertRowToConsignment(cr))
+      .map(c => ConsignmentEdge(c, c.consignmentReference))
   }
 }

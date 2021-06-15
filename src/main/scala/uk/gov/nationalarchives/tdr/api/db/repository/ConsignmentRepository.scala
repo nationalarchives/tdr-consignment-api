@@ -3,6 +3,8 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import java.sql.Timestamp
 import java.util.UUID
 
+import slick.lifted.{TableQuery, Tag}
+
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
@@ -58,6 +60,20 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
 
   def getConsignments(): Future[Seq[ConsignmentRow]] = {
     val query = Consignment
+    db.run(query.result)
+  }
+
+  def getConsignmentsPaginated(limit: Int, after: String): Future[Seq[ConsignmentRow]] = {
+    val criteriaAfter = Option(after)
+
+    val query = Consignment.filter { c =>
+      List(
+        criteriaAfter.map(c.consignmentreference >= _))
+        .collect({case Some(criteria) => criteria})
+        .reduce(_ && _)
+    }.sortBy(_.consignmentreference).take(limit)
+
+//    val query = Consignment.sortBy(_.consignmentsequence).drop(offset).take(limit)
     db.run(query.result)
   }
 
