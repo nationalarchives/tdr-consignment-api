@@ -14,13 +14,12 @@ import io.circe.parser.decode
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
-import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 
 import scala.concurrent.ExecutionContext
 import scala.io.Source.fromResource
 
+//scalastyle:off number.of.methods
 object TestUtils {
-  //scalastyle:off number.of.methods
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
 
   private val tdrPort: Int = 8000
