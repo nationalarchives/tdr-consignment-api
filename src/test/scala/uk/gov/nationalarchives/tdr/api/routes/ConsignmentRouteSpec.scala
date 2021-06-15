@@ -95,7 +95,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     createSeries(transferringBodyId)
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(transferringBodyCode))
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = transferringBodyCode))
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
@@ -111,7 +111,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     createSeries(transferringBodyId)
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(transferringBodyCode))
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = transferringBodyCode))
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     response.data.get.addConsignment.userid should contain(userId)
@@ -191,7 +191,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     createConsignmentUploadStatus(UUID.fromString(consignmentId), "Upload", "Completed")
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(bodyCode))
+    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = bodyCode))
 
     response should equal(expectedResponse)
   }

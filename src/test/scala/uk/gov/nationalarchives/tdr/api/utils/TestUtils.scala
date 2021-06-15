@@ -38,7 +38,7 @@ object TestUtils {
   val backendChecksUser: UUID = UUID.fromString("6847253d-b9c6-4ea9-b3c9-57542b8c6375")
   val reportingUser: UUID = UUID.fromString("a863292b-888b-4d88-b5f3-2bb9a11b336a")
 
-  def validUserToken(body: String = "Code"): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+  def validUserToken(userId: UUID = userId, body: String = "Code"): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
     aTokenConfig()
       .withResourceRole("tdr", "tdr_user")
       .withClaim("body", body)
