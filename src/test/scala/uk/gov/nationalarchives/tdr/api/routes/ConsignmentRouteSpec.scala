@@ -21,6 +21,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
+  private val defaultSeriesId = "fde450c9-09aa-4ba8-b0df-13f9bac1e587"
   private val transferringBodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6")
   private val transferringBodyCode = "default-transferring-body-code"
 
@@ -126,25 +127,13 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  //scalastyle:off magic.number
   "getConsignment" should "return all requested fields" in {
-    val sql = "INSERT INTO Consignment" +
-      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference)" +
-      "VALUES (?, ?, ?, ?, ?, ?, ?)"
-    val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
     val bodyId = UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8")
     val bodyCode = "consignment-body-code"
     val consignmentId = "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
-    val seriesId = "fde450c9-09aa-4ba8-b0df-13f9bac1e587"
-    val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
-    ps.setString(1, consignmentId)
-    ps.setString(2, seriesId)
-    ps.setString(3, userId.toString)
-    ps.setTimestamp(4, fixedTimeStamp)
-    ps.setTimestamp(5, fixedTimeStamp)
-    ps.setTimestamp(6, fixedTimeStamp)
-    ps.setString(7, "TEST-TDR-2021-MTB")
-    ps.executeUpdate()
+
+    createBaseConsignment(consignmentId)
+
     val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
     val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
     val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
@@ -186,7 +175,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     addTransferringBody(bodyId, "Some department name", bodyCode)
 
     val seriesName = "Mock series"
-    addSeries(UUID.fromString(seriesId), bodyId, seriesName)
+    addSeries(UUID.fromString(defaultSeriesId), bodyId, seriesName)
 
     createConsignmentUploadStatus(UUID.fromString(consignmentId), "Upload", "Completed")
 
@@ -195,7 +184,6 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
     response should equal(expectedResponse)
   }
-  //scalastyle:off magic.number
 
   "getConsignment" should "return the file metadata" in {
     val consignmentId = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
@@ -336,17 +324,30 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
   "consignments" should "allow a user with reporting access to return all consignments" in {
     createReportingData()
-    val exportAccessToken = validReportingToken("reporting")
+    val reportingAccessToken = validReportingToken("reporting")
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentQueryResponse("data_all")
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", exportAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", reportingAccessToken)
     response.data.get.consignments.size should equal(2)
+
+    response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+  }
+
+  "consignments" should "return requested fields for all consignments for a user with reporting access" in {
+    createReportingData()
+    val reportingAccessToken = validReportingToken("reporting")
+
+    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentQueryResponse("data_some")
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", reportingAccessToken)
+    response.data.get.consignments.size should equal(2)
+
+    response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
   "consignments" should "throw an error if user does not have reporting access" in {
     createReportingData()
 
-    val exportAccessToken = invalidReportingToken
+    val exportAccessToken = invalidReportingToken()
     val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", exportAccessToken)
 
     response.errors should have size 1
@@ -381,9 +382,27 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   private def createReportingData(): Unit = {
-    val consignmentId1 = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
-    val consignmentId2 = UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8")
-    createConsignment(consignmentId1, userId)
-    createConsignment(consignmentId2, userId)
+    val consignmentId1 = "c31b3d3e-1931-421b-a829-e2ef4cd8930c"
+    val consignmentId2 = "5c761efa-ae1a-4ec8-bb08-dc609fce51f8"
+    createBaseConsignment(consignmentId1)
+    createBaseConsignment(consignmentId2)
   }
+
+  //scalastyle:off magic.number
+  private def createBaseConsignment(consignmentId: String): Unit = {
+    val sql = "INSERT INTO Consignment" +
+      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference)" +
+      "VALUES (?, ?, ?, ?, ?, ?, ?)"
+    val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
+    val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
+    ps.setString(1, consignmentId)
+    ps.setString(2, defaultSeriesId)
+    ps.setString(3, userId.toString)
+    ps.setTimestamp(4, fixedTimeStamp)
+    ps.setTimestamp(5, fixedTimeStamp)
+    ps.setTimestamp(6, fixedTimeStamp)
+    ps.setString(7, "TEST-TDR-2021-MTB")
+    ps.executeUpdate()
+  }
+  //scalastyle:off magic.number
 }

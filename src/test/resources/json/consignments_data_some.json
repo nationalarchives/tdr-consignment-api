@@ -1,0 +1,14 @@
+{
+  "data": {
+    "consignments": [
+      {
+        "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
+        "consignmentReference": "TEST-TDR-2021-MTB"
+      },
+      {
+        "consignmentid": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
+        "consignmentReference": "TEST-TDR-2021-MTB"
+      }
+    ]
+  }
+}
