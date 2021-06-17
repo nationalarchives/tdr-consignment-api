@@ -52,26 +52,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     response should be(CurrentStatus(None))
   }
 
-  "getConsignmentStatus" should "return the newest status when more than one is available" in {
-    val consignmentId = UUID.randomUUID()
-    val newTime = Timestamp.from(FixedTimeSource.now)
-    val olderTime = Timestamp.from(FixedTimeSource.now.minus(Duration.ofDays(1)))
-    val oldestTime = Timestamp.from(FixedTimeSource.now.minus(Duration.ofDays(2)))
-    val mockedResponse = Future {
-      Seq(
-        ConsignmentstatusRow(UUID.randomUUID(), consignmentId, "Upload", "InProgressOlder", olderTime),
-        ConsignmentstatusRow(UUID.randomUUID(), consignmentId, "Upload", "InProgressNew", newTime),
-        ConsignmentstatusRow(UUID.randomUUID(), consignmentId, "Upload", "InProgressOldest", oldestTime)
-      )
-    }
-
-    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockedResponse)
-
-    val response = consignmentService.getConsignmentStatus(consignmentId).futureValue
-
-    response.upload.get should equal("InProgressNew")
-  }
-
   "setUploadConsignmentStatusValueToComplete" should "update a consignments' status when upload is complete" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId = fixedUUIDSource.uuid
