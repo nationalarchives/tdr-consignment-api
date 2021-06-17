@@ -116,17 +116,24 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
     response.headOption.get.consignmentid should equal(consignmentIdOne)
   }
 
-  "getConsignments" should "return all consignments" in {
+  "getConsignments" should "return all consignments from cursor value up to the limit value" in {
     val db = DbConnection.db
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val consignmentIdOne = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
     val consignmentIdTwo = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val consignmentIdThree = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+    val consignmentIdFour = UUID.fromString("47019574-8407-40c7-b618-bf2b8f8b0de7")
 
-    TestUtils.createConsignment(consignmentIdOne, userId)
-    TestUtils.createConsignment(consignmentIdTwo, userId)
+    TestUtils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    TestUtils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B")
+    TestUtils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-C")
+    TestUtils.createConsignment(consignmentIdFour, userId, consignmentRef = "TDR-2021-D")
 
-    val response = consignmentRepository.getConsignments().futureValue
+    val response = consignmentRepository.getConsignments(2, "TDR-2021-B").futureValue
 
     response.size should be (2)
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds.contains(consignmentIdTwo) should be (true)
+    consignmentIds.contains(consignmentIdThree) should be (true)
   }
 }

@@ -192,7 +192,7 @@ object ValidateHasReportingAccess extends SyncAuthorisationTag {
       continue
     } else {
       val tokenUserId = token.userId
-      throw AuthorisationException(s"Use $tokenUserId does not have permission to run reporting")
+      throw AuthorisationException(s"User $tokenUserId does not have permission to run reporting")
     }
   }
 }

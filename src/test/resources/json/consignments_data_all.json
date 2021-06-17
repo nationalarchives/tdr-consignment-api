@@ -1,54 +1,66 @@
 {
   "data": {
-    "consignments": [
-      {
-        "exportDatetime": "2020-01-01T09:00:00Z",
-        "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
-        "createdDatetime": "2020-01-01T09:00:00Z",
-        "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
-        "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
-        "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
-        "consignmentReference": "TEST-TDR-2021-MTB",
-        "totalFiles": 0,
-        "files": [],
-        "fileChecks": {
-          "antivirusProgress": {
-            "filesProcessed": 0
-          },
-          "checksumProgress": {
-            "filesProcessed": 0
-          },
-          "ffidProgress": {
-            "filesProcessed": 0
-          }
-        },
-        "currentStatus": {
-        }
+    "consignments": {
+      "pageInfo": {
+        "startCursor": "consignment-ref1",
+        "endCursor": "consignment-ref3",
+        "hasNextPage": true,
+        "hasPreviousPage": true
       },
-      {
-        "exportDatetime": "2020-01-01T09:00:00Z",
-        "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
-        "createdDatetime": "2020-01-01T09:00:00Z",
-        "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
-        "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
-        "consignmentid": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
-        "consignmentReference": "TEST-TDR-2021-MTB",
-        "totalFiles": 0,
-        "files": [],
-        "fileChecks": {
-          "antivirusProgress": {
-            "filesProcessed": 0
-          },
-          "checksumProgress": {
-            "filesProcessed": 0
-          },
-          "ffidProgress": {
-            "filesProcessed": 0
+      "edges": [
+        {
+          "node": {
+            "exportDatetime": "2020-01-01T09:00:00Z",
+            "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
+            "createdDatetime": "2020-01-01T09:00:00Z",
+            "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
+            "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+            "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
+            "consignmentReference": "TEST-TDR-2021-MTB",
+            "totalFiles": 0,
+            "files": [],
+            "fileChecks": {
+              "antivirusProgress": {
+                "filesProcessed": 0
+              },
+              "checksumProgress": {
+                "filesProcessed": 0
+              },
+              "ffidProgress": {
+                "filesProcessed": 0
+              }
+            },
+            "currentStatus": {
+            }
           }
         },
-        "currentStatus": {
+        {
+          "node": {
+            "exportDatetime": "2020-01-01T09:00:00Z",
+            "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
+            "createdDatetime": "2020-01-01T09:00:00Z",
+            "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
+            "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+            "consignmentid": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
+            "consignmentReference": "TEST-TDR-2021-MTB",
+            "totalFiles": 0,
+            "files": [],
+            "fileChecks": {
+              "antivirusProgress": {
+                "filesProcessed": 0
+              },
+              "checksumProgress": {
+                "filesProcessed": 0
+              },
+              "ffidProgress": {
+                "filesProcessed": 0
+              }
+            },
+            "currentStatus": {
+            }
+          }
         }
-      }
-    ]
+      ]
+    }
   }
 }

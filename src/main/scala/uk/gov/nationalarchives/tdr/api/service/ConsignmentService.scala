@@ -1,15 +1,15 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import java.sql.Timestamp
-import java.time.{LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{LocalDate, ZoneOffset}
 import java.util.UUID
 
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
-import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -54,12 +54,15 @@ class ConsignmentService(
       row => convertRowToConsignment(row)))
   }
 
-  def getConsignments(): Future[Seq[Consignment]] = {
-    consignmentRepository.getConsignments().map(rows =>
-      rows.map(row => {
-        convertRowToConsignment(row)}
-      )
-    )
+  def getConsignments(limit: Int, currentCursor: String): Future[PaginatedConsignments] = {
+    for {
+      //Limit increased by one to get the value of the next cursor
+      response <- consignmentRepository.getConsignments(limit + 1, currentCursor)
+      hasNextPage =  response.size > limit
+      nextCursor = if (hasNextPage) response.last.consignmentreference else ""
+      pageConsignmentRows = if (hasNextPage) response.dropRight(1) else response
+      paginatedConsignments = mapToEdges(pageConsignmentRows)
+    } yield PaginatedConsignments(nextCursor, paginatedConsignments)
   }
 
   def getSeriesOfConsignment(consignmentId: UUID): Future[Option[Series]] = {
@@ -100,4 +103,11 @@ class ConsignmentService(
       row.exportdatetime.map(ts => ts.toZonedDateTime),
       row.consignmentreference)
   }
+
+  def mapToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
+    consignmentRows.map(cr => convertRowToConsignment(cr))
+      .map(c => ConsignmentEdge(c, c.consignmentReference))
+  }
 }
+
+case class PaginatedConsignments(nextCursor: String, consignmentEdges: Seq[ConsignmentEdge])

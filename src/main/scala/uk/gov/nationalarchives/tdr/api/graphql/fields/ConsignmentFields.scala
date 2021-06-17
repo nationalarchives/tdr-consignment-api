@@ -2,14 +2,20 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.time.ZonedDateTime
 import java.util.UUID
+
+import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
+import sangria.relay.util.Base64
+import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionType, StringType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateSeries, ValidateUserHasAccessToConsignment, ValidateHasReportingAccess}
+import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object ConsignmentFields {
 
@@ -21,6 +27,8 @@ object ConsignmentFields {
                          exportDatetime: Option[ZonedDateTime],
                          consignmentReference: String
                         )
+
+  case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
   case class AddConsignmentInput(seriesid: UUID)
 
@@ -113,10 +121,24 @@ object ConsignmentFields {
 
   implicit val AddConsignmentInputType: InputObjectType[AddConsignmentInput] = deriveInputObjectType[AddConsignmentInput]()
   implicit val UpdateExportLocationInputType: InputObjectType[UpdateExportLocationInput] = deriveInputObjectType[UpdateExportLocationInput]()
+  implicit val ConnectionDefinition(_, consignmentConnections) =
+    Connection.definition[RequestContext, Connection, Consignment](
+      name = "Consignment",
+      nodeType = ConsignmentType
+    )
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportLocationArg: Argument[UpdateExportLocationInput] = Argument("exportLocation", UpdateExportLocationInputType)
+  val LimitArg = Argument("limit", IntType)
+  val CurrentCursorArg = Argument("currentCursor", StringType)
+
+  private def decode(value: String) = {
+    Base64.decode(value) match {
+      case Some(s) => s
+      case None => throw new IllegalArgumentException("Invalid cursor: " + value)
+    }
+  }
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
@@ -124,9 +146,29 @@ object ConsignmentFields {
       resolve = ctx => ctx.ctx.consignmentService.getConsignment(ctx.arg(ConsignmentIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),
-    Field("consignments", ListType(ConsignmentType),
-      arguments = Nil,
-      resolve = ctx => ctx.ctx.consignmentService.getConsignments(),
+    Field("consignments", consignmentConnections,
+      arguments = List(LimitArg, CurrentCursorArg),
+      resolve = ctx => {
+        val limit: Int = ctx.args.arg("limit")
+        val currentCursor: String = ctx.args.arg("currentCursor")
+        //val decodedCurrentCursor: String = decode(currentCursor)
+        ctx.ctx.consignmentService.getConsignments(limit, currentCursor)
+          .map(r => {
+            val nextCursor = r.nextCursor
+            val edges = r.consignmentEdges
+            val firstEdge = edges.headOption
+            DefaultConnection(
+              PageInfo(
+                startCursor = firstEdge.map(_.cursor),
+                endCursor = Option(nextCursor),
+                hasNextPage = !nextCursor.isEmpty,
+                hasPreviousPage = !currentCursor.isEmpty
+              ),
+              edges
+            )
+          }
+        )
+      },
       tags = List(ValidateHasReportingAccess)
     )
   )

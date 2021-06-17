@@ -113,9 +113,13 @@ object TestUtils {
     createClientFileMetadata(defaultFileId)
   }
 
-  def createConsignment(consignmentId: UUID, userId: UUID, seriesId: UUID = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861")): Unit = {
+  def createConsignment(
+                         consignmentId: UUID,
+                         userId: UUID,
+                         seriesId: UUID = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861"),
+                         consignmentRef: String = "TDR-2021-TESTMTB"): Unit = {
     val sql =
-      s"INSERT INTO Consignment (ConsignmentId, SeriesId, UserId, ConsignmentReference) VALUES ('$consignmentId', '$seriesId', '$userId', 'TDR-2021-TESTMTB')"
+      s"INSERT INTO Consignment (ConsignmentId, SeriesId, UserId, ConsignmentReference) VALUES ('$consignmentId', '$seriesId', '$userId', '$consignmentRef')"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.executeUpdate()
   }

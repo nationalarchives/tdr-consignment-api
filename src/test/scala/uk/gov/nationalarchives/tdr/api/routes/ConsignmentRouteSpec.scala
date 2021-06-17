@@ -1,5 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
+import java.sql.{PreparedStatement, Timestamp}
+import java.time.{LocalDateTime, ZonedDateTime}
+import java.util.UUID
+
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -10,10 +14,7 @@ import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDatabase, TestRequest}
 
-import java.sql.{PreparedStatement, Timestamp}
-import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.UUID
-
+//scalastyle:off number.of.methods
 class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase {
   private val addConsignmentJsonFilePrefix: String = "json/addconsignment_"
   private val getConsignmentJsonFilePrefix: String = "json/getconsignment_"
@@ -26,7 +27,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   private val transferringBodyCode = "default-transferring-body-code"
 
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
-  case class GraphqlConsignmentsQueryData(data: Option[Consignments], errors: List[GraphqlError] = Nil)
+  case class GraphqlConsignmentsQueryData(data: Option[ConsignmentConnections], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationData(data: Option[AddConsignment], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationExportLocation(data: Option[UpdateExportLocation])
   case class GraphqlMutationTransferInitiated(data: Option[UpdateTransferInitiated])
@@ -45,6 +46,11 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                          files: Option[List[File]],
                          currentStatus: Option[CurrentStatus] = None
                         )
+  case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
+  case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
+  case class Consignments(pageInfo: PageInfo, edges: List[ConsignmentEdge])
+  case class ConsignmentConnections(consignments: Consignments)
+
   case class FileChecks(antivirusProgress: Option[AntivirusProgress], checksumProgress: Option[ChecksumProgress], ffidProgress: Option[FfidProgress])
   case class AntivirusProgress(filesProcessed: Option[Int])
   case class ChecksumProgress(filesProcessed: Option[Int])
@@ -52,7 +58,6 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   case class Series(seriesid: Option[UUID], bodyid: Option[UUID], name: Option[String] = None, code: Option[String] = None, description: Option[String] = None)
   case class TransferringBody(name: Option[String], tdrCode: Option[String])
   case class GetConsignment(getConsignment: Option[Consignment])
-  case class Consignments(consignments: List[Consignment])
   case class AddConsignment(addConsignment: Consignment)
   case class UpdateExportLocation(updateExportLocation: Int)
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
@@ -82,7 +87,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
-  val expectedConsignmentQueryResponse: String =>
+  val expectedConsignmentsQueryResponse: String =>
     GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
 
@@ -322,33 +327,32 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     field("TransferInitiatedBy") should equal(userId.toString)
   }
 
-  "consignments" should "allow a user with reporting access to return all consignments" in {
+  "consignments" should "allow a user with reporting access to return consignments in a paginated format" in {
     createReportingData()
     val reportingAccessToken = validReportingToken("reporting")
 
-    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentQueryResponse("data_all")
+    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_all")
     val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", reportingAccessToken)
-    response.data.get.consignments.size should equal(2)
 
     response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
-  "consignments" should "return requested fields for all consignments for a user with reporting access" in {
+  "consignments" should "allow a user with reporting access to return requested fields for consignments in a paginated format" in {
     createReportingData()
     val reportingAccessToken = validReportingToken("reporting")
 
-    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentQueryResponse("data_some")
+    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_some")
     val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", reportingAccessToken)
-    response.data.get.consignments.size should equal(2)
+    response.data.get.consignments.edges.size should equal(2)
 
-    response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+    response.data should equal(expectedResponse.data)
   }
 
   "consignments" should "throw an error if user does not have reporting access" in {
     createReportingData()
 
     val exportAccessToken = invalidReportingToken()
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", exportAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", exportAccessToken)
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
@@ -382,14 +386,20 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   private def createReportingData(): Unit = {
+    val consignmentRef1 = "consignment-ref1"
+    val consignmentRef2 = "consignment-ref2"
+    val consignmentRef3 = "consignment-ref3"
+
     val consignmentId1 = "c31b3d3e-1931-421b-a829-e2ef4cd8930c"
     val consignmentId2 = "5c761efa-ae1a-4ec8-bb08-dc609fce51f8"
-    createBaseConsignment(consignmentId1)
-    createBaseConsignment(consignmentId2)
+    val consignmentId3 = "614d0cba-380f-4b09-a6e4-542413dd7f4a"
+    createBaseConsignment(consignmentId1, consignmentRef1)
+    createBaseConsignment(consignmentId2, consignmentRef2)
+    createBaseConsignment(consignmentId3, consignmentRef3)
   }
 
   //scalastyle:off magic.number
-  private def createBaseConsignment(consignmentId: String): Unit = {
+  private def createBaseConsignment(consignmentId: String, consignmentRef : String = "TEST-TDR-2021-MTB"): Unit = {
     val sql = "INSERT INTO Consignment" +
       "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference)" +
       "VALUES (?, ?, ?, ?, ?, ?, ?)"
@@ -401,7 +411,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.setTimestamp(4, fixedTimeStamp)
     ps.setTimestamp(5, fixedTimeStamp)
     ps.setTimestamp(6, fixedTimeStamp)
-    ps.setString(7, "TEST-TDR-2021-MTB")
+    ps.setString(7, consignmentRef)
     ps.executeUpdate()
   }
   //scalastyle:on magic.number

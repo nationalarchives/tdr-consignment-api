@@ -56,8 +56,15 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignments(): Future[Seq[ConsignmentRow]] = {
-    val query = Consignment
+  def getConsignments(limit: Int, after: String): Future[Seq[ConsignmentRow]] = {
+    val criteriaAfter = Option(after)
+
+    val query = Consignment.filter { c =>
+      List(
+        criteriaAfter.map(c.consignmentreference >= _))
+        .collect({case Some(criteria) => criteria})
+        .reduce(_ && _)
+    }.sortBy(_.consignmentreference).take(limit)
     db.run(query.result)
   }
 
