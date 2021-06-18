@@ -10,53 +10,129 @@
       "edges": [
         {
           "node": {
+            "series": {
+              "code": "Mock series"
+            },
             "exportDatetime": "2020-01-01T09:00:00Z",
             "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
             "createdDatetime": "2020-01-01T09:00:00Z",
             "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
             "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+            "transferringBody": {
+              "name": "Default transferring body name",
+              "tdrCode": "default-transferring-body-code"
+            },
             "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
-            "consignmentReference": "TEST-TDR-2021-MTB",
-            "totalFiles": 0,
-            "files": [],
+            "consignmentReference": "consignment-ref1",
+            "totalFiles": 1,
+            "files": [
+              {
+                "fileId": "9b003759-a9a2-4bf9-8e34-14079bdaed58",
+                "metadata": {
+                  "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
+                  "legalStatus": "LegalStatus value",
+                  "clientSideFileSize": 1,
+                  "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+                  "rightsCopyright": "RightsCopyright value",
+                  "heldBy": "HeldBy value",
+                  "foiExemptionCode": "FoiExemptionCode value",
+                  "language": "Language value"
+                },
+                "ffidMetadata": {
+                  "method": "TEST DATA method",
+                  "softwareVersion": "TEST DATA software version",
+                  "datetime": 1577869200000,
+                  "software": "TEST DATA software",
+                  "matches": [
+                    {
+                      "extension": "txt",
+                      "identificationBasis": "TEST DATA identification",
+                      "puid": "TEST DATA puid"
+                    }
+                  ],
+                  "containerSignatureFileVersion": "TEST DATA container signature file version",
+                  "binarySignatureFileVersion": "TEST DATA binary signature file version"
+                }
+              }
+            ],
+            "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
             "fileChecks": {
               "antivirusProgress": {
-                "filesProcessed": 0
+                "filesProcessed": 1
               },
               "checksumProgress": {
-                "filesProcessed": 0
+                "filesProcessed": 1
               },
               "ffidProgress": {
-                "filesProcessed": 0
+                "filesProcessed": 1
               }
             },
             "currentStatus": {
+              "upload": "Completed"
             }
           }
         },
         {
           "node": {
+            "series": {
+              "code": "Mock series"
+            },
             "exportDatetime": "2020-01-01T09:00:00Z",
             "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
             "createdDatetime": "2020-01-01T09:00:00Z",
             "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
             "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+            "transferringBody": {
+              "name": "Default transferring body name",
+              "tdrCode": "default-transferring-body-code"
+            },
             "consignmentid": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
-            "consignmentReference": "TEST-TDR-2021-MTB",
-            "totalFiles": 0,
-            "files": [],
+            "consignmentReference": "consignment-ref2",
+            "totalFiles": 1,
+            "files": [
+              {
+                "fileId": "62c53beb-84d6-4676-80ea-b43f5329de72",
+                "metadata": {
+                  "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
+                  "legalStatus": "LegalStatus value",
+                  "clientSideFileSize": 1,
+                  "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+                  "rightsCopyright": "RightsCopyright value",
+                  "heldBy": "HeldBy value",
+                  "foiExemptionCode": "FoiExemptionCode value",
+                  "language": "Language value"
+                },
+                "ffidMetadata": {
+                  "method": "TEST DATA method",
+                  "softwareVersion": "TEST DATA software version",
+                  "datetime": 1577869200000,
+                  "software": "TEST DATA software",
+                  "matches": [
+                    {
+                      "extension": "txt",
+                      "identificationBasis": "TEST DATA identification",
+                      "puid": "TEST DATA puid"
+                    }
+                  ],
+                  "containerSignatureFileVersion": "TEST DATA container signature file version",
+                  "binarySignatureFileVersion": "TEST DATA binary signature file version"
+                }
+              }
+            ],
+            "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
             "fileChecks": {
               "antivirusProgress": {
-                "filesProcessed": 0
+                "filesProcessed": 1
               },
               "checksumProgress": {
-                "filesProcessed": 0
+                "filesProcessed": 1
               },
               "ffidProgress": {
-                "filesProcessed": 0
+                "filesProcessed": 1
               }
             },
             "currentStatus": {
+              "upload": "Completed"
             }
           }
         }

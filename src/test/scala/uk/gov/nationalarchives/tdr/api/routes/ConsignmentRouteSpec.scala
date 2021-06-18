@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import java.sql.{PreparedStatement, Timestamp}
+import java.sql.{PreparedStatement, ResultSet}
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
-import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDatabase, TestRequest}
+import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestDatabase, TestRequest}
 
 //scalastyle:off number.of.methods
 class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase {
@@ -128,7 +128,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "some-other-transferring-body"))
 
-    response.errors should have size 1
+    response.errors.size should be(1)
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
@@ -137,11 +137,15 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val bodyCode = "consignment-body-code"
     val consignmentId = "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
 
-    createBaseConsignment(consignmentId)
-
     val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
     val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
     val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+
+    val consignmentParams = List(
+      (UUID.fromString(consignmentId), "TEST-TDR-2021-MTB", List())
+    )
+
+    createConsignments(consignmentParams, transferringBodyId = bodyId)
 
     val extensionMatch = "txt"
     val identificationBasisMatch = "TEST DATA identification"
@@ -175,14 +179,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val fileThreeFfidMetadataId = addFFIDMetadata(fileThreeId)
     addFFIDMetadataMatches(fileThreeFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
 
-    addParentFolderName(UUID.fromString(consignmentId), "ALL CONSIGNMENT DATA PARENT FOLDER")
-
     addTransferringBody(bodyId, "Some department name", bodyCode)
-
-    val seriesName = "Mock series"
-    addSeries(UUID.fromString(defaultSeriesId), bodyId, seriesName)
-
-    createConsignmentUploadStatus(UUID.fromString(consignmentId), "Upload", "Completed")
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
     val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = bodyCode))
@@ -296,7 +293,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
     val response: GraphqlQueryData = runTestQuery("query_somedata", validUserToken())
 
-    response.errors should have size 1
+    response.errors.size should be(1)
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
@@ -328,7 +325,20 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   "consignments" should "allow a user with reporting access to return consignments in a paginated format" in {
-    createReportingData()
+    val consignmentParams: List[(UUID, String, List[UUID])] = List(
+      (UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+        "consignment-ref1",
+        List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
+      (UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+        "consignment-ref2",
+        List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72"))),
+      (UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
+        "consignment-ref3",
+        List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
+    )
+
+    createConsignments(consignmentParams)
+
     val reportingAccessToken = validReportingToken("reporting")
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_all")
@@ -338,7 +348,13 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   "consignments" should "allow a user with reporting access to return requested fields for consignments in a paginated format" in {
-    createReportingData()
+    val consignmentParams = List(
+      (UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
+      (UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
+      (UUID.fromString("e6dadac0-0666-4653-b462-adca0b988095"), "consignment-ref3", List())
+    )
+
+    createConsignments(consignmentParams)
     val reportingAccessToken = validReportingToken("reporting")
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_some")
@@ -349,16 +365,14 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   "consignments" should "throw an error if user does not have reporting access" in {
-    createReportingData()
-
     val exportAccessToken = invalidReportingToken()
     val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", exportAccessToken)
 
-    response.errors should have size 1
+    response.errors.size should be(1)
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  private def getConsignment(consignmentId: UUID) = {
+  private def getConsignment(consignmentId: UUID): ResultSet = {
     val sql = s"SELECT * FROM Consignment WHERE ConsignmentId = ?"
     val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
     ps.setString(1, consignmentId.toString)
@@ -385,34 +399,44 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.executeUpdate()
   }
 
-  private def createReportingData(): Unit = {
-    val consignmentRef1 = "consignment-ref1"
-    val consignmentRef2 = "consignment-ref2"
-    val consignmentRef3 = "consignment-ref3"
+  private def createConsignments(
+                                  consignmentParams: List[(UUID, String, List[UUID])],
+                                  seriesName: String = "Mock series",
+                                  seriesId: String = defaultSeriesId,
+                                  transferringBodyId: UUID = transferringBodyId
+                                ): Unit = {
 
-    val consignmentId1 = "c31b3d3e-1931-421b-a829-e2ef4cd8930c"
-    val consignmentId2 = "5c761efa-ae1a-4ec8-bb08-dc609fce51f8"
-    val consignmentId3 = "614d0cba-380f-4b09-a6e4-542413dd7f4a"
-    createBaseConsignment(consignmentId1, consignmentRef1)
-    createBaseConsignment(consignmentId2, consignmentRef2)
-    createBaseConsignment(consignmentId3, consignmentRef3)
+    addSeries(UUID.fromString(seriesId), transferringBodyId, seriesName)
+
+    consignmentParams.foreach(ps => {
+      createConsignment(ps._1, userId, UUID.fromString(defaultSeriesId), consignmentRef = ps._2)
+      createConsignmentUploadStatus(ps._1, "Upload", "Completed")
+      addParentFolderName(ps._1, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      ps._3.foreach(fs => {
+        createFileAndMetadata(ps._1, fs)
+      })
+    })
   }
 
-  //scalastyle:off magic.number
-  private def createBaseConsignment(consignmentId: String, consignmentRef : String = "TEST-TDR-2021-MTB"): Unit = {
-    val sql = "INSERT INTO Consignment" +
-      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference)" +
-      "VALUES (?, ?, ?, ?, ?, ?, ?)"
-    val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
-    val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
-    ps.setString(1, consignmentId)
-    ps.setString(2, defaultSeriesId)
-    ps.setString(3, userId.toString)
-    ps.setTimestamp(4, fixedTimeStamp)
-    ps.setTimestamp(5, fixedTimeStamp)
-    ps.setTimestamp(6, fixedTimeStamp)
-    ps.setString(7, consignmentRef)
-    ps.executeUpdate()
+  private def createFileAndMetadata(consignmentId: UUID, fileId: UUID): Unit = {
+    val extensionMatch = "txt"
+    val identificationBasisMatch = "TEST DATA identification"
+    val puidMatch = "TEST DATA puid"
+
+    createFile(fileId, consignmentId)
+    addAntivirusMetadata(fileId.toString)
+
+    addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ServerSideChecksum)
+    (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(propertyName => {
+      val value = propertyName match {
+        case ClientSideFileLastModifiedDate => "2021-03-11 12:30:30.592853"
+        case ClientSideFileSize => "1"
+        case _ => s"$propertyName value"
+      }
+      addFileMetadata(UUID.randomUUID().toString, fileId.toString, propertyName, value)
+    })
+
+    val ffidMetadataId = addFFIDMetadata(fileId.toString)
+    addFFIDMetadataMatches(ffidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
   }
-  //scalastyle:on magic.number
 }

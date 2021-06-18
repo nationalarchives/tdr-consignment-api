@@ -113,16 +113,27 @@ object TestUtils {
     createClientFileMetadata(defaultFileId)
   }
 
+  //scalastyle:off magic.number
   def createConsignment(
                          consignmentId: UUID,
                          userId: UUID,
                          seriesId: UUID = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861"),
                          consignmentRef: String = "TDR-2021-TESTMTB"): Unit = {
-    val sql =
-      s"INSERT INTO Consignment (ConsignmentId, SeriesId, UserId, ConsignmentReference) VALUES ('$consignmentId', '$seriesId', '$userId', '$consignmentRef')"
+    val sql = "INSERT INTO Consignment" +
+      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference)" +
+      "VALUES (?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
+    ps.setString(1, consignmentId.toString)
+    ps.setString(2, seriesId.toString)
+    ps.setString(3, userId.toString)
+    ps.setTimestamp(4, fixedTimeStamp)
+    ps.setTimestamp(5, fixedTimeStamp)
+    ps.setTimestamp(6, fixedTimeStamp)
+    ps.setString(7, consignmentRef)
     ps.executeUpdate()
   }
+  //scalastyle:on magic.number
 
   //scalastyle:off magic.number
   def createConsignmentUploadStatus(consignmentId: UUID,

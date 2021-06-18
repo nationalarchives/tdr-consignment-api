@@ -7,7 +7,6 @@ import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
-import sangria.relay.util.Base64
 import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionType, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
@@ -130,15 +129,8 @@ object ConsignmentFields {
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportLocationArg: Argument[UpdateExportLocationInput] = Argument("exportLocation", UpdateExportLocationInputType)
-  val LimitArg = Argument("limit", IntType)
-  val CurrentCursorArg = Argument("currentCursor", StringType)
-
-  private def decode(value: String) = {
-    Base64.decode(value) match {
-      case Some(s) => s
-      case None => throw new IllegalArgumentException("Invalid cursor: " + value)
-    }
-  }
+  val LimitArg: Argument[Int] = Argument("limit", IntType)
+  val CurrentCursorArg: Argument[String] = Argument("currentCursor", StringType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
@@ -151,7 +143,6 @@ object ConsignmentFields {
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
         val currentCursor: String = ctx.args.arg("currentCursor")
-        //val decodedCurrentCursor: String = decode(currentCursor)
         ctx.ctx.consignmentService.getConsignments(limit, currentCursor)
           .map(r => {
             val nextCursor = r.nextCursor
