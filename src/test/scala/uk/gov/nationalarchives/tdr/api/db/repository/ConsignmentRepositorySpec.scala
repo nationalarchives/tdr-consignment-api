@@ -15,10 +15,10 @@ import scala.concurrent.ExecutionContext
 class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  val consignmentIdOne = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
-  val consignmentIdTwo = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
-  val consignmentIdThree = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
-  val consignmentIdFour = UUID.fromString("47019574-8407-40c7-b618-bf2b8f8b0de7")
+  val consignmentIdOne: UUID = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
+  val consignmentIdTwo: UUID = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+  val consignmentIdThree: UUID = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+  val consignmentIdFour: UUID = UUID.fromString("47019574-8407-40c7-b618-bf2b8f8b0de7")
 
   "addParentFolder" should "add parent folder name to an existing consignment row" in {
     val db = DbConnection.db
@@ -48,7 +48,6 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
   "getParentFolder" should "return nothing if no parent folder exists" in {
     val db = DbConnection.db
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-    //val consignmentId = UUID.fromString("8233b9a4-5c2d-4c2d-9355-e6ec5751fea5")
 
     TestUtils.createConsignment(consignmentIdOne, userId)
 

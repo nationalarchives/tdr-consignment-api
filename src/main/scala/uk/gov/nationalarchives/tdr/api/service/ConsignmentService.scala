@@ -61,7 +61,7 @@ class ConsignmentService(
       hasNextPage =  response.size > limit
       nextCursor = if (hasNextPage) response.last.consignmentreference else ""
       pageConsignmentRows = if (hasNextPage) response.dropRight(1) else response
-      paginatedConsignments = mapToEdges(pageConsignmentRows)
+      paginatedConsignments = convertToEdges(pageConsignmentRows)
     } yield PaginatedConsignments(nextCursor, paginatedConsignments)
   }
 
@@ -104,7 +104,7 @@ class ConsignmentService(
       row.consignmentreference)
   }
 
-  def mapToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
+  def convertToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
     consignmentRows.map(cr => convertRowToConsignment(cr))
       .map(c => ConsignmentEdge(c, c.consignmentReference))
   }

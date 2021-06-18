@@ -303,13 +303,13 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response.consignmentEdges.size should be(0)
   }
 
-  "mapToEdges" should "return consignment edges for the given consignment rows" in {
+  "convertToEdges" should "return consignment edges for the given consignment rows" in {
     val consignmentId = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
     val consignmentSeq = 400L
     val consignmentRef = "consignment-ref1"
     val consignmentRow: ConsignmentRow = createConsignmentRow(consignmentId, consignmentRef, consignmentSeq)
 
-    val edges = consignmentService.mapToEdges(Seq(consignmentRow))
+    val edges = consignmentService.convertToEdges(Seq(consignmentRow))
     edges.size should be (1)
     val edge = edges.headOption.get
     edge.cursor should equal(consignmentRef)
@@ -323,17 +323,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.exportDatetime.get.toInstant should equal(fixedTimeSource)
     consignment.createdDateTime.toInstant should equal(fixedTimeSource)
   }
-
-//  "getConsignments" should "return empty list if no consignments" in {
-//    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
-//    when(consignmentRepoMock.getConsignments()).thenReturn(mockResponse)
-//
-//    val response: Seq[ConsignmentFields.Consignment] = consignmentService.getConsignments().futureValue
-//
-//    verify(consignmentRepoMock, times(1)).getConsignments()
-//
-//    response.size should be(0)
-//  }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long): ConsignmentRow = {
     ConsignmentRow(
