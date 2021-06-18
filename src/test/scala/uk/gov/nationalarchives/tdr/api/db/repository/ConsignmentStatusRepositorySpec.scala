@@ -72,6 +72,32 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     consignmentStatuses(2).statustype should be(statusType3)
   }
 
+  "getConsignmentStatus" should "return only the consignment status for the consignment specified" in {
+    val db = DbConnection.db
+    val consignmentStatusRepository = new ConsignmentStatusRepository(db)
+    val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
+    val consignmentIdTwo = UUID.fromString("1b0fd1d8-9213-448f-baf3-44c87fe1828b")
+    val consignmentIdThree = UUID.fromString("77ce2eaa-6f16-4b3c-8ec5-b47c46bf8d63")
+    val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
+    val statusType = "Upload"
+    val statusValue = "Completed"
+    val createdTimestamp = Timestamp.from(now)
+    val modifiedTimestamp = Timestamp.from(now)
+
+    TestUtils.createConsignment(consignmentId, userId)
+    TestUtils.createConsignment(consignmentIdTwo, userId)
+    TestUtils.createConsignment(consignmentIdThree, userId)
+
+    TestUtils.createConsignmentStatus(consignmentId, "Upload", "InProgress")
+    TestUtils.createConsignmentStatus(consignmentIdTwo, "Upload", "InProgress")
+    TestUtils.createConsignmentStatus(consignmentIdThree, "Upload", "InProgress")
+
+    val consignmentStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
+
+    consignmentStatus.length should be(1)
+    consignmentStatus.head.consignmentid should be(consignmentId)
+  }
+
   "updateConsignmentStatus" should "update a consignments' status value to 'completed'" in {
     val db = DbConnection.db
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
@@ -93,5 +119,45 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     consignmentStatusRetrieved.value should be(statusValue)
     consignmentStatusRetrieved.statustype should be(statusType)
     consignmentStatusRetrieved.modifieddatetime.get should be(modifiedTimestamp)
+  }
+
+  "updateConsignmentStatus" should "only update the value of the status type passed in" in {
+    val db = DbConnection.db
+    val consignmentStatusRepository = new ConsignmentStatusRepository(db)
+    val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
+    val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
+    val statusTypeOne = "TransferAgreement"
+    val statusTypeTwo = "Upload"
+    val statusTypeThree = "Export"
+    val statusValueOne = "Completed"
+    val statusValueTwo = "Completed"
+    val statusValueThree = "InProgress"
+    val newStatusValueThree = "Completed"
+    val createdTimestamp = Timestamp.from(now)
+    val modifiedTimestamp = Timestamp.from(now)
+
+    TestUtils.createConsignment(consignmentId, userId)
+
+    TestUtils.createConsignmentStatus(consignmentId, statusTypeOne, statusValueOne, createdTimestamp)
+    TestUtils.createConsignmentStatus(consignmentId, statusTypeTwo, statusValueTwo, createdTimestamp)
+    TestUtils.createConsignmentStatus(consignmentId, statusTypeThree, statusValueThree, createdTimestamp)
+
+    val response: Int =
+      consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusTypeThree, newStatusValueThree, modifiedTimestamp).futureValue
+
+    val consignmentStatusRetrieved = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
+
+    response should be(1)
+    consignmentStatusRetrieved.head.statustype should be(statusTypeOne)
+    consignmentStatusRetrieved.head.value should be(statusValueOne)
+    consignmentStatusRetrieved.head.createddatetime should be(createdTimestamp)
+
+    consignmentStatusRetrieved(1).statustype should be(statusTypeTwo)
+    consignmentStatusRetrieved(1).value should be(statusValueTwo)
+    consignmentStatusRetrieved(1).createddatetime should be(createdTimestamp)
+
+    consignmentStatusRetrieved(2).statustype should be(statusTypeThree)
+    consignmentStatusRetrieved(2).value should be(newStatusValueThree)
+    consignmentStatusRetrieved(2).modifieddatetime.get should be(modifiedTimestamp)
   }
 }
