@@ -16,21 +16,25 @@ import scala.concurrent.{ExecutionContext, Future}
 class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  "getConsignmentStatus" should "return all of a consignment's status markers" in {
+  "getConsignmentStatus" should "return all data from the consignment status" in {
     val db = DbConnection.db
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
     val userId = UUID.fromString("aee2d1a9-e1db-43a0-9fd6-a6c342bb187b")
     val statusType = "Upload"
     val statusValue = "InProgress"
+    val createdTimestamp = Timestamp.from(now)
 
     TestUtils.createConsignment(consignmentId, userId)
-    TestUtils.createConsignmentStatus(consignmentId, statusType, statusValue)
+    TestUtils.createConsignmentStatus(consignmentId, statusType, statusValue, createdTimestamp)
 
     val consignmentStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
 
+    consignmentStatus.consignmentid should be(consignmentId)
     consignmentStatus.statustype should be(statusType)
     consignmentStatus.value should be(statusValue)
+    consignmentStatus.createddatetime should be(createdTimestamp)
+    consignmentStatus.modifieddatetime should be(None)
   }
 
   "getConsignmentStatus" should "return an empty list if no consignment status rows are found matching a given consignmentId" in {
