@@ -25,12 +25,12 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     val statusValue = "InProgress"
 
     TestUtils.createConsignment(consignmentId, userId)
-    TestUtils.createConsignmentUploadStatus(consignmentId, statusType, statusValue)
+    TestUtils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-    val consignmentUploadStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
+    val consignmentStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
 
-    consignmentUploadStatus.statustype should be(statusType)
-    consignmentUploadStatus.value should be(statusValue)
+    consignmentStatus.statustype should be(statusType)
+    consignmentStatus.value should be(statusValue)
   }
 
   "getConsignmentStatus" should "return an empty list if no consignment status rows are found matching a given consignmentId" in {
@@ -41,9 +41,9 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
 
     TestUtils.createConsignment(consignmentId, userId)
 
-    val consignmentUploadStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
+    val consignmentStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
 
-    consignmentUploadStatus should be(empty)
+    consignmentStatus should be(empty)
   }
 
   "updateConsignmentStatus" should "update a consignments' status value to 'completed'" in {
@@ -57,7 +57,7 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     val modifiedTimestamp = Timestamp.from(now)
 
     TestUtils.createConsignment(consignmentId, userId)
-    TestUtils.createConsignmentUploadStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
+    TestUtils.createConsignmentStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
     val response: Int =
       consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, statusValue, modifiedTimestamp).futureValue
 

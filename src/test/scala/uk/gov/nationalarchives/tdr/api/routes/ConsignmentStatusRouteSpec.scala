@@ -49,7 +49,7 @@ class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequ
     val token = validUserToken(userId)
 
     createConsignment(consignmentId, userId)
-    createConsignmentUploadStatus(consignmentId, statusType, statusValue)
+    createConsignmentStatus(consignmentId, statusType, statusValue)
 
     val expectedResponse = getDataFromFile[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("data_all")
     val response = runTestRequest[GraphqlMutationData](markUploadAsCompletedJsonFilePrefix)("mutation_data_all", token)
@@ -64,7 +64,7 @@ class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequ
     val statusValue = "InProgress"
 
     createConsignment(consignmentId, userId)
-    createConsignmentUploadStatus(consignmentId, statusType, statusValue)
+    createConsignmentStatus(consignmentId, statusType, statusValue)
 
 
     val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
