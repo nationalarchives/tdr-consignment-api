@@ -51,25 +51,25 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
     val userId = UUID.fromString("aee2d1a9-e1db-43a0-9fd6-a6c342bb187b")
-    val statusType1 = "TransferAgreement"
-    val statusValue1 = "Complete"
-    val statusType2 = "Upload"
-    val statusValue2 = "Complete"
-    val statusType3 = "Export"
-    val statusValue3 = "InProgress"
+    val statusTypeOne = "TransferAgreement"
+    val statusValueOne = "Complete"
+    val statusTypeTwo = "Upload"
+    val statusValueTwo = "Complete"
+    val statusTypeThree = "Export"
+    val statusValueThree = "InProgress"
 
     TestUtils.createConsignment(consignmentId, userId)
-    TestUtils.createConsignmentStatus(consignmentId, statusType1, statusValue1)
-    TestUtils.createConsignmentStatus(consignmentId, statusType2, statusValue2)
-    TestUtils.createConsignmentStatus(consignmentId, statusType3, statusValue3)
+    TestUtils.createConsignmentStatus(consignmentId, statusTypeOne, statusValueOne)
+    TestUtils.createConsignmentStatus(consignmentId, statusTypeTwo, statusValueTwo)
+    TestUtils.createConsignmentStatus(consignmentId, statusTypeThree, statusValueThree)
 
     val consignmentStatuses = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
 
     consignmentStatuses.length should be(3)
 
-    consignmentStatuses(0).statustype should be(statusType1)
-    consignmentStatuses(1).statustype should be(statusType2)
-    consignmentStatuses(2).statustype should be(statusType3)
+    consignmentStatuses(0).statustype should be(statusTypeOne)
+    consignmentStatuses(1).statustype should be(statusTypeTwo)
+    consignmentStatuses(2).statustype should be(statusTypeThree)
   }
 
   "getConsignmentStatus" should "return only the consignment status for the consignment specified" in {
