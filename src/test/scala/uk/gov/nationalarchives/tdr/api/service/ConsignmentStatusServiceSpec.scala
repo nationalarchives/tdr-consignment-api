@@ -11,8 +11,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentS
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
-import java.time.Duration
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
@@ -41,7 +39,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     response.upload should be(Some("InProgress"))
   }
 
-  "getConsignmentStatus" should "return an empty CurrentStatus object if a consignment status doesn't exist for given consignment" in {
+  "getConsignmentStatus" should "return a CurrentStatus object of type 'None' if a consignment status doesn't exist for given consignment" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId = fixedUUIDSource.uuid
     val mockRepoResponse = Future.successful(Seq())
