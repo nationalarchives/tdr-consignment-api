@@ -3,15 +3,13 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
-import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestDatabase, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestUtils}
 
 import java.sql.Timestamp
-import java.time.Duration
 import java.time.Instant.now
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -71,7 +69,7 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
 
     consignmentStatuses.length should be(3)
 
-    consignmentStatuses(0).statustype should be(statusTypeOne)
+    consignmentStatuses.head.statustype should be(statusTypeOne)
     consignmentStatuses(1).statustype should be(statusTypeTwo)
     consignmentStatuses(2).statustype should be(statusTypeThree)
   }
@@ -85,16 +83,14 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
     val statusType = "Upload"
     val statusValue = "Completed"
-    val createdTimestamp = Timestamp.from(now)
-    val modifiedTimestamp = Timestamp.from(now)
 
     TestUtils.createConsignment(consignmentId, userId)
     TestUtils.createConsignment(consignmentIdTwo, userId)
     TestUtils.createConsignment(consignmentIdThree, userId)
 
-    TestUtils.createConsignmentStatus(consignmentId, "Upload", "InProgress")
-    TestUtils.createConsignmentStatus(consignmentIdTwo, "Upload", "InProgress")
-    TestUtils.createConsignmentStatus(consignmentIdThree, "Upload", "InProgress")
+    TestUtils.createConsignmentStatus(consignmentId, statusType, statusValue)
+    TestUtils.createConsignmentStatus(consignmentIdTwo, statusType, statusValue)
+    TestUtils.createConsignmentStatus(consignmentIdThree, statusType, statusValue)
 
     val consignmentStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
 

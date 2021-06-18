@@ -66,7 +66,6 @@ class ConsignmentStatusRouteSpec extends AnyFlatSpec with Matchers with TestRequ
     createConsignment(consignmentId, userId)
     createConsignmentStatus(consignmentId, statusType, statusValue)
 
-
     val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
     val token = validUserToken(wrongUserId)
 
