@@ -135,6 +135,15 @@ object TestUtils {
   }
   //scalastyle:on magic.number
 
+  def getConsignment(consignmentId: UUID): ResultSet = {
+    val sql = s"SELECT * FROM Consignment WHERE ConsignmentId = ?"
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setString(1, consignmentId.toString)
+    val result = ps.executeQuery()
+    result.next()
+    result
+  }
+
   //scalastyle:off magic.number
   def createConsignmentUploadStatus(consignmentId: UUID,
                                     statusType: String,
