@@ -129,10 +129,10 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     val statusTypeOne = "TransferAgreement"
     val statusTypeTwo = "Upload"
     val statusTypeThree = "Export"
-    val statusValueOne = "Completed"
-    val statusValueTwo = "Completed"
+    val statusValueOne = "InProgress"
+    val statusValueTwo = "InProgress"
     val statusValueThree = "InProgress"
-    val newStatusValueThree = "Completed"
+    val newStatusValueOne = "Completed"
     val createdTimestamp = Timestamp.from(now)
     val modifiedTimestamp = Timestamp.from(now)
 
@@ -143,21 +143,21 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     TestUtils.createConsignmentStatus(consignmentId, statusTypeThree, statusValueThree, createdTimestamp)
 
     val response: Int =
-      consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusTypeThree, newStatusValueThree, modifiedTimestamp).futureValue
+      consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusTypeOne, newStatusValueOne, modifiedTimestamp).futureValue
 
     val consignmentStatusRetrieved = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
 
     response should be(1)
     consignmentStatusRetrieved.head.statustype should be(statusTypeOne)
-    consignmentStatusRetrieved.head.value should be(statusValueOne)
-    consignmentStatusRetrieved.head.createddatetime should be(createdTimestamp)
+    consignmentStatusRetrieved.head.value should be(newStatusValueOne)
+    consignmentStatusRetrieved.head.modifieddatetime.get should be(modifiedTimestamp)
 
     consignmentStatusRetrieved(1).statustype should be(statusTypeTwo)
     consignmentStatusRetrieved(1).value should be(statusValueTwo)
     consignmentStatusRetrieved(1).createddatetime should be(createdTimestamp)
 
     consignmentStatusRetrieved(2).statustype should be(statusTypeThree)
-    consignmentStatusRetrieved(2).value should be(newStatusValueThree)
-    consignmentStatusRetrieved(2).modifieddatetime.get should be(modifiedTimestamp)
+    consignmentStatusRetrieved(2).value should be(statusValueThree)
+    consignmentStatusRetrieved(2).createddatetime should be(createdTimestamp)
   }
 }
