@@ -181,7 +181,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val seriesName = "Mock series"
     addSeries(UUID.fromString(seriesId), bodyId, seriesName)
 
-    createConsignmentUploadStatus(UUID.fromString(consignmentId), "Upload", "Completed")
+    createConsignmentStatus(UUID.fromString(consignmentId), "Upload", "Completed")
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
     val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = bodyCode))
