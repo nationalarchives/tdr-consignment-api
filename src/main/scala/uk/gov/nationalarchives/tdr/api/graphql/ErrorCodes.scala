@@ -10,4 +10,5 @@ object ErrorCodes {
   val notAuthorised = "NOT_AUTHORISED"
   val invalidConsignmentState = "INVALID_CONSIGNMENT_STATE"
   val invalidInputData = "INVALID_INPUT_DATA"
+  val unknownError = "UNKNOWN_ERROR"
 }

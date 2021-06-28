@@ -43,6 +43,9 @@ object GraphQLServer {
       handleException(resultMarshaller, ErrorCodes.invalidConsignmentState, message)
     case (resultMarshaller, InputDataException(message, _)) =>
       handleException(resultMarshaller, ErrorCodes.invalidInputData, message)
+    case (_, exception) =>
+      logger.error(exception.getMessage, exception)
+      HandledException(ErrorCodes.unknownError)
   }
 
   def endpoint(requestJSON: JsValue, accessToken: Token)(implicit ec: ExecutionContext): Route = {
