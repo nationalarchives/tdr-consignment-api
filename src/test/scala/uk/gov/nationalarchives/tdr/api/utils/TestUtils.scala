@@ -145,7 +145,7 @@ object TestUtils {
   }
 
   //scalastyle:off magic.number
-  def createConsignmentUploadStatus(consignmentId: UUID,
+  def createConsignmentStatus(consignmentId: UUID,
                                     statusType: String,
                                     statusValue: String,
                                     createdDate: Timestamp = Timestamp.from(FixedTimeSource.now)

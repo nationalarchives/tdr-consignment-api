@@ -5,7 +5,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentS
 
 import java.sql.Timestamp
 import java.util.UUID
-import java.time.Instant.now
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRepository,
@@ -14,8 +13,11 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
 
   def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
     for {
-      upload <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
-    } yield CurrentStatus(upload.sortBy(t => t.createddatetime).reverse.map(_.value).headOption)
+      consignmentStatuses <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
+    } yield {
+      val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statustype, cs.value)).toMap
+      CurrentStatus(consignmentStatusTypesAndVals.get("Upload"))
+    }
   }
 
   def setUploadConsignmentStatusValueToComplete(consignmentId: UUID): Future[Int] = {
