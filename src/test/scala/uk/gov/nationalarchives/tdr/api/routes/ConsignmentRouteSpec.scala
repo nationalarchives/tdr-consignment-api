@@ -149,8 +149,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     createFile(noAVAndChecksumFileId, consignmentId)
     generateMetadataPropertiesForFile(noAVAndChecksumFileId)
     setUpStandardFFIDMatchesForFile(noAVAndChecksumFileId)
-    createConsignmentStatus(consignmentId, "Upload", "Completed")
-
+    
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
     val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = defaultTransferringBodyCode))
 
@@ -325,7 +324,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
     consignmentParams.foreach(ps => {
       createConsignment(ps._1, userId, defaultSeriesId, consignmentRef = ps._2)
-      createConsignmentUploadStatus(ps._1, "Upload", "Completed")
+      createConsignmentStatus(ps._1, "Upload", "Completed")
       addParentFolderName(ps._1, "ALL CONSIGNMENT DATA PARENT FOLDER")
       ps._3.foreach(fs => {
         setUpFileAndStandardMetadata(ps._1, fs)
