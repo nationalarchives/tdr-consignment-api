@@ -44,7 +44,8 @@ class Routes(val config: Config) extends Cors {
           QueryParser.parse(query) match {
             case Failure(parseException) =>
               logger.error(s"Error parsing entity $requestJson", parseException)
-              complete(HttpResponse(InternalServerError, entity = parseException.getMessage))
+              logger.error(ex.getMessage, ex)
+              complete(HttpResponse(InternalServerError, entity = ex.getMessage))
             case Success(document) =>
               val fieldName = document.definitions.headOption.flatMap {
                 case operationDefinition: OperationDefinition => operationDefinition.selections.headOption.map {
