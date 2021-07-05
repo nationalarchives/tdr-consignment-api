@@ -4,6 +4,7 @@ import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
+import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
 import org.mockito.MockitoSugar
 import org.mockito.scalatest.ResetMocksAfterEachTest
@@ -57,7 +58,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     fileRepositoryMock,
     ffidMetadataRepositoryMock,
     FixedTimeSource,
-    fixedUuidSource)
+    fixedUuidSource,
+    ConfigFactory.load())
 
   "addConsignment" should "create a consignment given correct arguments" in {
     val mockConsignmentSeq = 5L
@@ -152,7 +154,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
       FixedTimeSource,
-      fixedUuidSource)
+      fixedUuidSource,
+      ConfigFactory.load())
 
     val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
     val consignmentId = UUID.fromString("d8383f9f-c277-49dc-b082-f6e266a39618")
@@ -176,7 +179,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
       FixedTimeSource,
-      fixedUuidSource)
+      fixedUuidSource,
+      ConfigFactory.load())
 
     val consignmentId = UUID.fromString("d8383f9f-c277-49dc-b082-f6e266a39618")
     val userId = UUID.randomUUID()
@@ -207,100 +211,146 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     body.name shouldBe mockBody.head.name
   }
 
-  "getConsignments" should "return all the consignments from the cursor to the limit" in {
-    val consignmentId1 = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
+  "getConsignments" should "return all the consignments after the cursor to the limit" in {
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
 
     val consignmentRowParams = List(
-      (consignmentId1, "consignment-ref1", 1L),
       (consignmentId2, "consignment-ref2", 2L),
       (consignmentId3, "consignment-ref3", 3L)
     )
 
-    //Returned rows from repository are 'limit + 1' so additional row included to represent correct response
     val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
 
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit + 1, "consignment-ref1")).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"))).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(limit, "consignment-ref1").futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
-    verify(consignmentRepoMock, times(1)).getConsignments(limit + 1, "consignment-ref1")
-
-    response.nextCursor should be ("consignment-ref3")
-    response.consignmentEdges.size should be (2)
+    response.lastCursor should be (Some("consignment-ref3"))
+    response.consignmentEdges should have size 2
     val edges = response.consignmentEdges
     val cursors: List[String] = edges.map(e => e.cursor).toList
-    cursors.contains("consignment-ref1") should be (true)
-    cursors.contains("consignment-ref2") should be (true)
+    cursors should contain ("consignment-ref2")
+    cursors should contain ("consignment-ref3")
 
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
-    consignmentRefs.contains(consignmentId1) should be (true)
-    consignmentRefs.contains(consignmentId2) should be (true)
+    consignmentRefs should contain (consignmentId2)
+    consignmentRefs should contain (consignmentId3)
+  }
+
+  "getConsignments" should "return all the consignments after the cursor to the maximum limit where the requested limit is greater than the maximum" in {
+    val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+
+    val consignmentRowParams = List(
+      (consignmentId2, "consignment-ref2", 2L),
+      (consignmentId3, "consignment-ref3", 3L)
+    )
+
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
+
+    val limit = 3
+
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
+    when(consignmentRepoMock.getConsignments(2, Some("consignment-ref1"))).thenReturn(mockResponse)
+
+    val response: PaginatedConsignments = consignmentService.getConsignments(2, Some("consignment-ref1")).futureValue
+
+    response.lastCursor should be (Some("consignment-ref3"))
+    response.consignmentEdges should have size 2
+    val edges = response.consignmentEdges
+    val cursors: List[String] = edges.map(e => e.cursor).toList
+    cursors should contain ("consignment-ref2")
+    cursors should contain ("consignment-ref3")
+
+    val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
+    consignmentRefs should contain (consignmentId2)
+    consignmentRefs should contain (consignmentId3)
+  }
+
+  "getConsignments" should "return all the consignments up to the limit where no cursor provided" in {
+    val consignmentId1 = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
+    val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+
+    val consignmentRowParams = List(
+      (consignmentId1, "consignment-ref1", 1L),
+      (consignmentId2, "consignment-ref2", 2L)
+    )
+
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
+
+    val limit = 2
+
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
+    when(consignmentRepoMock.getConsignments(limit, None)).thenReturn(mockResponse)
+
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None).futureValue
+
+    response.lastCursor should be (Some("consignment-ref2"))
+    response.consignmentEdges should have size 2
+    val edges = response.consignmentEdges
+    val cursors: List[String] = edges.map(e => e.cursor).toList
+    cursors should contain ("consignment-ref1")
+    cursors should contain ("consignment-ref2")
+
+    val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
+    consignmentRefs should contain (consignmentId1)
+    consignmentRefs should contain (consignmentId2)
   }
 
   "getConsignments" should "return all the consignments up to the limit where empty cursor provided" in {
     val consignmentId1 = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
-    val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
 
     val consignmentRowParams = List(
       (consignmentId1, "consignment-ref1", 1L),
-      (consignmentId2, "consignment-ref2", 2L),
-      (consignmentId3, "consignment-ref3", 3L)
+      (consignmentId2, "consignment-ref2", 2L)
     )
 
-    //Returned rows from repository are 'limit + 1' so additional row included to represent correct response
     val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
 
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit + 1, "")).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some(""))).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(limit, "").futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("")).futureValue
 
-    verify(consignmentRepoMock, times(1)).getConsignments(limit + 1, "")
-
-    response.nextCursor should be ("consignment-ref3")
-    response.consignmentEdges.size should be (2)
+    response.lastCursor should be (Some("consignment-ref2"))
+    response.consignmentEdges should have size 2
     val edges = response.consignmentEdges
     val cursors: List[String] = edges.map(e => e.cursor).toList
-    cursors.contains("consignment-ref1") should be (true)
-    cursors.contains("consignment-ref2") should be (true)
+    cursors should contain ("consignment-ref1")
+    cursors should contain ("consignment-ref2")
 
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
-    consignmentRefs.contains(consignmentId1) should be (true)
-    consignmentRefs.contains(consignmentId1) should be (true)
+    consignmentRefs should contain (consignmentId1)
+    consignmentRefs should contain (consignmentId2)
   }
 
-  "getConsignments" should "return empty list and empty next cursor if no consignments" in {
+  "getConsignments" should "return empty list and no cursor if no consignments" in {
     val limit = 2
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
-    when(consignmentRepoMock.getConsignments(limit + 1, "consignment-ref1")).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"))).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(limit, "consignment-ref1").futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
-    verify(consignmentRepoMock, times(1)).getConsignments(limit + 1, "consignment-ref1")
-
-    response.nextCursor should be ("")
-    response.consignmentEdges.size should be(0)
+    response.lastCursor should be (None)
+    response.consignmentEdges should have size 0
   }
 
-  "getConsignments" should "return empty list and empty next cursor if limit set to '0'" in {
+  "getConsignments" should "return empty list and no cursor if limit set to '0'" in {
     val limit = 0
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
-    when(consignmentRepoMock.getConsignments(limit + 1, "consignment-ref1")).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"))).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(limit, "consignment-ref1").futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
-    verify(consignmentRepoMock, times(1)).getConsignments(limit + 1, "consignment-ref1")
-
-    response.nextCursor should be ("")
-    response.consignmentEdges.size should be(0)
+    response.lastCursor should be (None)
+    response.consignmentEdges should have size 0
   }
 
   "convertToEdges" should "return consignment edges for the given consignment rows" in {

@@ -121,12 +121,12 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
     response.headOption.get.consignmentid should equal(consignmentId)
   }
 
-  "getConsignments" should "return all consignments including cursor value up to the limit value" in {
+  "getConsignments" should "return all consignments after the cursor up to the limit value" in {
     val db = DbConnection.db
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     createConsignments()
 
-    val response = consignmentRepository.getConsignments(2, "TDR-2021-B").futureValue
+    val response = consignmentRepository.getConsignments(2, Some("TDR-2021-A")).futureValue
 
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
@@ -134,12 +134,24 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
     consignmentIds should contain (consignmentIdThree)
   }
 
+  "getConsignments" should "return all consignments up to limit where no cursor provided including first consignment" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    createConsignments()
+
+    val response = consignmentRepository.getConsignments(2, None).futureValue
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain (consignmentIdOne)
+    consignmentIds should contain (consignmentIdTwo)
+  }
+
   "getConsignments" should "return all consignments up to limit where empty cursor provided" in {
     val db = DbConnection.db
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     createConsignments()
 
-    val response = consignmentRepository.getConsignments(2, "").futureValue
+    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
     consignmentIds should contain (consignmentIdOne)
@@ -151,24 +163,27 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     createConsignments()
 
-    val response = consignmentRepository.getConsignments(0, "TDR-2021-A").futureValue
+    val response = consignmentRepository.getConsignments(0, Some("TDR-2021-A")).futureValue
     response should have size 0
   }
 
-  "getConsignments" should "return no consignments where non-existent cursor value provided'" in {
+  "getConsignments" should "return consignments where non-existent cursor value provided, and the consignments reference is greater than the cursor value" in {
     val db = DbConnection.db
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     createConsignments()
 
-    val response = consignmentRepository.getConsignments(0, "Some-Non-existent-cursor").futureValue
-    response should have size 0
+    val response = consignmentRepository.getConsignments(2, Some("AAA")).futureValue
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain (consignmentIdOne)
+    consignmentIds should contain (consignmentIdTwo)
   }
 
   "getConsignments" should "return no consignments where there are no consignments" in {
     val db = DbConnection.db
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
 
-    val response = consignmentRepository.getConsignments(2, "").futureValue
+    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
     response should have size  0
   }
 

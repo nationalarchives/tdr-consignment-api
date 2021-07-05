@@ -8,7 +8,7 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionType, StringType, fields}
+import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
@@ -130,7 +130,7 @@ object ConsignmentFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportLocationArg: Argument[UpdateExportLocationInput] = Argument("exportLocation", UpdateExportLocationInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
-  val CurrentCursorArg: Argument[String] = Argument("currentCursor", StringType)
+  val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
@@ -142,18 +142,17 @@ object ConsignmentFields {
       arguments = List(LimitArg, CurrentCursorArg),
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
-        val currentCursor: String = ctx.args.arg("currentCursor")
+        val currentCursor = ctx.args.argOpt("currentCursor")
         ctx.ctx.consignmentService.getConsignments(limit, currentCursor)
           .map(r => {
-            val nextCursor = r.nextCursor
+            val endCursor = r.lastCursor
             val edges = r.consignmentEdges
-            val firstEdge = edges.headOption
             DefaultConnection(
               PageInfo(
-                startCursor = firstEdge.map(_.cursor),
-                endCursor = Option(nextCursor),
-                hasNextPage = !nextCursor.isEmpty,
-                hasPreviousPage = !currentCursor.isEmpty
+                startCursor = edges.headOption.map(_.cursor),
+                endCursor = endCursor,
+                hasNextPage = endCursor.isDefined,
+                hasPreviousPage = currentCursor.isDefined
               ),
               edges
             )

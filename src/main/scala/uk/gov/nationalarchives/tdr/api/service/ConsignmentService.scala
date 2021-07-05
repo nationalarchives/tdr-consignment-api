@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.{LocalDate, ZoneOffset}
 import java.util.UUID
-
+import com.typesafe.config.Config
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
@@ -19,8 +19,11 @@ class ConsignmentService(
                           fileRepository: FileRepository,
                           ffidMetadataRepository: FFIDMetadataRepository,
                           timeSource: TimeSource,
-                          uuidSource: UUIDSource
+                          uuidSource: UUIDSource,
+                          config: Config
                         )(implicit val executionContext: ExecutionContext) {
+
+  val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
     consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
@@ -54,15 +57,15 @@ class ConsignmentService(
       row => convertRowToConsignment(row)))
   }
 
-  def getConsignments(limit: Int, currentCursor: String): Future[PaginatedConsignments] = {
+  def getConsignments(limit: Int, currentCursor: Option[String]): Future[PaginatedConsignments] = {
+    val l: Int = if (limit > maxLimit) maxLimit else limit
+
     for {
-      //Limit increased by one to get the value of the next cursor
-      response <- consignmentRepository.getConsignments(limit + 1, currentCursor)
-      hasNextPage =  response.size > limit
-      nextCursor = if (hasNextPage) response.last.consignmentreference else ""
-      pageConsignmentRows = if (hasNextPage) response.dropRight(1) else response
-      paginatedConsignments = convertToEdges(pageConsignmentRows)
-    } yield PaginatedConsignments(nextCursor, paginatedConsignments)
+      response <- consignmentRepository.getConsignments(l, currentCursor)
+      hasNextPage = response.nonEmpty
+      lastCursor: Option[String] = if (hasNextPage) Some(response.last.consignmentreference) else None
+      paginatedConsignments = convertToEdges(response)
+    } yield PaginatedConsignments(lastCursor, paginatedConsignments)
   }
 
   def getSeriesOfConsignment(consignmentId: UUID): Future[Option[Series]] = {
@@ -110,4 +113,4 @@ class ConsignmentService(
   }
 }
 
-case class PaginatedConsignments(nextCursor: String, consignmentEdges: Seq[ConsignmentEdge])
+case class PaginatedConsignments(lastCursor: Option[String], consignmentEdges: Seq[ConsignmentEdge])
