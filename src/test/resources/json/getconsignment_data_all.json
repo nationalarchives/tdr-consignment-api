@@ -5,13 +5,13 @@
         "code": "Mock series"
       },
       "exportDatetime": "2020-01-01T09:00:00Z",
-      "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+      "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
       "createdDatetime": "2020-01-01T09:00:00Z",
       "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
       "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
       "transferringBody": {
-        "name": "Default transferring body name",
-        "tdrCode": "default-transferring-body-code"
+        "name": "Some department name",
+        "tdrCode": "consignment-body-code"
       },
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",
@@ -21,13 +21,13 @@
           "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
-            "legalStatus": "Public Record",
+            "legalStatus": "LegalStatus value",
             "clientSideFileSize": 1,
-            "clientSideLastModifiedDate": "2021-02-08T16:00",
-            "rightsCopyright": "Crown Copyright",
-            "heldBy": "TNA",
-            "foiExemptionCode": "open",
-            "language": "English"
+            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+            "rightsCopyright": "RightsCopyright value",
+            "heldBy": "HeldBy value",
+            "foiExemptionCode": "FoiExemptionCode value",
+            "language": "Language value"
           },
           "ffidMetadata": {
             "method": "TEST DATA method",
@@ -49,13 +49,13 @@
           "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
-            "legalStatus": "Public Record",
+            "legalStatus": "LegalStatus value",
             "clientSideFileSize": 1,
-            "clientSideLastModifiedDate": "2021-02-08T16:00",
-            "rightsCopyright": "Crown Copyright",
-            "heldBy": "TNA",
-            "foiExemptionCode": "open",
-            "language": "English"
+            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+            "rightsCopyright": "RightsCopyright value",
+            "heldBy": "HeldBy value",
+            "foiExemptionCode": "FoiExemptionCode value",
+            "language": "Language value"
           },
           "ffidMetadata": {
             "method": "TEST DATA method",
@@ -77,13 +77,13 @@
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
-            "legalStatus": "Public Record",
+            "legalStatus": "LegalStatus value",
             "clientSideFileSize": 1,
-            "clientSideLastModifiedDate": "2021-02-08T16:00",
-            "rightsCopyright": "Crown Copyright",
-            "heldBy": "TNA",
-            "foiExemptionCode": "open",
-            "language": "English"
+            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+            "rightsCopyright": "RightsCopyright value",
+            "heldBy": "HeldBy value",
+            "foiExemptionCode": "FoiExemptionCode value",
+            "language": "Language value"
           },
           "ffidMetadata": {
             "method": "TEST DATA method",
@@ -105,7 +105,7 @@
       "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
       "fileChecks": {
         "antivirusProgress": {
-          "filesProcessed": 2
+          "filesProcessed": 1
         },
         "checksumProgress": {
           "filesProcessed": 2
