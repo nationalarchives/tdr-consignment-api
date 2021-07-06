@@ -347,14 +347,14 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   "consignments" should "allow a user with reporting access to return consignments in a paginated format" in {
-    val consignmentParams: List[(UUID, String, List[UUID])] = List(
-      (UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+    val consignmentParams: List[ConsignmentParams] = List(
+      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
         "consignment-ref1",
         List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
-      (UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
         "consignment-ref2",
         List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72"))),
-      (UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
+      ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
         "consignment-ref3",
         List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
     )
@@ -370,10 +370,10 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   "consignments" should "allow a user with reporting access to return requested fields for consignments in a paginated format" in {
-    val consignmentParams = List(
-      (UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
-      (UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
-      (UUID.fromString("e6dadac0-0666-4653-b462-adca0b988095"), "consignment-ref3", List())
+    val consignmentParams: List[ConsignmentParams] = List(
+      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
+      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
+      ConsignmentParams(UUID.fromString("e6dadac0-0666-4653-b462-adca0b988095"), "consignment-ref3", List())
     )
 
     setUpConsignments(consignmentParams)
@@ -404,16 +404,16 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     result.getString(field)
   }
 
-  private def setUpConsignments(consignmentParams: List[(UUID, String, List[UUID])]): Unit = {
+  private def setUpConsignments(consignmentParams: List[ConsignmentParams]): Unit = {
     val seriesId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     addSeries(seriesId, UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"), "Mock series")
 
     consignmentParams.foreach(ps => {
-      createConsignment(ps._1, userId, seriesId, consignmentRef = ps._2)
-      createConsignmentStatus(ps._1, "Upload", "Completed")
-      addParentFolderName(ps._1, "ALL CONSIGNMENT DATA PARENT FOLDER")
-      ps._3.foreach(fs => {
-        setUpFileAndStandardMetadata(ps._1, fs)
+      createConsignment(ps.consignmentId, userId, seriesId, consignmentRef = ps.consignmentRef)
+      createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
+      addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      ps.fileIds.foreach(fs => {
+        setUpFileAndStandardMetadata(ps.consignmentId, fs)
       })
     })
   }
@@ -448,3 +448,5 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     addFFIDMetadataMatches(fileFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
   }
 }
+
+case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID])

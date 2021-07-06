@@ -28,6 +28,7 @@ import scala.util.{Failure, Success}
 object GraphQLServer {
 
   private val logger = Logger(s"${GraphQLServer.getClass}")
+  private val config = ConfigFactory.load()
 
   private def handleException(marshaller: ResultMarshaller, errorCode: String, message: String): HandledException = {
     val node = marshaller.scalarNode(errorCode, "String", Set.empty)
@@ -69,7 +70,7 @@ object GraphQLServer {
   }
 
   private def generateConsignmentApiContext(accessToken: Token)(implicit ec: ExecutionContext): ConsignmentApiContext = {
-    val uuidSourceClass: Class[_] = Class.forName(ConfigFactory.load().getString("source.uuid"))
+    val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
     val timeSource = new CurrentTimeSource
     val db = DbConnection.db
@@ -82,7 +83,7 @@ object GraphQLServer {
     val antivirusMetadataRepository = new AntivirusMetadataRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
     val consignmentService = new ConsignmentService(consignmentRepository, fileMetadataRepository, fileRepository,
-      ffidMetadataRepository, timeSource, uuidSource, ConfigFactory.load())
+      ffidMetadataRepository, timeSource, uuidSource, config)
     val seriesService = new SeriesService(new SeriesRepository(db), uuidSource)
     val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)
     val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)

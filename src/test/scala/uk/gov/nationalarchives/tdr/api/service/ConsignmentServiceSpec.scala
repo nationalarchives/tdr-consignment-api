@@ -257,7 +257,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
     when(consignmentRepoMock.getConsignments(2, Some("consignment-ref1"))).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(2, Some("consignment-ref1")).futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
     response.lastCursor should be (Some("consignment-ref3"))
     response.consignmentEdges should have size 2
@@ -351,27 +351,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     response.lastCursor should be (None)
     response.consignmentEdges should have size 0
-  }
-
-  "convertToEdges" should "return consignment edges for the given consignment rows" in {
-    val consignmentId = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
-    val consignmentSeq = 400L
-    val consignmentRef = "consignment-ref1"
-    val consignmentRow: ConsignmentRow = createConsignmentRow(consignmentId, consignmentRef, consignmentSeq)
-
-    val edges = consignmentService.convertToEdges(Seq(consignmentRow))
-    edges.size should be (1)
-    val edge = edges.headOption.get
-    edge.cursor should equal(consignmentRef)
-
-    val consignment = edge.node
-    consignment.consignmentReference should equal(consignmentRef)
-    consignment.consignmentid should equal(consignmentId)
-    consignment.seriesid should equal(seriesId)
-    consignment.userid should equal(userId)
-    consignment.transferInitiatedDatetime.get.toInstant should equal(fixedTimeSource)
-    consignment.exportDatetime.get.toInstant should equal(fixedTimeSource)
-    consignment.createdDateTime.toInstant should equal(fixedTimeSource)
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long): ConsignmentRow = {

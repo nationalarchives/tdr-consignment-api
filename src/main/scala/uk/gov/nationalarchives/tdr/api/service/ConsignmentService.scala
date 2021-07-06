@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.{LocalDate, ZoneOffset}
 import java.util.UUID
+
 import com.typesafe.config.Config
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -12,6 +13,7 @@ import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.math.min
 
 class ConsignmentService(
                           consignmentRepository: ConsignmentRepository,
@@ -58,10 +60,10 @@ class ConsignmentService(
   }
 
   def getConsignments(limit: Int, currentCursor: Option[String]): Future[PaginatedConsignments] = {
-    val l: Int = if (limit > maxLimit) maxLimit else limit
+    val maxConsignments: Int = min(limit, maxLimit)
 
     for {
-      response <- consignmentRepository.getConsignments(l, currentCursor)
+      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor)
       hasNextPage = response.nonEmpty
       lastCursor: Option[String] = if (hasNextPage) Some(response.last.consignmentreference) else None
       paginatedConsignments = convertToEdges(response)
@@ -107,7 +109,7 @@ class ConsignmentService(
       row.consignmentreference)
   }
 
-  def convertToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
+  private def convertToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
     consignmentRows.map(cr => convertRowToConsignment(cr))
       .map(c => ConsignmentEdge(c, c.consignmentReference))
   }
