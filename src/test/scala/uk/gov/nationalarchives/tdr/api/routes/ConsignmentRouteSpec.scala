@@ -19,12 +19,14 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   private val addConsignmentJsonFilePrefix: String = "json/addconsignment_"
   private val getConsignmentJsonFilePrefix: String = "json/getconsignment_"
   private val consignmentsJsonFilePrefix: String = "json/consignments_"
+  private val startUploadJsonFilePrefix: String = "json/startupload_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
   case class GraphqlConsignmentsQueryData(data: Option[ConsignmentConnections], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationData(data: Option[AddConsignment], errors: List[GraphqlError] = Nil)
+  case class GraphqlMutationStartUpload(data: Option[StartUpload], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationExportLocation(data: Option[UpdateExportLocation])
   case class GraphqlMutationTransferInitiated(data: Option[UpdateTransferInitiated])
 
@@ -77,11 +79,13 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                                 matches: List[FFIDMetadataMatches],
                                 datetime: Long)
   case class CurrentStatus(upload: Option[String])
+  case class StartUpload(startUpload: Long)
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val runConsignmentsTestQuery: (String, OAuth2BearerToken) =>
     GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
+  val runTestStartUploadMutation: (String, OAuth2BearerToken) => GraphqlMutationStartUpload = runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String =>
     GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
@@ -392,6 +396,16 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+  }
+
+  "startUpload" should "add the upload status and update the parent folder" in {
+    val consignmentId = new FixedUUIDSource().uuid
+    createConsignment(consignmentId, userId)
+    runTestStartUploadMutation("mutation_alldata", validUserToken())
+
+    val consignment = getConsignment(consignmentId)
+    consignment.getString("ParentFolder") should equal("parent")
+    getConsignmentStatus(consignmentId, "Upload").getString("Value") should equal("InProgress")
   }
 
   private def checkConsignmentExists(consignmentId: UUID): Unit = {
