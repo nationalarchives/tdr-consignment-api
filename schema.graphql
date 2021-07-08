@@ -21,12 +21,6 @@ input AddConsignmentInput {
   seriesid: UUID!
 }
 
-input AddFileAndMetadataInput {
-  consignmentId: UUID!
-  metadataInput: [MetadataInput!]!
-  isComplete: Boolean!
-}
-
 input AddFileMetadataInput {
   filePropertyName: String!
   fileId: UUID!
@@ -189,11 +183,6 @@ type FileMetadataValues {
   foiExemptionCode: String
 }
 
-type FileSequence {
-  fileId: UUID!
-  sequenceNumber: Long!
-}
-
 type Files {
   fileIds: [UUID!]!
 }
@@ -209,22 +198,14 @@ scalar LocalDateTime
 "The `Long` scalar type represents non-fractional signed whole numeric values. Long can represent values between -(2^63) and 2^63 - 1."
 scalar Long
 
-input MetadataInput {
-  originalPath: String
-  checksum: String
-  lastModified: Long!
-  fileSize: Long
-  sequenceNumber: Long!
-}
-
 type Mutation {
   addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
   updateTransferInitiated(consignmentid: UUID!): Int
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
+  startUpload(startUploadInput: StartUploadInput!): Int!
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
   addClientFileMetadata(addClientFileMetadataInput: [AddClientFileMetadataInput!]!): [ClientFileMetadata!]!
   addFiles(addFilesInput: AddFilesInput!): Files!
-  addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileSequence!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataInput: AddFileMetadataInput!): FileMetadata!
@@ -262,6 +243,11 @@ type Series {
   name: String!
   code: String!
   description: String
+}
+
+input StartUploadInput {
+  consignmentId: UUID!
+  parentFolder: String!
 }
 
 type TransferAgreement {
