@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.time.ZonedDateTime
 import java.util.UUID
-
 import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
@@ -10,8 +9,10 @@ import sangria.marshalling.circe._
 import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
+import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
+import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,6 +41,7 @@ object ConsignmentFields {
   case class FileChecks(antivirusProgress: AntivirusProgress, checksumProgress: ChecksumProgress, ffidProgress: FFIDProgress)
   case class TransferringBody(name: String, tdrCode: String)
   case class CurrentStatus(upload: Option[String])
+  case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
   case class UpdateExportLocationInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime])
 
@@ -120,6 +122,7 @@ object ConsignmentFields {
 
   implicit val AddConsignmentInputType: InputObjectType[AddConsignmentInput] = deriveInputObjectType[AddConsignmentInput]()
   implicit val UpdateExportLocationInputType: InputObjectType[UpdateExportLocationInput] = deriveInputObjectType[UpdateExportLocationInput]()
+  implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[RequestContext, Connection, Consignment](
       name = "Consignment",
@@ -131,6 +134,7 @@ object ConsignmentFields {
   val ExportLocationArg: Argument[UpdateExportLocationInput] = Argument("exportLocation", UpdateExportLocationInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
+  val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
@@ -182,6 +186,11 @@ object ConsignmentFields {
       arguments = ExportLocationArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateExportLocation(ctx.arg(ExportLocationArg)),
       tags = List(ValidateHasExportAccess)
+    ),
+    Field("startUpload", IntType,
+      arguments = StartUploadArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.startUpload(ctx.arg(StartUploadArg)),
+      tags = List(ValidateUserHasAccessToConsignment(StartUploadArg), ValidateNoPreviousUploadForConsignment)
     )
   )
 }

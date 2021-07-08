@@ -5,7 +5,7 @@ import java.time.{LocalDate, ZoneOffset}
 import java.util.UUID
 
 import com.typesafe.config.Config
-import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow}
+import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow, ConsignmentstatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
@@ -17,6 +17,7 @@ import scala.math.min
 
 class ConsignmentService(
                           consignmentRepository: ConsignmentRepository,
+                          consignmentStatusRepository: ConsignmentStatusRepository,
                           fileMetadataRepository: FileMetadataRepository,
                           fileRepository: FileRepository,
                           ffidMetadataRepository: FFIDMetadataRepository,
@@ -26,6 +27,15 @@ class ConsignmentService(
                         )(implicit val executionContext: ExecutionContext) {
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
+
+  def startUpload(startUploadInput: StartUploadInput): Future[Int] = {
+    val now = Timestamp.from(timeSource.now)
+    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, "Upload", "InProgress", now)
+    for {
+      _ <- consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder)
+      res <- consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
+    } yield res
+  }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
     consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
