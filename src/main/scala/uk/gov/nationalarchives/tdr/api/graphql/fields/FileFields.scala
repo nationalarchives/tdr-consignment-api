@@ -54,7 +54,7 @@ object FileFields {
       ListType(FileSequenceType),
       arguments = List(FileAndMetadataInputArg),
       resolve = ctx => ctx.ctx.fileService.addFile(ctx.arg(FileAndMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags=List(ValidateUserHasAccessToConsignment(FileAndMetadataInputArg), ValidateNoPreviousUploadForConsignment)
+      tags=List(ValidateUserHasAccessToConsignment(FileAndMetadataInputArg))
     ),
   )
 }
