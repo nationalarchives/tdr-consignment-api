@@ -47,7 +47,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+      fileRepositoryMock, consignmentRepositoryMock, fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
     val result: Files = fileService.addFile(AddFilesInput(consignmentId, 1, "Parent folder name"), uuid).futureValue
 
@@ -80,7 +80,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+      fileRepositoryMock, consignmentRepositoryMock, fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
     val result: Files = fileService.addFile(AddFilesInput(consignmentUuid, 3, "Parent folder name"), userUuid).futureValue
 
@@ -106,7 +106,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
 
     val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock,fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+      fileRepositoryMock, consignmentRepositoryMock,fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
 
     fixedUuidSource.reset
@@ -157,7 +157,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUUIDSource)
 
     val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUUIDSource
+      fileRepositoryMock, consignmentRepositoryMock, fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUUIDSource
     )
 
     fileService.addFile(AddFilesInput(consignmentId, 1, "Parent folder name"), uuid).futureValue
@@ -213,7 +213,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+      fileRepositoryMock, consignmentRepositoryMock, fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
 
 
@@ -251,7 +251,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+      fileRepositoryMock, consignmentRepositoryMock, fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
     val result: Files = fileService.getFiles(consignmentId).futureValue
 
@@ -298,7 +298,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val service = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+      fileRepositoryMock, consignmentRepositoryMock, fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
     val metadataList: Seq[File] = service.getFileMetadata(consignmentId).futureValue
 
@@ -359,7 +359,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
 
     val service = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
+      fileRepositoryMock, consignmentRepositoryMock, fileMetadataRepositoryMock, fileMetadataService, ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
 
     val fileMetadataList = service.getFileMetadata(consignmentId).futureValue
 

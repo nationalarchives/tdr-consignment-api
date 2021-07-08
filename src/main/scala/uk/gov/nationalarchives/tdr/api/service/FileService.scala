@@ -1,9 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow}
+import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFilesInput, Files}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AddFilesInput, FileSequence, Files, MetadataInput}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -12,6 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FileService(
                    fileRepository: FileRepository,
                    consignmentRepository: ConsignmentRepository,
+                   fileMetadataRepository: FileMetadataRepository,
                    fileMetadataService: FileMetadataService,
                    ffidMetadataService: FFIDMetadataService,
                    avMetadataService: AntivirusMetadataService,
@@ -32,6 +34,32 @@ class FileService(
       files <- fileRepository.addFiles(rows, consignmentStatusRow)
       _ <- fileMetadataService.addStaticMetadata(files, userId)
     } yield Files(files.map(_.fileid))
+  }
+
+  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): List[FileSequence] = {
+    val now = Timestamp.from(timeSource.now)
+    val fileRows: List[FileRow] = List.fill(addFileAndMetadataInput.metadataInput.size)(1)
+      .map(_ => FileRow(uuidSource.uuid, addFileAndMetadataInput.consignmentId, userId, now))
+    val metadataWithIds: List[(UUID, MetadataInput)] = fileRows.map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
+    val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _,  _, now, userId, _)
+
+    val fileMetadataRows: Seq[FilemetadataRow] = metadataWithIds.flatMap {
+      case (fileId, input) =>
+      Seq(
+        row(fileId, input.originalPath.getOrElse(""), ClientSideOriginalFilepath),
+        row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
+        row(fileId, input.fileSize.map(_.toString).getOrElse(""), ClientSideFileSize),
+        row(fileId, input.checksum.getOrElse(""), SHA256ClientSideChecksum)
+      )
+      case _ => Seq()
+    }
+
+    for {
+      _ <- fileRepository.addFiles(fileRows)
+      _ <- fileMetadataRepository.addFileMetadata(fileMetadataRows)
+      _ <- fileMetadataService.addStaticMetadata(fileRows, userId)
+    } yield ()
+    metadataWithIds.map(m => (m._1, m._2.sequenceNumber)).map(f => FileSequence(f._1, f._2))
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {

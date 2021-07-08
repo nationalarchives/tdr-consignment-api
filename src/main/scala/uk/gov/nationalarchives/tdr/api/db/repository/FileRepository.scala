@@ -24,6 +24,9 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(allAdditions).map(_ => fileRows)
   }
 
+  def addFiles(fileRows: Seq[FileRow]): Future[Option[Int]] =
+    db.run(File ++= fileRows)
+
   def countFilesInConsignment(consignmentId: UUID): Future[Int] = {
     val query = File.filter(_.consignmentid === consignmentId).length
     db.run(query.result)

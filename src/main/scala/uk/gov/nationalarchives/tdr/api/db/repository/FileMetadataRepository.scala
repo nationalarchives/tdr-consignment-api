@@ -17,7 +17,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
   def addFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[FilemetadataRow]] = {
-    db.run(insertFileMetadataQuery ++= rows)
+    db.run(Filemetadata ++= rows).map(_ => rows)
   }
 
   def addChecksumMetadata(fileMetadataRow: FilemetadataRow, fileStatusRow: FilestatusRow): Future[FilemetadataRow] = {
