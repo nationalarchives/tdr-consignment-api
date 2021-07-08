@@ -7,13 +7,18 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
-import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
+import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestUtils}
 
 import scala.concurrent.ExecutionContext
 
 class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+
+  val consignmentIdOne: UUID = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
+  val consignmentIdTwo: UUID = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+  val consignmentIdThree: UUID = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+  val consignmentIdFour: UUID = UUID.fromString("47019574-8407-40c7-b618-bf2b8f8b0de7")
 
   "addParentFolder" should "add parent folder name to an existing consignment row" in {
     val db = DbConnection.db
@@ -103,4 +108,89 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
     sequenceId should be(expectedSeq)
   }
 
+  "getConsignment" should "return the consignment given the consignment id" in {
+    val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+
+    TestUtils.createConsignment(consignmentId, userId)
+
+    val response = consignmentRepository.getConsignment(consignmentId).futureValue
+
+    response should have size 1
+    response.headOption.get.consignmentid should equal(consignmentId)
+  }
+
+  "getConsignments" should "return all consignments after the cursor up to the limit value" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    createConsignments()
+
+    val response = consignmentRepository.getConsignments(2, Some("TDR-2021-A")).futureValue
+
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain (consignmentIdTwo)
+    consignmentIds should contain (consignmentIdThree)
+  }
+
+  "getConsignments" should "return all consignments up to limit where no cursor provided including first consignment" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    createConsignments()
+
+    val response = consignmentRepository.getConsignments(2, None).futureValue
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain (consignmentIdOne)
+    consignmentIds should contain (consignmentIdTwo)
+  }
+
+  "getConsignments" should "return all consignments up to limit where empty cursor provided" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    createConsignments()
+
+    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain (consignmentIdOne)
+    consignmentIds should contain (consignmentIdTwo)
+  }
+
+  "getConsignments" should "return no consignments where limit set at '0'" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    createConsignments()
+
+    val response = consignmentRepository.getConsignments(0, Some("TDR-2021-A")).futureValue
+    response should have size 0
+  }
+
+  "getConsignments" should "return consignments where non-existent cursor value provided, and the consignments reference is greater than the cursor value" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    createConsignments()
+
+    val response = consignmentRepository.getConsignments(2, Some("AAA")).futureValue
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain (consignmentIdOne)
+    consignmentIds should contain (consignmentIdTwo)
+  }
+
+  "getConsignments" should "return no consignments where there are no consignments" in {
+    val db = DbConnection.db
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+
+    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
+    response should have size  0
+  }
+
+  private def createConsignments(): Unit = {
+    TestUtils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    TestUtils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B")
+    TestUtils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-C")
+    TestUtils.createConsignment(consignmentIdFour, userId, consignmentRef = "TDR-2021-D")
+  }
 }

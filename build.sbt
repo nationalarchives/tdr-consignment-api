@@ -53,6 +53,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.0-M1",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.0",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.2",
+  "org.sangria-graphql" %% "sangria-relay" % "2.0.0",
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "de.heikoseeberger" %% "akka-http-circe" % "1.30.0",
@@ -86,7 +87,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.6.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.2.0" % Test,
   "com.h2database" % "h2" % "1.4.200" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.23",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.24",
   "io.github.hakky54" % "logcaptor" % "2.1.0" % Test
 )
 

@@ -18,6 +18,7 @@ trait AuthorisationTag extends ValidationTag {
   val clientFileMetadataRole = "client_file_metadata"
   val fileFormatRole = "file_format"
   val exportRole = "export"
+  val reportingRole = "reporting"
 }
 
 trait SyncAuthorisationTag extends AuthorisationTag {
@@ -179,6 +180,19 @@ object ValidateHasExportAccess extends SyncAuthorisationTag {
     } else {
       val tokenUserId = token.userId
       throw AuthorisationException(s"User '$tokenUserId' does not have permission to export the files")
+    }
+  }
+}
+
+object ValidateHasReportingAccess extends SyncAuthorisationTag {
+  override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+    val token = ctx.ctx.accessToken
+    val reportingAccess = token.reportingRoles.contains(reportingRole)
+    if (reportingAccess) {
+      continue
+    } else {
+      val tokenUserId = token.userId
+      throw AuthorisationException(s"User $tokenUserId does not have permission to run reporting")
     }
   }
 }

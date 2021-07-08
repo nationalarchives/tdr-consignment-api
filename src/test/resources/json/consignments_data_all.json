@@ -1,0 +1,142 @@
+{
+  "data": {
+    "consignments": {
+      "pageInfo": {
+        "startCursor": "consignment-ref2",
+        "endCursor": "consignment-ref3",
+        "hasNextPage": true,
+        "hasPreviousPage": true
+      },
+      "edges": [
+        {
+          "node": {
+            "series": {
+              "code": "Mock series"
+            },
+            "exportDatetime": "2020-01-01T09:00:00Z",
+            "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+            "createdDatetime": "2020-01-01T09:00:00Z",
+            "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
+            "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+            "transferringBody": {
+              "name": "Default transferring body name",
+              "tdrCode": "default-transferring-body-code"
+            },
+            "consignmentid": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
+            "consignmentReference": "consignment-ref2",
+            "totalFiles": 1,
+            "files": [
+              {
+                "fileId": "62c53beb-84d6-4676-80ea-b43f5329de72",
+                "metadata": {
+                  "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
+                  "legalStatus": "Public Record",
+                  "clientSideFileSize": 1,
+                  "clientSideLastModifiedDate": "2021-02-08T16:00",
+                  "rightsCopyright": "Crown Copyright",
+                  "heldBy": "TNA",
+                  "foiExemptionCode": "open",
+                  "language": "English"
+                },
+                "ffidMetadata": {
+                  "method": "TEST DATA method",
+                  "softwareVersion": "TEST DATA software version",
+                  "datetime": 1577869200000,
+                  "software": "TEST DATA software",
+                  "matches": [
+                    {
+                      "extension": "txt",
+                      "identificationBasis": "TEST DATA identification",
+                      "puid": "TEST DATA puid"
+                    }
+                  ],
+                  "containerSignatureFileVersion": "TEST DATA container signature file version",
+                  "binarySignatureFileVersion": "TEST DATA binary signature file version"
+                }
+              }
+            ],
+            "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
+            "fileChecks": {
+              "antivirusProgress": {
+                "filesProcessed": 1
+              },
+              "checksumProgress": {
+                "filesProcessed": 1
+              },
+              "ffidProgress": {
+                "filesProcessed": 1
+              }
+            },
+            "currentStatus": {
+              "upload": "Completed"
+            }
+          }
+        },
+        {
+          "node": {
+            "series": {
+              "code": "Mock series"
+            },
+            "exportDatetime": "2020-01-01T09:00:00Z",
+            "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+            "createdDatetime": "2020-01-01T09:00:00Z",
+            "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
+            "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
+            "transferringBody": {
+              "name": "Default transferring body name",
+              "tdrCode": "default-transferring-body-code"
+            },
+            "consignmentid": "614d0cba-380f-4b09-a6e4-542413dd7f4a",
+            "consignmentReference": "consignment-ref3",
+            "totalFiles": 1,
+            "files": [
+              {
+                "fileId": "6f9d3202-aca0-48b6-b464-6c0a2ff61bd8",
+                "metadata": {
+                  "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
+                  "legalStatus": "Public Record",
+                  "clientSideFileSize": 1,
+                  "clientSideLastModifiedDate": "2021-02-08T16:00",
+                  "rightsCopyright": "Crown Copyright",
+                  "heldBy": "TNA",
+                  "foiExemptionCode": "open",
+                  "language": "English"
+                },
+                "ffidMetadata": {
+                  "method": "TEST DATA method",
+                  "softwareVersion": "TEST DATA software version",
+                  "datetime": 1577869200000,
+                  "software": "TEST DATA software",
+                  "matches": [
+                    {
+                      "extension": "txt",
+                      "identificationBasis": "TEST DATA identification",
+                      "puid": "TEST DATA puid"
+                    }
+                  ],
+                  "containerSignatureFileVersion": "TEST DATA container signature file version",
+                  "binarySignatureFileVersion": "TEST DATA binary signature file version"
+                }
+              }
+            ],
+            "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
+            "fileChecks": {
+              "antivirusProgress": {
+                "filesProcessed": 1
+              },
+              "checksumProgress": {
+                "filesProcessed": 1
+              },
+              "ffidProgress": {
+                "filesProcessed": 1
+              }
+            },
+            "currentStatus": {
+              "upload": "Completed"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

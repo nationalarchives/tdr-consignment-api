@@ -1,5 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
+import java.sql.{PreparedStatement, Timestamp}
+import java.time.{LocalDateTime, ZonedDateTime}
+import java.util.UUID
+
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -10,20 +14,16 @@ import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDatabase, TestRequest}
 
-import java.sql.{PreparedStatement, Timestamp}
-import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.UUID
-
+//scalastyle:off number.of.methods
 class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase {
   private val addConsignmentJsonFilePrefix: String = "json/addconsignment_"
   private val getConsignmentJsonFilePrefix: String = "json/getconsignment_"
+  private val consignmentsJsonFilePrefix: String = "json/consignments_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
-  private val transferringBodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6")
-  private val transferringBodyCode = "default-transferring-body-code"
-
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
+  case class GraphqlConsignmentsQueryData(data: Option[ConsignmentConnections], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationData(data: Option[AddConsignment], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationExportLocation(data: Option[UpdateExportLocation])
   case class GraphqlMutationTransferInitiated(data: Option[UpdateTransferInitiated])
@@ -42,6 +42,11 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                          files: Option[List[File]],
                          currentStatus: Option[CurrentStatus] = None
                         )
+  case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
+  case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
+  case class Consignments(pageInfo: PageInfo, edges: List[ConsignmentEdge])
+  case class ConsignmentConnections(consignments: Consignments)
+
   case class FileChecks(antivirusProgress: Option[AntivirusProgress], checksumProgress: Option[ChecksumProgress], ffidProgress: Option[FfidProgress])
   case class AntivirusProgress(filesProcessed: Option[Int])
   case class ChecksumProgress(filesProcessed: Option[Int])
@@ -74,21 +79,31 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   case class CurrentStatus(upload: Option[String])
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
+  val runConsignmentsTestQuery: (String, OAuth2BearerToken) =>
+    GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
+  val expectedConsignmentsQueryResponse: String =>
+    GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
 
-    addTransferringBody(transferringBodyId, "Default transferring body name", transferringBodyCode)
+    addTransferringBody(
+      UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"),
+      "Default transferring body name",
+      "default-transferring-body-code")
   }
 
   "addConsignment" should "create a consignment if the correct information is provided" in {
-    createSeries(transferringBodyId)
+    addSeries(
+      UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"),
+      bodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"),
+      "Mock series")
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = transferringBodyCode))
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "default-transferring-body-code"))
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
@@ -101,17 +116,21 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   }
 
   "addConsignment" should "link a new consignment to the creating user" in {
-    createSeries(transferringBodyId)
+    addSeries(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"),
+      bodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"),
+      "Mock series")
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = transferringBodyCode))
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "default-transferring-body-code"))
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     response.data.get.addConsignment.userid should contain(userId)
   }
 
   "addConsignment" should "not allow a user to link a consignment to a series from another transferring body" in {
-    createSeries(transferringBodyId)
+    addSeries(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"),
+      bodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"),
+      "Mock series")
 
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "some-other-transferring-body"))
 
@@ -327,13 +346,52 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     field("TransferInitiatedBy") should equal(userId.toString)
   }
 
-  private def getConsignment(consignmentId: UUID) = {
-    val sql = s"SELECT * FROM Consignment WHERE ConsignmentId = ?"
-    val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
-    ps.setString(1, consignmentId.toString)
-    val result = ps.executeQuery()
-    result.next()
-    result
+  "consignments" should "allow a user with reporting access to return consignments in a paginated format" in {
+    val consignmentParams: List[ConsignmentParams] = List(
+      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+        "consignment-ref1",
+        List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
+      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+        "consignment-ref2",
+        List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72"))),
+      ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
+        "consignment-ref3",
+        List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
+    )
+
+    setUpConsignments(consignmentParams)
+
+    val reportingAccessToken = validReportingToken("reporting")
+
+    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_all")
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", reportingAccessToken)
+
+    response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+  }
+
+  "consignments" should "allow a user with reporting access to return requested fields for consignments in a paginated format" in {
+    val consignmentParams: List[ConsignmentParams] = List(
+      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
+      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
+      ConsignmentParams(UUID.fromString("e6dadac0-0666-4653-b462-adca0b988095"), "consignment-ref3", List())
+    )
+
+    setUpConsignments(consignmentParams)
+    val reportingAccessToken = validReportingToken("reporting")
+
+    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_some")
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", reportingAccessToken)
+    response.data.get.consignments.edges.size should equal(2)
+
+    response.data should equal(expectedResponse.data)
+  }
+
+  "consignments" should "throw an error if user does not have reporting access" in {
+    val exportAccessToken = invalidReportingToken()
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", exportAccessToken)
+
+    response.errors should have size 1
+    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
   private def checkConsignmentExists(consignmentId: UUID): Unit = {
@@ -346,11 +404,49 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     result.getString(field)
   }
 
-  private def createSeries(bodyId: UUID): Unit = {
-    val sql = "INSERT INTO Series (SeriesId, BodyId) VALUES (?,?)"
-    val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
-    ps.setString(1, "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    ps.setString(2, bodyId.toString)
-    ps.executeUpdate()
+  private def setUpConsignments(consignmentParams: List[ConsignmentParams]): Unit = {
+    val seriesId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    addSeries(seriesId, UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"), "Mock series")
+
+    consignmentParams.foreach(ps => {
+      createConsignment(ps.consignmentId, userId, seriesId, consignmentRef = ps.consignmentRef)
+      createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
+      addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      ps.fileIds.foreach(fs => {
+        setUpFileAndStandardMetadata(ps.consignmentId, fs)
+      })
+    })
+  }
+
+  private def setUpFileAndStandardMetadata(consignmentId: UUID, fileId: UUID): Unit = {
+    createFile(fileId, consignmentId)
+    generateMetadataPropertiesForFile(fileId)
+    addAntivirusMetadata(fileId.toString)
+    addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ServerSideChecksum)
+    setUpStandardFFIDMatchesForFile(fileId)
+  }
+
+  private def generateMetadataPropertiesForFile(fileId: UUID): Unit = {
+    staticMetadataProperties.foreach(smp => addFileMetadata(UUID.randomUUID().toString, fileId.toString, smp.name, smp.value))
+    clientSideProperties.foreach { csp =>
+      addFileMetadata(UUID.randomUUID().toString, fileId.toString, csp,
+        csp match {
+          case ClientSideFileLastModifiedDate => s"2021-02-08 16:00:00"
+          case ClientSideFileSize => "1"
+          case _ => s"$csp value"
+        }
+      )
+    }
+  }
+
+  private def setUpStandardFFIDMatchesForFile(fileId: UUID): Unit = {
+    val extensionMatch = "txt"
+    val identificationBasisMatch = "TEST DATA identification"
+    val puidMatch = "TEST DATA puid"
+
+    val fileFfidMetadataId = addFFIDMetadata(fileId.toString)
+    addFFIDMetadataMatches(fileFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
   }
 }
+
+case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID])

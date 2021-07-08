@@ -14,13 +14,12 @@ import io.circe.parser.decode
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
-import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 
 import scala.concurrent.ExecutionContext
 import scala.io.Source.fromResource
 
+//scalastyle:off number.of.methods
 object TestUtils {
-
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
 
   private val tdrPort: Int = 8000
@@ -36,6 +35,7 @@ object TestUtils {
 
   val userId: UUID = UUID.fromString("4ab14990-ed63-4615-8336-56fbb9960300")
   val backendChecksUser: UUID = UUID.fromString("6847253d-b9c6-4ea9-b3c9-57542b8c6375")
+  val reportingUser: UUID = UUID.fromString("a863292b-888b-4d88-b5f3-2bb9a11b336a")
 
   def validUserToken(userId: UUID = userId, body: String = "Code"): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
     aTokenConfig()
@@ -63,6 +63,20 @@ object TestUtils {
     aTokenConfig()
       .withClaim("user_id", backendChecksUser)
       .withResourceRole("tdr-backend-checks", "some_role").build
+  ))
+
+  def validReportingToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+    aTokenConfig()
+      .withResourceRole("tdr-reporting", role)
+      .withClaim("user_id", reportingUser)
+      .build
+  ))
+
+  def invalidReportingToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+    aTokenConfig()
+      .withClaim("user_id", reportingUser)
+      .withResourceRole("tdr-reporting", "some_role")
+      .build
   ))
 
   def invalidToken: OAuth2BearerToken = OAuth2BearerToken(testMock.getAccessToken(aTokenConfig().build))
@@ -99,11 +113,35 @@ object TestUtils {
     createClientFileMetadata(defaultFileId)
   }
 
-  def createConsignment(consignmentId: UUID, userId: UUID, seriesId: UUID = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861")): Unit = {
-    val sql =
-      s"INSERT INTO Consignment (ConsignmentId, SeriesId, UserId, ConsignmentReference) VALUES ('$consignmentId', '$seriesId', '$userId', 'TDR-2021-TESTMTB')"
+  //scalastyle:off magic.number
+  def createConsignment(
+                         consignmentId: UUID,
+                         userId: UUID,
+                         seriesId: UUID = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861"),
+                         consignmentRef: String = "TDR-2021-TESTMTB"): Unit = {
+    val sql = "INSERT INTO Consignment" +
+      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference)" +
+      "VALUES (?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
+    ps.setString(1, consignmentId.toString)
+    ps.setString(2, seriesId.toString)
+    ps.setString(3, userId.toString)
+    ps.setTimestamp(4, fixedTimeStamp)
+    ps.setTimestamp(5, fixedTimeStamp)
+    ps.setTimestamp(6, fixedTimeStamp)
+    ps.setString(7, consignmentRef)
     ps.executeUpdate()
+  }
+  //scalastyle:on magic.number
+
+  def getConsignment(consignmentId: UUID): ResultSet = {
+    val sql = s"SELECT * FROM Consignment WHERE ConsignmentId = ?"
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setString(1, consignmentId.toString)
+    val result = ps.executeQuery()
+    result.next()
+    result
   }
 
   //scalastyle:off magic.number
