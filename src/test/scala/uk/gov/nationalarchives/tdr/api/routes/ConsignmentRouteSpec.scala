@@ -85,7 +85,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   val runConsignmentsTestQuery: (String, OAuth2BearerToken) =>
     GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
-  val runTestStartUploadMutation: (String, OAuth2BearerToken) => GraphqlMutationStartUpload = runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
+  val runTestStartUploadMutation: (String, OAuth2BearerToken) => GraphqlMutationStartUpload =
+    runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String =>
     GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
