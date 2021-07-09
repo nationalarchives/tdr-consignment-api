@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FileService(
                    fileRepository: FileRepository,
                    consignmentRepository: ConsignmentRepository,
-                   fileMetadataRepository: FileMetadataRepository,
+                   consignmentStatusRepository: ConsignmentStatusRepository,
                    fileMetadataService: FileMetadataService,
                    ffidMetadataService: FFIDMetadataService,
                    avMetadataService: AntivirusMetadataService,
@@ -36,30 +36,37 @@ class FileService(
     } yield Files(files.map(_.fileid))
   }
 
-  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): List[FileSequence] = {
+  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileSequence]] = {
     val now = Timestamp.from(timeSource.now)
+    val consignmentId = addFileAndMetadataInput.consignmentId
     val fileRows: List[FileRow] = List.fill(addFileAndMetadataInput.metadataInput.size)(1)
-      .map(_ => FileRow(uuidSource.uuid, addFileAndMetadataInput.consignmentId, userId, now))
+      .map(_ => {
+        FileRow(uuidSource.uuid, consignmentId, userId, now)
+      })
     val metadataWithIds: List[(UUID, MetadataInput)] = fileRows.map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
-    val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _,  _, now, userId, _)
+    val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
 
     val fileMetadataRows: Seq[FilemetadataRow] = metadataWithIds.flatMap {
       case (fileId, input) =>
-      Seq(
-        row(fileId, input.originalPath.getOrElse(""), ClientSideOriginalFilepath),
-        row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
-        row(fileId, input.fileSize.map(_.toString).getOrElse(""), ClientSideFileSize),
-        row(fileId, input.checksum.getOrElse(""), SHA256ClientSideChecksum)
-      )
+        Seq(
+          row(fileId, input.originalPath.getOrElse(""), ClientSideOriginalFilepath),
+          row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
+          row(fileId, input.fileSize.map(_.toString).getOrElse(""), ClientSideFileSize),
+          row(fileId, input.checksum.getOrElse(""), SHA256ClientSideChecksum)
+        ) ++ staticMetadataProperties.map(property => {
+          row(fileId, property.value, property.name)
+        })
       case _ => Seq()
     }
-
     for {
-      _ <- fileRepository.addFiles(fileRows)
-      _ <- fileMetadataRepository.addFileMetadata(fileMetadataRows)
-      _ <- fileMetadataService.addStaticMetadata(fileRows, userId)
-    } yield ()
-    metadataWithIds.map(m => (m._1, m._2.sequenceNumber)).map(f => FileSequence(f._1, f._2))
+      _ <- fileRepository.addFiles(fileRows, fileMetadataRows)
+      _ <- if (addFileAndMetadataInput.isComplete) {
+        consignmentStatusRepository.updateConsignmentStatus(consignmentId, "Upload", "Completed", now)
+      } else {
+        Future(List())
+      }
+
+    } yield metadataWithIds.map(m => (m._1, m._2.sequenceNumber)).map(f => FileSequence(f._1, f._2))
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {

@@ -55,6 +55,6 @@ object FileFields {
       arguments = List(FileAndMetadataInputArg),
       resolve = ctx => ctx.ctx.fileService.addFile(ctx.arg(FileAndMetadataInputArg), ctx.ctx.accessToken.userId),
       tags=List(ValidateUserHasAccessToConsignment(FileAndMetadataInputArg))
-    ),
+    )
   )
 }
