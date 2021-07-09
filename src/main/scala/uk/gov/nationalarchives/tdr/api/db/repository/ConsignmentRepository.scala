@@ -97,7 +97,8 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(updateAction).map(_ => ())
   }
 
-  def addParentFolder(consignmentId: UUID, parentFolder: String, consignmentStatusRow: ConsignmentstatusRow)(implicit executionContext: ExecutionContext): Future[String] = {
+  def addParentFolder(consignmentId: UUID, parentFolder: String, consignmentStatusRow: ConsignmentstatusRow)
+                     (implicit executionContext: ExecutionContext): Future[String] = {
     val updateAction = Consignment.filter(_.consignmentid === consignmentId).map(c => c.parentfolder).update(Option(parentFolder))
     val consignmentStatusAction = Consignmentstatus += consignmentStatusRow
     val allActions = DBIO.seq(updateAction, consignmentStatusAction).transactionally
