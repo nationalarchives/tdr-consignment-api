@@ -79,7 +79,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                                 matches: List[FFIDMetadataMatches],
                                 datetime: Long)
   case class CurrentStatus(upload: Option[String])
-  case class StartUpload(startUpload: Long)
+  case class StartUpload(startUpload: String)
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val runConsignmentsTestQuery: (String, OAuth2BearerToken) =>

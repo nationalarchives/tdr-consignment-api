@@ -17,7 +17,6 @@ import scala.math.min
 
 class ConsignmentService(
                           consignmentRepository: ConsignmentRepository,
-                          consignmentStatusRepository: ConsignmentStatusRepository,
                           fileMetadataRepository: FileMetadataRepository,
                           fileRepository: FileRepository,
                           ffidMetadataRepository: FFIDMetadataRepository,
@@ -28,13 +27,10 @@ class ConsignmentService(
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
 
-  def startUpload(startUploadInput: StartUploadInput): Future[Int] = {
+  def startUpload(startUploadInput: StartUploadInput): Future[String] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, "Upload", "InProgress", now)
-    for {
-      _ <- consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder)
-      res <- consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
-    } yield res
+    consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder, consignmentStatusRow)
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {

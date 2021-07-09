@@ -14,10 +14,6 @@ class ConsignmentStatusRepository(db: Database) {
     db.run(query.result)
   }
 
-  def addConsignmentStatus(consignmentStatusRow: ConsignmentstatusRow): Future[Int] = {
-    db.run(Consignmentstatus += consignmentStatusRow)
-  }
-
   def updateConsignmentStatus(consignmentId: UUID, statusType: String, statusValue: String, modifiedTimestamp: Timestamp): Future[Int] = {
     val dbUpdate = Consignmentstatus.filter(cs => cs.consignmentid === consignmentId && cs.statustype === statusType)
       .map(cs => (cs.value, cs.modifieddatetime))

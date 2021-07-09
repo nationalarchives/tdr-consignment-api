@@ -2,9 +2,8 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import java.sql.Timestamp
 import java.util.UUID
-
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, File, Series, SeriesRow}
+import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
@@ -96,6 +95,13 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
   def addParentFolder(consignmentId: UUID, parentFolder: String)(implicit executionContext: ExecutionContext): Future[Unit] = {
     val updateAction = Consignment.filter(_.consignmentid === consignmentId).map(c => c.parentfolder).update(Option(parentFolder))
     db.run(updateAction).map(_ => ())
+  }
+
+  def addParentFolder(consignmentId: UUID, parentFolder: String, consignmentStatusRow: ConsignmentstatusRow)(implicit executionContext: ExecutionContext): Future[String] = {
+    val updateAction = Consignment.filter(_.consignmentid === consignmentId).map(c => c.parentfolder).update(Option(parentFolder))
+    val consignmentStatusAction = Consignmentstatus += consignmentStatusRow
+    val allActions = DBIO.seq(updateAction, consignmentStatusAction).transactionally
+    db.run(allActions).map(_ => parentFolder)
   }
 
   def getParentFolder(consignmentId: UUID)(implicit executionContext: ExecutionContext): Future[Option[String]] = {

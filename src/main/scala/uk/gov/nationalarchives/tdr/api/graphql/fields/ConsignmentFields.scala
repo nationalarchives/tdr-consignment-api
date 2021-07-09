@@ -187,7 +187,7 @@ object ConsignmentFields {
       resolve = ctx => ctx.ctx.consignmentService.updateExportLocation(ctx.arg(ExportLocationArg)),
       tags = List(ValidateHasExportAccess)
     ),
-    Field("startUpload", IntType,
+    Field("startUpload", StringType,
       arguments = StartUploadArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.startUpload(ctx.arg(StartUploadArg)),
       tags = List(ValidateUserHasAccessToConsignment(StartUploadArg), ValidateNoPreviousUploadForConsignment)

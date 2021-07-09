@@ -47,13 +47,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   )
 
   val consignmentRepoMock: ConsignmentRepository = mock[ConsignmentRepository]
-  val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
   val fileMetadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
   val fileRepositoryMock: FileRepository = mock[FileRepository]
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val mockResponse: Future[ConsignmentRow] = Future.successful(mockConsignment)
   val consignmentService = new ConsignmentService(consignmentRepoMock,
-    consignmentStatusRepoMock,
     fileMetadataRepositoryMock,
     fileRepositoryMock,
     ffidMetadataRepositoryMock,
@@ -151,7 +149,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
-      consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
@@ -171,14 +168,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateTransferInitiated" should "update the transfer initiated fields for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
-    val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
-      consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
@@ -363,9 +358,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val parentFolderCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val parentFolder = "parentFolder"
 
-    when(consignmentStatusRepoMock.addConsignmentStatus(consignmentStatusCaptor.capture())).thenReturn(Future(1))
-    when(consignmentRepoMock.addParentFolder(consignmentIdCaptor.capture(), parentFolderCaptor.capture())(any[ExecutionContext]))
-      .thenReturn(Future.successful(()))
+    when(consignmentRepoMock.addParentFolder
+    (consignmentIdCaptor.capture(), parentFolderCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext]))
+      .thenReturn(Future.successful(parentFolder))
     consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
 
     val statusRow = consignmentStatusCaptor.getValue
