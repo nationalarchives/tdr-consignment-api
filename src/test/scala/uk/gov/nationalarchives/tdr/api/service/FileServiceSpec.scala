@@ -405,17 +405,22 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
 
     val metadataInputOne = ClientSideMetadataInput("OriginalPath1", "Checksum1", 1L, 1L, 1)
-    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, 1)
+    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, 2)
 
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
-//    when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])).thenReturn(Future(1))
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
             ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
 
-    service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo), isComplete = false), userId).futureValue
+    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo), isComplete = false), userId).futureValue
     val fileRows: List[FileRow] = fileRowCaptor.getValue
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getValue
+
+    response.head.fileId should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
+    response.head.matchId should equal(1)
+
+    response.last.fileId should equal(UUID.fromString("7e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
+    response.last.matchId should equal(2)
 
     fileRows.size should equal(2)
     fileRows.foreach(row => {
