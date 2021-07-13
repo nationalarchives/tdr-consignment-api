@@ -376,6 +376,13 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     parentFolderCaptor.getValue should be (parentFolder)
   }
 
+  "startUpload" should "return an error if there is an existing consignment status" in {
+    val statusRows = Seq(ConsignmentstatusRow(UUID.randomUUID(), consignmentId, "Upload", "InProgress", Timestamp.from(FixedTimeSource.now), Option.empty))
+    when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(statusRows))
+    val exception = consignmentService.startUpload(StartUploadInput(consignmentId, "parentFolder")).failed.futureValue
+    exception.getMessage should equal("Consignment status is InProgress")
+  }
+
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long): ConsignmentRow = {
     ConsignmentRow(
       consignmentId,
