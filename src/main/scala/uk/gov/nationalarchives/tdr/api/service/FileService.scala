@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AddFilesInput, FileSequence, Files, MetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AddFilesInput, FileMatches, Files, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 
@@ -36,23 +36,23 @@ class FileService(
     } yield Files(files.map(_.fileid))
   }
 
-  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileSequence]] = {
+  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
     val fileRows: List[FileRow] = List.fill(addFileAndMetadataInput.metadataInput.size)(1)
       .map(_ => {
         FileRow(uuidSource.uuid, consignmentId, userId, now)
       })
-    val metadataWithIds: List[(UUID, MetadataInput)] = fileRows.map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
+    val metadataWithIds: List[(UUID, ClientSideMetadataInput)] = fileRows.map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
 
     val fileMetadataRows: Seq[FilemetadataRow] = metadataWithIds.flatMap {
       case (fileId, input) =>
         Seq(
-          row(fileId, input.originalPath.getOrElse(""), ClientSideOriginalFilepath),
+          row(fileId, input.originalPath, ClientSideOriginalFilepath),
           row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
-          row(fileId, input.fileSize.map(_.toString).getOrElse(""), ClientSideFileSize),
-          row(fileId, input.checksum.getOrElse(""), SHA256ClientSideChecksum)
+          row(fileId, input.fileSize.toString, ClientSideFileSize),
+          row(fileId, input.checksum, SHA256ClientSideChecksum)
         ) ++ staticMetadataProperties.map(property => {
           row(fileId, property.value, property.name)
         })
@@ -63,10 +63,10 @@ class FileService(
       _ <- if (addFileAndMetadataInput.isComplete) {
         consignmentStatusRepository.updateConsignmentStatus(consignmentId, "Upload", "Completed", now)
       } else {
-        Future(List())
+        Future(())
       }
 
-    } yield metadataWithIds.map(m => (m._1, m._2.sequenceNumber)).map(f => FileSequence(f._1, f._2))
+    } yield metadataWithIds.map(m => (m._1, m._2.matchId)).map(f => FileMatches(f._1, f._2))
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {

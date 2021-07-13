@@ -23,7 +23,7 @@ input AddConsignmentInput {
 
 input AddFileAndMetadataInput {
   consignmentId: UUID!
-  metadataInput: [MetadataInput!]!
+  metadataInput: [ClientSideMetadataInput!]!
   isComplete: Boolean!
 }
 
@@ -79,6 +79,14 @@ type ClientFileMetadata {
   checksumType: String
   lastModified: Long!
   fileSize: Long
+}
+
+input ClientSideMetadataInput {
+  originalPath: String!
+  checksum: String!
+  lastModified: Long!
+  fileSize: Long!
+  matchId: Long!
 }
 
 type Consignment {
@@ -171,6 +179,11 @@ type FileChecks {
   ffidProgress: FFIDProgress!
 }
 
+type FileMatches {
+  fileId: UUID!
+  matchId: Long!
+}
+
 type FileMetadata {
   filePropertyName: String!
   fileId: UUID!
@@ -189,11 +202,6 @@ type FileMetadataValues {
   foiExemptionCode: String
 }
 
-type FileSequence {
-  fileId: UUID!
-  sequenceNumber: Long!
-}
-
 type Files {
   fileIds: [UUID!]!
 }
@@ -209,14 +217,6 @@ scalar LocalDateTime
 "The `Long` scalar type represents non-fractional signed whole numeric values. Long can represent values between -(2^63) and 2^63 - 1."
 scalar Long
 
-input MetadataInput {
-  originalPath: String
-  checksum: String
-  lastModified: Long!
-  fileSize: Long
-  sequenceNumber: Long!
-}
-
 type Mutation {
   addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
   updateTransferInitiated(consignmentid: UUID!): Int
@@ -224,7 +224,7 @@ type Mutation {
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
   addClientFileMetadata(addClientFileMetadataInput: [AddClientFileMetadataInput!]!): [ClientFileMetadata!]!
   addFiles(addFilesInput: AddFilesInput!): Files!
-  addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileSequence!]!
+  addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataInput: AddFileMetadataInput!): FileMetadata!

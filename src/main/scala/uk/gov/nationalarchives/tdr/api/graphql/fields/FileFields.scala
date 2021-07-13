@@ -13,20 +13,20 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 
 object FileFields {
   case class Files(fileIds: Seq[UUID])
-  case class FileSequence(fileId: UUID, sequenceNumber: Long)
+  case class FileMatches(fileId: UUID, matchId: Long)
 
   case class AddFilesInput(consignmentId: UUID, numberOfFiles: Int, parentFolder: String) extends UserOwnsConsignment
-  case class MetadataInput(originalPath: Option[String] = None,
-                           checksum: Option[String] = None,
-                           lastModified: Long,
-                           fileSize: Option[Long] = None,
-                           sequenceNumber: Long)
-  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[MetadataInput], isComplete: Boolean) extends UserOwnsConsignment
+  case class ClientSideMetadataInput(originalPath: String,
+                                     checksum: String,
+                                     lastModified: Long,
+                                     fileSize: Long,
+                                     matchId: Long)
+  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[ClientSideMetadataInput], isComplete: Boolean) extends UserOwnsConsignment
   implicit val AddFilesInputType: InputObjectType[AddFilesInput] = deriveInputObjectType[AddFilesInput]()
-  implicit val MetadataInputType: InputObjectType[MetadataInput] = deriveInputObjectType[MetadataInput]()
+  implicit val MetadataInputType: InputObjectType[ClientSideMetadataInput] = deriveInputObjectType[ClientSideMetadataInput]()
   implicit val AddFileAndMetadataInputType: InputObjectType[AddFileAndMetadataInput] = deriveInputObjectType[AddFileAndMetadataInput]()
   implicit val FileType: ObjectType[Unit, Files]  = deriveObjectType[Unit, Files]()
-  implicit val FileSequenceType: ObjectType[Unit, FileSequence]  = deriveObjectType[Unit, FileSequence]()
+  implicit val FileSequenceType: ObjectType[Unit, FileMatches]  = deriveObjectType[Unit, FileMatches]()
   private val FileInputArg = Argument("addFilesInput", AddFilesInputType)
   private val FileAndMetadataInputArg = Argument("addFilesAndMetadataInput", AddFileAndMetadataInputType)
   private val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)

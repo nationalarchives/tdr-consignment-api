@@ -27,8 +27,8 @@ class FileRouteSpec extends AnyFlatSpec with Matchers with TestRequest with Test
   case class File(fileIds: Seq[UUID])
   case class AddFiles(addFiles: File)
   case class GetFiles(getFiles: File)
-  case class FileSequence(fileId: UUID, sequenceNumber: Long)
-  case class AddFilesAndMetadata(addFilesAndMetadata: List[FileSequence])
+  case class FileMatches(fileId: UUID, matchId: Long)
+  case class AddFilesAndMetadata(addFilesAndMetadata: List[FileMatches])
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getFilesJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addFileJsonFilePrefix)
