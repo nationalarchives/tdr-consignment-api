@@ -409,6 +409,28 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     getConsignmentStatus(consignmentId, "Upload").getString("Value") should equal("InProgress")
   }
 
+  "startUpload" should "return an error if the upload is in progress" in {
+
+    val consignmentId = new FixedUUIDSource().uuid
+    createConsignment(consignmentId, userId)
+    createConsignmentStatus(consignmentId, "Upload", "InProgress")
+    val response = runTestStartUploadMutation("mutation_alldata", validUserToken())
+
+    response.errors.size should equal(1)
+    response.errors.head.message should equal("Consignment status is InProgress")
+  }
+
+  "startUpload" should "return an error if the upload is complete" in {
+
+    val consignmentId = new FixedUUIDSource().uuid
+    createConsignment(consignmentId, userId)
+    createConsignmentStatus(consignmentId, "Upload", "Complete")
+    val response = runTestStartUploadMutation("mutation_alldata", validUserToken())
+
+    response.errors.size should equal(1)
+    response.errors.head.message should equal("Consignment status is Complete")
+  }
+
   private def checkConsignmentExists(consignmentId: UUID): Unit = {
     val result = getConsignment(consignmentId)
     result.getString("ConsignmentId") should equal(consignmentId.toString)

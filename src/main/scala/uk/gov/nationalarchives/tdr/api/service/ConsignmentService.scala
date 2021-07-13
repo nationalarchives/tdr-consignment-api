@@ -3,9 +3,9 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.{LocalDate, ZoneOffset}
 import java.util.UUID
-
 import com.typesafe.config.Config
-import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow, ConsignmentstatusRow}
+import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
+import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
@@ -17,6 +17,7 @@ import scala.math.min
 
 class ConsignmentService(
                           consignmentRepository: ConsignmentRepository,
+                          consignmentStatusRepository: ConsignmentStatusRepository,
                           fileMetadataRepository: FileMetadataRepository,
                           fileRepository: FileRepository,
                           ffidMetadataRepository: FFIDMetadataRepository,
@@ -28,9 +29,16 @@ class ConsignmentService(
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
-    val now = Timestamp.from(timeSource.now)
-    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, "Upload", "InProgress", now)
-    consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder, consignmentStatusRow)
+    consignmentStatusRepository.getConsignmentStatus(startUploadInput.consignmentId).flatMap(status => {
+      val uploadStatus = status.find(s => s.statustype == "Upload")
+      if(uploadStatus.isDefined) {
+        throw ConsignmentStateException(s"Consignment status is ${uploadStatus.get.value}")
+      }
+      val now = Timestamp.from(timeSource.now)
+      val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, "Upload", "InProgress", now)
+      consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder, consignmentStatusRow)
+    })
+
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
