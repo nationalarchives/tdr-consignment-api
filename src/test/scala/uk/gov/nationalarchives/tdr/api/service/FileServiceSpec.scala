@@ -436,6 +436,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     clientSideProperties.foreach(prop => {
       metadataRows.count(r => r.propertyname == prop) should equal(2)
     })
+
+    verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
   "addFile" should "update the consignment status if the metadata upload is complete" in {
