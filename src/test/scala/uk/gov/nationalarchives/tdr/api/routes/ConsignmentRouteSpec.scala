@@ -417,7 +417,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val response = runTestStartUploadMutation("mutation_alldata", validUserToken())
 
     response.errors.size should equal(1)
-    response.errors.head.message should equal("Consignment status is InProgress")
+    response.errors.head.message should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
   }
 
   "startUpload" should "return an error if the upload is complete" in {
@@ -428,7 +428,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val response = runTestStartUploadMutation("mutation_alldata", validUserToken())
 
     response.errors.size should equal(1)
-    response.errors.head.message should equal("Consignment status is Complete")
+    response.errors.head.message should equal("Existing consignment upload status is 'Complete', so cannot start new upload")
   }
 
   private def checkConsignmentExists(consignmentId: UUID): Unit = {

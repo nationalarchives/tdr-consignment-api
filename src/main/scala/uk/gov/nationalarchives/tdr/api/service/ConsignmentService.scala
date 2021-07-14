@@ -32,7 +32,7 @@ class ConsignmentService(
     consignmentStatusRepository.getConsignmentStatus(startUploadInput.consignmentId).flatMap(status => {
       val uploadStatus = status.find(s => s.statustype == "Upload")
       if(uploadStatus.isDefined) {
-        throw ConsignmentStateException(s"Consignment status is ${uploadStatus.get.value}")
+        throw ConsignmentStateException(s"Existing consignment upload status is '${uploadStatus.get.value}', so cannot start new upload")
       }
       val now = Timestamp.from(timeSource.now)
       val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, "Upload", "InProgress", now)
