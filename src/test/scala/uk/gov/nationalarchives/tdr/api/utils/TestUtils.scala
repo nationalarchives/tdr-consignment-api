@@ -161,6 +161,16 @@ object TestUtils {
     ps.executeUpdate()
   }
 
+  def getConsignmentStatus(consignmentId: UUID, statusType: String): ResultSet = {
+    val sql = "SELECT Value FROM ConsignmentStatus WHERE ConsignmentId = ? AND StatusType = ?"
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setString(1, consignmentId.toString)
+    ps.setString(2, statusType)
+    val result = ps.executeQuery()
+    result.next()
+    result
+  }
+
   //scalastyle:on magic.number
 
   def createFile(fileId: UUID, consignmentId: UUID): Unit = {

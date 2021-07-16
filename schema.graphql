@@ -202,6 +202,7 @@ type Mutation {
   addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
   updateTransferInitiated(consignmentid: UUID!): Int
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
+  startUpload(startUploadInput: StartUploadInput!): String!
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
   addClientFileMetadata(addClientFileMetadataInput: [AddClientFileMetadataInput!]!): [ClientFileMetadata!]!
   addFiles(addFilesInput: AddFilesInput!): Files!
@@ -242,6 +243,11 @@ type Series {
   name: String!
   code: String!
   description: String
+}
+
+input StartUploadInput {
+  consignmentId: UUID!
+  parentFolder: String!
 }
 
 type TransferAgreement {
