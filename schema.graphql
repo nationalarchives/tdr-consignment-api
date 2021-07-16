@@ -21,6 +21,12 @@ input AddConsignmentInput {
   seriesid: UUID!
 }
 
+input AddFileAndMetadataInput {
+  consignmentId: UUID!
+  metadataInput: [ClientSideMetadataInput!]!
+  isComplete: Boolean!
+}
+
 input AddFileMetadataInput {
   filePropertyName: String!
   fileId: UUID!
@@ -73,6 +79,14 @@ type ClientFileMetadata {
   checksumType: String
   lastModified: Long!
   fileSize: Long
+}
+
+input ClientSideMetadataInput {
+  originalPath: String!
+  checksum: String!
+  lastModified: Long!
+  fileSize: Long!
+  matchId: Long!
 }
 
 type Consignment {
@@ -165,6 +179,11 @@ type FileChecks {
   ffidProgress: FFIDProgress!
 }
 
+type FileMatches {
+  fileId: UUID!
+  matchId: Long!
+}
+
 type FileMetadata {
   filePropertyName: String!
   fileId: UUID!
@@ -206,6 +225,7 @@ type Mutation {
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
   addClientFileMetadata(addClientFileMetadataInput: [AddClientFileMetadataInput!]!): [ClientFileMetadata!]!
   addFiles(addFilesInput: AddFilesInput!): Files!
+  addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataInput: AddFileMetadataInput!): FileMetadata!

@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{Avmetadata, Consignmentstatus, ConsignmentstatusRow, File, FileRow}
+import uk.gov.nationalarchives.Tables.{Avmetadata, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,6 +23,9 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     val allAdditions = DBIO.seq(insertFileQuery ++= fileRows, Consignmentstatus += consignmentStatusRow).transactionally
     db.run(allAdditions).map(_ => fileRows)
   }
+
+  def addFiles(fileRows: Seq[FileRow], fileMetadataRows: Seq[FilemetadataRow]): Future[Unit] =
+    db.run(DBIO.seq(File ++= fileRows, Filemetadata ++= fileMetadataRows).transactionally)
 
   def countFilesInConsignment(consignmentId: UUID): Future[Int] = {
     val query = File.filter(_.consignmentid === consignmentId).length
