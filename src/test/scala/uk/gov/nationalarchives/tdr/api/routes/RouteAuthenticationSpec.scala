@@ -9,7 +9,9 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.http.Routes
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{invalidToken, validUserToken}
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{addTransferringBody, closeDB, invalidToken, validUserToken}
+
+import java.util.UUID
 
 class RouteAuthenticationSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
 
@@ -37,6 +39,26 @@ class RouteAuthenticationSpec extends AnyFlatSpec with Matchers with ScalatestRo
     val query: String = """{"query":"{getSeries(body:\"Body\"){seriesid}}"}"""
     Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
       status shouldEqual StatusCodes.OK
+    }
+  }
+
+  "The db" should "return ok when there is at least one transferring body in the db" in {
+    addTransferringBody(UUID.randomUUID(), "MOCK Department", "Code")
+    Get("/healthcheck-full") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+    }
+  }
+
+  "The db" should "return 500 Internal Server Error if there are no transferring bodies in the db" in {
+    Get("/healthcheck-full") ~> route ~> check {
+      status shouldEqual StatusCodes.InternalServerError
+    }
+  }
+
+  "The db" should "return 500 Internal Server Error if the db is down" in {
+    closeDB()
+    Get("/healthcheck-full") ~> route ~> check {
+      status shouldEqual StatusCodes.InternalServerError
     }
   }
 }
