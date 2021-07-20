@@ -17,14 +17,16 @@ import sangria.ast.{Field, OperationDefinition}
 import sangria.parser.QueryParser
 import spray.json.{JsObject, JsString, JsValue}
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
+import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FullHealthCheckService
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment, Token}
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-class Routes(val config: Config) extends Cors {
+class Routes(val config: Config, db: Database) extends Cors {
   val url: String = config.getString("auth.url")
 
   implicit val system: ActorSystem = ActorSystem("consignmentApi")
@@ -78,7 +80,7 @@ class Routes(val config: Config) extends Cors {
         complete(StatusCodes.OK)
       } ~ (get & path("healthcheck-full")) {
         val fullHealthCheck = new FullHealthCheckService()
-        onSuccess(fullHealthCheck.checkDbIsUpAndRunning()) {
+        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(DbConnection.db)) {
           complete(StatusCodes.OK)
         }
       }

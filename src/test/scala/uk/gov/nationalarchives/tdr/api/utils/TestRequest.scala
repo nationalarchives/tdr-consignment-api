@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigFactory
 import io.circe.Decoder
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.http.Routes
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.unmarshalResponse
 
@@ -16,7 +17,7 @@ import scala.reflect.ClassTag
 
 trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
 
-  val route = new Routes(ConfigFactory.load()).route
+  val route = new Routes(ConfigFactory.load(), DbConnection.db).route
 
   def runTestRequest[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken)
                        (implicit decoder: Decoder[A], classTag: ClassTag[A])

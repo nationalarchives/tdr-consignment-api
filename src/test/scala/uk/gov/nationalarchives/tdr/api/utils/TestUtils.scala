@@ -105,10 +105,6 @@ object TestUtils {
     }
   })
 
-  def closeDB(): Unit = {
-    DbConnection.db.close()
-  }
-
   def seedDatabaseWithDefaultEntries(): Unit = {
     val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
     val seriesId = UUID.fromString("1436ad43-73a2-4489-a774-85fa95daff32")
