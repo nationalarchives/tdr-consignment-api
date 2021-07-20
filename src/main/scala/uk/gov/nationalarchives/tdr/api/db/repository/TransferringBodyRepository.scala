@@ -16,4 +16,9 @@ class TransferringBodyRepository(db: Database) {
 
     db.run(query.result).map(body => body.head)
   }
+
+  def dbHasTransferringBodies(implicit executionContext: ExecutionContext): Future[Boolean] = {
+    val query = Body.length
+    db.run(query.result).map(_ > 0)
+  }
 }
