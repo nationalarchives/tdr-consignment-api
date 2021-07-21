@@ -1,7 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.db.repository.TransferringBodyRepository
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -92,7 +92,5 @@ class RouteAuthenticationSpec extends AnyFlatSpec with Matchers with ScalatestRo
     Get("/healthcheck-full") ~> route ~> check {
       status shouldEqual StatusCodes.InternalServerError
     }
-
-
   }
 }
