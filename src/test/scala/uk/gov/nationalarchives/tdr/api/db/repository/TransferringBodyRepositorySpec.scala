@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 class TransferringBodyRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  "dbHasTransferringBodies" should "Should return true if db has 1 Transferring Bodies in it" in {
+  "dbHasTransferringBodies" should "return true if db has 1 Transferring Bodies in it" in {
     val db = DbConnection.db
     val transferringBodyRepository = new TransferringBodyRepository(db)
 
@@ -25,7 +25,7 @@ class TransferringBodyRepositorySpec extends AnyFlatSpec with TestDatabase with 
     dbHasTransferringBodies shouldBe true
   }
 
-  "dbHasTransferringBodies" should "Should return false if db has 0 Transferring Bodies in it" in {
+  "dbHasTransferringBodies" should "return false if db has 0 Transferring Bodies in it" in {
     val db = DbConnection.db
     val transferringBodyRepository = new TransferringBodyRepository(db)
 

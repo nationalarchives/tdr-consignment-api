@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 class FullHealthCheckServiceSpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  "checkDbIsUpAndRunning" should "Should throw an exception if db has no Transferring Bodies in it" in {
+  "checkDbIsUpAndRunning" should "throw an exception if db has no Transferring Bodies in it" in {
     val db = DbConnection.db
     val fullHealthCheckService: FullHealthCheckService = new FullHealthCheckService()
     val thrownException = intercept[Exception] {
@@ -23,7 +23,7 @@ class FullHealthCheckServiceSpec extends AnyFlatSpec with TestDatabase with Scal
     thrownException.getMessage should include("Health Check failed because there are no Transferring Bodies in the DB")
   }
 
-  "checkDbIsUpAndRunning" should "Should return Unit if db has 1 or more Transferring Bodies in it" in {
+  "checkDbIsUpAndRunning" should "return Unit if db has 1 or more Transferring Bodies in it" in {
     val db = DbConnection.db
     addTransferringBody(UUID.randomUUID(), "MOCK Department", "Code")
     val fullHealthCheckService: FullHealthCheckService = new FullHealthCheckService()
