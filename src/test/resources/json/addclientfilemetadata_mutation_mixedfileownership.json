@@ -1,3 +1,0 @@
-{
-  "query": "mutation {addClientFileMetadata(addClientFileMetadataInput: [{fileId: \"587b2a7c-a92e-430f-aa61-431117398e64\", originalPath: \"originalpath\", checksum: \"checksum\", checksumType: \"checksumtype\", lastModified: 1584599020000, fileSize: 1000, datetime: 1584599020000},{fileId: \"dd7a6739-2843-496a-8f17-4a2cfbe297f6\", originalPath: \"originalpath2\", checksum: \"checksum2\", checksumType: \"checksumtype\", lastModified: 1584599020000, fileSize: 1000, datetime: 1584599020000}]) {fileId, originalPath, checksum, checksumType, lastModified, fileSize}}"
-}

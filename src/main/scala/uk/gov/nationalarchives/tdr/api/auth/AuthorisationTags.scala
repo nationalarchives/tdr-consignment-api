@@ -4,7 +4,6 @@ import java.util.UUID
 
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ClientFileMetadataFields.AddClientFileMetadataInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.AddConsignmentInput
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
@@ -87,29 +86,6 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends 
           continue
         } else {
           throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
-        }
-      })
-  }
-}
-
-object ValidateUserOwnsFiles extends AuthorisationTag {
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                       (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
-    val token = ctx.ctx.accessToken
-    val tokenUserId = token.userId
-
-    val queryInput = ctx.arg[Seq[AddClientFileMetadataInput]]("addClientFileMetadataInput")
-
-    val fileIds = queryInput.map(_.fileId)
-    ctx.ctx.fileService
-      .getOwnersOfFiles(fileIds)
-      .map(fileOwnership => {
-        val otherUsersFiles = fileOwnership.filter(_.userId != tokenUserId)
-
-        otherUsersFiles match {
-          case Nil => continue
-          case files => throw AuthorisationException(
-            s"User '$tokenUserId' does not have permission to updatefiles: ${files.map(_.fileId)}")
         }
       })
   }

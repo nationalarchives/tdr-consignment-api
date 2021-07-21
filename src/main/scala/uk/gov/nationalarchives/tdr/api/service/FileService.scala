@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FileRow, FilemetadataRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AddFilesInput, FileMatches, Files, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches, Files, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 
@@ -20,21 +20,6 @@ class FileService(
                    timeSource: TimeSource,
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
-
-  def addFile(addFilesInput: AddFilesInput, userId: UUID): Future[Files] = {
-    val now = Timestamp.from(timeSource.now)
-
-    val rows: Seq[FileRow] = List.fill(addFilesInput.numberOfFiles)(1)
-      .map(_ => FileRow(uuidSource.uuid, addFilesInput.consignmentId, userId, now))
-
-    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, addFilesInput.consignmentId, "Upload", "InProgress", now)
-
-    for {
-      _ <- consignmentRepository.addParentFolder(addFilesInput.consignmentId, addFilesInput.parentFolder)
-      files <- fileRepository.addFiles(rows, consignmentStatusRow)
-      _ <- fileMetadataService.addStaticMetadata(files, userId)
-    } yield Files(files.map(_.fileid))
-  }
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
