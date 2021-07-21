@@ -4,12 +4,11 @@ import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.db.repository.TransferringBodyRepository
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class FullHealthCheckService {
 
-  def checkDbIsUpAndRunning(db: Database): Future[Unit] = {
+  def checkDbIsUpAndRunning(db: Database)(implicit executionContext: ExecutionContext): Future[Unit] = {
     val transferringBodyRepository = new TransferringBodyRepository(db)
     transferringBodyRepository.dbHasTransferringBodies.map { bodiesInDb =>
       if (bodiesInDb) () else throw new IllegalStateException("Health Check failed because there are no Transferring Bodies in the DB.")
