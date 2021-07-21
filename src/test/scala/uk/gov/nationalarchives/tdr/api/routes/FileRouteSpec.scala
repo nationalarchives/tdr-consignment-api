@@ -17,18 +17,26 @@ import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestDatabase, Tes
 class FileRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase  {
   private val addFileJsonFilePrefix: String = "json/addfile_"
   private val getFilesJsonFilePrefix: String = "json/getfiles_"
+  private val addFilesAndMetadataJsonFilePrefix: String = "json/addfileandmetadata_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
+  case class GraphqlMutationDataFilesMetadata(data: Option[AddFilesAndMetadata], errors: List[GraphqlError] = Nil)
   case class GraphqlMutationData(data: Option[AddFiles], errors: List[GraphqlError] = Nil)
   case class GraphqlQueryData(data: Option[GetFiles], errors: List[GraphqlError] = Nil)
   case class File(fileIds: Seq[UUID])
   case class AddFiles(addFiles: File)
   case class GetFiles(getFiles: File)
+  case class FileMatches(fileId: UUID, matchId: Long)
+  case class AddFilesAndMetadata(addFilesAndMetadata: List[FileMatches])
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getFilesJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addFileJsonFilePrefix)
+  val runTestMutationFileMetadata: (String, OAuth2BearerToken) => GraphqlMutationDataFilesMetadata =
+    runTestRequest[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addFileJsonFilePrefix)
+  val expectedFilesAndMetadataMutationResponse: String => GraphqlMutationDataFilesMetadata =
+    getDataFromFile[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getFilesJsonFilePrefix)
 
   val fixedUuidSource = new FixedUUIDSource()
@@ -130,6 +138,16 @@ class FileRouteSpec extends AnyFlatSpec with Matchers with TestRequest with Test
     val response = runTestQuery("mutation_onevirusfailed", validBackendChecksToken("export"))
 
     expectedResponse.data.get.getFiles should equal(response.data.get.getFiles)
+  }
+
+  "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in {
+    val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+    createConsignment(consignmentId, userId)
+
+    val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
+    val response = runTestMutationFileMetadata("mutation_alldata", validUserToken())
+
+    expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
   }
 
   private def checkFileExists(fileId: UUID) = {

@@ -3,19 +3,17 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
-
 import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
-import org.mockito.MockitoSugar
+import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.mockito.scalatest.ResetMocksAfterEachTest
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, SeriesRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentRepository, FFIDMetadataRepository, FileMetadataRepository, FileRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, UpdateExportLocationInput}
+import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
+import uk.gov.nationalarchives.tdr.api.db.repository._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, StartUploadInput, UpdateExportLocationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
-import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,11 +47,13 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   )
 
   val consignmentRepoMock: ConsignmentRepository = mock[ConsignmentRepository]
+  val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
   val fileMetadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
   val fileRepositoryMock: FileRepository = mock[FileRepository]
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val mockResponse: Future[ConsignmentRow] = Future.successful(mockConsignment)
   val consignmentService = new ConsignmentService(consignmentRepoMock,
+    consignmentStatusRepoMock,
     fileMetadataRepositoryMock,
     fileRepositoryMock,
     ffidMetadataRepositoryMock,
@@ -144,12 +144,14 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateExportLocation" should "update the export location for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
+    val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+      consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
@@ -175,6 +177,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+      consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
@@ -351,6 +354,33 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     response.lastCursor should be (None)
     response.consignmentEdges should have size 0
+  }
+
+  "startUpload" should "create an upload in progress status and add the parent folder" in {
+    val consignmentStatusCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
+    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+    val parentFolderCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+    val parentFolder = "parentFolder"
+
+    when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
+    when(consignmentRepoMock.addParentFolder
+    (consignmentIdCaptor.capture(), parentFolderCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext]))
+      .thenReturn(Future.successful(parentFolder))
+    consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
+
+    val statusRow = consignmentStatusCaptor.getValue
+    statusRow.consignmentid should be (consignmentId)
+    statusRow.statustype should be ("Upload")
+    statusRow.value should be ("InProgress")
+    consignmentIdCaptor.getValue should be (consignmentId)
+    parentFolderCaptor.getValue should be (parentFolder)
+  }
+
+  "startUpload" should "return an error if there is an existing consignment status" in {
+    val statusRows = Seq(ConsignmentstatusRow(UUID.randomUUID(), consignmentId, "Upload", "InProgress", Timestamp.from(FixedTimeSource.now), Option.empty))
+    when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(statusRows))
+    val exception = consignmentService.startUpload(StartUploadInput(consignmentId, "parentFolder")).failed.futureValue
+    exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long): ConsignmentRow = {

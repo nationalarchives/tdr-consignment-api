@@ -82,7 +82,7 @@ object GraphQLServer {
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val antivirusMetadataRepository = new AntivirusMetadataRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
-    val consignmentService = new ConsignmentService(consignmentRepository, fileMetadataRepository, fileRepository,
+    val consignmentService = new ConsignmentService(consignmentRepository, consignmentStatusRepository, fileMetadataRepository, fileRepository,
       ffidMetadataRepository, timeSource, uuidSource, config)
     val seriesService = new SeriesService(new SeriesRepository(db), uuidSource)
     val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)
@@ -91,9 +91,8 @@ object GraphQLServer {
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, timeSource, uuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
-    val fileService = new FileService(
-      fileRepository, consignmentRepository, fileMetadataService, ffidMetadataService, antivirusMetadataService, new CurrentTimeSource, uuidSource
-    )
+    val fileService = new FileService(fileRepository,consignmentRepository,consignmentStatusRepository, fileMetadataService,
+      ffidMetadataService, antivirusMetadataService, new CurrentTimeSource, uuidSource)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, timeSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)

@@ -1,24 +1,19 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import java.sql.{SQLException, Timestamp}
-import java.time.Instant
 import java.util.UUID
-
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ClientFileMetadataFields.{AddClientFileMetadataInput, ClientFileMetadata}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ClientFileMetadataService(fileMetadataRepository: FileMetadataRepository,
                                 uuidSource: UUIDSource, timeSource: TimeSource)
                                (implicit val executionContext: ExecutionContext) {
-
-  implicit class LongUtils(value: Long) {
-    def toTimestampString: String = Timestamp.from(Instant.ofEpochMilli(value)).toString
-  }
 
   def addClientFileMetadata(inputs: Seq[AddClientFileMetadataInput], userId: UUID): Future[List[ClientFileMetadata]] = {
     val time = Timestamp.from(timeSource.now)
