@@ -80,7 +80,7 @@ class Routes(val config: Config, db: Database) extends Cors {
         complete(StatusCodes.OK)
       } ~ (get & path("healthcheck-full")) {
         val fullHealthCheck = new FullHealthCheckService()
-        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(DbConnection.db)) {
+        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(db)) {
           complete(StatusCodes.OK)
         }
       }
