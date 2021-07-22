@@ -2,16 +2,14 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
-import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, ConsignmentstatusRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow}
+import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AddFilesInput, Files, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, Files, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues, clientSideProperties, staticMetadataProperties}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -30,159 +28,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val antivirusMetadataRepositoryMock: AntivirusMetadataRepository = mock[AntivirusMetadataRepository]
   val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-
-  "createFile" should "create a file given correct arguments" in {
-    val fixedUuidSource = new FixedUUIDSource()
-    val uuid = UUID.randomUUID()
-    val fileId = UUID.randomUUID()
-    val consignmentId = UUID.randomUUID()
-
-    val mockFileResponse = Future.successful(List(FileRow(fileId, consignmentId, uuid, Timestamp.from(Instant.now))))
-    when(fileRepositoryMock.addFiles(any[List[FileRow]], any[ConsignmentstatusRow])).thenReturn(mockFileResponse)
-    val mockConsignmentResponse = Future.successful(())
-    when(consignmentRepositoryMock.addParentFolder(consignmentId, "Parent folder name")).thenReturn(mockConsignmentResponse)
-    val mockFileMetadataResponse = Future.successful(Seq(FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now), uuid, "name")))
-    when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
-
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
-
-    val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
-    )
-    val result: Files = fileService.addFile(AddFilesInput(consignmentId, 1, "Parent folder name"), uuid).futureValue
-
-    result.fileIds shouldBe List(fileId)
-  }
-
-  "createFile" should "create three files given correct arguments" in {
-    val fixedUuidSource = new FixedUUIDSource()
-    val fileUuidOne = fixedUuidSource.uuid
-    val fileUuidTwo = fixedUuidSource.uuid
-    val fileUuidThree = fixedUuidSource.uuid
-    fixedUuidSource.reset
-    val consignmentUuid = UUID.randomUUID()
-    val userUuid = UUID.randomUUID()
-
-    val fileRowOne = FileRow(fileUuidOne, consignmentUuid, userUuid, Timestamp.from(FixedTimeSource.now))
-    val fileRowTwo = FileRow(fileUuidTwo, consignmentUuid, userUuid, Timestamp.from(FixedTimeSource.now))
-    val fileRowThree = FileRow(fileUuidThree, consignmentUuid, userUuid, Timestamp.from(FixedTimeSource.now))
-    val captor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
-
-    val mockResponse = Future.successful(List(fileRowOne, fileRowTwo, fileRowThree))
-    when(fileRepositoryMock.addFiles(captor.capture(), any[ConsignmentstatusRow])).thenReturn(mockResponse)
-    val mockConsignmentResponse = Future.successful(())
-    when(consignmentRepositoryMock.addParentFolder(consignmentUuid, "Parent folder name")).thenReturn(mockConsignmentResponse)
-    val mockFileMetadataResponse = Future.successful(
-      Seq(FilemetadataRow(UUID.randomUUID(), fileUuidOne, "value", Timestamp.from(Instant.now), userUuid, "name"))
-    )
-    when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
-
-    val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
-    )
-    val result: Files = fileService.addFile(AddFilesInput(consignmentUuid, 3, "Parent folder name"), userUuid).futureValue
-
-    captor.getAllValues.size should equal(1)
-    captor.getAllValues.get(0).length should equal(3)
-    captor.getAllValues.get(0).forall(List(fileRowOne, fileRowTwo, fileRowThree).contains) should be(true)
-
-    result.fileIds shouldBe List(fileUuidOne, fileUuidTwo, fileUuidThree)
-  }
-
-  "createFile" should "link a file to the correct user, consignment, and consignment status" in {
-    val fixedUuidSource = new FixedUUIDSource()
-    val userId = UUID.randomUUID()
-    val fileUuid = fixedUuidSource.uuid
-    val consignmentUuid = UUID.randomUUID()
-    val consignmentStatusUuid = fixedUuidSource.uuid
-    val fileRepositoryMock = mock[FileRepository]
-    val consignmentRepositoryMock = mock[ConsignmentRepository]
-    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
-
-    val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock,fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
-    )
-
-    fixedUuidSource.reset
-    val timeNow = Timestamp.from(FixedTimeSource.now)
-
-    val mockConsignmentStatusRow = ConsignmentstatusRow(consignmentStatusUuid, consignmentUuid, "Upload", "InProgress", timeNow)
-    val expectedFileRow = List(FileRow(fileUuid, consignmentUuid, userId, timeNow))
-    val fileCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
-    val consignmentStatusCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
-    val mockResponse = Future.successful(List(FileRow(fileUuid, consignmentUuid, userId, timeNow)))
-    when(fileRepositoryMock.addFiles(fileCaptor.capture(), consignmentStatusCaptor.capture())).thenReturn(mockResponse)
-    val mockConsignmentResponse = Future.successful(())
-    when(consignmentRepositoryMock.addParentFolder(consignmentUuid, "Parent folder name")).thenReturn(mockConsignmentResponse)
-    val mockFileMetadataResponse = Future.successful(Seq(FilemetadataRow(UUID.randomUUID(), fileUuid, "value", timeNow, userId, "name")))
-    when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
-
-    fileService.addFile(AddFilesInput(consignmentUuid, 1, "Parent folder name"), userId).futureValue
-
-    verify(fileRepositoryMock).addFiles(expectedFileRow, mockConsignmentStatusRow)
-    fileCaptor.getAllValues.size should equal(1)
-    fileCaptor.getAllValues.get(0).head.consignmentid should equal(consignmentUuid)
-    fileCaptor.getAllValues.get(0).head.userid should equal(userId)
-    consignmentStatusCaptor.getAllValues.size() should equal(1)
-    consignmentStatusCaptor.getAllValues.get(0).consignmentstatusid should equal(consignmentStatusUuid)
-    consignmentStatusCaptor.getAllValues.get(0).consignmentid should equal(consignmentUuid)
-    consignmentStatusCaptor.getAllValues.get(0).statustype should equal("Upload")
-    consignmentStatusCaptor.getAllValues.get(0).value should equal("InProgress")
-    consignmentStatusCaptor.getAllValues.get(0).createddatetime should equal(timeNow)
-  }
-
-  "createFile" should "create the correct static metadata" in {
-    val fixedUUIDSource = new FixedUUIDSource()
-    val uuid = UUID.randomUUID()
-    val fileId = UUID.randomUUID()
-    val consignmentId = UUID.randomUUID()
-
-    val mockFileResponse = Future.successful(List(FileRow(fileId, consignmentId, uuid, Timestamp.from(Instant.now))))
-    when(fileRepositoryMock.addFiles(any[List[FileRow]], any[ConsignmentstatusRow])).thenReturn(mockFileResponse)
-    val mockConsignmentResponse = Future.successful(())
-    when(consignmentRepositoryMock.addParentFolder(consignmentId, "Parent folder name")).thenReturn(mockConsignmentResponse)
-    val mockFileMetadataResponse = Future.successful(Seq(FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now), uuid, "name")))
-
-    val captor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
-    when(fileMetadataRepositoryMock.addFileMetadata(captor.capture())).thenReturn(mockFileMetadataResponse)
-
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUUIDSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUUIDSource, FixedTimeSource)
-    val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUUIDSource)
-
-    val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUUIDSource
-    )
-
-    fileService.addFile(AddFilesInput(consignmentId, 1, "Parent folder name"), uuid).futureValue
-
-    val metadataRows: Seq[Tables.FilemetadataRow] = captor.getValue
-    metadataRows.size should equal(staticMetadataProperties.size)
-
-    def checkRow(propertyName: String, propertyValue: String): Assertion = {
-      val filteredRow = metadataRows.find(_.propertyname == propertyName)
-      filteredRow.isDefined should equal(true)
-      filteredRow.get.value should equal(propertyValue)
-      filteredRow.get.fileid should equal(fileId)
-    }
-
-    checkRow("RightsCopyright", "Crown Copyright")
-    checkRow("LegalStatus", "Public Record")
-    checkRow("HeldBy", "TNA")
-    checkRow("Language", "English")
-    checkRow("FoiExemptionCode", "open")
-  }
 
   //scalastyle:off magic.number
   "getOwnersOfFiles" should "find the owners of the given files" in {
