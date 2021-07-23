@@ -19,6 +19,7 @@ import uk.gov.nationalarchives.tdr.api.http.Routes
 import uk.gov.nationalarchives.tdr.api.utils.TestDatabase
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{addTransferringBody, invalidToken, validUserToken}
 
+import java.sql.PreparedStatement
 import java.util.UUID
 import scala.util.{Failure, Success}
 
@@ -84,9 +85,22 @@ class RouteAuthenticationSpec extends AnyFlatSpec with Matchers with ScalatestRo
             db
         }
       }
+
+      def addTransferringBody(id: UUID, name: String, code: String): Unit = {
+        val sql = s"INSERT INTO Body (BodyId, Name, TdrCode) VALUES (?, ?, ?)"
+        val ps: PreparedStatement = this.db.source.createConnection().prepareStatement(sql)
+        ps.setString(1, id.toString)
+        ps.setString(2, name)
+        ps.setString(3, code)
+
+        ps.executeUpdate()
+      }
     }
 
     val testDb = DbConnectionTest.db
+    /* Add transferring body to ensure that the 'Internal Server Error' produced by this test is due to db being closed
+     and not due to db not having any transferring bodies */
+    DbConnectionTest.addTransferringBody(UUID.randomUUID(), "MOCK Department", "Code")
     val route = new Routes(ConfigFactory.load(), testDb).route
     testDb.close()
     Get("/healthcheck-full") ~> route ~> check {
