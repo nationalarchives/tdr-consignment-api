@@ -15,25 +15,24 @@ import com.typesafe.config._
 import com.typesafe.scalalogging.Logger
 import sangria.ast.{Field, OperationDefinition}
 import sangria.parser.QueryParser
+import slick.jdbc.PostgresProfile.api._
 import spray.json.{JsObject, JsString, JsValue}
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
+import uk.gov.nationalarchives.tdr.api.service.FullHealthCheckService
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment, Token}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-class Routes(val config: Config) extends Cors {
-
-  private val logger = Logger(classOf[Routes])
+class Routes(val config: Config, db: Database) extends Cors {
+  val url: String = config.getString("auth.url")
 
   implicit val system: ActorSystem = ActorSystem("consignmentApi")
   implicit val materializer: Materializer = Materializer(system)
   implicit val executionContext: ExecutionContext = system.dispatcher
-  val url: String = config.getString("auth.url")
   val ttlSeconds: Int = 3600
   val transportSecurityMaxAge = 31536000
-  implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(url, "tdr", ttlSeconds)
-
   val exceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case ex: Throwable =>
@@ -61,6 +60,32 @@ class Routes(val config: Config) extends Cors {
           }
         }
     }
+  implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(url, "tdr", ttlSeconds)
+  val route: Route =
+    logging {
+      handleExceptions(exceptionHandler) {
+        optionalHeaderValueByType[Origin](()) { originHeader =>
+          corsHandler((post & path("graphql")) {
+            authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
+              respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
+                entity(as[JsValue]) { requestJson =>
+                  GraphQLServer.endpoint(requestJson, accessToken)
+                }
+              }
+            }
+          }, originHeader)
+        }
+      } ~ (get & path("healthcheck")) {
+        complete(StatusCodes.OK)
+      } ~ (get & path("healthcheck-full")) {
+        val fullHealthCheck = new FullHealthCheckService()
+        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(db)) {
+          complete(StatusCodes.OK)
+        }
+      }
+    }
+
+  private val logger = Logger(classOf[Routes])
 
   // We return None rather than a failed future because we're following the async authenticator docs
   // https://doc.akka.io/docs/akka-http/10.0/routing-dsl/directives/security-directives/authenticateOAuth2Async.html
@@ -89,24 +114,7 @@ class Routes(val config: Config) extends Cors {
           logger.warn(s"Rejected Reason: " + reason.mkString(", "))
       }
     }
-    DebuggingDirectives.logRequestResult(LoggingMagnet(_ => logNon200Response))
-  }
 
-  val route: Route = handleExceptions(exceptionHandler) {
-    logging {
-      optionalHeaderValueByType[Origin](()) { originHeader =>
-        corsHandler((post & path("graphql")) {
-          authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
-            respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
-              entity(as[JsValue]) { requestJson =>
-                GraphQLServer.endpoint(requestJson, accessToken)
-              }
-            }
-          }
-        }, originHeader)
-      } ~ (get & path("healthcheck")) {
-        complete(StatusCodes.OK)
-      }
-    }
+    DebuggingDirectives.logRequestResult(LoggingMagnet(_ => logNon200Response))
   }
 }
