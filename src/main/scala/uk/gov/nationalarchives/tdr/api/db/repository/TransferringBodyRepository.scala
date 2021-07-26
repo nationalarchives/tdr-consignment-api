@@ -4,10 +4,9 @@ import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Series}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class TransferringBodyRepository(db: Database) {
+class TransferringBodyRepository(db: Database)(implicit executionContext: ExecutionContext) {
 
   def getTransferringBody(seriesId: UUID): Future[BodyRow] = {
     val query = for {

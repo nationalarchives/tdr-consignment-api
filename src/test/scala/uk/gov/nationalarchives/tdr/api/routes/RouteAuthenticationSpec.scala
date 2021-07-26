@@ -68,23 +68,7 @@ class RouteAuthenticationSpec extends AnyFlatSpec with Matchers with ScalatestRo
   "The db" should "return 500 Internal Server Error if the db is down" in {
     object DbConnectionTest {
       implicit val passwordCache: CaffeineCache[String] = CaffeineCache[String](CacheConfig())
-      val slickSession: SlickSession = SlickSession.forConfig("consignmentapi")
-
-      def db: JdbcBackend#DatabaseDef = {
-        val db = slickSession.db
-        db.source match {
-          case hikariDataSource: HikariCPJdbcDataSource =>
-            val configBean = hikariDataSource.ds.getHikariConfigMXBean
-            getPassword match {
-              case Failure(exception) => throw exception
-              case Success(password) =>
-                configBean.setPassword(password)
-                db
-            }
-          case _ =>
-            db
-        }
-      }
+      val db: JdbcBackend#DatabaseDef = SlickSession.forConfig("consignmentapi").db
 
       def addTransferringBody(id: UUID, name: String, code: String): Unit = {
         val sql = s"INSERT INTO Body (BodyId, Name, TdrCode) VALUES (?, ?, ?)"
