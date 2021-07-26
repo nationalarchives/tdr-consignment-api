@@ -7,16 +7,6 @@ input AddAntivirusMetadataInput {
   datetime: Long!
 }
 
-input AddClientFileMetadataInput {
-  fileId: UUID!
-  originalPath: String
-  checksum: String
-  checksumType: String
-  lastModified: Long!
-  fileSize: Long
-  datetime: Long
-}
-
 input AddConsignmentInput {
   seriesid: UUID!
 }
@@ -31,12 +21,6 @@ input AddFileMetadataInput {
   filePropertyName: String!
   fileId: UUID!
   value: String!
-}
-
-input AddFilesInput {
-  consignmentId: UUID!
-  numberOfFiles: Int!
-  parentFolder: String!
 }
 
 input AddFinalTransferConfirmationInput {
@@ -223,8 +207,6 @@ type Mutation {
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
-  addClientFileMetadata(addClientFileMetadataInput: [AddClientFileMetadataInput!]!): [ClientFileMetadata!]!
-  addFiles(addFilesInput: AddFilesInput!): Files!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!

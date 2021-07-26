@@ -5,8 +5,8 @@ import java.util.UUID
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
-import sangria.schema.{Argument, Field, InputObjectType, ListInputType, ListType, ObjectType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasClientFileMetadataAccess, ValidateUserOwnsFiles}
+import sangria.schema.{Argument, Field, ObjectType, fields}
+import uk.gov.nationalarchives.tdr.api.auth.ValidateHasClientFileMetadataAccess
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 
@@ -18,18 +18,8 @@ object ClientFileMetadataFields {
                                 lastModified: Long,
                                 fileSize: Option[Long] = None)
 
-  case class AddClientFileMetadataInput(fileId: UUID,
-                                        originalPath: Option[String] = None,
-                                        checksum: Option[String] = None,
-                                        checksumType: Option[String] = None,
-                                        lastModified: Long,
-                                        fileSize: Option[Long] = None,
-                                        datetime: Option[Long])
-
   implicit val ClientFileMetadataType: ObjectType[Unit, ClientFileMetadata] = deriveObjectType[Unit, ClientFileMetadata]()
-  implicit val AddClientFileMetadataInputType: InputObjectType[AddClientFileMetadataInput] = deriveInputObjectType[AddClientFileMetadataInput]()
 
-  val ClientFileMetadataInputArg = Argument("addClientFileMetadataInput", ListInputType(AddClientFileMetadataInputType))
   val FileIdArg = Argument("fileId", UuidType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
@@ -38,12 +28,5 @@ object ClientFileMetadataFields {
       resolve = ctx => ctx.ctx.clientFileMetadataService.getClientFileMetadata(ctx.arg(FileIdArg)),
       tags=ValidateHasClientFileMetadataAccess :: Nil
       //We're only using this for the file metadata api update lambda for now. This check can be changed if we use it anywhere else
-    ))
-
-  val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addClientFileMetadata", ListType(ClientFileMetadataType),
-      arguments=ClientFileMetadataInputArg :: Nil,
-      resolve = ctx => ctx.ctx.clientFileMetadataService.addClientFileMetadata(ctx.arg(ClientFileMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags=List(ValidateUserOwnsFiles)
     ))
 }
