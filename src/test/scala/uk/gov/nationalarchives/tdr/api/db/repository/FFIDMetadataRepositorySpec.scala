@@ -74,6 +74,22 @@ class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     fileMetadataFiles shouldBe 2
   }
 
+  "countProcessedFfidMetadata" should "return 0 if file has ffid metadata but no ffid matches" in {
+    val db = DbConnection.db
+    val ffidMetadataRepository = new FFIDMetadataRepository(db)
+    val consignment = UUID.fromString("a9ccec45-5325-4e07-a0cd-1b0f4dc0d6fd")
+    val fileId = "be77573a-8710-42a2-9a9f-522bd681d467"
+
+    TestUtils.createConsignment(consignment, userId)
+
+    TestUtils.createFile(UUID.fromString(fileId), consignment)
+    TestUtils.addFFIDMetadata(fileId)
+
+    val fileMetadataFiles = ffidMetadataRepository.countProcessedFfidMetadata(consignment).futureValue
+
+    fileMetadataFiles shouldBe 0
+  }
+
   "countProcessedFfidMetadata" should "return number of ffidMetadata rows with repetitive data filtered out" in {
     val db = DbConnection.db
     val ffidMetadataRepository = new FFIDMetadataRepository(db)
