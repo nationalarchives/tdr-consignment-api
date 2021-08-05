@@ -161,6 +161,14 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     checkNoFFIDMetadataAdded()
   }
 
+  "addFFIDMetadata" should "throw an error if there are no ffid matches" in {
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_ffid_matches")
+    val response: GraphqlMutationData = runTestMutation("mutation_no_ffid_matches", validBackendChecksToken("file_format"))
+    response.errors.head.extensions should equal (expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal (expectedResponse.errors.head.message)
+    checkNoFFIDMetadataAdded()
+  }
+
   private def checkFFIDMetadataExists(fileId: UUID): Unit = {
     val sql = "select * from FFIDMetadata where FileId = ?;"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
