@@ -1,6 +1,0 @@
-{
-  "query": "query getFiles($consignmentId:UUID!){getFiles(consignmentid:$consignmentId){fileIds}}",
-  "variables": {
-    "consignmentId": "50df01e6-2e5e-4269-97e7-531a755b417d"
-  }
-}
