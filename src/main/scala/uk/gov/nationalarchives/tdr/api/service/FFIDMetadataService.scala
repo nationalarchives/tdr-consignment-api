@@ -30,6 +30,11 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
     "x-fmt/268", "x-fmt/269", "x-fmt/412", "x-fmt/416", "x-fmt/429")
 
   def addFFIDMetadata(ffidMetadata: FFIDMetadataInput): Future[FFIDMetadata] = {
+
+    if (ffidMetadata.matches.isEmpty) {
+      throw InputDataException(s"No ffid matches for file ${ffidMetadata.fileId}")
+    }
+
     val metadataRow = FfidmetadataRow(uuidSource.uuid, ffidMetadata.fileId,
       ffidMetadata.software,
       ffidMetadata.softwareVersion,
