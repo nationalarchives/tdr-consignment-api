@@ -1,12 +1,19 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import akka.stream.alpakka.slick.scaladsl.SlickSession
+import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import scalacache.CacheConfig
+import scalacache.caffeine.CaffeineCache
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.http.Routes
 import uk.gov.nationalarchives.tdr.api.utils.TestDatabase
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 
+import java.sql.PreparedStatement
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
@@ -29,5 +36,15 @@ class FullHealthCheckServiceSpec extends AnyFlatSpec with TestDatabase with Scal
     val fullHealthCheckService: FullHealthCheckService = new FullHealthCheckService()
     val result: Unit = fullHealthCheckService.checkDbIsUpAndRunning(db).futureValue
     result shouldBe()
+  }
+
+  "checkDbIsUpAndRunning" should "throw an exception if the database is unavailable" in {
+    val testDb = SlickSession.forConfig("consignmentapi").db
+    testDb.close()
+    val fullHealthCheckService: FullHealthCheckService = new FullHealthCheckService()
+    val thrownException: Exception = intercept[Exception] {
+      fullHealthCheckService.checkDbIsUpAndRunning(testDb).futureValue
+    }
+    thrownException.getCause.getMessage should equal("Cannot initialize ExecutionContext; AsyncExecutor already shut down")
   }
 }

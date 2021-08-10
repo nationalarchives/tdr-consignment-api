@@ -6,7 +6,6 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.http.Routes
 
 import scala.jdk.CollectionConverters._
@@ -19,7 +18,7 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
 
   private val config = ConfigFactory.load()
     .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-  private val route = new Routes(config, DbConnection.db).route
+  private val route = new Routes(config).route
 
   "the pre-flight request" should "allow credentials, required headers and methods" in {
     Options("/graphql") ~> route ~> check {
@@ -65,7 +64,7 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
 
     val testConfig = ConfigFactory.load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-    val testRoute = new Routes(testConfig, DbConnection.db).route
+    val testRoute = new Routes(testConfig).route
 
     val headers = List(Origin(allowedDomain))
 
@@ -81,7 +80,7 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
 
     val testConfig = ConfigFactory.load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-    val testRoute = new Routes(testConfig, DbConnection.db).route
+    val testRoute = new Routes(testConfig).route
 
     val headers = List(Origin(domainWithOtherPort))
 

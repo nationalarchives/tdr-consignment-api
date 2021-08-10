@@ -5,7 +5,6 @@ import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 
 import scala.concurrent.Await
 import scala.language.postfixOps
@@ -22,7 +21,7 @@ object ApiServer extends App {
 
   scala.sys.addShutdownHook(() -> shutdown())
 
-  val routes = new Routes(ConfigFactory.load(), DbConnection.db)
+  val routes = new Routes(ConfigFactory.load())
 
   Http().bindAndHandle(routes.route, "0.0.0.0", PORT)
   logger.info(s"Consignment API is running")
