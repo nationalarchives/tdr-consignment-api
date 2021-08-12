@@ -16,7 +16,7 @@ import scala.jdk.CollectionConverters._
 class RoutesSpec extends AnyFlatSpec with BeforeAndAfterEach with TestRequest {
 
   private val logCaptor = LogCaptor.forClass(classOf[Routes])
-  private val routes = new Routes(ConfigFactory.load(), DbConnection.db)
+  private val routes = new Routes(ConfigFactory.load())
 
   override def beforeEach(): Unit = {
     logCaptor.clearLogs()
