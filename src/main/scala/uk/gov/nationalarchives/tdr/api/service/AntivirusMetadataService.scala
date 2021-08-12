@@ -33,8 +33,9 @@ class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRep
       case _ => VirusDetected
     }
     val fileStatusRow = FilestatusRow(uuidSource.uuid, input.fileId, Antivirus, fileStatusValue, Timestamp.from(timeSource.now))
+    val avMatch = if(fileStatusValue == VirusDetected) { s": ${input.result}" } else { "" }
 
-    loggingUtils.logFileFormatStatus("antivirus", input.fileId, fileStatusValue)
+    loggingUtils.logFileFormatStatus("antivirus", input.fileId, fileStatusValue + avMatch)
 
     antivirusMetadataRepository.addAntivirusMetadata(inputRow, fileStatusRow).map(rowToAntivirusMetadata)
   }

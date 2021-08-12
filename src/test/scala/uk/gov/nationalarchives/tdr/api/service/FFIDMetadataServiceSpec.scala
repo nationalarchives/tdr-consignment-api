@@ -104,6 +104,32 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     matches.puid.get shouldEqual "puid"
   }
 
+  "addFFIDMetadata" should "throw an error if there are no ffid matches" in {
+    val fixedFileUuid = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
+    val metadataRepository = mock[FFIDMetadataRepository]
+    val matchesRepository = mock[FFIDMetadataMatchesRepository]
+    val inputWithNoMatches = FFIDMetadataInput(
+      fixedFileUuid,
+      "software",
+      "softwareVersion",
+      "binaryVersion",
+      "containerVersion",
+      "method",
+      List()
+    )
+
+    val service = new FFIDMetadataService(metadataRepository, matchesRepository, FixedTimeSource, new FixedUUIDSource())
+
+    val thrownException = intercept[Exception] {
+      service.addFFIDMetadata(inputWithNoMatches)
+    }
+
+    verify(metadataRepository, times(0)).addFFIDMetadata(any[FfidmetadataRow], any[List[FilestatusRow]])
+    verify(matchesRepository, times(0)).addFFIDMetadataMatches(any[List[FfidmetadatamatchesRow]])
+
+    thrownException.getMessage should include("No ffid matches for file 07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
+  }
+
   "getFFIDMetadata" should "call the repository with the correct arguments" in {
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
