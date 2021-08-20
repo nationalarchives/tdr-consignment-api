@@ -45,12 +45,6 @@ class FileService(
     }
     for {
       _ <- fileRepository.addFiles(fileRows, fileMetadataRows)
-      _ <- if (addFileAndMetadataInput.isComplete) {
-        consignmentStatusRepository.updateConsignmentStatus(consignmentId, "Upload", "Completed", now)
-      } else {
-        Future.successful(())
-      }
-
     } yield metadataWithIds.map(m => (m._1, m._2.matchId)).map(f => FileMatches(f._1, f._2))
   }
 
