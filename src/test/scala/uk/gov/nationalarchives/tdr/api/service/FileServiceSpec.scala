@@ -82,34 +82,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   }
   //scalastyle:on magic.number
 
-  "getFiles" should "return all the files" in {
-    val fixedUuidSource = new FixedUUIDSource()
-    val uuid = UUID.randomUUID()
-    val fileIdOne = UUID.randomUUID()
-    val fileIdTwo = UUID.randomUUID()
-    val consignmentId = UUID.randomUUID()
-
-    val mockFileResponse = Future.successful(List(
-      FileRow(fileIdOne, consignmentId, uuid, Timestamp.from(Instant.now)),
-      FileRow(fileIdTwo, consignmentId, uuid, Timestamp.from(Instant.now))
-    ))
-    when(fileRepositoryMock.getFilesWithPassedAntivirus(any[UUID])).thenReturn(mockFileResponse)
-    val mockFileMetadataResponse = Future.successful(Seq(FilemetadataRow(UUID.randomUUID(), fileIdOne, "value", Timestamp.from(Instant.now), uuid, "name")))
-    when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
-
-    val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, fixedUuidSource)
-    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
-
-    val fileService = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
-    )
-    val result: Files = fileService.getFiles(consignmentId).futureValue
-
-    result.fileIds shouldBe List(fileIdOne, fileIdTwo)
-  }
-
   "getFileMetadata" should "return the correct metadata" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]

@@ -27,16 +27,6 @@ object FileFields {
   private val FileAndMetadataInputArg = Argument("addFilesAndMetadataInput", AddFileAndMetadataInputType)
   private val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
-  val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field(
-      "getFiles",
-      FileType,
-      arguments = List(ConsignmentIdArg),
-      resolve = ctx => ctx.ctx.fileService.getFiles(ctx.arg(ConsignmentIdArg)),
-      tags=List(ValidateHasExportAccess)
-    )
-  )
-
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
       "addFilesAndMetadata",
