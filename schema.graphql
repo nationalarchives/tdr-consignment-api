@@ -186,10 +186,6 @@ type FileMetadataValues {
   foiExemptionCode: String
 }
 
-type Files {
-  fileIds: [UUID!]!
-}
-
 type FinalTransferConfirmation {
   consignmentId: UUID!
   finalOpenRecordsConfirmed: Boolean!
@@ -236,7 +232,6 @@ type Query {
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getTransferAgreement(consignmentid: UUID!): TransferAgreement
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
-  getFiles(consignmentid: UUID!): Files!
 }
 
 type Series {

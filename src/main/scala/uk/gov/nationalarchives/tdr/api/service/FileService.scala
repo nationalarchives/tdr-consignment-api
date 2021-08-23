@@ -56,10 +56,6 @@ class FileService(
     fileRepository.countFilesInConsignment(consignmentId)
   }
 
-  def getFiles(consignmentId: UUID): Future[Files] = {
-    fileRepository.getFilesWithPassedAntivirus(consignmentId).map(r => Files(r.map(_.fileid)))
-  }
-
   def getFileMetadata(consignmentId: UUID): Future[List[File]] = {
     for {
       fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
