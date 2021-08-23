@@ -229,7 +229,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
             ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
 
-    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo), isComplete = false), userId).futureValue
+    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo), Some(false)), userId).futureValue
     val fileRows: List[FileRow] = fileRowCaptor.getValue
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getValue
 
@@ -255,37 +255,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     })
 
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
-  }
-
-  "addFile" should "update the consignment status if the metadata upload is complete" in {
-    val ffidMetadataService = mock[FFIDMetadataService]
-    val antivirusMetadataService = mock[AntivirusMetadataService]
-    val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
-    val fileRepositoryMock = mock[FileRepository]
-
-    val fixedUuidSource = new FixedUUIDSource()
-    val consignmentId = UUID.randomUUID()
-
-    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
-    val nameCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
-    val valueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
-    val modifiedDateCaptor: ArgumentCaptor[Timestamp] = ArgumentCaptor.forClass(classOf[Timestamp])
-
-    when(fileRepositoryMock.addFiles(any[List[FileRow]], any[List[FilemetadataRow]])).thenReturn(Future(()))
-
-    when(consignmentStatusRepositoryMock
-      .updateConsignmentStatus(consignmentIdCaptor.capture(), nameCaptor.capture(), valueCaptor.capture(), modifiedDateCaptor.capture()))
-      .thenReturn(Future(1))
-
-    val service = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-      ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
-
-    service.addFile(AddFileAndMetadataInput(consignmentId, List(), isComplete = true), UUID.randomUUID()).futureValue
-
-    consignmentIdCaptor.getValue should equal(consignmentId)
-    nameCaptor.getValue should equal("Upload")
-    valueCaptor.getValue should equal("Completed")
   }
 
   private def ffidMetadataRow(ffidMetadataid: UUID, fileId: UUID, datetime: Timestamp): FfidmetadataRow =

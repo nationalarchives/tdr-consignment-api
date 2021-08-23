@@ -24,10 +24,9 @@ class FileService(
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
-    val fileRows: List[FileRow] = List.fill(addFileAndMetadataInput.metadataInput.size)(1)
-      .map(_ => {
+    val fileRows: List[FileRow] = addFileAndMetadataInput.metadataInput.map { _ =>
         FileRow(uuidSource.uuid, consignmentId, userId, now)
-      })
+    }
     val metadataWithIds: List[(UUID, ClientSideMetadataInput)] = fileRows.map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
 
@@ -45,12 +44,6 @@ class FileService(
     }
     for {
       _ <- fileRepository.addFiles(fileRows, fileMetadataRows)
-      _ <- if (addFileAndMetadataInput.isComplete) {
-        consignmentStatusRepository.updateConsignmentStatus(consignmentId, "Upload", "Completed", now)
-      } else {
-        Future.successful(())
-      }
-
     } yield metadataWithIds.map(m => (m._1, m._2.matchId)).map(f => FileMatches(f._1, f._2))
   }
 
