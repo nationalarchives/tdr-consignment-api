@@ -1,23 +1,32 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import uk.gov.nationalarchives.Tables
+
 import java.sql.{SQLException, Timestamp}
 import java.util.UUID
-
 import uk.gov.nationalarchives.Tables._
-import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentMetadataRepository
+import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentMetadataRepository, ConsignmentStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{AddTransferAgreementInput, TransferAgreement}
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadataRepository, uuidSource: UUIDSource, timeSource: TimeSource)
-                              (implicit val executionContext: ExecutionContext) {
+class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadataRepository,
+                               consignmentStatusRepository: ConsignmentStatusRepository,
+                               uuidSource: UUIDSource, timeSource: TimeSource) (implicit val executionContext: ExecutionContext) {
 
   def addTransferAgreement(input: AddTransferAgreementInput, userId: UUID): Future[TransferAgreement] = {
-    consignmentMetadataRepository.addConsignmentMetadata(convertInputToPropertyRows(input, userId)).map(
+    val transferAgreement = consignmentMetadataRepository.addConsignmentMetadata(convertInputToPropertyRows(input, userId)).map(
       rows => convertDbRowsToTransferAgreement(input.consignmentId, rows)
     )
+    addTransferAgreementStatus(input.consignmentId, "Completed")
+    transferAgreement
+  }
+
+  def addTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[Tables.ConsignmentstatusRow] = {
+    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "TransferAgreement", statusValue, Timestamp.from(timeSource.now))
+    consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 
   private def convertInputToPropertyRows(input: AddTransferAgreementInput, userId: UUID): Seq[ConsignmentmetadataRow] = {

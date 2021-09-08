@@ -47,7 +47,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
     val response = consignmentService.getConsignmentStatus(consignmentId).futureValue
 
-    response should be(CurrentStatus(None))
+    response should be(CurrentStatus(None, None))
   }
 
   "setUploadConsignmentStatusValueToComplete" should "update a consignments' status when upload is complete" in {

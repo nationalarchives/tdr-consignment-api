@@ -110,6 +110,7 @@ type ConsignmentEdge {
 }
 
 type CurrentStatus {
+  transferAgreement: String
   upload: String
 }
 
