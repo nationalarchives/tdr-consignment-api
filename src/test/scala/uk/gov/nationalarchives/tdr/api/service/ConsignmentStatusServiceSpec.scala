@@ -39,7 +39,9 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     response.upload should be(Some("InProgress"))
   }
 
-  "getConsignmentStatus" should "return a CurrentStatus object of type 'None' if a consignment status doesn't exist for given consignment" in {
+  "getConsignmentStatus" should
+    """return a CurrentStatus object, where all properties have a value of 'None',
+      | if consignment statuses don't exist for given consignment""".stripMargin in {
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId = fixedUUIDSource.uuid
     val mockRepoResponse = Future.successful(Seq())
