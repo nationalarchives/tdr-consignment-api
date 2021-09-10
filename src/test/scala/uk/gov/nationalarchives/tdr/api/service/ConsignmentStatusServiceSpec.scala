@@ -11,6 +11,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentS
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
@@ -19,23 +20,54 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
   val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, FixedTimeSource)
 
-  "getConsignmentStatus" should "turn repository response into current status object" in {
+  "getConsignmentStatus" should
+    "return a CurrentStatus object, where all properties have a value, if all consignment status exists for given consignment" in {
     val fixedUUIDSource = new FixedUUIDSource()
-    val consignmentStatusId = fixedUUIDSource.uuid
     val consignmentId = fixedUUIDSource.uuid
-    val consignmentStatusRow = ConsignmentstatusRow(
-      consignmentStatusId,
-      consignmentId,
-      "Upload",
-      "InProgress",
-      Timestamp.from(FixedTimeSource.now)
-    )
+    val consignmentStatusRow1 = generateConsignmentStatusRow(consignmentId, "TransferAgreement","Completed")
+    val consignmentStatusRow2 = generateConsignmentStatusRow(consignmentId, "Upload","Completed")
+
+    val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future.successful(Seq(consignmentStatusRow1, consignmentStatusRow2))
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockRepoResponse)
+
+    val response: CurrentStatus = consignmentService.getConsignmentStatus(consignmentId).futureValue
+
+    response.transferAgreement should be(Some("Completed"))
+    response.upload should be(Some("Completed"))
+  }
+
+  "getConsignmentStatus" should
+    """return a CurrentStatus object, where only the transferAgreement property has a value, while others have a value of 'None',
+      | if only the transferAgreement consignment status exists for given consignment""".stripMargin in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val consignmentId = fixedUUIDSource.uuid
+    val consignmentStatusRow = generateConsignmentStatusRow(consignmentId, "TransferAgreement","Completed")
 
     val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future.successful(Seq(consignmentStatusRow))
     when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockRepoResponse)
 
     val response: CurrentStatus = consignmentService.getConsignmentStatus(consignmentId).futureValue
 
+    response.transferAgreement should be(Some("Completed"))
+    response.upload should be(None)
+  }
+
+  "getConsignmentStatus" should
+    """return a CurrentStatus object, where only the upload property has a value, while others have a value of 'None',
+      | if only one consignment status exists for given consignment""".stripMargin in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val consignmentId = fixedUUIDSource.uuid
+    val dateTime = Timestamp.from(FixedTimeSource.now)
+
+    val mockConsignmentStatusResponse = Future.successful(Seq(
+      generateConsignmentStatusRow(consignmentId, "Upload", "InProgress")
+    ))
+
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockConsignmentStatusResponse)
+
+    val response: CurrentStatus = consignmentService.getConsignmentStatus(consignmentId).futureValue
+
+    response.transferAgreement should be(None)
     response.upload should be(Some("InProgress"))
   }
 
@@ -66,5 +98,14 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val response: Int = consignmentService.setUploadConsignmentStatusValueToComplete(consignmentId).futureValue
 
     response should be(1)
+  }
+  private def generateConsignmentStatusRow(consignmentId: UUID, statusType: String, statusValue: String): ConsignmentstatusRow = {
+    ConsignmentstatusRow(
+      UUID.randomUUID(),
+      consignmentId,
+      statusType,
+      statusValue,
+      Timestamp.from(FixedTimeSource.now)
+    )
   }
 }
