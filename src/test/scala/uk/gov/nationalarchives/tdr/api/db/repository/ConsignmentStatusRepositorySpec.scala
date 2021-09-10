@@ -9,7 +9,6 @@ import uk.gov.nationalarchives.tdr.api.utils.TestUtils
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 
 import java.sql.Timestamp
-import java.time.Instant
 import java.time.Instant.now
 import java.util.UUID
 import scala.concurrent.ExecutionContext

@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.util.UUID
 import org.mockito.ArgumentMatchers.any
-import org.mockito.{ArgumentCaptor, MockitoSugar}
+import org.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
