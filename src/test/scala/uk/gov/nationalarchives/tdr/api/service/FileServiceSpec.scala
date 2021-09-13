@@ -229,7 +229,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
             ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
 
-    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo), Some(false)), userId).futureValue
+    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
     val fileRows: List[FileRow] = fileRowCaptor.getValue
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getValue
 

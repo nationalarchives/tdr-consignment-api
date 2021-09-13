@@ -3,7 +3,6 @@
   "variables": {
     "addFilesAndMetadataInput" : {
       "consignmentId": "f1a9269d-157b-402c-98d8-1633393634c5",
-      "isComplete": false,
       "metadataInput": [
         {
           "originalPath": "originalPath",
