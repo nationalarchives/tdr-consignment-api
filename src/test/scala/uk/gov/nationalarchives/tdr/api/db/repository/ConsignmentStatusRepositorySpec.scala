@@ -4,7 +4,9 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
-import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils.TestDatabase
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils
+import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 
 import java.sql.Timestamp
 import java.time.Instant.now
@@ -13,6 +15,28 @@ import scala.concurrent.ExecutionContext
 
 class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+
+  "addConsignmentStatus" should "add consignment status data" in {
+    val db = DbConnection.db
+    val consignmentStatusRepository = new ConsignmentStatusRepository(db)
+    val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
+    val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
+    val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
+    val statusType = "Status"
+    val statusValue = "Value"
+    val createdTimestamp = Timestamp.from(now)
+
+    TestUtils.createConsignment(consignmentId, userId)
+    val transferAgreementStatusRow = ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp)
+
+    val consignmentStatus = consignmentStatusRepository.addConsignmentStatus(transferAgreementStatusRow).futureValue
+
+    consignmentStatus.consignmentid should be(consignmentId)
+    consignmentStatus.consignmentstatusid should be(consignmentStatusId)
+    consignmentStatus.statustype should be(statusType)
+    consignmentStatus.value should be(statusValue)
+    consignmentStatus.createddatetime should be(createdTimestamp)
+  }
 
   "getConsignmentStatus" should "return all data from the consignment status" in {
     val db = DbConnection.db

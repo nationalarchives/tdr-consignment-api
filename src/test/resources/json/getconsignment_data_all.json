@@ -115,6 +115,7 @@
         }
       },
       "currentStatus": {
+        "transferAgreement": "Completed",
         "upload": "Completed"
       }
     }
