@@ -5,7 +5,7 @@ def repo = "tdr-consignment-api"
 
 pipeline {
   agent {
-    label "master"
+    label "built-in"
   }
 
   stages {
