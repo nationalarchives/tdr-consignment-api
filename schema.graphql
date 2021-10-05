@@ -255,7 +255,6 @@ type TransferAgreement {
   appraisalSelectionSignedOff: Boolean!
   initialOpenRecords: Boolean!
   sensitivityReviewSignedOff: Boolean!
-  isAgreementComplete: Boolean!
 }
 
 type TransferringBody {

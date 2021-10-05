@@ -56,15 +56,8 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
       propertyNameToValue(AllEnglishConfirmed),
       propertyNameToValue(AppraisalSelectionSignOffConfirmed),
       propertyNameToValue(InitialOpenRecordsConfirmed),
-      propertyNameToValue(SensitivityReviewSignOffConfirmed),
-      isAgreementComplete(propertyNameToValue)
+      propertyNameToValue(SensitivityReviewSignOffConfirmed)
     )
-  }
-
-  private def isAgreementComplete(propertyNameToValue: Map[String, Boolean]): Boolean = {
-    transferAgreementProperties.map(p => {
-      propertyNameToValue(p)
-    }) forall (_ == true)
   }
 
   def getTransferAgreement(consignmentId: UUID): Future[TransferAgreement] = {
