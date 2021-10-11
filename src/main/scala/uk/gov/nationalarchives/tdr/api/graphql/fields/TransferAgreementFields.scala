@@ -19,8 +19,7 @@ object TransferAgreementFields {
                                allEnglish: Boolean,
                                appraisalSelectionSignedOff: Boolean,
                                initialOpenRecords: Boolean,
-                               sensitivityReviewSignedOff: Boolean,
-                               isAgreementComplete: Boolean)
+                               sensitivityReviewSignedOff: Boolean)
 
   case class AddTransferAgreementInput(consignmentId: UUID,
                                        allPublicRecords: Boolean,
