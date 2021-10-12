@@ -1,3 +1,0 @@
-{
-  "query": "query {getTransferAgreement {consignmentId, allEnglish, allCrownCopyright, allPublicRecords, appraisalSelectionSignedOff, sensitivityReviewSignedOff}}"
-}
