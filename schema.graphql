@@ -230,7 +230,6 @@ type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!): Consignment
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
-  getTransferAgreement(consignmentid: UUID!): TransferAgreement
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
 }
 

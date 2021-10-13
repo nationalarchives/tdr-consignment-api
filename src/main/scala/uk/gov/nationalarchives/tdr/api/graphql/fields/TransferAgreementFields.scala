@@ -41,11 +41,4 @@ object TransferAgreementFields {
       resolve = ctx => ctx.ctx.transferAgreementService.addTransferAgreement(ctx.arg(TransferAgreementInputArg), ctx.ctx.accessToken.userId),
       tags=List(ValidateUserHasAccessToConsignment(TransferAgreementInputArg))
     ))
-
-  val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("getTransferAgreement", OptionType(TransferAgreementType),
-      arguments=ConsignmentIdArg :: Nil,
-      resolve = ctx => ctx.ctx.transferAgreementService.getTransferAgreement(ctx.arg(ConsignmentIdArg)),
-      tags=List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
-    ))
 }

@@ -35,12 +35,8 @@ class TransferAgreementRouteSpec extends AnyFlatSpec with Matchers with TestRequ
 
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData =
     runTestRequest[GraphqlMutationData](addTransferAgreementJsonFilePrefix)
-  val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData =
-    runTestRequest[GraphqlQueryData](getTransferAgreementJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addTransferAgreementJsonFilePrefix)
-  val expectedQueryResponse: String => GraphqlQueryData =
-    getDataFromFile[GraphqlQueryData](getTransferAgreementJsonFilePrefix)
 
   "The api" should "return all requested fields from inserted transfer agreement consignment metadata properties" in {
     seedDatabaseWithDefaultEntries()
@@ -95,49 +91,6 @@ class TransferAgreementRouteSpec extends AnyFlatSpec with Matchers with TestRequ
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_error_invalid_consignmentid")
     val response: GraphqlMutationData = runTestMutation("mutation_invalid_consignmentid", validUserToken())
     response.errors.head.message should equal(expectedResponse.errors.head.message)
-  }
-
-  "The api" should "return an existing transfer agreement consignment metadata properties for a user-owned consignment" in {
-    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    createConsignment(consignmentId, userId)
-
-    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken())
-    response.data should equal(expectedResponse.data)
-  }
-
-  "The api" should "return no transfer agreement consignment metadata properties if it doesn't exist" in {
-    val fixedUUIDSource = new FixedUUIDSource()
-    val consignmentId: UUID = fixedUUIDSource.uuid
-    createConsignment(consignmentId, userId)
-
-    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_none")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken())
-    response.data should equal(expectedResponse.data)
-  }
-
-  "The api" should "return an error if the consignment id isn't provided" in {
-    val fixedUUIDSource = new FixedUUIDSource()
-    val consignmentId: UUID = fixedUUIDSource.uuid
-    createConsignment(consignmentId, userId)
-
-    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_consignmentidmissing")
-    val response: GraphqlQueryData = runTestQuery("query_missingconsignmentid", validUserToken())
-    response.errors.length should equal(1)
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-  }
-
-  "The api" should "return an error if the user doesn't own the consignment" in {
-    val fixedUUIDSource = new FixedUUIDSource()
-    val otherUserId = UUID.randomUUID()
-    val consignmentId: UUID = fixedUUIDSource.uuid
-    createConsignment(consignmentId, otherUserId)
-
-    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_notowner")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken())
-    response.errors.length should equal(1)
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-    response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)
   }
 
   private def checkTransferAgreementExists(consignmentId: UUID): Unit = {

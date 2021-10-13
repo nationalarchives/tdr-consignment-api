@@ -59,15 +59,6 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
       propertyNameToValue(SensitivityReviewSignOffConfirmed)
     )
   }
-
-  def getTransferAgreement(consignmentId: UUID): Future[TransferAgreement] = {
-    consignmentMetadataRepository.getConsignmentMetadata(
-      consignmentId, transferAgreementProperties: _*).map(rows => convertDbRowsToTransferAgreement(consignmentId, rows))
-      .recover {
-        case nse: NoSuchElementException => throw InputDataException(s"Could not find metadata for consignment $consignmentId", Some(nse))
-        case e: SQLException => throw InputDataException(e.getLocalizedMessage, Some(e))
-      }
-  }
 }
 
 object TransferAgreementService {

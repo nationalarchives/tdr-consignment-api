@@ -1,9 +1,0 @@
-{
-  "data": null,
-  "errors": [
-    {
-      "message": "Field 'getTransferAgreement' argument 'consignmentid' of type 'UUID!' is required but not provided. (line 1, column 8):\nquery {getTransferAgreement {consignmentId, allEnglish, allCrownCopyright, allPublicRecords, appraisalSelectionSignedOff, sensitivityReviewSignedOff}}\n       ^"
-    }
-  ]
-}
-
