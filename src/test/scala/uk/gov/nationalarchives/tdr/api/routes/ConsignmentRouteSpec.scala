@@ -42,7 +42,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                          series: Option[Series],
                          transferringBody: Option[TransferringBody],
                          files: Option[List[File]],
-                         currentStatus: Option[CurrentStatus] = None
+                         currentStatus: Option[CurrentStatus] = None,
+                         consignmentType: Option[String]
                         )
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
   case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
@@ -114,9 +115,46 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
   }
 
+  "addConsignment" should "create a consignment of type 'standard' if no consignment type provided" in {
+    addSeries(
+      UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"),
+      bodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"),
+      "Mock series")
+
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
+    val response: GraphqlMutationData = runTestMutation("mutation_no_consignment_type", validUserToken(body = "default-transferring-body-code"))
+    response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
+
+    checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
+  }
+
+  "addConsignment" should "create a consignment of type 'judgment' when judgment consignment type provided" in {
+    addSeries(
+      UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"),
+      bodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"),
+      "Mock series")
+
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_judgment_consignment_type")
+    val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validUserToken(body = "default-transferring-body-code"))
+    response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
+
+    checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
+  }
+
   "addConsignment" should "throw an error if the series id field isn't provided" in {
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_seriesid_missing")
     val response: GraphqlMutationData = runTestMutation("mutation_missingseriesid", validUserToken())
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+  }
+
+  "addConsignment" should "throw an error if an invalid consignment type is provided" in {
+    addSeries(
+      UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"),
+      bodyId = UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"),
+      "Mock series")
+
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_invalid_consignment_type")
+    val response: GraphqlMutationData = runTestMutation("mutation_invalid_consignment_type", validUserToken(body = "default-transferring-body-code"))
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 

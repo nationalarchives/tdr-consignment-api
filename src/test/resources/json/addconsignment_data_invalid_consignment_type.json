@@ -1,0 +1,8 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Invalid consignment type 'notValidType' for consignment"
+    }
+  ]
+}

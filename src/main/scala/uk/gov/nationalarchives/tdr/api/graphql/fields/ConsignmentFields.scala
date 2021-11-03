@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.time.ZonedDateTime
 import java.util.UUID
+
 import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
@@ -25,12 +26,13 @@ object ConsignmentFields {
                          createdDateTime: ZonedDateTime,
                          transferInitiatedDatetime: Option[ZonedDateTime],
                          exportDatetime: Option[ZonedDateTime],
-                         consignmentReference: String
+                         consignmentReference: String,
+                         consignmentType: Option[String]
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
-  case class AddConsignmentInput(seriesid: UUID)
+  case class AddConsignmentInput(seriesid: UUID, consignmentType: Option[String] = None)
 
   case class AntivirusProgress(filesProcessed: Int)
 
@@ -72,6 +74,7 @@ object ConsignmentFields {
       Field("createdDatetime", OptionType(ZonedDateTimeType), resolve = _.value.createdDateTime),
       Field("transferInitiatedDatetime", OptionType(ZonedDateTimeType), resolve = _.value.transferInitiatedDatetime),
       Field("exportDatetime", OptionType(ZonedDateTimeType), resolve = _.value.exportDatetime),
+      Field("consignmentType", OptionType(StringType), resolve = _.value.consignmentType),
       Field(
         "allChecksSucceeded",
         BooleanType,

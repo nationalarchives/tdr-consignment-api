@@ -43,7 +43,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     userId,
     Timestamp.from(FixedTimeSource.now),
     consignmentsequence = consignmentSequence,
-    consignmentreference = consignmentReference
+    consignmentreference = consignmentReference,
+    consignmenttype = Some("standard")
   )
 
   val consignmentRepoMock: ConsignmentRepository = mock[ConsignmentRepository]
@@ -66,11 +67,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
 
-    val result = consignmentService.addConsignment(AddConsignmentInput(seriesId), userId).futureValue
+    val result = consignmentService.addConsignment(AddConsignmentInput(seriesId, Some("standard")), userId).futureValue
 
     result.consignmentid shouldBe consignmentId
     result.seriesid shouldBe seriesId
     result.userid shouldBe userId
+    result.consignmentType shouldBe Some("standard")
   }
 
   "addConsignment" should "link a consignment to the user's ID" in {
@@ -80,6 +82,14 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignmentService.addConsignment(AddConsignmentInput(seriesId), userId).futureValue
 
     verify(consignmentRepoMock).addConsignment(mockConsignment)
+  }
+
+  "addConsignment" should "return an error if consignment type input is not recognized" in {
+    val thrownException = intercept[Exception] {
+      consignmentService.addConsignment(AddConsignmentInput(seriesId, Some("notRecognizedType")), userId).futureValue
+    }
+
+    thrownException.getMessage should equal("Invalid consignment type 'notRecognizedType' for consignment")
   }
 
   "getConsignment" should "return the specific consignment for the requested consignment id" in {
