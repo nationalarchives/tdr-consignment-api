@@ -22,7 +22,7 @@ object ConsignmentFields {
 
   case class Consignment(consignmentid: UUID,
                          userid: UUID,
-                         seriesid: UUID,
+                         seriesid: Option[UUID],
                          createdDateTime: ZonedDateTime,
                          transferInitiatedDatetime: Option[ZonedDateTime],
                          exportDatetime: Option[ZonedDateTime],
@@ -70,7 +70,7 @@ object ConsignmentFields {
     fields[Unit, Consignment](
       Field("consignmentid", OptionType(UuidType), resolve = _.value.consignmentid),
       Field("userid", UuidType, resolve = _.value.userid),
-      Field("seriesid", UuidType, resolve = _.value.seriesid),
+      Field("seriesid", OptionType(UuidType), resolve = _.value.seriesid),
       Field("createdDatetime", OptionType(ZonedDateTimeType), resolve = _.value.createdDateTime),
       Field("transferInitiatedDatetime", OptionType(ZonedDateTimeType), resolve = _.value.transferInitiatedDatetime),
       Field("exportDatetime", OptionType(ZonedDateTimeType), resolve = _.value.exportDatetime),

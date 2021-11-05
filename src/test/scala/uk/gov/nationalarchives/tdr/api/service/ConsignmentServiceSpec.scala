@@ -39,7 +39,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val consignmentReference = "TDR-2020-VB"
   val mockConsignment: ConsignmentRow = ConsignmentRow(
     consignmentId,
-    seriesId,
+    Some(seriesId),
     userId,
     Timestamp.from(FixedTimeSource.now),
     consignmentsequence = consignmentSequence,
@@ -70,7 +70,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val result = consignmentService.addConsignment(AddConsignmentInput(seriesId, Some("standard")), userId).futureValue
 
     result.consignmentid shouldBe consignmentId
-    result.seriesid shouldBe seriesId
+    result.seriesid shouldBe Some(seriesId)
     result.userid shouldBe userId
     result.consignmentType shouldBe Some("standard")
   }
@@ -102,7 +102,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     verify(consignmentRepoMock, times(1)).getConsignment(any[UUID])
     val consignment: ConsignmentFields.Consignment = response.get
     consignment.consignmentid should equal(consignmentId)
-    consignment.seriesid should equal(seriesId)
+    consignment.seriesid should equal(Some(seriesId))
     consignment.userid should equal(userId)
   }
 
@@ -396,7 +396,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long): ConsignmentRow = {
     ConsignmentRow(
       consignmentId,
-      seriesId,
+      Some(seriesId),
       userId,
       Timestamp.from(fixedTimeSource),
       None,

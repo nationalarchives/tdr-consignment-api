@@ -66,7 +66,7 @@ class ConsignmentService(
       val consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       val consignmentRow = ConsignmentRow(
         uuidSource.uuid,
-        addConsignmentInput.seriesid,
+        Some(addConsignmentInput.seriesid),
         userId,
         Timestamp.from(now),
         consignmentsequence = sequence,
