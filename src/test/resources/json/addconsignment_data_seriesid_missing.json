@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Field 'AddConsignmentInput.seriesid' of required type 'UUID!' was not provided. (line 1, column 47):\nmutation {addConsignment(addConsignmentInput: {userid: \"6e3b76c4-1745-4467-8ac5-b4dd736e1b3e\"}) {consignmentid, seriesid, userid}}\n                                              ^",
+      "message": "User '4ab14990-ed63-4615-8336-56fbb9960300' is not a judgment user and does not have permission to create a consignment without a series",
       "locations": [
         {
           "column": 47,

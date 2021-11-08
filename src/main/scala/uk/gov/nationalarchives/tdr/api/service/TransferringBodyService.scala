@@ -13,4 +13,9 @@ class TransferringBodyService(transferringBodyRepository: TransferringBodyReposi
     val bodyRow = transferringBodyRepository.getTransferringBody(seriesId)
     bodyRow.map(body => TransferringBody(body.tdrcode))
   }
+
+  def getBodyByCode(tdrCode: String)(implicit executionContext: ExecutionContext): Future[TransferringBody] = {
+    val bodyRow = transferringBodyRepository.getTransferringBodyByCode(tdrCode)
+    bodyRow.map(body => TransferringBody(body.tdrcode))
+  }
 }

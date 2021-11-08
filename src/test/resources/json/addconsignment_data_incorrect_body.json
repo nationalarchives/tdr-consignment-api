@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "User '4ab14990-ed63-4615-8336-56fbb9960300' is from transferring body 'incorrect' and does not have permission to create a consignment under series '6e3b76c4-1745-4467-8ac5-b4dd736e1b3e' owned by body 'default-transferring-body-code'",
+      "locations": [
+        {
+          "column": 47,
+          "line": 1
+        }
+      ]
+    }
+  ]
+}

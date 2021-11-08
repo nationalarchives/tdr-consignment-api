@@ -44,25 +44,36 @@ object ValidateBody extends SyncAuthorisationTag {
   }
 }
 
-object ValidateSeries extends AuthorisationTag {
+object ValidateConsignmentCreation extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
                        (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
+    val userId = token.userId
     val userBody = token.transferringBody.getOrElse(
-      throw AuthorisationException(s"No transferring body in user token for user '${token.userId}'"))
-
+      throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
     val addConsignmentInput = ctx.arg[AddConsignmentInput]("addConsignmentInput")
-    val bodyResult = ctx.ctx.transferringBodyService.getBody(addConsignmentInput.seriesid)
+    val seriesId: Option[UUID] = addConsignmentInput.seriesid
+    val judgmentUser = token.judgmentUser
 
-    bodyResult.map(body => {
-      body.tdrCode match {
-        case code if code == userBody => continue
-        case code =>
-          val message = s"User '${token.userId}' is from transferring body '$userBody' and does not have permission " +
-            s"to create a consignment under series '$addConsignmentInput' owned by body '$code'"
-          throw AuthorisationException(message)
+    seriesId match {
+      case Some(value) => {
+        val bodyResult = ctx.ctx.transferringBodyService.getBody(value)
+        bodyResult.map(body => {
+          body.tdrCode match {
+            case code if code == userBody => continue
+            case code =>
+              val message = s"User '$userId' is from transferring body '$userBody' and does not have permission " +
+                s"to create a consignment under series '$value' owned by body '$code'"
+              throw AuthorisationException(message)
+          }
+        })
       }
-    })
+      case _ if judgmentUser.isDefined && judgmentUser.get == "true" =>  Future(continue)
+      case _ =>
+        val message = s"User '$userId' is not a judgment user and does not have permission " +
+          s"to create a consignment without a series"
+        throw AuthorisationException(message)
+    }
   }
 }
 

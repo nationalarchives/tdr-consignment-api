@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
+
 import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
 import org.mockito.{ArgumentCaptor, MockitoSugar}
@@ -15,6 +16,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, StartUploadInput, UpdateExportLocationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -44,7 +46,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     Timestamp.from(FixedTimeSource.now),
     consignmentsequence = consignmentSequence,
     consignmentreference = consignmentReference,
-    consignmenttype = Some("standard")
+    consignmenttype = Some("standard"),
+    bodyid = Some(bodyId)
   )
 
   val consignmentRepoMock: ConsignmentRepository = mock[ConsignmentRepository]
@@ -52,41 +55,58 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val fileMetadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
   val fileRepositoryMock: FileRepository = mock[FileRepository]
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
+  val transferringBodyRepositoryMock: TransferringBodyRepository = mock[TransferringBodyRepository]
   val mockResponse: Future[ConsignmentRow] = Future.successful(mockConsignment)
   val consignmentService = new ConsignmentService(consignmentRepoMock,
     consignmentStatusRepoMock,
     fileMetadataRepositoryMock,
     fileRepositoryMock,
     ffidMetadataRepositoryMock,
+    transferringBodyRepositoryMock,
     FixedTimeSource,
     fixedUuidSource,
     ConfigFactory.load())
 
   "addConsignment" should "create a consignment given correct arguments" in {
     val mockConsignmentSeq = 5L
+    val mockToken = mock[Token]
+    val mockBodyRow = mock[BodyRow]
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
+    when(transferringBodyRepositoryMock.getTransferringBodyByCode("body-code")).thenReturn(Future.successful(mockBodyRow))
+    when(mockBodyRow.bodyid).thenReturn(bodyId)
+    when(mockToken.transferringBody).thenReturn(Some("body-code"))
 
-    val result = consignmentService.addConsignment(AddConsignmentInput(seriesId, Some("standard")), userId).futureValue
+    val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), Some("standard")), mockToken).futureValue
 
     result.consignmentid shouldBe consignmentId
     result.seriesid shouldBe Some(seriesId)
     result.userid shouldBe userId
     result.consignmentType shouldBe Some("standard")
+    result.bodyId shouldBe Some(bodyId)
   }
 
   "addConsignment" should "link a consignment to the user's ID" in {
+    val mockToken = mock[Token]
+    val mockBodyRow = mock[BodyRow]
+
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
+    when(transferringBodyRepositoryMock.getTransferringBodyByCode("body-code")).thenReturn(Future.successful(mockBodyRow))
+    when(mockBodyRow.bodyid).thenReturn(bodyId)
+    when(mockToken.transferringBody).thenReturn(Some("body-code"))
+    when(mockToken.userId).thenReturn(userId)
     when(fixedUuidSource.uuid).thenReturn(consignmentId)
-    consignmentService.addConsignment(AddConsignmentInput(seriesId), userId).futureValue
+    consignmentService.addConsignment(AddConsignmentInput(Some(seriesId)), mockToken).futureValue
 
     verify(consignmentRepoMock).addConsignment(mockConsignment)
   }
 
   "addConsignment" should "return an error if consignment type input is not recognized" in {
+    val mockToken = mock[Token]
+
     val thrownException = intercept[Exception] {
-      consignmentService.addConsignment(AddConsignmentInput(seriesId, Some("notRecognizedType")), userId).futureValue
+      consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), Some("notRecognizedType")), mockToken).futureValue
     }
 
     thrownException.getMessage should equal("Invalid consignment type 'notRecognizedType' for consignment")
@@ -158,6 +178,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+    val transferringBodyRepositoryMock: TransferringBodyRepository = mock[TransferringBodyRepository]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
@@ -165,6 +186,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
+      transferringBodyRepositoryMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load())
@@ -184,6 +206,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+    val transferringBodyRepositoryMock: TransferringBodyRepository = mock[TransferringBodyRepository]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
@@ -191,6 +214,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
+      transferringBodyRepositoryMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load())

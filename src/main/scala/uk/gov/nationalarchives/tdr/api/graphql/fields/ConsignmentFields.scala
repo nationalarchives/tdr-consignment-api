@@ -9,7 +9,7 @@ import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, StringType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
+import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateConsignmentCreation, ValidateUserHasAccessToConsignment}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
@@ -27,12 +27,13 @@ object ConsignmentFields {
                          transferInitiatedDatetime: Option[ZonedDateTime],
                          exportDatetime: Option[ZonedDateTime],
                          consignmentReference: String,
-                         consignmentType: Option[String]
+                         consignmentType: Option[String],
+                         bodyId: Option[UUID]
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
-  case class AddConsignmentInput(seriesid: UUID, consignmentType: Option[String] = None)
+  case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: Option[String] = None)
 
   case class AntivirusProgress(filesProcessed: Int)
 
@@ -175,9 +176,9 @@ object ConsignmentFields {
       arguments = ConsignmentInputArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.addConsignment(
         ctx.arg(ConsignmentInputArg),
-        ctx.ctx.accessToken.userId
+        ctx.ctx.accessToken
       ),
-      tags = List(ValidateSeries)
+      tags = List(ValidateConsignmentCreation)
     ),
     Field("updateTransferInitiated", OptionType(IntType),
       arguments = ConsignmentIdArg :: Nil,
