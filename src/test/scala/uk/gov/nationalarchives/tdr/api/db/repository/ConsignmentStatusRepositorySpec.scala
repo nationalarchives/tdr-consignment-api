@@ -9,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestUtils
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 
 import java.sql.Timestamp
+import java.text.SimpleDateFormat
 import java.time.Instant.now
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -35,7 +36,7 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     consignmentStatus.consignmentstatusid should be(consignmentStatusId)
     consignmentStatus.statustype should be(statusType)
     consignmentStatus.value should be(statusValue)
-    consignmentStatus.createddatetime should be(createdTimestamp)
+    convertTimestampToSimpleDate(consignmentStatus.createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
   }
 
   "getConsignmentStatus" should "return all data from the consignment status" in {
@@ -55,7 +56,7 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     consignmentStatus.consignmentid should be(consignmentId)
     consignmentStatus.statustype should be(statusType)
     consignmentStatus.value should be(statusValue)
-    consignmentStatus.createddatetime should be(createdTimestamp)
+    convertTimestampToSimpleDate(consignmentStatus.createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
     consignmentStatus.modifieddatetime should be(None)
   }
 
@@ -142,7 +143,7 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     response should be(1)
     consignmentStatusRetrieved.value should be(statusValue)
     consignmentStatusRetrieved.statustype should be(statusType)
-    consignmentStatusRetrieved.modifieddatetime.get should be(modifiedTimestamp)
+    convertTimestampToSimpleDate(consignmentStatusRetrieved.modifieddatetime.get) should be(convertTimestampToSimpleDate(modifiedTimestamp))
   }
 
   "updateConsignmentStatus" should "only update the value of the status type passed in" in {
@@ -174,14 +175,19 @@ class ConsignmentStatusRepositorySpec extends AnyFlatSpec with TestDatabase with
     response should be(1)
     consignmentStatusRetrieved.head.statustype should be(statusTypeOne)
     consignmentStatusRetrieved.head.value should be(newStatusValueOne)
-    consignmentStatusRetrieved.head.modifieddatetime.get should be(modifiedTimestamp)
+    convertTimestampToSimpleDate(consignmentStatusRetrieved.head.modifieddatetime.get) should be(convertTimestampToSimpleDate(modifiedTimestamp))
 
     consignmentStatusRetrieved(1).statustype should be(statusTypeTwo)
     consignmentStatusRetrieved(1).value should be(statusValueTwo)
-    consignmentStatusRetrieved(1).createddatetime should be(createdTimestamp)
+    convertTimestampToSimpleDate(consignmentStatusRetrieved(1).createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
 
     consignmentStatusRetrieved(2).statustype should be(statusTypeThree)
     consignmentStatusRetrieved(2).value should be(statusValueThree)
-    consignmentStatusRetrieved(2).createddatetime should be(createdTimestamp)
+    convertTimestampToSimpleDate(consignmentStatusRetrieved(2).createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
+  }
+
+  private def convertTimestampToSimpleDate(timestamp: Timestamp): String = {
+    val simpleDateFormat = new SimpleDateFormat()
+    simpleDateFormat.format(timestamp)
   }
 }
