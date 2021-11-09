@@ -7,6 +7,7 @@ import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.AddConsignmentInput
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
+import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import scala.concurrent._
 import scala.language.postfixOps
@@ -45,6 +46,10 @@ object ValidateBody extends SyncAuthorisationTag {
 }
 
 object ValidateConsignmentCreation extends AuthorisationTag {
+  private def isJudgmentConsignmentType(consignmentType: Option[String]): Boolean = {
+    consignmentType.isDefined && consignmentType.get == "judgment"
+  }
+
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
                        (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
@@ -53,7 +58,7 @@ object ValidateConsignmentCreation extends AuthorisationTag {
       throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
     val addConsignmentInput = ctx.arg[AddConsignmentInput]("addConsignmentInput")
     val seriesId: Option[UUID] = addConsignmentInput.seriesid
-    val judgmentUser = token.judgmentUser
+    val consignmentType: Option[String] = addConsignmentInput.consignmentType
 
     seriesId match {
       case Some(value) => {
@@ -68,10 +73,15 @@ object ValidateConsignmentCreation extends AuthorisationTag {
           }
         })
       }
-      case _ if judgmentUser.isDefined && judgmentUser.get == "true" =>  Future(continue)
+      case _ if token.isJudgmentUser && isJudgmentConsignmentType(consignmentType) =>
+        Future(continue)
       case _ =>
-        val message = s"User '$userId' is not a judgment user and does not have permission " +
-          s"to create a consignment without a series"
+        val message = if (!token.isJudgmentUser) {
+            s"User '$userId' is not a judgment user and does not have permission to create a consignment without a series"
+          } else {
+            s"Cannot create consignment without series for consignment type '$consignmentType'"
+          }
+
         throw AuthorisationException(message)
     }
   }

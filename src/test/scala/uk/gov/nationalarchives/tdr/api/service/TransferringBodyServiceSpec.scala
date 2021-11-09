@@ -29,4 +29,16 @@ class TransferringBodyServiceSpec extends AnyFlatSpec with MockitoSugar with Mat
 
     body.futureValue.tdrCode should equal("CODE")
   }
+
+  "getBodyByCode" should "return the transferring body matching the code" in {
+    val bodyId = UUID.fromString("8a72cc59-7f2f-4e55-a263-4a4cb9f677f5")
+    val bodyCode = "CODE123"
+
+    val bodyRow = BodyRow(bodyId, "Some department name", None, bodyCode)
+    when(repository.getTransferringBodyByCode(bodyCode)).thenReturn(Future.successful(bodyRow))
+
+    val body = service.getBodyByCode(bodyCode).futureValue
+
+    body.tdrCode shouldBe bodyCode
+  }
 }
