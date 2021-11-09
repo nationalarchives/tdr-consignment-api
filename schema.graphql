@@ -23,6 +23,11 @@ input AddFileMetadataInput {
   value: String!
 }
 
+input AddFinalJudgmentTransferConfirmationInput {
+  consignmentId: UUID!
+  legalCustodyTransferConfirmed: Boolean!
+}
+
 input AddFinalTransferConfirmationInput {
   consignmentId: UUID!
   finalOpenRecordsConfirmed: Boolean!
@@ -188,6 +193,11 @@ type FileMetadataValues {
   foiExemptionCode: String
 }
 
+type FinalJudgmentTransferConfirmation {
+  consignmentId: UUID!
+  legalCustodyTransferConfirmed: Boolean!
+}
+
 type FinalTransferConfirmation {
   consignmentId: UUID!
   finalOpenRecordsConfirmed: Boolean!
@@ -211,6 +221,7 @@ type Mutation {
   addFileMetadata(addFileMetadataInput: AddFileMetadataInput!): FileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
+  addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
 }
 
 "Information about pagination in a connection."

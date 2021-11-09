@@ -33,6 +33,23 @@ class FinalTransferConfirmationRouteSpec extends AnyFlatSpec with Matchers with 
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addFinalTransferConfirmationJsonFilePrefix)
 
+  //Judgment ******************
+  private val addFinalJudgmentTransferConfirmationJsonFilePrefix: String = "json/addfinaljudgmenttransferconfirmation_"
+
+  case class GraphqlJudgmentMutationData(data: Option[AddFinalJudgmentTransferConfirmation], errors: List[GraphqlError] = Nil)
+  case class GraphqlJudgmentQueryData(data: Option[FinalJudgmentTransferConfirmation], errors: List[GraphqlError] = Nil)
+  case class FinalJudgmentTransferConfirmation(
+                                        consignmentId: Option[UUID] = None,
+                                        legalCustodyTransferConfirmed: Option[Boolean] = None
+                                      )
+
+  case class AddFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmation: FinalJudgmentTransferConfirmation)
+
+  val runTestJudgmentMutation: (String, OAuth2BearerToken) => GraphqlJudgmentMutationData =
+    runTestRequest[GraphqlJudgmentMutationData](addFinalJudgmentTransferConfirmationJsonFilePrefix)
+  val expectedJudgmentMutationResponse: String => GraphqlJudgmentMutationData =
+    getDataFromFile[GraphqlJudgmentMutationData](addFinalJudgmentTransferConfirmationJsonFilePrefix)
+
   "The api" should "return all requested fields from inserted final transfer confirmation consignment metadata properties" in {
     createConsignment(consignmentId, userId)
 
@@ -41,6 +58,17 @@ class FinalTransferConfirmationRouteSpec extends AnyFlatSpec with Matchers with 
     response.data.get.addFinalTransferConfirmation should equal(expectedResponse.data.get.addFinalTransferConfirmation)
 
     checkFinalTransferConfirmationExists(consignmentId)
+  }
+
+  //Judgment
+  it should "return all requested fields from inserted final judgment transfer confirmation consignment metadata properties" in {
+    createConsignment(consignmentId, userId)
+
+    val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_all")
+    val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_alldata", validUserToken())
+    response.data.get.addFinalJudgmentTransferConfirmation should equal(expectedResponse.data.get.addFinalJudgmentTransferConfirmation)
+
+    checkFinalTransferConfirmationExists2(consignmentId)
   }
 
   "The api" should "return the expected data from inserted final transfer confirmation consignment metadata properties" in {
@@ -53,9 +81,28 @@ class FinalTransferConfirmationRouteSpec extends AnyFlatSpec with Matchers with 
     checkFinalTransferConfirmationExists(response.data.get.addFinalTransferConfirmation.consignmentId.get)
   }
 
+  //Judgment probably don't need this because we only have a single field
+  it should "return the expected data from inserted final judgment transfer confirmation consignment metadata properties" in {
+    createConsignment(consignmentId, userId)
+
+    val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_some")
+    val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_somedata", validUserToken())
+    response.data.get.addFinalJudgmentTransferConfirmation should equal(expectedResponse.data.get.addFinalJudgmentTransferConfirmation)
+
+    checkFinalTransferConfirmationExists2(response.data.get.addFinalJudgmentTransferConfirmation.consignmentId.get)
+  }
+
   "The api" should "throw an error if the consignment id field is not provided" in {
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_consignmentid_missing")
     val response: GraphqlMutationData = runTestMutation("mutation_missingconsignmentid", validUserToken())
+    response.errors.head.message should equal (expectedResponse.errors.head.message)
+  }
+
+  //judgment
+  it should "throw an error if the consignment id field is not provided for judgment user" in {
+    val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_consignmentid_missing")
+    val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_missingconsignmentid", validUserToken())
+    print(response.errors.head.message)
     response.errors.head.message should equal (expectedResponse.errors.head.message)
   }
 
@@ -85,6 +132,16 @@ class FinalTransferConfirmationRouteSpec extends AnyFlatSpec with Matchers with 
     val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getString("Value") should equal("true")
+    rs.next()
+    rs.getString("Value") should equal("true")
+  }
+
+  private def checkFinalTransferConfirmationExists2(consignmentId: UUID): Unit = {
+    val sql = """SELECT * FROM ConsignmentMetadata
+                 WHERE ConsignmentId = ? AND PropertyName in ('LegalCustodyTransferConfirmed');"""
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setString(1, consignmentId.toString)
+    val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getString("Value") should equal("true")
   }
