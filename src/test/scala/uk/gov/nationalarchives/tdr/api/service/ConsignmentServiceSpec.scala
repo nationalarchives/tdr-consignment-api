@@ -112,6 +112,18 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     thrownException.getMessage should equal("Invalid consignment type 'notRecognizedType' for consignment")
   }
 
+  "addConsignment" should "return an error if the user does not have a body" in {
+    val mockToken = mock[Token]
+    when(mockToken.userId).thenReturn(userId)
+    when(mockToken.transferringBody).thenReturn(None)
+
+    val thrownException = intercept[Exception] {
+      consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), Some("standard")), mockToken).futureValue
+    }
+
+    thrownException.getMessage should equal("No transferring body in user token for user '8d415358-f68b-403b-a90a-daab3fd60109'")
+  }
+
   "getConsignment" should "return the specific consignment for the requested consignment id" in {
     val consignmentRow = mockConsignment
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))

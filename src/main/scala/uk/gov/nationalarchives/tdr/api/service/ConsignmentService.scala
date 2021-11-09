@@ -66,12 +66,13 @@ class ConsignmentService(
     }
 
     val userBody = token.transferringBody.getOrElse(
-      throw new Exception(s"No transferring body in user token for user '${token.userId}'"))
+      throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
 
-    consignmentRepository.getNextConsignmentSequence.flatMap(sequence => {
-      transferringBodyRepository.getTransferringBodyByCode(userBody).flatMap(body => {
-        val consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
-        val consignmentRow = ConsignmentRow(
+    for {
+      sequence <- consignmentRepository.getNextConsignmentSequence
+      body <- transferringBodyRepository.getTransferringBodyByCode(userBody)
+      consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
+      consignmentRow = ConsignmentRow(
           uuidSource.uuid,
           addConsignmentInput.seriesid,
           token.userId,
@@ -79,12 +80,12 @@ class ConsignmentService(
           consignmentsequence = sequence,
           consignmentreference = consignmentRef,
           consignmenttype = consignmentType,
-          bodyid = Some(body.bodyid))
-        consignmentRepository.addConsignment(consignmentRow).map(
-          row => convertRowToConsignment(row)
+          bodyid = Some(body.bodyid)
         )
-      })
-    })
+      consignment <- consignmentRepository.addConsignment(consignmentRow).map(
+        row => convertRowToConsignment(row)
+      )
+    } yield consignment
   }
 
   def getConsignment(consignmentId: UUID): Future[Option[Consignment]] = {
