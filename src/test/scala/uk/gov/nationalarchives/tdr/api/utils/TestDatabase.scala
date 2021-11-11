@@ -3,8 +3,7 @@ package uk.gov.nationalarchives.tdr.api.utils
 import org.scalatest.{BeforeAndAfterEach, Suite}
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{clientSideProperties, staticMetadataProperties}
-import uk.gov.nationalarchives.tdr.api.service.FinalJudgmentTransferConfirmationService.finalJudgmentTransferConfirmationProperties
-import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.finalTransferConfirmationProperties
+import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.{finalJudgmentTransferConfirmationProperties, finalTransferConfirmationProperties}
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService.transferAgreementProperties
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{addConsignmentProperty, addFileProperty}
 

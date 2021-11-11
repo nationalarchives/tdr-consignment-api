@@ -1,13 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.util.UUID
 import uk.gov.nationalarchives.Tables.ConsignmentmetadataRow
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FinalTransferConfirmationFields._
-import uk.gov.nationalarchives.tdr.api.service.FinalJudgmentTransferConfirmationService.LegalCustodyTransferConfirmed
-import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.{FinalOpenRecordsConfirmed, LegalOwnershipTransferConfirmed}
+import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.{FinalOpenRecordsConfirmed, LegalCustodyTransferConfirmed, LegalOwnershipTransferConfirmed}
 
+import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -67,15 +66,12 @@ class FinalTransferConfirmationService(consignmentMetadataRepository: Consignmen
 object FinalTransferConfirmationService {
   val FinalOpenRecordsConfirmed = "FinalOpenRecordsConfirmed"
   val LegalOwnershipTransferConfirmed = "LegalOwnershipTransferConfirmed"
+  val LegalCustodyTransferConfirmed = "LegalCustodyTransferConfirmed"
 
   val finalTransferConfirmationProperties = List(
     FinalOpenRecordsConfirmed,
     LegalOwnershipTransferConfirmed
   )
-}
-
-object FinalJudgmentTransferConfirmationService {
-  val LegalCustodyTransferConfirmed = "LegalCustodyTransferConfirmed"
 
   val finalJudgmentTransferConfirmationProperties = List(
     LegalCustodyTransferConfirmed

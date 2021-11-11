@@ -33,7 +33,6 @@ class FinalTransferConfirmationRouteSpec extends AnyFlatSpec with Matchers with 
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addFinalTransferConfirmationJsonFilePrefix)
 
-  //Judgment ******************
   private val addFinalJudgmentTransferConfirmationJsonFilePrefix: String = "json/addfinaljudgmenttransferconfirmation_"
 
   case class GraphqlJudgmentMutationData(data: Option[AddFinalJudgmentTransferConfirmation], errors: List[GraphqlError] = Nil)
