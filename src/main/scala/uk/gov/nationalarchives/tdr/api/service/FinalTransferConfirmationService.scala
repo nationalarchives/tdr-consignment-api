@@ -24,27 +24,27 @@ class FinalTransferConfirmationService(consignmentMetadataRepository: Consignmen
 
   def addFinalJudgmentTransferConfirmation(consignmentMetadataInputs: AddFinalJudgmentTransferConfirmationInput,
                                            userId: UUID): Future[FinalJudgmentTransferConfirmation] = {
-    consignmentMetadataRepository.addConsignmentMetadata(convertJudgmentInputToPropertyRows(consignmentMetadataInputs, userId)).map {
+    consignmentMetadataRepository.addConsignmentMetadata(convertInputToPropertyRows(consignmentMetadataInputs, userId)).map {
       rows => convertDbRowsToFinalJudgmentTransferConfirmation(consignmentMetadataInputs.consignmentId, rows)
     }
   }
 
-  private def convertInputToPropertyRows(inputs: AddFinalTransferConfirmationInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
+  private def convertInputToPropertyRows[A](inputs: A, userId: UUID): Seq[ConsignmentmetadataRow] = {
     val time = Timestamp.from(timeSource.now)
-    Seq(
-      ConsignmentmetadataRow(
-        uuidSource.uuid, inputs.consignmentId, FinalOpenRecordsConfirmed, inputs.finalOpenRecordsConfirmed.toString, time, userId),
-      ConsignmentmetadataRow(
-        uuidSource.uuid, inputs.consignmentId, LegalOwnershipTransferConfirmed, inputs.legalOwnershipTransferConfirmed.toString, time, userId)
-    )
-  }
-
-  private def convertJudgmentInputToPropertyRows(inputs: AddFinalJudgmentTransferConfirmationInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
-    val time = Timestamp.from(timeSource.now)
-    Seq(
-      ConsignmentmetadataRow(
-        uuidSource.uuid, inputs.consignmentId, LegalCustodyTransferConfirmed, inputs.legalCustodyTransferConfirmed.toString, time, userId),
-    )
+    inputs match {
+      case standard: AddFinalTransferConfirmationInput =>
+        Seq(
+          ConsignmentmetadataRow(
+            uuidSource.uuid, standard.consignmentId, FinalOpenRecordsConfirmed, standard.finalOpenRecordsConfirmed.toString, time, userId),
+          ConsignmentmetadataRow(
+            uuidSource.uuid, standard.consignmentId, LegalOwnershipTransferConfirmed, standard.legalOwnershipTransferConfirmed.toString, time, userId)
+        )
+      case judgment: AddFinalJudgmentTransferConfirmationInput =>
+        Seq(
+          ConsignmentmetadataRow(
+            uuidSource.uuid, judgment.consignmentId, LegalCustodyTransferConfirmed, judgment.legalCustodyTransferConfirmed.toString, time, userId),
+        )
+    }
   }
 
   private def convertDbRowsToFinalTransferConfirmation(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): FinalTransferConfirmation = {
