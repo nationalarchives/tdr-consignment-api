@@ -1,3 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.model
 
-case class TransferringBody(tdrCode: String)
+import java.util.UUID
+
+case class TransferringBody(tdrCode: String, bodyId: UUID)

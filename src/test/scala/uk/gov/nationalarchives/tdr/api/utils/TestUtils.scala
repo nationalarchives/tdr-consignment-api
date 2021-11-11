@@ -37,13 +37,25 @@ object TestUtils {
   val backendChecksUser: UUID = UUID.fromString("6847253d-b9c6-4ea9-b3c9-57542b8c6375")
   val reportingUser: UUID = UUID.fromString("a863292b-888b-4d88-b5f3-2bb9a11b336a")
 
-  def validUserToken(userId: UUID = userId, body: String = "Code"): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr", "tdr_user")
-      .withClaim("body", body)
-      .withClaim("user_id", userId)
-      .build)
+  def validUserToken(userId: UUID = userId, body: String = "Code", standardUser: String = "true"): OAuth2BearerToken =
+    OAuth2BearerToken(tdrMock.getAccessToken(
+      aTokenConfig()
+        .withResourceRole("tdr", "tdr_user")
+        .withClaim("body", body)
+        .withClaim("user_id", userId)
+        .withClaim("standard_user", standardUser)
+        .build)
   )
+
+  def validJudgmentUserToken(userId: UUID = userId, body: String = "Code", judgmentUser: String = "true"): OAuth2BearerToken =
+    OAuth2BearerToken(tdrMock.getAccessToken(
+      aTokenConfig()
+        .withResourceRole("tdr", "tdr_user")
+        .withClaim("body", body)
+        .withClaim("user_id", userId)
+        .withClaim("judgment_user", judgmentUser)
+        .build
+    ))
 
   def validUserTokenNoBody: OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
     aTokenConfig()

@@ -43,7 +43,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val consignment1 = ConsignmentRow(
       consignmentId1,
-      seriesId1,
+      Some(seriesId1),
       userId1,
       Timestamp.from(Instant.now),
       consignmentsequence = 400L,
@@ -51,7 +51,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
     val consignment2 = ConsignmentRow(
       consignmentId2,
-      seriesId2,
+      Some(seriesId2),
       userId2,
       Timestamp.from(Instant.now),
       consignmentsequence = 500L,

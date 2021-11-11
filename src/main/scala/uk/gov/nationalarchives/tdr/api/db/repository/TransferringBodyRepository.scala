@@ -16,6 +16,11 @@ class TransferringBodyRepository(db: Database)(implicit executionContext: Execut
     db.run(query.result).map(body => body.head)
   }
 
+  def getTransferringBodyByCode(code: String): Future[Option[BodyRow]] = {
+    val query = Body.filter(_.tdrcode === code)
+    db.run(query.result).map(body => body.headOption)
+  }
+
   def dbHasTransferringBodies: Future[Boolean] = {
     val query = Body.length
     db.run(query.result).map(_ > 0)
