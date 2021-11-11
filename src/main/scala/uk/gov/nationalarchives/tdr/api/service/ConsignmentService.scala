@@ -12,7 +12,9 @@ import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.{consignmentTypeHelper, standard}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
+import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
@@ -23,14 +25,13 @@ class ConsignmentService(
                           fileMetadataRepository: FileMetadataRepository,
                           fileRepository: FileRepository,
                           ffidMetadataRepository: FFIDMetadataRepository,
+                          transferringBodyService: TransferringBodyService,
                           timeSource: TimeSource,
                           uuidSource: UUIDSource,
                           config: Config
                         )(implicit val executionContext: ExecutionContext) {
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
-  val standardConsignmentType = "standard"
-  val judgmentConsignmentType = "judgment"
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
     consignmentStatusRepository.getConsignmentStatus(startUploadInput.consignmentId).flatMap(status => {
@@ -52,30 +53,37 @@ class ConsignmentService(
     consignmentRepository.updateExportLocation(exportLocationInput)
   }
 
-  def addConsignment(addConsignmentInput: AddConsignmentInput, userId: UUID): Future[Consignment] = {
+  def addConsignment(addConsignmentInput: AddConsignmentInput, token: Token): Future[Consignment] = {
     val now = timeSource.now
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
     val consignmentTypeInput: Option[String] = addConsignmentInput.consignmentType
     val consignmentType: Option[String] = consignmentTypeInput match {
-      case Some("judgment") | Some("standard") => consignmentTypeInput
-      case None => Some(standardConsignmentType)
+      case _ if consignmentTypeInput.isJudgment | consignmentTypeInput.isStandard => consignmentTypeInput
+      case None => Some(standard)
       case _ => throw InputDataException(s"Invalid consignment type '${consignmentTypeInput.get}' for consignment")
     }
 
-    consignmentRepository.getNextConsignmentSequence.flatMap(sequence => {
-      val consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
-      val consignmentRow = ConsignmentRow(
-        uuidSource.uuid,
-        addConsignmentInput.seriesid,
-        userId,
-        Timestamp.from(now),
-        consignmentsequence = sequence,
-        consignmentreference = consignmentRef,
-        consignmenttype = consignmentType)
-      consignmentRepository.addConsignment(consignmentRow).map(
+    val userBody = token.transferringBody.getOrElse(
+      throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
+
+    for {
+      sequence <- consignmentRepository.getNextConsignmentSequence
+      body <- transferringBodyService.getBodyByCode(userBody)
+      consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
+      consignmentRow = ConsignmentRow(
+          uuidSource.uuid,
+          addConsignmentInput.seriesid,
+          token.userId,
+          Timestamp.from(now),
+          consignmentsequence = sequence,
+          consignmentreference = consignmentRef,
+          consignmenttype = consignmentType,
+          bodyid = Some(body.bodyId)
+        )
+      consignment <- consignmentRepository.addConsignment(consignmentRow).map(
         row => convertRowToConsignment(row)
       )
-    })
+    } yield consignment
   }
 
   def getConsignment(consignmentId: UUID): Future[Option[Consignment]] = {
@@ -132,7 +140,8 @@ class ConsignmentService(
       row.transferinitiateddatetime.map(ts => ts.toZonedDateTime),
       row.exportdatetime.map(ts => ts.toZonedDateTime),
       row.consignmentreference,
-      row.consignmenttype)
+      row.consignmenttype,
+      row.bodyid)
   }
 
   private def convertToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {

@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Cannot create consignment without series for consignment type 'Some(standard)'",
+      "locations": [
+        {
+          "column": 47,
+          "line": 1
+        }
+      ]
+    }
+  ]
+}

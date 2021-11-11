@@ -8,7 +8,7 @@ input AddAntivirusMetadataInput {
 }
 
 input AddConsignmentInput {
-  seriesid: UUID!
+  seriesid: UUID
   consignmentType: String
 }
 
@@ -76,7 +76,7 @@ input ClientSideMetadataInput {
 type Consignment {
   consignmentid: UUID
   userid: UUID!
-  seriesid: UUID!
+  seriesid: UUID
   createdDatetime: ZonedDateTime
   transferInitiatedDatetime: ZonedDateTime
   exportDatetime: ZonedDateTime

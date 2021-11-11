@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "User '4ab14990-ed63-4615-8336-56fbb9960300' is not a judgment user and does not have permission to create a consignment without a series",
+      "locations": [
+        {
+          "column": 47,
+          "line": 1
+        }
+      ]
+    }
+  ]
+}

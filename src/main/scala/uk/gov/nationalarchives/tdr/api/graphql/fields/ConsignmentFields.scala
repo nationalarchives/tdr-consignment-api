@@ -9,7 +9,7 @@ import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, StringType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateHasReportingAccess, ValidateSeries, ValidateUserHasAccessToConsignment}
+import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
@@ -22,17 +22,18 @@ object ConsignmentFields {
 
   case class Consignment(consignmentid: UUID,
                          userid: UUID,
-                         seriesid: UUID,
+                         seriesid: Option[UUID],
                          createdDateTime: ZonedDateTime,
                          transferInitiatedDatetime: Option[ZonedDateTime],
                          exportDatetime: Option[ZonedDateTime],
                          consignmentReference: String,
-                         consignmentType: Option[String]
+                         consignmentType: Option[String],
+                         bodyId: Option[UUID]
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
-  case class AddConsignmentInput(seriesid: UUID, consignmentType: Option[String] = None)
+  case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: Option[String] = None)
 
   case class AntivirusProgress(filesProcessed: Int)
 
@@ -70,7 +71,7 @@ object ConsignmentFields {
     fields[Unit, Consignment](
       Field("consignmentid", OptionType(UuidType), resolve = _.value.consignmentid),
       Field("userid", UuidType, resolve = _.value.userid),
-      Field("seriesid", UuidType, resolve = _.value.seriesid),
+      Field("seriesid", OptionType(UuidType), resolve = _.value.seriesid),
       Field("createdDatetime", OptionType(ZonedDateTimeType), resolve = _.value.createdDateTime),
       Field("transferInitiatedDatetime", OptionType(ZonedDateTimeType), resolve = _.value.transferInitiatedDatetime),
       Field("exportDatetime", OptionType(ZonedDateTimeType), resolve = _.value.exportDatetime),
@@ -175,9 +176,9 @@ object ConsignmentFields {
       arguments = ConsignmentInputArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.addConsignment(
         ctx.arg(ConsignmentInputArg),
-        ctx.ctx.accessToken.userId
+        ctx.ctx.accessToken
       ),
-      tags = List(ValidateSeries)
+      tags = List(ValidateConsignmentCreation)
     ),
     Field("updateTransferInitiated", OptionType(IntType),
       arguments = ConsignmentIdArg :: Nil,
