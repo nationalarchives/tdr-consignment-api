@@ -36,7 +36,7 @@ class TransferringBodyRepositorySpec extends AnyFlatSpec with TestDatabase with 
 
     addTransferringBody(bodyId, "MOCK Department", "Code123")
 
-    val tb: BodyRow = transferringBodyRepository.getTransferringBodyByCode("Code123").futureValue
+    val tb: BodyRow = transferringBodyRepository.getTransferringBodyByCode("Code123").futureValue.get
     tb.bodyid shouldBe bodyId
     tb.tdrcode shouldBe "Code123"
     tb.name shouldBe "MOCK Department"

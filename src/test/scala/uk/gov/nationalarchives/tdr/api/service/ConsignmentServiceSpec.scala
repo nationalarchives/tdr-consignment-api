@@ -15,6 +15,7 @@ import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, Consignmentstatu
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, StartUploadInput, UpdateExportLocationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
+import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -55,14 +56,14 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val fileMetadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
   val fileRepositoryMock: FileRepository = mock[FileRepository]
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
-  val transferringBodyRepositoryMock: TransferringBodyRepository = mock[TransferringBodyRepository]
+  val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
   val mockResponse: Future[ConsignmentRow] = Future.successful(mockConsignment)
   val consignmentService = new ConsignmentService(consignmentRepoMock,
     consignmentStatusRepoMock,
     fileMetadataRepositoryMock,
     fileRepositoryMock,
     ffidMetadataRepositoryMock,
-    transferringBodyRepositoryMock,
+    transferringBodyServiceMock,
     FixedTimeSource,
     fixedUuidSource,
     ConfigFactory.load())
@@ -70,11 +71,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "addConsignment" should "create a consignment given correct arguments" in {
     val mockConsignmentSeq = 5L
     val mockToken = mock[Token]
-    val mockBodyRow = mock[BodyRow]
+    val mockBody = mock[TransferringBody]
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
-    when(transferringBodyRepositoryMock.getTransferringBodyByCode("body-code")).thenReturn(Future.successful(mockBodyRow))
-    when(mockBodyRow.bodyid).thenReturn(bodyId)
+    when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
+    when(mockBody.bodyId).thenReturn(bodyId)
     when(mockToken.transferringBody).thenReturn(Some("body-code"))
 
     val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), Some("standard")), mockToken).futureValue
@@ -88,12 +89,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "addConsignment" should "link a consignment to the user's ID" in {
     val mockToken = mock[Token]
-    val mockBodyRow = mock[BodyRow]
+    val mockBody = mock[TransferringBody]
 
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
-    when(transferringBodyRepositoryMock.getTransferringBodyByCode("body-code")).thenReturn(Future.successful(mockBodyRow))
-    when(mockBodyRow.bodyid).thenReturn(bodyId)
+    when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
+    when(mockBody.bodyId).thenReturn(bodyId)
     when(mockToken.transferringBody).thenReturn(Some("body-code"))
     when(mockToken.userId).thenReturn(userId)
     when(fixedUuidSource.uuid).thenReturn(consignmentId)
@@ -190,7 +191,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
-    val transferringBodyRepositoryMock: TransferringBodyRepository = mock[TransferringBodyRepository]
+    val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
@@ -198,7 +199,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
-      transferringBodyRepositoryMock,
+      transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load())
@@ -218,7 +219,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
-    val transferringBodyRepositoryMock: TransferringBodyRepository = mock[TransferringBodyRepository]
+    val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
@@ -226,7 +227,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       fileMetadataRepositoryMock,
       fileRepositoryMock,
       ffidMetadataRepositoryMock,
-      transferringBodyRepositoryMock,
+      transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load())

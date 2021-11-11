@@ -26,7 +26,7 @@ class ConsignmentService(
                           fileMetadataRepository: FileMetadataRepository,
                           fileRepository: FileRepository,
                           ffidMetadataRepository: FFIDMetadataRepository,
-                          transferringBodyRepository: TransferringBodyRepository,
+                          transferringBodyService: TransferringBodyService,
                           timeSource: TimeSource,
                           uuidSource: UUIDSource,
                           config: Config
@@ -69,7 +69,7 @@ class ConsignmentService(
 
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
-      body <- transferringBodyRepository.getTransferringBodyByCode(userBody)
+      body <- transferringBodyService.getBodyByCode(userBody)
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentRow = ConsignmentRow(
           uuidSource.uuid,
@@ -79,7 +79,7 @@ class ConsignmentService(
           consignmentsequence = sequence,
           consignmentreference = consignmentRef,
           consignmenttype = consignmentType,
-          bodyid = Some(body.bodyid)
+          bodyid = Some(body.bodyId)
         )
       consignment <- consignmentRepository.addConsignment(consignmentRow).map(
         row => convertRowToConsignment(row)

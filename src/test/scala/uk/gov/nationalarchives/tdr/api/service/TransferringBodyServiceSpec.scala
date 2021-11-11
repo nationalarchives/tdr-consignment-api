@@ -35,10 +35,22 @@ class TransferringBodyServiceSpec extends AnyFlatSpec with MockitoSugar with Mat
     val bodyCode = "CODE123"
 
     val bodyRow = BodyRow(bodyId, "Some department name", None, bodyCode)
-    when(repository.getTransferringBodyByCode(bodyCode)).thenReturn(Future.successful(bodyRow))
+    when(repository.getTransferringBodyByCode(bodyCode)).thenReturn(Future.successful(Some(bodyRow)))
 
     val body = service.getBodyByCode(bodyCode).futureValue
 
     body.tdrCode shouldBe bodyCode
+  }
+
+  "getBodyByCode" should "return an error when no transferring body matches the code" in {
+    val bodyCode = "CODE123"
+
+    when(repository.getTransferringBodyByCode(bodyCode)).thenReturn(Future.successful(None))
+
+    val thrownException = intercept[Exception] { service.getBodyByCode(bodyCode).futureValue }
+
+    thrownException.getMessage should equal("The future returned an exception of type: " +
+      "uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, with message: " +
+      "No transferring body found for code 'CODE123'.")
   }
 }
