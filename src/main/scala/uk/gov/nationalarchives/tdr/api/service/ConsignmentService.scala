@@ -15,6 +15,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 import uk.gov.nationalarchives.tdr.keycloak.Token
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.{consignmentTypeHelper, standard}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
@@ -32,8 +33,6 @@ class ConsignmentService(
                         )(implicit val executionContext: ExecutionContext) {
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
-  val standardConsignmentType = "standard"
-  val judgmentConsignmentType = "judgment"
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
     consignmentStatusRepository.getConsignmentStatus(startUploadInput.consignmentId).flatMap(status => {
@@ -60,8 +59,8 @@ class ConsignmentService(
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
     val consignmentTypeInput: Option[String] = addConsignmentInput.consignmentType
     val consignmentType: Option[String] = consignmentTypeInput match {
-      case Some("judgment") | Some("standard") => consignmentTypeInput
-      case None => Some(standardConsignmentType)
+      case _ if consignmentTypeInput.isJudgment | consignmentTypeInput.isStandard => consignmentTypeInput
+      case None => Some(standard)
       case _ => throw InputDataException(s"Invalid consignment type '${consignmentTypeInput.get}' for consignment")
     }
 

@@ -7,7 +7,7 @@ import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.AddConsignmentInput
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
-import uk.gov.nationalarchives.tdr.keycloak.Token
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.consignmentTypeHelper
 
 import scala.concurrent._
 import scala.language.postfixOps
@@ -46,9 +46,6 @@ object ValidateBody extends SyncAuthorisationTag {
 }
 
 object ValidateConsignmentCreation extends AuthorisationTag {
-  private def isJudgmentConsignmentType(consignmentType: Option[String]): Boolean = {
-    consignmentType.isDefined && consignmentType.get == "judgment"
-  }
 
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
                        (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
@@ -73,7 +70,7 @@ object ValidateConsignmentCreation extends AuthorisationTag {
           }
         })
       }
-      case _ if token.isJudgmentUser && isJudgmentConsignmentType(consignmentType) =>
+      case _ if token.isJudgmentUser && consignmentType.isJudgment =>
         Future(continue)
       case _ =>
         val message = if (!token.isJudgmentUser) {
