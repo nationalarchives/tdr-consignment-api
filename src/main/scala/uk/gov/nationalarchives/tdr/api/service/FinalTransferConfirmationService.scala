@@ -42,7 +42,7 @@ class FinalTransferConfirmationService(consignmentMetadataRepository: Consignmen
       case judgment: AddFinalJudgmentTransferConfirmationInput =>
         Seq(
           ConsignmentmetadataRow(
-            uuidSource.uuid, judgment.consignmentId, LegalCustodyTransferConfirmed, judgment.legalCustodyTransferConfirmed.toString, time, userId),
+            uuidSource.uuid, judgment.consignmentId, LegalCustodyTransferConfirmed, judgment.legalCustodyTransferConfirmed.toString, time, userId)
         )
     }
   }
