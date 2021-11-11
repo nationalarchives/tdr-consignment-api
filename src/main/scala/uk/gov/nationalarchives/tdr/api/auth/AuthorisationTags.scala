@@ -58,7 +58,7 @@ object ValidateConsignmentCreation extends AuthorisationTag {
     val consignmentType: Option[String] = addConsignmentInput.consignmentType
 
     seriesId match {
-      case Some(value) => {
+      case Some(value) =>
         val bodyResult = ctx.ctx.transferringBodyService.getBody(value)
         bodyResult.map(body => {
           body.tdrCode match {
@@ -69,7 +69,6 @@ object ValidateConsignmentCreation extends AuthorisationTag {
               throw AuthorisationException(message)
           }
         })
-      }
       case _ if token.isJudgmentUser && consignmentType.isJudgment =>
         Future(continue)
       case _ =>
