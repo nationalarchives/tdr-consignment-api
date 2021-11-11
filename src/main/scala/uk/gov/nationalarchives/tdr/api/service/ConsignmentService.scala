@@ -6,16 +6,15 @@ import java.util.UUID
 
 import com.typesafe.config.Config
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
-import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.{consignmentTypeHelper, standard}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 import uk.gov.nationalarchives.tdr.keycloak.Token
-import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.{consignmentTypeHelper, standard}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
