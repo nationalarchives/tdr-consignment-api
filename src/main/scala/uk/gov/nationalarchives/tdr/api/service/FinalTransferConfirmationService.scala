@@ -3,8 +3,8 @@ package uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.Tables.ConsignmentmetadataRow
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FinalTransferConfirmationFields._
-import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.{FinalOpenRecordsConfirmed, LegalCustodyTransferConfirmed, LegalOwnershipTransferConfirmed}
-
+import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.{FinalOpenRecordsConfirmed, LegalCustodyTransferConfirmed,
+  LegalOwnershipTransferConfirmed}
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
