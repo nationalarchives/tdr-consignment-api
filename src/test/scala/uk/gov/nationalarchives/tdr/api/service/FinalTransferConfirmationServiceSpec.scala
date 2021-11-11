@@ -42,7 +42,7 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
     result.finalOpenRecordsConfirmed shouldBe true
     result.legalOwnershipTransferConfirmed shouldBe true
   }
-  it should "create consignment metadata given correct arguments for a judgment user" in {
+  "addConsignmentMetadata" should "create consignment metadata given correct arguments for a judgment user" in {
     val fixedUuidSource = new FixedUUIDSource()
     val metadataId: UUID = fixedUuidSource.uuid
     val consignmentMetadataRepoMock = mock[ConsignmentMetadataRepository]
