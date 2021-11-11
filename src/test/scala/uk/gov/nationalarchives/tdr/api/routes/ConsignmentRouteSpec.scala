@@ -131,22 +131,35 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
   }
 
-  "addConsignment" should "create a consignment of type 'judgment' when judgment consignment type provided" in {
-    addSeries(
-      fixedSeriesId,
-      fixedBodyId,
-      "Mock series")
-
+  "addConsignment" should "create a consignment of type 'judgment' when judgment consignment type provided and the user is a judgment user" in {
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_judgment_consignment_type")
-    val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validUserToken(body = "default-transferring-body-code"))
+    val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validJudgmentUserToken(body = "default-transferring-body-code"))
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
   }
 
-  "addConsignment" should "throw an error if the series id field isn't provided" in {
-    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_seriesid_missing")
-    val response: GraphqlMutationData = runTestMutation("mutation_missingseriesid", validUserToken())
+  "addConsignment" should "throw an error if no series id and the user is not a 'judgment' user" in {
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_seriesid")
+    val response: GraphqlMutationData = runTestMutation("mutation_no_seriesid", validUserToken())
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+  }
+
+  "addConsignment" should "throw an error if no series id, the user is a judgment user but the consignment type is not 'judgment'" in {
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_seriesid_standard_consignment_type")
+    val response: GraphqlMutationData = runTestMutation(
+      "mutation_no_seriesid_standard_consignment_type", validJudgmentUserToken(body = "default-transferring-body-code"))
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+  }
+
+  "addConsignment" should "throw an error if 'standard' user's body is not the same as the series body" in {
+    addSeries(
+      fixedSeriesId,
+      fixedBodyId,
+      "Mock series")
+
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_incorrect_body")
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "incorrect"))
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
