@@ -48,7 +48,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignmentsequence = consignmentSequence,
     consignmentreference = consignmentReference,
     consignmenttype = Some("standard"),
-    bodyid = Some(bodyId)
+    bodyid = bodyId
   )
 
   val consignmentRepoMock: ConsignmentRepository = mock[ConsignmentRepository]
@@ -84,7 +84,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     result.seriesid shouldBe Some(seriesId)
     result.userid shouldBe userId
     result.consignmentType shouldBe Some("standard")
-    result.bodyId shouldBe Some(bodyId)
+    result.bodyId shouldBe bodyId
   }
 
   "addConsignment" should "link a consignment to the user's ID" in {
@@ -442,7 +442,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       Some(Timestamp.from(fixedTimeSource)),
       None,
       consignmentSeq,
-      consignmentRef
+      consignmentRef,
+      bodyid = bodyId
     )
   }
 }
