@@ -131,10 +131,11 @@ object TestUtils {
                          userId: UUID,
                          seriesId: UUID = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861"),
                          consignmentRef: String = "TDR-2021-TESTMTB",
-                         consignmentType: String = "standard"): Unit = {
+                         consignmentType: String = "standard",
+                         bodyId: UUID = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")): Unit = {
     val sql = "INSERT INTO Consignment" +
-      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference, ConsignmentType)" +
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference, ConsignmentType, BodyId)" +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
     ps.setString(1, consignmentId.toString)
@@ -145,6 +146,7 @@ object TestUtils {
     ps.setTimestamp(6, fixedTimeStamp)
     ps.setString(7, consignmentRef)
     ps.setString(8, consignmentType)
+    ps.setString(9, bodyId.toString)
     ps.executeUpdate()
   }
   //scalastyle:on magic.number

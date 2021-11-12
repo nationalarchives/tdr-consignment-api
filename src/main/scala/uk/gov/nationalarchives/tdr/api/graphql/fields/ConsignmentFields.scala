@@ -28,7 +28,7 @@ object ConsignmentFields {
                          exportDatetime: Option[ZonedDateTime],
                          consignmentReference: String,
                          consignmentType: Option[String],
-                         bodyId: Option[UUID]
+                         bodyId: UUID
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]

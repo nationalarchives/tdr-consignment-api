@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS Consignment (
   ConsignmentSequence bigint DEFAULT NEXT VALUE FOR consignment_sequence_id,
   ConsignmentReference varchar(255) NOT NULL,
   ConsignmentType text,
-  BodyId uuid DEFAULT NULL,
+  BodyId uuid NOT NULL DEFAULT '6e3b76c4-1745-4467-8ac5-b4dd736e1b3e',
   PRIMARY KEY (ConsignmentId)
 );
 
