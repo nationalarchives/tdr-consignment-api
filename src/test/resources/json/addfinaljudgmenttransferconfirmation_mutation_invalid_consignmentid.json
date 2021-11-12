@@ -1,0 +1,3 @@
+{
+  "query": "mutation {addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: {consignmentId: \"f67d1337-cbd0-4fd1-9eac-611489e7113f\", legalCustodyTransferConfirmed: true}) {consignmentId, legalCustodyTransferConfirmed}}"
+}
