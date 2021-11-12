@@ -21,6 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
+  private val bodyId = UUID.randomUUID()
+
   val consignmentRepositoryMock: ConsignmentRepository = mock[ConsignmentRepository]
   val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
   val fileMetadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
@@ -47,7 +49,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       userId1,
       Timestamp.from(Instant.now),
       consignmentsequence = 400L,
-      consignmentreference = "TEST-TDR-2021-VB"
+      consignmentreference = "TEST-TDR-2021-VB",
+      bodyid = bodyId
     )
     val consignment2 = ConsignmentRow(
       consignmentId2,
@@ -55,7 +58,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       userId2,
       Timestamp.from(Instant.now),
       consignmentsequence = 500L,
-      consignmentreference = "TEST-TDR-2021-3B"
+      consignmentreference = "TEST-TDR-2021-3B",
+      bodyid = bodyId
     )
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
@@ -66,7 +70,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
           ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
-
 
     when(consignmentRepositoryMock.getConsignmentsOfFiles(Seq(fileId1)))
       .thenReturn(Future.successful(Seq((fileId1, consignment1), (fileId2, consignment2))))

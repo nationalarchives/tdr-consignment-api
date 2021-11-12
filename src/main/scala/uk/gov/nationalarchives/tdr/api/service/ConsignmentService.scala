@@ -78,7 +78,7 @@ class ConsignmentService(
           consignmentsequence = sequence,
           consignmentreference = consignmentRef,
           consignmenttype = consignmentType,
-          bodyid = Some(body.bodyId)
+          bodyid = body.bodyId
         )
       consignment <- consignmentRepository.addConsignment(consignmentRow).map(
         row => convertRowToConsignment(row)

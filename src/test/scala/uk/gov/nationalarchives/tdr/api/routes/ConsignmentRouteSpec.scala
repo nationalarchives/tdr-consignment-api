@@ -43,7 +43,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                          transferringBody: Option[TransferringBody],
                          files: Option[List[File]],
                          currentStatus: Option[CurrentStatus] = None,
-                         consignmentType: Option[String]
+                         consignmentType: Option[String],
+                         bodyId: Option[UUID] = None
                         )
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
   case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
@@ -202,8 +203,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   //scalastyle:off magic.number
   "getConsignment" should "return all requested fields" in {
     val sql = "INSERT INTO Consignment" +
-      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference)" +
-      "VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference, BodyId)" +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
     val bodyId = UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8")
     val bodyCode = "consignment-body-code"
@@ -217,6 +218,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.setTimestamp(5, fixedTimeStamp)
     ps.setTimestamp(6, fixedTimeStamp)
     ps.setString(7, "TEST-TDR-2021-MTB")
+    ps.setString(8, bodyId.toString)
     ps.executeUpdate()
     val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
     val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
@@ -499,10 +501,10 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
   private def setUpConsignments(consignmentParams: List[ConsignmentParams]): Unit = {
     val seriesId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    addSeries(seriesId, UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"), "Mock series")
+    addSeries(seriesId, fixedBodyId, "Mock series")
 
     consignmentParams.foreach(ps => {
-      createConsignment(ps.consignmentId, userId, seriesId, consignmentRef = ps.consignmentRef)
+      createConsignment(ps.consignmentId, userId, seriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId)
       createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
       addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
       ps.fileIds.foreach(fs => {

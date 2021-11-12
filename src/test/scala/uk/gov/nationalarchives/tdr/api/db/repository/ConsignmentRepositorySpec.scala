@@ -86,7 +86,7 @@ class ConsignmentRepositorySpec extends AnyFlatSpec with TestDatabase with Scala
 
     TestUtils.addTransferringBody(bodyId, bodyName, "some-body-code")
     TestUtils.addSeries(seriesId, bodyId, seriesCode)
-    TestUtils.createConsignment(consignmentId, userId, seriesId)
+    TestUtils.createConsignment(consignmentId, userId, seriesId, bodyId = bodyId)
 
     val consignmentBody = consignmentRepository.getTransferringBodyOfConsignment(consignmentId).futureValue.head
 
