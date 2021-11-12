@@ -43,7 +43,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                          transferringBody: Option[TransferringBody],
                          files: Option[List[File]],
                          currentStatus: Option[CurrentStatus] = None,
-                         consignmentType: Option[String]
+                         consignmentType: Option[String],
+                         bodyId: Option[UUID] = None
                         )
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
   case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
@@ -500,10 +501,10 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
   private def setUpConsignments(consignmentParams: List[ConsignmentParams]): Unit = {
     val seriesId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    addSeries(seriesId, UUID.fromString("830f0315-e683-440e-90d0-5f4aa60388c6"), "Mock series")
+    addSeries(seriesId, fixedBodyId, "Mock series")
 
     consignmentParams.foreach(ps => {
-      createConsignment(ps.consignmentId, userId, seriesId, consignmentRef = ps.consignmentRef)
+      createConsignment(ps.consignmentId, userId, seriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId)
       createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
       addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
       ps.fileIds.foreach(fs => {

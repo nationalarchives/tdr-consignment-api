@@ -71,11 +71,11 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
   }
 
   def getTransferringBodyOfConsignment(consignmentId: UUID)(implicit executionContext: ExecutionContext): Future[Seq[BodyRow]] = {
-    val query = Consignment.join(Series)
-      .on(_.seriesid === _.seriesid).join(Body)
-      .on(_._2.bodyid === _.bodyid)
-      .filter(_._1._1.consignmentid === consignmentId)
+    val query = Consignment.join(Body)
+      .on(_.bodyid === _.bodyid)
+      .filter(_._1.consignmentid === consignmentId)
       .map(rows => rows._2)
+
     db.run(query.result)
   }
 
