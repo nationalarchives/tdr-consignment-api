@@ -47,7 +47,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     Timestamp.from(FixedTimeSource.now),
     consignmentsequence = consignmentSequence,
     consignmentreference = consignmentReference,
-    consignmenttype = Some("standard"),
+    consignmenttype = "standard",
     bodyid = bodyId
   )
 
@@ -78,12 +78,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(mockBody.bodyId).thenReturn(bodyId)
     when(mockToken.transferringBody).thenReturn(Some("body-code"))
 
-    val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), Some("standard")), mockToken).futureValue
+    val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
     result.consignmentid shouldBe consignmentId
     result.seriesid shouldBe Some(seriesId)
     result.userid shouldBe userId
-    result.consignmentType shouldBe Some("standard")
+    result.consignmentType shouldBe "standard"
     result.bodyId shouldBe bodyId
   }
 
@@ -98,7 +98,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(mockToken.transferringBody).thenReturn(Some("body-code"))
     when(mockToken.userId).thenReturn(userId)
     when(fixedUuidSource.uuid).thenReturn(consignmentId)
-    consignmentService.addConsignment(AddConsignmentInput(Some(seriesId)), mockToken).futureValue
+    consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
     verify(consignmentRepoMock).addConsignment(mockConsignment)
   }
@@ -107,7 +107,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockToken = mock[Token]
 
     val thrownException = intercept[Exception] {
-      consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), Some("notRecognizedType")), mockToken).futureValue
+      consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "notRecognizedType"), mockToken).futureValue
     }
 
     thrownException.getMessage should equal("Invalid consignment type 'notRecognizedType' for consignment")
@@ -119,7 +119,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(mockToken.transferringBody).thenReturn(None)
 
     val thrownException = intercept[Exception] {
-      consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), Some("standard")), mockToken).futureValue
+      consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
     }
 
     thrownException.getMessage should equal("No transferring body in user token for user '8d415358-f68b-403b-a90a-daab3fd60109'")
@@ -443,7 +443,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       None,
       consignmentSeq,
       consignmentRef,
-      bodyid = bodyId
+      "standard",
+      bodyId
     )
   }
 }

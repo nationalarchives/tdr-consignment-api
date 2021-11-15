@@ -55,7 +55,7 @@ object ValidateConsignmentCreation extends AuthorisationTag {
       throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
     val addConsignmentInput = ctx.arg[AddConsignmentInput]("addConsignmentInput")
     val seriesId: Option[UUID] = addConsignmentInput.seriesid
-    val consignmentType: Option[String] = addConsignmentInput.consignmentType
+    val consignmentType: String = addConsignmentInput.consignmentType
 
     seriesId match {
       case Some(value) =>

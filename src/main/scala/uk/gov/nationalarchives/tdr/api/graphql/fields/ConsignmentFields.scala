@@ -27,13 +27,13 @@ object ConsignmentFields {
                          transferInitiatedDatetime: Option[ZonedDateTime],
                          exportDatetime: Option[ZonedDateTime],
                          consignmentReference: String,
-                         consignmentType: Option[String],
+                         consignmentType: String,
                          bodyId: UUID
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
-  case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: Option[String] = None)
+  case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: String)
 
   case class AntivirusProgress(filesProcessed: Int)
 

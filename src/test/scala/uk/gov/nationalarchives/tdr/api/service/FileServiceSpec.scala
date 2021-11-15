@@ -50,6 +50,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       Timestamp.from(Instant.now),
       consignmentsequence = 400L,
       consignmentreference = "TEST-TDR-2021-VB",
+      consignmenttype = "standard",
       bodyid = bodyId
     )
     val consignment2 = ConsignmentRow(
@@ -59,6 +60,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       Timestamp.from(Instant.now),
       consignmentsequence = 500L,
       consignmentreference = "TEST-TDR-2021-3B",
+      consignmenttype = "standard",
       bodyid = bodyId
     )
 
