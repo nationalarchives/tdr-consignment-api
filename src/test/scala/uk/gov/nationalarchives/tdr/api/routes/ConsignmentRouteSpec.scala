@@ -119,19 +119,6 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
   }
 
-//  "addConsignment" should "create a consignment of type 'standard' if no consignment type provided" in {
-//    addSeries(
-//      fixedSeriesId,
-//      fixedBodyId,
-//      "Mock series")
-//
-//    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-//    val response: GraphqlMutationData = runTestMutation("mutation_no_consignment_type", validUserToken(body = "default-transferring-body-code"))
-//    response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
-//
-//    checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
-//  }
-
   "addConsignment" should "create a consignment of type 'judgment' when judgment consignment type provided and the user is a judgment user" in {
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_judgment_consignment_type")
     val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validJudgmentUserToken(body = "default-transferring-body-code"))
