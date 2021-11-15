@@ -9,7 +9,7 @@ input AddAntivirusMetadataInput {
 
 input AddConsignmentInput {
   seriesid: UUID
-  consignmentType: String
+  consignmentType: String!
 }
 
 input AddFileAndMetadataInput {
