@@ -1,4 +1,4 @@
-FROM openjdk:15-jdk-alpine
+FROM alpine
 #For alpine versions need to create a group before adding a user to the image
 WORKDIR /api
 RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
@@ -6,7 +6,8 @@ RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
     apk upgrade p11-kit busybox && \
     apk add ca-certificates && \
     chown -R apiuser /api && \
-    wget https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
+    wget https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem && \
+    apk add openjdk15 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 COPY target/scala-2.13/consignmentapi.jar /api
 
 USER apiuser
