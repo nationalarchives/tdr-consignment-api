@@ -12,7 +12,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
-import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.{consignmentTypeHelper, standard}
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.{ConsignmentTypeHelper, standard}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -56,12 +56,7 @@ class ConsignmentService(
   def addConsignment(addConsignmentInput: AddConsignmentInput, token: Token): Future[Consignment] = {
     val now = timeSource.now
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
-    val consignmentTypeInput: Option[String] = addConsignmentInput.consignmentType
-    val consignmentType: Option[String] = consignmentTypeInput match {
-      case _ if consignmentTypeInput.isJudgment | consignmentTypeInput.isStandard => consignmentTypeInput
-      case None => Some(standard)
-      case _ => throw InputDataException(s"Invalid consignment type '${consignmentTypeInput.get}' for consignment")
-    }
+    val consignmentType: String = addConsignmentInput.consignmentType.validateType
 
     val userBody = token.transferringBody.getOrElse(
       throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))

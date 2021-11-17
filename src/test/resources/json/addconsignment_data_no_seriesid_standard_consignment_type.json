@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Cannot create consignment without series for consignment type 'Some(standard)'",
+      "message": "Cannot create consignment without series for consignment type 'standard'",
       "locations": [
         {
           "column": 47,

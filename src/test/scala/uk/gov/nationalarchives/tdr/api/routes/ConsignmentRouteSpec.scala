@@ -119,19 +119,6 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
   }
 
-  "addConsignment" should "create a consignment of type 'standard' if no consignment type provided" in {
-    addSeries(
-      fixedSeriesId,
-      fixedBodyId,
-      "Mock series")
-
-    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_no_consignment_type", validUserToken(body = "default-transferring-body-code"))
-    response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
-
-    checkConsignmentExists(response.data.get.addConsignment.consignmentid.get)
-  }
-
   "addConsignment" should "create a consignment of type 'judgment' when judgment consignment type provided and the user is a judgment user" in {
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_judgment_consignment_type")
     val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validJudgmentUserToken(body = "default-transferring-body-code"))
@@ -203,8 +190,9 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   //scalastyle:off magic.number
   "getConsignment" should "return all requested fields" in {
     val sql = "INSERT INTO Consignment" +
-      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime, ExportDatetime, ConsignmentReference, BodyId)" +
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "(ConsignmentId, SeriesId, UserId, Datetime, TransferInitiatedDatetime," +
+      "ExportDatetime, ConsignmentReference, ConsignmentType, BodyId)" +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = databaseConnection.prepareStatement(sql)
     val bodyId = UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8")
     val bodyCode = "consignment-body-code"
@@ -218,7 +206,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.setTimestamp(5, fixedTimeStamp)
     ps.setTimestamp(6, fixedTimeStamp)
     ps.setString(7, "TEST-TDR-2021-MTB")
-    ps.setString(8, bodyId.toString)
+    ps.setString(8, "standard")
+    ps.setString(9, bodyId.toString)
     ps.executeUpdate()
     val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
     val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"

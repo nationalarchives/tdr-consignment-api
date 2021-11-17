@@ -7,7 +7,7 @@ import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.AddConsignmentInput
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
-import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.consignmentTypeHelper
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
 
 import scala.concurrent._
 import scala.language.postfixOps
@@ -55,7 +55,7 @@ object ValidateConsignmentCreation extends AuthorisationTag {
       throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
     val addConsignmentInput = ctx.arg[AddConsignmentInput]("addConsignmentInput")
     val seriesId: Option[UUID] = addConsignmentInput.seriesid
-    val consignmentType: Option[String] = addConsignmentInput.consignmentType
+    val consignmentType: String = addConsignmentInput.consignmentType
 
     seriesId match {
       case Some(value) =>
