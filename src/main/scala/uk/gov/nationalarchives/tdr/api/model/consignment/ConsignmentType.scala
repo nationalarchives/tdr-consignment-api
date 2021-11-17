@@ -6,7 +6,7 @@ object ConsignmentType {
   val standard = "standard"
   val judgment = "judgment"
 
-  implicit class consignmentTypeHelper(value: String) {
+  implicit class ConsignmentTypeHelper(value: String) {
     def validateType: String = {
       value match {
         case _ if isStandard | isJudgment => value

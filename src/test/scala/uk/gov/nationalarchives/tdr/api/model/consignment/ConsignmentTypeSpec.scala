@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.model.consignment
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.consignmentTypeHelper
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
 
 class ConsignmentTypeSpec extends AnyFlatSpec with ScalaFutures with Matchers {
   val standardType: String = "standard"
