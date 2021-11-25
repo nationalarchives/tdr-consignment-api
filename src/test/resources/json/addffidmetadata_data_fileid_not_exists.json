@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Referential integrity constraint violation: \"CONSTRAINT_C5: PUBLIC.FFIDMetadata FOREIGN KEY(FileId) REFERENCES PUBLIC.File(FileId) ('16b8c5f9-9d72-4d12-af06-4c2749823ebd')\"; SQL statement:\ninsert into \"FFIDMetadata\" (\"FFIDMetadataId\",\"FileId\",\"Software\",\"SoftwareVersion\",\"Datetime\",\"BinarySignatureFileVersion\",\"ContainerSignatureFileVersion\",\"Method\")  values (?,?,?,?,?,?,?,?) [23506-200]",
+      "message": "No consignment found for file 16b8c5f9-9d72-4d12-af06-4c2749823ebd",
       "extensions": {
         "code": "INVALID_INPUT_DATA"
       }
