@@ -1,28 +1,31 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
-import net.logstash.logback.argument.StructuredArguments._
-
-import java.sql.Timestamp
-import java.time.LocalDateTime
-import java.util.UUID
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddFileMetadataInput, FileMetadata, SHA256ServerSideChecksum}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataFields
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
-import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils._
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
+
+  def getCustomMetadata: Future[List[MetadataFields.Metadata]] = {
+    fileMetadataRepository.getCustomMetadata
+
+  }
 
   def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
     val now = Timestamp.from(timeSource.now)

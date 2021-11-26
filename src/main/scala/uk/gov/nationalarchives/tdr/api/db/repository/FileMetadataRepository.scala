@@ -1,11 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import java.util.UUID
-
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
+import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataFields._
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
@@ -15,6 +15,59 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
 
   private val insertFileStatusQuery =
     Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
+
+  def getDataType(dataType: Option[String]): DataType = dataType match {
+    case Some("text") => Text
+    case Some("datetime") => DateTime
+    case Some("integer") => Integer
+    case Some("decimal") => Decimal
+    case _ => throw new Exception(s"Invalid data type $dataType")
+  }
+
+  def getCustomMetadata: Future[List[Metadata]] = {
+    (for {
+      properties <- db.run(Filepropertyv2.result)
+      values <- db.run(Filepropertyvaluesv2.result)
+      dependencies <- db.run(Filepropertydependanciesv2.result)
+    } yield (properties, values, dependencies)).map {
+      case (properties, valuesResult, dependenciesResult) =>
+        val values: Map[String, Seq[Filepropertyvaluesv2Row]] = valuesResult.groupBy(_.propertyname)
+        val dependencies: Map[Int, Seq[Filepropertydependanciesv2Row]] = dependenciesResult.groupBy(_.groupid)
+
+        def rowsToMetadata(fp: Filepropertyv2Row, defaultValueOption: Option[String] = None): Metadata = {
+          val metadataValues: Seq[MetadataValues] = values.getOrElse(fp.name, Nil).map(value => {
+            value.dependancies.map(groupId => {
+              val deps: Seq[Metadata] = for {
+                dep <- dependencies.getOrElse(groupId, Nil)
+                dependencyProps <- properties.find(_.name == dep.propertyname).map(fp => {
+                  rowsToMetadata(fp, dep.default)
+                })
+              } yield dependencyProps
+              MetadataValues(deps.toList, value.propertyvalue)
+            }).getOrElse(MetadataValues(Nil, value.propertyvalue))
+          })
+          Metadata(
+            fp.name,
+            fp.fullname,
+            fp.description,
+            fp.propertygroup,
+            getDataType(fp.datatype),
+            fp.editable.getOrElse(false),
+            fp.mutlivalue.getOrElse(false),
+            defaultValueOption,
+            metadataValues.toList
+          )
+        }
+
+        properties.map(prop => {
+          val defaultValue: Option[String] = for {
+            values <- values.get(prop.name)
+            value <- values.find(_.default.getOrElse(false))
+          } yield value.propertyvalue
+          rowsToMetadata(prop, defaultValue)
+        }).toList
+    }
+  }
 
   def addFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[FilemetadataRow]] = {
     db.run(insertFileMetadataQuery ++= rows)

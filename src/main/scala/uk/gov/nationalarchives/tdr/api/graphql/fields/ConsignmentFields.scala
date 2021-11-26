@@ -75,7 +75,7 @@ object ConsignmentFields {
       Field("createdDatetime", OptionType(ZonedDateTimeType), resolve = _.value.createdDateTime),
       Field("transferInitiatedDatetime", OptionType(ZonedDateTimeType), resolve = _.value.transferInitiatedDatetime),
       Field("exportDatetime", OptionType(ZonedDateTimeType), resolve = _.value.exportDatetime),
-      Field("consignmentType", OptionType(StringType), resolve = _.value.consignmentType),
+      Field("consignmentType", StringType, resolve = _.value.consignmentType),
       Field(
         "allChecksSucceeded",
         BooleanType,

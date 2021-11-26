@@ -83,6 +83,11 @@ object ValidateConsignmentCreation extends AuthorisationTag {
   }
 }
 
+case class ValidateNotHavingToUseAToken() extends AuthorisationTag {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
+                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = Future(continue)
+}
+
 case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
                        (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {

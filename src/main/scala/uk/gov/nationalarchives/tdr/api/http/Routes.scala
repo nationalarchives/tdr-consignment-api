@@ -11,8 +11,10 @@ import akka.http.scaladsl.server.directives.{Credentials, DebuggingDirectives, L
 import akka.http.scaladsl.server.{Directive0, ExceptionHandler, Route, RouteResult}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
+import com.nimbusds.oauth2.sdk.token.BearerAccessToken
 import com.typesafe.config._
 import com.typesafe.scalalogging.Logger
+import org.keycloak.representations.AccessToken
 import sangria.ast.{Field, OperationDefinition}
 import sangria.parser.QueryParser
 import spray.json.{JsObject, JsString, JsValue}
