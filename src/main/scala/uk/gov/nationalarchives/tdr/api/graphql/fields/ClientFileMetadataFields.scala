@@ -1,11 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.util.UUID
-
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
-import sangria.schema.{Argument, Field, ObjectType, fields}
+import sangria.schema.{Argument, Field, InputObjectType, ObjectType, OptionInputType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.ValidateHasClientFileMetadataAccess
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
@@ -21,6 +20,9 @@ object ClientFileMetadataFields {
   implicit val ClientFileMetadataType: ObjectType[Unit, ClientFileMetadata] = deriveObjectType[Unit, ClientFileMetadata]()
 
   val FileIdArg = Argument("fileId", UuidType)
+  case class FileIds(fileIds: List[UUID])
+  implicit val FileIdsType: InputObjectType[FileIds] = deriveInputObjectType[FileIds]()
+  val FileIdsArg: Argument[Option[UUID]] = Argument("fileId", OptionInputType(UuidType))
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getClientFileMetadata", ClientFileMetadataType,

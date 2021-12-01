@@ -15,19 +15,26 @@ object MetadataFields {
   case object DateTime extends DataType
   case object Decimal extends DataType
 
-  case class MetadataValues(dependencies: List[Metadata], value: String)
-  case class Metadata(
-                       name: String, fullName: Option[String], description: Option[String],
+  sealed trait PropertyType
+  case object System extends PropertyType
+  case object Defined extends PropertyType
+  case object Supplied extends PropertyType
+
+
+  case class MetadataValues(dependencies: List[MetadataField], value: String)
+  case class MetadataField(
+                       name: String, fullName: Option[String], description: Option[String], propertyType: PropertyType,
                        propertyGroup: Option[String], dataType: DataType, editable: Boolean,
                        multiValue: Boolean, defaultValue: Option[String], values: List[MetadataValues]
                      )
 
   implicit val DataTypeType: EnumType[DataType] = deriveEnumType[DataType]()
-  implicit val MetadataType: ObjectType[Unit, Metadata] = deriveObjectType[Unit, Metadata]()
+  implicit val PropertyTypeType: EnumType[PropertyType] = deriveEnumType[PropertyType]()
+  implicit val MetadataFieldsType: ObjectType[Unit, MetadataField] = deriveObjectType[Unit, MetadataField]()
   implicit val MetadataValuesType: ObjectType[Unit, MetadataValues] = deriveObjectType[Unit, MetadataValues]()
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("metadata", ListType(MetadataType),
+    Field("metadata", ListType(MetadataFieldsType),
       arguments=Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.getCustomMetadata,
       tags=List(ValidateNotHavingToUseAToken())

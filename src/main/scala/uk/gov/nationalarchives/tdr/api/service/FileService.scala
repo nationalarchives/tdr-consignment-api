@@ -56,15 +56,16 @@ class FileService(
     fileRepository.countFilesInConsignment(consignmentId)
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[List[File]] = {
+  def getFileMetadata(consignmentId: UUID, fileId: Option[UUID]): Future[List[File]] = {
     for {
-      fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
-      ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
-      avList <- avMetadataService.getAntivirusMetadata(consignmentId)
+      fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId, fileId)
+      ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileId)
+      avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileId)
+      allMetadata <- fileMetadataService.getAllMetadata(fileId)
     } yield {
       fileMetadataList map {
         case (fileId, fileMetadata) =>
-          File(fileId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
+          File(fileId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId), allMetadata)
       }
     }.toList
   }

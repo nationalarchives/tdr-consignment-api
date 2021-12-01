@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.time.ZonedDateTime
 import java.util.UUID
-
 import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
@@ -12,9 +11,11 @@ import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, L
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.graphql._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ClientFileMetadataFields.{FileIdArg, FileIdsArg}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.FileMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues, Metadata}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -58,11 +59,13 @@ object ConsignmentFields {
     deriveObjectType[Unit, FFIDProgress]()
   implicit val TransferringBodyType: ObjectType[Unit, TransferringBody] =
     deriveObjectType[Unit, TransferringBody]()
+  implicit val MetadataType: ObjectType[Unit, Metadata] = deriveObjectType[Unit, Metadata]()
   implicit val FileType: ObjectType[Unit, File] =
     deriveObjectType[Unit, File]()
   implicit val FileMetadataType: ObjectType[Unit, FileMetadataValues] = {
     deriveObjectType[Unit, FileMetadataValues]()
   }
+
   implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
     deriveObjectType[Unit, CurrentStatus]()
 
@@ -109,7 +112,8 @@ object ConsignmentFields {
       Field(
         "files",
         ListType(FileType),
-        resolve = context => DeferFiles(context.value.consignmentid)
+        arguments = FileIdsArg :: Nil,
+        resolve = context => DeferFiles(context.value.consignmentid, context.arg(FileIdsArg))
       ),
       Field(
         "consignmentReference",

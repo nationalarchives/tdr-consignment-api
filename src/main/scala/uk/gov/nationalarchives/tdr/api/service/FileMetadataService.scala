@@ -8,6 +8,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.An
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddFileMetadataInput, FileMetadata, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataFields
+import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataFields.PropertyType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
@@ -22,9 +23,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
-  def getCustomMetadata: Future[List[MetadataFields.Metadata]] = {
+  def getCustomMetadata: Future[List[MetadataFields.MetadataField]] = {
     fileMetadataRepository.getCustomMetadata
-
   }
 
   def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
@@ -62,11 +62,14 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
           case e: Throwable =>
             throw InputDataException(s"Could not find metadata for file ${addFileMetadataInput.fileId}", Some(e))
         }
-      case _ => Future.failed(InputDataException(s"$filePropertyName found. We are only expecting checksum updates for now"))
+      case _ => fileMetadataRepository.addFileMetadata(FilemetadataRow(uuidSource.uuid, addFileMetadataInput.fileId, addFileMetadataInput.value, Timestamp.from(timeSource.now), userId, addFileMetadataInput.filePropertyName) :: Nil)
+        .map(_ => FileMetadata(filePropertyName, addFileMetadataInput.fileId, addFileMetadataInput.value))
     }
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId).map {
+  def getAllMetadata(fileId: Option[UUID]): Future[List[Metadata]] = fileMetadataRepository.getFileMetadataForFile(fileId)
+
+  def getFileMetadata(consignmentId: UUID, fileId: Option[UUID] = None): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId, fileId).map {
     rows =>
       rows.groupBy(_.fileid).map {
         case (fileId, fileMetadata) =>
@@ -111,7 +114,9 @@ object FileMetadataService {
   val clientSideProperties = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
   val staticMetadataProperties = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 
-  case class File(fileId: UUID, metadata: FileMetadataValues, ffidMetadata: Option[FFIDMetadata], antivirusMetadata: Option[AntivirusMetadata])
+  case class File(fileId: UUID, metadata: FileMetadataValues, ffidMetadata: Option[FFIDMetadata], antivirusMetadata: Option[AntivirusMetadata], allMetadata: List[Metadata])
+
+  case class Metadata(propertyName: String, value: String, propertyGroup: Option[String])
 
   case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
                                 clientSideOriginalFilePath: Option[String],

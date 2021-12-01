@@ -130,7 +130,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
           ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
-    val metadataList: Seq[File] = service.getFileMetadata(consignmentId).futureValue
+    val metadataList: Seq[File] = service.getFileMetadata(consignmentId, Some(UUID.randomUUID())).futureValue
 
     metadataList.length should equal(1)
 
@@ -155,7 +155,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         "pronom",
         List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"))),
         datetime.getTime)),
-      Option(AntivirusMetadata(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp.getTime))
+      Option(AntivirusMetadata(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp.getTime)),
+      Nil
     )
 
     actualFileMetadata should equal(expectedFileMetadata)
@@ -192,7 +193,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
           ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
 
-    val fileMetadataList = service.getFileMetadata(consignmentId).futureValue
+    val fileMetadataList = service.getFileMetadata(consignmentId, Some(UUID.randomUUID())).futureValue
 
     fileMetadataList.length should equal(1)
 
@@ -208,7 +209,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         "pronom",
         List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"))),
         datetime.getTime)),
-      Option.empty
+      Option.empty, Nil
     )
 
     actualFileMetadata should equal(expectedFileMetadata)

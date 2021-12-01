@@ -62,8 +62,8 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository, matche
     }
   }
 
-  def getFFIDMetadata(consignmentId: UUID): Future[List[FFIDMetadata]] = {
-    ffidMetadataRepository.getFFIDMetadata(consignmentId).map {
+  def getFFIDMetadata(consignmentId: UUID, fileId: Option[UUID] = None): Future[List[FFIDMetadata]] = {
+    ffidMetadataRepository.getFFIDMetadata(consignmentId, fileId).map {
       ffidMetadataAndMatchesRows =>
         val ffidMetadataAndMatches: Map[FfidmetadataRow, Seq[FfidmetadatamatchesRow]] = {
           ffidMetadataAndMatchesRows.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
