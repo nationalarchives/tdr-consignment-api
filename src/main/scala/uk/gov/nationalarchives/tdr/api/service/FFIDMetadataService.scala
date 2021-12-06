@@ -78,6 +78,8 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
 
   private def generateFileStatusRows(ffidMetadata: FFIDMetadataInput): Future[List[FilestatusRow]] = {
     val fileId = ffidMetadata.fileId
+    val timestamp = Timestamp.from(timeSource.now)
+
     for {
       consignments <- fileRepository.getConsignmentForFile(fileId)
       consignmentType = if (consignments.isEmpty) { throw InputDataException(s"No consignment found for file $fileId") }
@@ -85,9 +87,9 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
       uniqueStatuses: List[String] = ffidMetadata.matches.map(m => checkStatus(m.puid, consignmentType)).distinct
       rows = uniqueStatuses match {
         case s if uniqueStatuses.size == 1 =>
-          List(FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, s.head, Timestamp.from(timeSource.now)))
+          List(FilestatusRow(uuidSource.uuid, fileId, FFID, s.head, timestamp))
         case _ => uniqueStatuses.filterNot(_.equals(Success)).map(
-          FilestatusRow(uuidSource.uuid, ffidMetadata.fileId, FFID, _, Timestamp.from(timeSource.now)))
+          FilestatusRow(uuidSource.uuid, fileId, FFID, _, timestamp))
       }
     } yield rows
   }
