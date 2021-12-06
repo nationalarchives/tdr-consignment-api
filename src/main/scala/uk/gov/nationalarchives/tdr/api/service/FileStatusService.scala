@@ -32,4 +32,5 @@ object FileStatusService {
   val VirusDetected = "VirusDetected"
   val PasswordProtected = "PasswordProtected"
   val Zip = "Zip"
+  val NonJudgmentFormat = "NonJudgmentFormat"
 }

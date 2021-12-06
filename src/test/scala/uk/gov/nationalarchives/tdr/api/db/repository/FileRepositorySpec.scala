@@ -157,6 +157,21 @@ class FileRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures
     files.head.fileid shouldBe fileOneId
   }
 
+  "getConsignmentForFile" should "return the correct consignment for the given file id" in {
+    val db = DbConnection.db
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+
+    TestUtils.createConsignment(consignmentId, userId)
+    TestUtils.createFile(fileOneId, consignmentId)
+
+    val files = fileRepository.getConsignmentForFile(fileOneId).futureValue
+
+    files.size shouldBe 1
+    files.head.consignmentid shouldBe consignmentId
+  }
+
   private def checkConsignmentStatusExists(consignmentId: UUID): Unit = {
     val sql = "SELECT * FROM ConsignmentStatus WHERE ConsignmentId = ?"
     val ps:PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
