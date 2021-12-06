@@ -4,7 +4,7 @@ import java.util.UUID
 
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow, Series}
+import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
 
 import scala.concurrent.{ExecutionContext, Future}
 

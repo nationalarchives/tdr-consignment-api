@@ -4,8 +4,6 @@ import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Checksum, FFID, Success}
 import java.util.UUID
 
-import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val executionContext: ExecutionContext) {
