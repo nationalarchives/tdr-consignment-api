@@ -2,12 +2,15 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches, Files, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches, Files}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
-
 import java.sql.Timestamp
 import java.util.UUID
+
+import uk.gov.nationalarchives.tdr.api.model.file.FileType.FileTypeHelper
+import uk.gov.nationalarchives.tdr.api.utils.{TreeNode, TreeNodesUtils}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileService(
@@ -21,13 +24,25 @@ class FileService(
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
 
+  private val treeNodesUtils = TreeNodesUtils(uuidSource)
+
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
-    val fileRows: List[FileRow] = addFileAndMetadataInput.metadataInput.map { _ =>
-        FileRow(uuidSource.uuid, consignmentId, userId, now)
-    }
-    val metadataWithIds: List[(UUID, ClientSideMetadataInput)] = fileRows.map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
+    val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
+    val allNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths)
+
+    val fileRows: List[FileRow] = allNodes.map(n => {
+      val v = n._2
+      val parentId: Option[UUID] = v.parentPath match {
+        case Some(value) => Some(allNodes(value).id)
+        case None => None
+      }
+      FileRow(v.id, consignmentId, userId, now, filetype = Some(v.treeNodeType), filename = Some(v.name), parentid = parentId)}
+    ).toList
+
+    val metadataWithIds: List[(UUID, ClientSideMetadataInput)] =
+      fileRows.filter(_.filetype.get.isFileType).map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
 
     val fileMetadataRows: Seq[FilemetadataRow] = metadataWithIds.flatMap {
