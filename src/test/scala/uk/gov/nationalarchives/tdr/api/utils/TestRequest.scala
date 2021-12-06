@@ -24,7 +24,6 @@ trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
     implicit val unmarshaller: FromResponseUnmarshaller[A] = unmarshalResponse[A]()
     val query: String = fromResource(prefix + s"$queryFileName.json").mkString
     Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(token) ~> route ~> check {
-      val b = responseAs[String]
       responseAs[A]
     }
   }

@@ -34,4 +34,3 @@ object TreeNodesUtils {
   def apply(uuidSource: UUIDSource): TreeNodesUtils = new TreeNodesUtils(uuidSource)
   case class TreeNode(id: UUID, name: String, parentPath: Option[String], treeNodeType: String)
 }
-
