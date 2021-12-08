@@ -10,7 +10,8 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
 
   "generateNodes" should "generate the correct nodes for a nested path" in {
     val result = TreeNodesUtils(new FixedUUIDSource).generateNodes(Set("/a/path/with/some/nested/folders/file"))
-    result.size should equal(8)
+    val expectedSize = 8;
+    result.size should equal(expectedSize)
     List(
       ("/", None, ""),
       ("/a", Some("/"), "a"),

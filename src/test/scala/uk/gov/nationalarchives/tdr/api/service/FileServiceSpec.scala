@@ -249,7 +249,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     response.last.fileId should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
     response.last.matchId should equal(2)
 
-    fileRows.size should equal(6)
+    val expectedFileRows = 6
+    fileRows.size should equal(expectedFileRows)
     fileRows.foreach(row => {
       row.consignmentid should equal(consignmentId)
       row.userid should equal(userId)

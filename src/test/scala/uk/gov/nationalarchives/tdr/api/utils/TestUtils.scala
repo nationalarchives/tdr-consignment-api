@@ -187,8 +187,6 @@ object TestUtils {
     result
   }
 
-  //scalastyle:on magic.number
-
   def createFile(fileId: UUID, consignmentId: UUID, fileType: String = FileType.fileTypeIdentifier): Unit = {
     val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime, FileType) VALUES (?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
