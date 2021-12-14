@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.model.file
 
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 
-object FileType {
+object NodeType {
   val folderTypeIdentifier = "Folder"
   val fileTypeIdentifier = "File"
 
@@ -12,7 +12,7 @@ object FileType {
 
     def name: String = deconstructed.last
     def parent: Option[String] =
-      if (deconstructed.size == 1) None else Some(deconstructed.dropRight(1).mkString("/"))
+      if (deconstructed.length == 1) None else Some(deconstructed.dropRight(1).mkString("/"))
 
     def fileType: String = {
       if (isFile) fileTypeIdentifier else folderTypeIdentifier

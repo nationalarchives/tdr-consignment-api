@@ -4,7 +4,7 @@ import org.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.model.file.FileType
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
 class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
 
@@ -24,14 +24,14 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
       val (path, parent, name) = pathWithParent
       val treeNode = result.get(path)
       treeNode.isDefined should be(true)
-      treeNode.get.treeNodeType should equal(FileType.folderTypeIdentifier)
+      treeNode.get.treeNodeType should equal(NodeType.folderTypeIdentifier)
       treeNode.get.parentPath should equal(parent)
       treeNode.get.name should equal(name)
     })
     val folderPath = "/a/path/with/some/nested/folders"
     val fileTreeNode = result.get(s"$folderPath/file")
     fileTreeNode.isDefined should be(true)
-    fileTreeNode.get.treeNodeType should be(FileType.fileTypeIdentifier)
+    fileTreeNode.get.treeNodeType should be(NodeType.fileTypeIdentifier)
     fileTreeNode.get.name should equal("file")
     fileTreeNode.get.parentPath.get should be(folderPath)
   }
@@ -42,7 +42,7 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
     result.size should equal(1)
     val treeNode = result.get(fileName)
     treeNode.isDefined should be(true)
-    treeNode.get.treeNodeType should be(FileType.fileTypeIdentifier)
+    treeNode.get.treeNodeType should be(NodeType.fileTypeIdentifier)
     treeNode.get.parentPath.isEmpty should be(true)
     treeNode.get.name should be(fileName)
   }

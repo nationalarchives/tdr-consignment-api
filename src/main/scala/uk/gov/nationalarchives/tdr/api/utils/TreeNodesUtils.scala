@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.utils
 
 import java.io.{File => JIOFile}
 import java.util.UUID
-import uk.gov.nationalarchives.tdr.api.model.file.FileType.{fileTypeIdentifier, folderTypeIdentifier}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{fileTypeIdentifier, folderTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.UUIDSource
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils.TreeNode
 
@@ -17,7 +17,7 @@ class TreeNodesUtils(uuidSource: UUIDSource) {
       val name = jioFile.getName
       val treeNode = TreeNode(uuidSource.uuid, name, parentPath, fileType)
       val nextMap = nodes + (originalPath -> treeNode)
-      if (parentPath.isEmpty && !nodes.contains(originalPath)) {
+      if (parentPath.isEmpty) {
         nextMap
       } else {
         innerFunction(parentPath.get, folderTypeIdentifier, nextMap)

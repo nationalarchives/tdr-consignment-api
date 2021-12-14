@@ -9,7 +9,7 @@ import io.circe.generic.extras.auto._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
-import uk.gov.nationalarchives.tdr.api.model.file.FileType
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDatabase, TestRequest}
@@ -504,7 +504,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
   private def setUpFileAndStandardMetadata(consignmentId: UUID, fileId: UUID): Unit = {
     createFile(fileId, consignmentId)
-    createFile(UUID.randomUUID(), consignmentId, FileType.folderTypeIdentifier)
+    createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier)
     generateMetadataPropertiesForFile(fileId)
     addAntivirusMetadata(fileId.toString)
     addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ServerSideChecksum)

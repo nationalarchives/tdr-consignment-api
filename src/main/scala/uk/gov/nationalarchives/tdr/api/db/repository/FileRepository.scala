@@ -4,7 +4,7 @@ import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
-import uk.gov.nationalarchives.tdr.api.model.file.FileType
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,7 +15,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     val query = Avmetadata.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
-      .filter(_._2.filetype === FileType.fileTypeIdentifier)
+      .filter(_._2.filetype === NodeType.fileTypeIdentifier)
       .filter(_._1.result === "")
       .map(_._2)
     db.run(query.result)
@@ -39,7 +39,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
 
   def countFilesInConsignment(consignmentId: UUID): Future[Int] = {
     val query = File.filter(_.consignmentid === consignmentId)
-      .filter(_.filetype === FileType.fileTypeIdentifier)
+      .filter(_.filetype === NodeType.fileTypeIdentifier)
       .length
     db.run(query.result)
   }
@@ -48,7 +48,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     val query = Avmetadata.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
-      .filter(_._2.filetype === FileType.fileTypeIdentifier)
+      .filter(_._2.filetype === NodeType.fileTypeIdentifier)
       .groupBy(_._1.fileid)
       .map(_._1)
       .length

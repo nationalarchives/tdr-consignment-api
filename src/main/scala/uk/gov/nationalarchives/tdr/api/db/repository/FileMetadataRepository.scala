@@ -4,7 +4,7 @@ import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
-import uk.gov.nationalarchives.tdr.api.model.file.FileType
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,7 +36,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     val query = Filemetadata.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
-      .filter(_._2.filetype === FileType.fileTypeIdentifier)
+      .filter(_._2.filetype === NodeType.fileTypeIdentifier)
       .map(_._1)
     db.run(query.result)
   }
@@ -47,7 +47,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
       .on(_._1.propertyname === _.name)
       .filter(_._1._2.consignmentid === consignmentId)
       .filter(_._2.name === SHA256ServerSideChecksum)
-      .filter(_._1._2.filetype === FileType.fileTypeIdentifier)
+      .filter(_._1._2.filetype === NodeType.fileTypeIdentifier)
       .groupBy(_._1._2.fileid)
       .map(_._1)
       .length

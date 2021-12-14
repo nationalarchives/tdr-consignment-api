@@ -11,7 +11,7 @@ import com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig
 import io.circe.Decoder
 import io.circe.parser.decode
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
-import uk.gov.nationalarchives.tdr.api.model.file.FileType
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 
@@ -187,7 +187,7 @@ object TestUtils {
     result
   }
 
-  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = FileType.fileTypeIdentifier): Unit = {
+  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = NodeType.fileTypeIdentifier): Unit = {
     val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime, FileType) VALUES (?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
