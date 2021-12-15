@@ -12,12 +12,11 @@ class TreeNodesUtils(uuidSource: UUIDSource) {
   def generateNodes(filePaths: Set[String]): Map[String, TreeNode] = {
     @tailrec
     def innerFunction(originalPath: String, fileType: String, nodes: Map[String, TreeNode]): Map[String, TreeNode] = {
-      val pathWithoutInitialSlash: String = if (originalPath.startsWith("/")) originalPath.tail else originalPath
-      val jioFile = new JIOFile(pathWithoutInitialSlash)
+      val jioFile = new JIOFile(originalPath)
       val parentPath = Option(jioFile.getParent)
       val name = jioFile.getName
       val treeNode = TreeNode(uuidSource.uuid, name, parentPath, fileType)
-      val nextMap = nodes + (pathWithoutInitialSlash -> treeNode)
+      val nextMap = nodes + (originalPath -> treeNode)
       if (parentPath.isEmpty) {
         nextMap
       } else {
@@ -26,7 +25,8 @@ class TreeNodesUtils(uuidSource: UUIDSource) {
     }
 
     filePaths.flatMap(path => {
-      innerFunction(path, fileTypeIdentifier, Map())
+      val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
+      innerFunction(pathWithoutInitialSlash, fileTypeIdentifier, Map())
     }).toMap
   }
 }
