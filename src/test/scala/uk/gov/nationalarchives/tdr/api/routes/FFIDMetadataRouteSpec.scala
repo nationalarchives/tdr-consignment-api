@@ -112,17 +112,6 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
   }
 
   "addFFIDMetadata" should
-      "set a single file status of 'Success' when there are multiple success matches only found for 'judgment' consignment type" in {
-    seedDatabaseWithDefaultEntries("judgment")
-
-    runTestMutation("mutation_status_judgment_multiple_success", validBackendChecksToken("file_format"))
-
-    val result = getFileStatusResult(defaultFileId, FFID)
-    result.size should be(1)
-    result.head should equal(Success)
-  }
-
-  "addFFIDMetadata" should
       "set a single file status of 'PasswordProtected' when a password protected match only is found for 'standard' consignment type" in {
     seedDatabaseWithDefaultEntries()
 
