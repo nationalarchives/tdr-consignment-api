@@ -28,6 +28,10 @@ class FixedUUIDSource extends UUIDSource {
       UUID.fromString("8b5bba6e-5f12-11eb-ae93-0242ac130002"),
       UUID.fromString("8b5bbc44-5f12-11eb-ae93-0242ac130002"),
       UUID.fromString("8b5bbd98-5f12-11eb-ae93-0242ac130002"),
+      UUID.fromString("8b5bbf64-5f12-11eb-ae93-0242ac130002"),
+      UUID.fromString("8b5bbf64-5f12-11eb-ae93-0242ac130002"),
+      UUID.fromString("8b5bbf64-5f12-11eb-ae93-0242ac130002"),
+      UUID.fromString("8b5bbf64-5f12-11eb-ae93-0242ac130002"),
       UUID.fromString("8b5bbf64-5f12-11eb-ae93-0242ac130002")
     )(idx)
   }

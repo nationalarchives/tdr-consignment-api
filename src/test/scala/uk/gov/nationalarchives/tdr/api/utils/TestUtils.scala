@@ -3,7 +3,6 @@ package uk.gov.nationalarchives.tdr.api.utils
 import java.sql.{PreparedStatement, ResultSet, Timestamp}
 import java.time.Instant
 import java.util.UUID
-
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
@@ -12,6 +11,7 @@ import com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig
 import io.circe.Decoder
 import io.circe.parser.decode
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 
@@ -187,15 +187,14 @@ object TestUtils {
     result
   }
 
-  //scalastyle:on magic.number
-
-  def createFile(fileId: UUID, consignmentId: UUID): Unit = {
-    val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime) VALUES (?, ?, ?, ?)"
+  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = NodeType.fileTypeIdentifier): Unit = {
+    val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime, FileType) VALUES (?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
     ps.setString(2, consignmentId.toString)
     ps.setString(3, userId.toString)
     ps.setTimestamp(4, Timestamp.from(FixedTimeSource.now))
+    ps.setString(5, fileType)
     ps.executeUpdate()
   }
 

@@ -3,13 +3,13 @@ package uk.gov.nationalarchives.tdr.api.routes
 import java.sql.{PreparedStatement, Timestamp}
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
-
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDatabase, TestRequest}
@@ -504,6 +504,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
   private def setUpFileAndStandardMetadata(consignmentId: UUID, fileId: UUID): Unit = {
     createFile(fileId, consignmentId)
+    createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier)
     generateMetadataPropertiesForFile(fileId)
     addAntivirusMetadata(fileId.toString)
     addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ServerSideChecksum)
