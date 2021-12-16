@@ -40,8 +40,8 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     service.zipPuids should equal(expectedPuids)
   }
 
-  "judgmentPuidsAllow list" should "match the expected list of pronom ids for word file" in {
-    val expectedPuids = List("fmt/412", "fmt/523", "fmt/597")
+  "judgmentPuidsAllow list" should "match the expected list of pronom ids for docx file" in {
+    val expectedPuids = List("fmt/412")
 
     val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
       mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
