@@ -1,19 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables
+import java.sql.Timestamp
+import java.util.UUID
+
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches, Files}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.FileTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
-
-import java.sql.Timestamp
-import java.util.UUID
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileService(
@@ -83,6 +81,25 @@ class FileService(
       }
     }.toList
   }
+
+  def updateChildren(fileId: UUID, customMetadataInputRepresentation: Map[String, String], userId: UUID): Unit = {
+    for {
+      children <- fileRepository.getChildrenCTE(fileId)
+      ids = children.filter(_.filetype.get.isFileType).map(_.fileid)
+      rows = ids.map(id => {
+        customMetadataInputRepresentation.map(md => {
+          FilemetadataRow(uuidSource.uuid, id, md._2, Timestamp.from(timeSource.now), userId, md._1)
+        })
+      })
+    } yield fileRepository.updateFileMetadata(rows.flatten.toList)
+  }
+
+  def getChildren(fileId: UUID, propertyNames: List[String] = List()): Future[List[TreeNode]] = {
+    for {
+      rows <- fileRepository.getChildrenCTE(fileId)
+    } yield rows.map(r => TreeNode(r.fileid, r.filename.get, None, r.filetype.get)).toList
+  }
 }
 
 case class FileOwnership(fileId: UUID, userId: UUID)
+case class MetadataProperties(propertyName: String, propertyValue: String)
