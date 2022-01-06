@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
 
-  implicit val getChildrenResult: GetResult[nationalarchives.Tables.FileRow] = GetResult(r => Tables.FileRow(
+  implicit val getFileResult: GetResult[nationalarchives.Tables.FileRow] = GetResult(r => Tables.FileRow(
     r.nextUUID,
     r.nextUUID,
     r.nextUUID,
@@ -46,7 +46,14 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def getChildrenCTE(fileId: UUID): Future[Seq[Tables.FileRow]] = {
+  def getTopLevelFolder(consignmentId: UUID): Future[Seq[Tables.FileRow]] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
+      .filter(_.parentid.isEmpty)
+    db.run(query.result)
+  }
+
+  def getAllDescendentsCTE(fileId: UUID): Future[Seq[Tables.FileRow]] = {
     val id = fileId.toString
     val sql =
       sql"""WITH RECURSIVE children AS (
@@ -73,6 +80,12 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
             FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
         ) SELECT * FROM children;""".stripMargin.as[Tables.FileRow]
     db.run(sql)
+  }
+
+  def getDirectDescendents(fileId: UUID): Future[Seq[Tables.FileRow]] = {
+    val query = File
+      .filter(_.parentid === fileId)
+    db.run(query.result)
   }
 
   def addFiles(fileRows: Seq[FileRow], consignmentStatusRow: ConsignmentstatusRow): Future[Seq[Tables.FileRow]] = {

@@ -5,7 +5,7 @@ import java.util.UUID
 
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches, TreeNodeType}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.FileTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
@@ -82,10 +82,12 @@ class FileService(
     }.toList
   }
 
-  def updateChildren(fileId: UUID, customMetadataInputRepresentation: Map[String, String], userId: UUID): Unit = {
+  //function to update all file metadata when user has chosen to update an entire folder
+  //'customMetadataInputRepresentation' is a mock of what the input could be
+  def updateAllDescendantsMetadata(fileId: UUID, customMetadataInputRepresentation: Map[String, String], userId: UUID): Unit = {
     for {
-      children <- fileRepository.getChildrenCTE(fileId)
-      ids = children.filter(_.filetype.get.isFileType).map(_.fileid)
+      allDescendents <- fileRepository.getAllDescendentsCTE(fileId)
+      ids = allDescendents.filter(_.filetype.get.isFileType).map(_.fileid)
       rows = ids.map(id => {
         customMetadataInputRepresentation.map(md => {
           FilemetadataRow(uuidSource.uuid, id, md._2, Timestamp.from(timeSource.now), userId, md._1)
@@ -94,9 +96,27 @@ class FileService(
     } yield fileRepository.updateFileMetadata(rows.flatten.toList)
   }
 
-  def getChildren(fileId: UUID, propertyNames: List[String] = List()): Future[List[TreeNode]] = {
+  //would need to retrieve the top level node using consignment id
+  //because on initial UI page for custom metadata would only have the consignment id available
+  def getTopLevel(consignmentId: UUID): Future[List[TreeNode]] = {
     for {
-      rows <- fileRepository.getChildrenCTE(fileId)
+      rows <- fileRepository.getTopLevelFolder(consignmentId)
+    } yield rows.map(r => TreeNode(r.fileid, r.filename.get, None, r.filetype.get)).toList
+  }
+
+  //function to retrieve all the direct children of the given node
+  //would support the custom metadata UI
+  //only need direct children of the file for the UI
+  def getDirectDescendents(fileId: UUID): Future[List[TreeNode]] = {
+    for {
+      rows <- fileRepository.getDirectDescendents(fileId)
+    } yield rows.map(r => TreeNode(r.fileid, r.filename.get, None, r.filetype.get)).toList
+  }
+
+  //temp function to test the 'CTE' SQL. Wouldn't be needed for the application
+  def getAllDescendentsCTE(fileId: UUID, propertyNames: List[String] = List()): Future[List[TreeNode]] = {
+    for {
+      rows <- fileRepository.getAllDescendentsCTE(fileId)
     } yield rows.map(r => TreeNode(r.fileid, r.filename.get, None, r.filetype.get)).toList
   }
 }

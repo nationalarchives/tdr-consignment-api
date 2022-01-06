@@ -32,10 +32,23 @@ object FileFields {
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
-      "getChildren",
+      "getDirectDescendents",
       ListType(TreeNodeType),
       arguments = FileIdArg :: Nil,
-      resolve = ctx => ctx.ctx.fileService.getChildren(ctx.arg(FileIdArg)),
+      resolve = ctx => ctx.ctx.fileService.getDirectDescendents(ctx.arg(FileIdArg))
+    ),
+    Field(
+      "getAllDescendents",
+      ListType(TreeNodeType),
+      arguments = FileIdArg :: Nil,
+      resolve = ctx => ctx.ctx.fileService.getAllDescendentsCTE(ctx.arg(FileIdArg)),
+      tags=List()
+    ),
+    Field(
+      "getTopLevel",
+      ListType(TreeNodeType),
+      arguments = ConsignmentIdArg :: Nil,
+      resolve = ctx => ctx.ctx.fileService.getTopLevel(ctx.arg(ConsignmentIdArg)),
       tags=List()
     )
   )
