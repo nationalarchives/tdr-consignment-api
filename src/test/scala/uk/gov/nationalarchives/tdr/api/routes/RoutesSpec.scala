@@ -51,6 +51,6 @@ class RoutesSpec extends AnyFlatSpec with BeforeAndAfterEach with TestRequest {
   }
 
   private def createHttpResponse(status: StatusCode): HttpResponse = {
-    new HttpResponse(status, Seq(), "entity", HttpProtocol("Http/1.0"))
+    new HttpResponse(status, Seq(), Map(), "entity", HttpProtocol("Http/1.0"))
   }
 }
