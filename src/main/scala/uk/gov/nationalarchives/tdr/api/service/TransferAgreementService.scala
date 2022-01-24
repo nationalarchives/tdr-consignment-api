@@ -1,13 +1,15 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentMetadataRepository, ConsignmentStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{AddTransferAgreementInput, TransferAgreement}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{
+  AddTransferAgreementComplianceInput,
+  AddTransferAgreementNotComplianceInput,
+  TransferAgreementCompliance,
+  TransferAgreementNotCompliance}
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 
-import java.sql.{SQLException, Timestamp}
+import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,13 +17,22 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
                                consignmentStatusRepository: ConsignmentStatusRepository,
                                uuidSource: UUIDSource, timeSource: TimeSource)(implicit val executionContext: ExecutionContext) {
 
-  def addTransferAgreement(input: AddTransferAgreementInput, userId: UUID): Future[TransferAgreement] = {
+  def addTransferAgreementNotCompliance(input: AddTransferAgreementNotComplianceInput, userId: UUID): Future[TransferAgreementNotCompliance] = {
     for {
-      transferAgreement <- consignmentMetadataRepository.addConsignmentMetadata(convertInputToPropertyRows(input, userId)).map(
-        rows => convertDbRowsToTransferAgreement(input.consignmentId, rows)
+      transferAgreementNotCompliance <- consignmentMetadataRepository.addConsignmentMetadata(convertTANotComplianceInputToPropertyRows(input, userId)).map(
+        rows => convertDbRowsToTransferAgreementNotCompliance(input.consignmentId, rows)
+      )
+      _ <- addTransferAgreementStatus(input.consignmentId, "InProgress")
+    } yield transferAgreementNotCompliance
+  }
+
+  def addTransferAgreementCompliance(input: AddTransferAgreementComplianceInput, userId: UUID): Future[TransferAgreementCompliance] = {
+    for {
+      transferAgreementCompliance <- consignmentMetadataRepository.addConsignmentMetadata(convertTAComplianceInputToPropertyRows(input, userId)).map(
+        rows => convertDbRowsToTransferAgreementCompliance(input.consignmentId, rows)
       )
       _ <- addTransferAgreementStatus(input.consignmentId, "Completed")
-    } yield transferAgreement
+    } yield transferAgreementCompliance
   }
 
   def addTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[ConsignmentstatusRow] = {
@@ -29,7 +40,7 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
     consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 
-  private def convertInputToPropertyRows(input: AddTransferAgreementInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
+  private def convertTANotComplianceInputToPropertyRows(input: AddTransferAgreementNotComplianceInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
     val time = Timestamp.from(timeSource.now)
     val consignmentId = input.consignmentId
     Seq(
@@ -38,9 +49,25 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
       ConsignmentmetadataRow(
         uuidSource.uuid, consignmentId, AllEnglishConfirmed, input.allEnglish.toString, time, userId),
       ConsignmentmetadataRow(
-        uuidSource.uuid, consignmentId, AppraisalSelectionSignOffConfirmed, input.appraisalSelectionSignedOff.toString, time, userId),
+        uuidSource.uuid, consignmentId, CrownCopyrightConfirmed, input.allCrownCopyright.toString, time, userId)
+    )
+  }
+
+  private def convertDbRowsToTransferAgreementNotCompliance(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): TransferAgreementNotCompliance = {
+    val propertyNameToValue = rows.map(row => row.propertyname -> row.value.toBoolean).toMap
+    TransferAgreementNotCompliance(consignmentId,
+      propertyNameToValue(PublicRecordsConfirmed),
+      propertyNameToValue(CrownCopyrightConfirmed),
+      propertyNameToValue(AllEnglishConfirmed)
+    )
+  }
+
+  private def convertTAComplianceInputToPropertyRows(input: AddTransferAgreementComplianceInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
+    val time = Timestamp.from(timeSource.now)
+    val consignmentId = input.consignmentId
+    Seq(
       ConsignmentmetadataRow(
-        uuidSource.uuid, consignmentId, CrownCopyrightConfirmed, input.allCrownCopyright.toString, time, userId),
+        uuidSource.uuid, consignmentId, AppraisalSelectionSignOffConfirmed, input.appraisalSelectionSignedOff.toString, time, userId),
       ConsignmentmetadataRow(
         uuidSource.uuid, consignmentId, InitialOpenRecordsConfirmed, input.initialOpenRecords.toString, time, userId),
       ConsignmentmetadataRow(
@@ -48,12 +75,9 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
     )
   }
 
-  private def convertDbRowsToTransferAgreement(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): TransferAgreement = {
+  private def convertDbRowsToTransferAgreementCompliance(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): TransferAgreementCompliance = {
     val propertyNameToValue = rows.map(row => row.propertyname -> row.value.toBoolean).toMap
-    TransferAgreement(consignmentId,
-      propertyNameToValue(PublicRecordsConfirmed),
-      propertyNameToValue(CrownCopyrightConfirmed),
-      propertyNameToValue(AllEnglishConfirmed),
+    TransferAgreementCompliance(consignmentId,
       propertyNameToValue(AppraisalSelectionSignOffConfirmed),
       propertyNameToValue(InitialOpenRecordsConfirmed),
       propertyNameToValue(SensitivityReviewSignOffConfirmed)

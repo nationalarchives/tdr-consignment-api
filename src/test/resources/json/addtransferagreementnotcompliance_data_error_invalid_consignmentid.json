@@ -1,0 +1,8 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "User '4ab14990-ed63-4615-8336-56fbb9960300' does not have access to consignment 'f67d1337-cbd0-4fd1-9eac-611489e7113f'"
+    }
+  ]
+}

@@ -34,14 +34,18 @@ input AddFinalTransferConfirmationInput {
   legalOwnershipTransferConfirmed: Boolean!
 }
 
-input AddTransferAgreementInput {
+input AddTransferAgreementComplianceInput {
+  consignmentId: UUID!
+  appraisalSelectionSignedOff: Boolean!
+  initialOpenRecords: Boolean!
+  sensitivityReviewSignedOff: Boolean!
+}
+
+input AddTransferAgreementNotComplianceInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
   allEnglish: Boolean!
-  appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
-  sensitivityReviewSignedOff: Boolean!
 }
 
 type AntivirusMetadata {
@@ -214,7 +218,8 @@ type Mutation {
   updateTransferInitiated(consignmentid: UUID!): Int
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
-  addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
+  addTransferAgreementNotCompliance(addTransferAgreementNotComplianceInput: AddTransferAgreementNotComplianceInput!): TransferAgreementNotCompliance!
+  addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
@@ -259,14 +264,18 @@ input StartUploadInput {
   parentFolder: String!
 }
 
-type TransferAgreement {
+type TransferAgreementCompliance {
+  consignmentId: UUID!
+  appraisalSelectionSignedOff: Boolean!
+  initialOpenRecords: Boolean!
+  sensitivityReviewSignedOff: Boolean!
+}
+
+type TransferAgreementNotCompliance {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
   allEnglish: Boolean!
-  appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
-  sensitivityReviewSignedOff: Boolean!
 }
 
 type TransferringBody {

@@ -1,0 +1,3 @@
+{
+  "query": "mutation {addTransferAgreementCompliance(addTransferAgreementComplianceInput: {appraisalSelectionSignedOff: true, sensitivityReviewSignedOff: true}) {consignmentId, appraisalSelectionSignedOff}}"
+}

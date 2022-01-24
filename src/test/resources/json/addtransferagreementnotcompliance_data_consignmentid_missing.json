@@ -1,0 +1,8 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Field 'AddTransferAgreementNotComplianceInput.consignmentId' of required type 'UUID!' was not provided. (line 1, column 85):\nmutation {addTransferAgreementNotCompliance(addTransferAgreementNotComplianceInput: {allEnglish: true, allCrownCopyright: true, allPublicRecords: true}) {consignmentId, allEnglish}}\n                                                                                    ^"
+    }
+  ]
+}

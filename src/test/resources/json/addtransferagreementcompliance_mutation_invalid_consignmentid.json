@@ -1,0 +1,4 @@
+{
+  "query": "mutation {addTransferAgreementCompliance(addTransferAgreementComplianceInput: {consignmentId: \"f67d1337-cbd0-4fd1-9eac-611489e7113f\", appraisalSelectionSignedOff: true, initialOpenRecords: true, sensitivityReviewSignedOff: true}) {consignmentId, appraisalSelectionSignedOff, sensitivityReviewSignedOff}}"
+}
+
