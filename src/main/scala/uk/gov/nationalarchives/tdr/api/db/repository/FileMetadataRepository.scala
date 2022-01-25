@@ -103,7 +103,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-<<<<<<< HEAD
   def getFileMetadata(consignmentId: UUID, fileId: Option[UUID] = None): Future[Seq[FilemetadataRow]] = {
     val query = fileId.map(id => {
       Filemetadata.join(File)
@@ -117,14 +116,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
         .filter(_._2.consignmentid === consignmentId)
         .map(_._1)
     )
-=======
-  def getFileMetadata(consignmentId: UUID): Future[Seq[FilemetadataRow]] = {
-    val query = Filemetadata.join(File)
-      .on(_.fileid === _.fileid)
-      .filter(_._2.consignmentid === consignmentId)
-      .filter(_._2.filetype === NodeType.fileTypeIdentifier)
-      .map(_._1)
->>>>>>> master
     db.run(query.result)
   }
 
@@ -134,7 +125,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
       .on(_._1.propertyname === _.name)
       .filter(_._1._2.consignmentid === consignmentId)
       .filter(_._2.name === SHA256ServerSideChecksum)
-      .filter(_._1._2.filetype === NodeType.fileTypeIdentifier)
       .groupBy(_._1._2.fileid)
       .map(_._1)
       .length

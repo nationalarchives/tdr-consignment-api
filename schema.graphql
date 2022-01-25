@@ -85,14 +85,14 @@ type Consignment {
   createdDatetime: ZonedDateTime
   transferInitiatedDatetime: ZonedDateTime
   exportDatetime: ZonedDateTime
-  consignmentType: String
+  consignmentType: String!
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   fileChecks: FileChecks!
   parentFolder: String
   series: Series
   transferringBody: TransferringBody
-  files: [File!]!
+  files(fileId: UUID): [File!]!
   consignmentReference: String!
   currentStatus: CurrentStatus!
 }
@@ -118,6 +118,13 @@ type ConsignmentEdge {
 type CurrentStatus {
   transferAgreement: String
   upload: String
+}
+
+enum DataType {
+  Text
+  DateTime
+  Integer
+  Decimal
 }
 
 type FFIDMetadata {
@@ -162,6 +169,7 @@ type File {
   metadata: FileMetadataValues!
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
+  allMetadata: [Metadata!]!
 }
 
 type FileChecks {
@@ -209,6 +217,30 @@ scalar LocalDateTime
 "The `Long` scalar type represents non-fractional signed whole numeric values. Long can represent values between -(2^63) and 2^63 - 1."
 scalar Long
 
+type Metadata {
+  propertyName: String!
+  value: String!
+  propertyGroup: String
+}
+
+type MetadataField {
+  name: String!
+  fullName: String
+  description: String
+  propertyType: PropertyType!
+  propertyGroup: String
+  dataType: DataType!
+  editable: Boolean!
+  multiValue: Boolean!
+  defaultValue: String
+  values: [MetadataValues!]!
+}
+
+type MetadataValues {
+  dependencies: [MetadataField!]!
+  value: String!
+}
+
 type Mutation {
   addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
   updateTransferInitiated(consignmentid: UUID!): Int
@@ -239,11 +271,18 @@ type PageInfo {
   endCursor: String
 }
 
+enum PropertyType {
+  System
+  Defined
+  Supplied
+}
+
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!): Consignment
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
+  metadata: [MetadataField!]!
 }
 
 type Series {

@@ -38,11 +38,13 @@ class FileService(
     val fileRows: List[FileRow] = (allNodes map {
       case (_, treeNode) =>
         val parentId = treeNode.parentPath.map(v => allNodes(v).id)
-        FileRow(treeNode.id, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
+        FileRow(treeNode.id, consignmentId, userId, now)
     }).toList
 
     val metadataWithIds: List[(UUID, ClientSideMetadataInput)] =
-      fileRows.filter(_.filetype.get.isFileType).map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
+      fileRows
+//        .filter(_.filetype.get.isFileType)
+        .map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
 
     val fileMetadataRows: Seq[FilemetadataRow] = metadataWithIds.flatMap {
