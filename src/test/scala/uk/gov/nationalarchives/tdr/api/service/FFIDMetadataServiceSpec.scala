@@ -1,16 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import org.mockito.ArgumentMatchers.any
-
 import java.sql.Timestamp
 import java.util.UUID
+
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository}
+import uk.gov.nationalarchives.Tables.{ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataInputMatches, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -22,7 +22,8 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "passwordProtectedPuids list" should "match the expected list of pronom ids for password protected files" in {
     val expectedPuids = List("fmt/494", "fmt/754", "fmt/755")
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository],
+      mock[FFIDMetadataMatchesRepository], mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
     service.passwordProtectedPuids should equal(expectedPuids)
   }
 
@@ -34,22 +35,106 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       "fmt/1361", "fmt/1399", "x-fmt/157", "x-fmt/219", "x-fmt/263", "x-fmt/265", "x-fmt/266", "x-fmt/267", "x-fmt/268", "x-fmt/269",
       "x-fmt/412", "x-fmt/416", "x-fmt/429")
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
     service.zipPuids should equal(expectedPuids)
+  }
+
+  "judgmentPuidsAllow list" should "match the expected list of pronom ids for docx file" in {
+    val expectedPuids = List("fmt/412")
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+    service.judgmentPuidsAllow should equal(expectedPuids)
+  }
+
+  "checkStatus" should "return 'Success' status for a valid puid value on 'standard' consignment type" in {
+    val validPuid = "fmt/1"
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkStatus(Some(validPuid), "standard")
+    status shouldBe FileStatusService.Success
+  }
+
+  "checkStatus" should "return 'PasswordProtected' status for a password protected puid value on 'standard' consignment type" in {
+    val passwordProtectedPuid = "fmt/494"
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkStatus(Some(passwordProtectedPuid), "standard")
+    status shouldBe FileStatusService.PasswordProtected
+  }
+
+  "checkStatus" should "return 'Zip' status for a zip puid value on 'standard' consignment type" in {
+    val zipPuid = "fmt/289"
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkStatus(Some(zipPuid), "standard")
+    status shouldBe FileStatusService.Zip
+  }
+
+  "checkStatus" should "return 'Success' status for a valid judgment puid value on 'judgment' consignment type" in {
+    val validJudgmentPuid = "fmt/412"
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkStatus(Some(validJudgmentPuid), "judgment")
+    status shouldBe FileStatusService.Success
+  }
+
+  "checkStatus" should "return 'NonJudgmentFormat' status for a non-judgment puid value on 'judgment' consignment type" in {
+    val nonJudgmentPuid = "fmt/1"
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkStatus(Some(nonJudgmentPuid), "judgment")
+    status shouldBe FileStatusService.NonJudgmentFormat
+  }
+
+  "checkStatus" should "return 'PasswordProtected' status for a password protected puid value on 'judgment' consignment type" in {
+    val passwordProtectedPuid = "fmt/494"
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkStatus(Some(passwordProtectedPuid), "judgment")
+    status shouldBe FileStatusService.PasswordProtected
+  }
+
+  "checkStatus" should "return 'Zip' status for a zip puid value on 'judgment' consignment type" in {
+    val zipPuid = "fmt/289"
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkStatus(Some(zipPuid), "judgment")
+    status shouldBe FileStatusService.Zip
   }
 
   "addFFIDMetadata" should "call the repositories with the correct values" in {
     val fixedFileUuid = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
     val fixedUUIDSource = new FixedUUIDSource
     val fixedFileMetadataId = fixedUUIDSource.uuid
+    val fixedConsignmentId = fixedUUIDSource.uuid
+    val fixedUserId = fixedUUIDSource.uuid
+    val fixedBodyId = fixedUUIDSource.uuid
     fixedUUIDSource.reset
 
     val metadataRepository = mock[FFIDMetadataRepository]
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
+    val fileRepository = mock[FileRepository]
 
     val metadataCaptor: ArgumentCaptor[FfidmetadataRow] = ArgumentCaptor.forClass(classOf[FfidmetadataRow])
     val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
     val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] = ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
+    val fileIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
 
     val mockMetadataRow: FfidmetadataRow = getMockMetadataRow(fixedFileMetadataId, fixedFileUuid, Timestamp.from(FixedTimeSource.now))
     val mockMetadataMatchesRow = getMatchesRow(mockMetadataRow.ffidmetadataid)
@@ -57,11 +142,16 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockMetadataResponse = Future(mockMetadataRow)
     val mockMetadataMatchesResponse = Future(List(mockMetadataMatchesRow))
 
+    val mockConsignmentRow = getMockConsignmentRow(fixedConsignmentId, fixedUserId, bodyId = fixedBodyId)
+    val mockGetConsignmentResponse = Future(List(mockConsignmentRow))
+
+    when(fileRepository.getConsignmentForFile(fileIdCaptor.capture())).thenReturn(mockGetConsignmentResponse)
     when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, FixedTimeSource, new FixedUUIDSource())
-    service.addFFIDMetadata(getMetadataInput(fixedFileUuid))
+    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository, FixedTimeSource, new FixedUUIDSource())
+    service.addFFIDMetadata(getMetadataInput(fixedFileUuid)).futureValue
+    fileIdCaptor.getValue shouldBe fixedFileUuid
     metadataCaptor.getValue should equal(mockMetadataRow)
   }
 
@@ -69,14 +159,19 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fixedFileUuid = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
     val fixedUUIDSource = new FixedUUIDSource
     val fixedFileMetadataId = fixedUUIDSource.uuid
+    val fixedConsignmentId = fixedUUIDSource.uuid
+    val fixedUserId = fixedUUIDSource.uuid
+    val fixedBodyId = fixedUUIDSource.uuid
     fixedUUIDSource.reset
 
     val metadataRepository = mock[FFIDMetadataRepository]
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
+    val fileRepository = mock[FileRepository]
 
-    val metadataCaptor: ArgumentCaptor[FfidmetadataRow] =  ArgumentCaptor.forClass(classOf[FfidmetadataRow])
+    val metadataCaptor: ArgumentCaptor[FfidmetadataRow] = ArgumentCaptor.forClass(classOf[FfidmetadataRow])
     val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
-    val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] =  ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
+    val matchCaptor: ArgumentCaptor[List[FfidmetadatamatchesRow]] = ArgumentCaptor.forClass(classOf[List[FfidmetadatamatchesRow]])
+    val fileIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
 
     val mockMetadataRow: FfidmetadataRow = getMockMetadataRow(fixedFileMetadataId, fixedFileUuid, Timestamp.from(FixedTimeSource.now))
     val mockMetadataMatchesRow = getMatchesRow(mockMetadataRow.ffidmetadataid)
@@ -84,10 +179,14 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockMetadataResponse = Future(mockMetadataRow)
     val mockMetadataMatchesResponse = Future(List(mockMetadataMatchesRow))
 
+    val mockConsignmentRow = getMockConsignmentRow(fixedConsignmentId, fixedUserId, bodyId = fixedBodyId)
+    val mockGetConsignmentResponse = Future(List(mockConsignmentRow))
+
+    when(fileRepository.getConsignmentForFile(fileIdCaptor.capture())).thenReturn(mockGetConsignmentResponse)
     when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository, FixedTimeSource, new FixedUUIDSource())
     val result = service.addFFIDMetadata(getMetadataInput(fixedFileUuid)).futureValue
     result.fileId shouldEqual fixedFileUuid
     result.software shouldEqual "software"
@@ -108,6 +207,8 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fixedFileUuid = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
     val metadataRepository = mock[FFIDMetadataRepository]
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
+    val fileRepository = mock[FileRepository]
+
     val inputWithNoMatches = FFIDMetadataInput(
       fixedFileUuid,
       "software",
@@ -118,7 +219,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       List()
     )
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository, FixedTimeSource, new FixedUUIDSource())
 
     val thrownException = intercept[Exception] {
       service.addFFIDMetadata(inputWithNoMatches)
@@ -137,7 +238,8 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentIdCaptor.capture())).thenReturn(Future(Seq()))
 
-    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
     service.getFFIDMetadata(consignmentId)
 
     consignmentIdCaptor.getValue should equal(consignmentId)
@@ -175,11 +277,12 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     when(ffidMetadataRepositoryMock.getFFIDMetadata(any[UUID])).thenReturn(
       Future(Seq(
-        (metadataRowOne,matchesRowOneMatchOne ), (metadataRowOne, matchesRowOneMatchTwo), (metadataRowTwo, matchesRowTwoMatchOne)
+        (metadataRowOne, matchesRowOneMatchOne), (metadataRowOne, matchesRowOneMatchTwo), (metadataRowTwo, matchesRowTwoMatchOne)
       ))
     )
 
-    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository], FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
     val response = service.getFFIDMetadata(consignmentId).futureValue
 
     val ffidMetadataRowOne = response.find(_.fileId == fileIdOne).get
@@ -223,6 +326,21 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   }
 
   private def getMockMetadataRow(ffidMetadataId: UUID, fixedFileUuid: UUID, dummyTimestamp: Timestamp): FfidmetadataRow = {
-    FfidmetadataRow(ffidMetadataId, fixedFileUuid, "software", "softwareVersion",dummyTimestamp, "binaryVersion", "containerVersion", "method")
+    FfidmetadataRow(ffidMetadataId, fixedFileUuid, "software", "softwareVersion", dummyTimestamp, "binaryVersion", "containerVersion", "method")
+  }
+
+  private def getMockConsignmentRow(
+                                     consignmentId: UUID,
+                                     userId: UUID,
+                                     consignmentType: String = "standard",
+                                     bodyId: UUID): ConsignmentRow = {
+    ConsignmentRow(
+      consignmentId,
+      userid = userId,
+      datetime = Timestamp.from(FixedTimeSource.now),
+      consignmentsequence = 1L,
+      consignmentreference = "consignmentRef",
+      consignmenttype = consignmentType,
+      bodyid = bodyId)
   }
 }

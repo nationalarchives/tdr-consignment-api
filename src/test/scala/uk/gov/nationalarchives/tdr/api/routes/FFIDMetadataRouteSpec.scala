@@ -10,7 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, PasswordProtected, Success, Zip}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, NonJudgmentFormat, PasswordProtected, Success, Zip}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestRequest}
 
@@ -31,11 +31,11 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-
-    seedDatabaseWithDefaultEntries()
   }
 
   "addFFIDMetadata" should "return all requested fields from inserted file format object" in {
+    seedDatabaseWithDefaultEntries()
+
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
     val metadata: FFIDMetadata = response.data.get.addFFIDMetadata
@@ -58,7 +58,9 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     checkFFIDMetadataExists(response.data.get.addFFIDMetadata.fileId)
   }
 
-  "addFFIDMetadata" should "set a single file status to success when a success match only is found" in {
+  "addFFIDMetadata" should "set a single file status to 'Success' when a success match only is found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -66,7 +68,42 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.head should equal(Success)
   }
 
-  "addFFIDMetadata" should "set a single file status of success when there are multiple success matches only found" in {
+  "addFFIDMetadata" should "set a single file status to 'Success' when a success match only is found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_judgment_format", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(Success)
+  }
+
+  "addFFIDMetadata" should
+      "set a single file status to 'Success' when a non judgment match only is found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
+    runTestMutation("mutation_status_non_judgment_format", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(Success)
+  }
+
+  "addFFIDMetadata" should
+      "set a single file status to 'NonJudgmentRecord' when a non judgment match only is found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_non_judgment_format", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(NonJudgmentFormat)
+  }
+
+  "addFFIDMetadata" should
+      "set a single file status of 'Success' when there are multiple success matches only found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_status_multiple_success", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -74,7 +111,10 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.head should equal(Success)
   }
 
-  "addFFIDMetadata" should "set a single file status of password protected when a password protected match only is found" in {
+  "addFFIDMetadata" should
+      "set a single file status of 'PasswordProtected' when a password protected match only is found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_status_password_protected", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -82,7 +122,21 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.head should equal(PasswordProtected)
   }
 
-  "addFFIDMetadata" should "set a single file status of password protected when multiple password protected matches are found" in {
+  "addFFIDMetadata" should
+      "set a single file status of 'PasswordProtected' when a password protected match only is found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_password_protected", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(PasswordProtected)
+  }
+
+  "addFFIDMetadata" should
+      "set a single file status of 'PasswordProtected' when multiple password protected matches are found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_status_multiple_password_protected", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -90,7 +144,21 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.head should equal(PasswordProtected)
   }
 
-  "addFFIDMetadata" should "set a single status of password protected when password protected and success matches are found" in {
+  "addFFIDMetadata" should
+      "set a single file status of 'PasswordProtected' when multiple password protected matches are found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_multiple_password_protected", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(PasswordProtected)
+  }
+
+  "addFFIDMetadata" should
+      "set a single status of 'PasswordProtected' when password protected and success matches are found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_status_password_protected_success", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -98,7 +166,21 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.contains(PasswordProtected) should be(true)
   }
 
-  "addFFIDMetadata" should "set a single file status of zip when a zip match only is found" in {
+  "addFFIDMetadata" should
+      "set a single status of 'PasswordProtected' when password protected and success matches are found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_judgment_password_protected_success", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.contains(PasswordProtected) should be(true)
+  }
+
+  "addFFIDMetadata" should
+      "set a single file status of 'Zip' when a zip match only is found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_status_zip", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -106,7 +188,21 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.contains(Zip) should be(true)
   }
 
-  "addFFIDMetadata" should "set a single file status of zip when multiple zip matches are found" in {
+  "addFFIDMetadata" should
+      "set a single file status of 'Zip' when a zip match only is found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_zip", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.contains(Zip) should be(true)
+  }
+
+  "addFFIDMetadata" should
+      "set a single file status of 'Zip' when multiple zip matches are found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_status_multiple_zip", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -114,7 +210,21 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.head should equal(Zip)
   }
 
-  "addFFIDMetadata" should "set a single file status of zip when zip and success matches are found" in {
+  "addFFIDMetadata" should
+      "set a single file status of 'Zip' when multiple zip matches are found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_multiple_zip", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(Zip)
+  }
+
+  "addFFIDMetadata" should
+      "set a single file status of 'Zip' when zip and success matches are found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
     runTestMutation("mutation_status_zip_success", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -122,7 +232,33 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
     result.head should equal(Zip)
   }
 
-  "addFFIDMetadata" should "set multiple file statuses when zip and password protected matches are found" in {
+  "addFFIDMetadata" should
+      "set a single file status of 'Zip' when zip and success matches are found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
+    runTestMutation("mutation_status_judgment_zip_success", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(1)
+    result.head should equal(Zip)
+  }
+
+  "addFFIDMetadata" should
+      "set multiple file statuses when zip and password protected matches are found for 'standard' consignment type" in {
+    seedDatabaseWithDefaultEntries()
+
+    runTestMutation("mutation_status_zip_password_protected", validBackendChecksToken("file_format"))
+
+    val result = getFileStatusResult(defaultFileId, FFID)
+    result.size should be(2)
+    result.contains(Zip) should be(true)
+    result.contains(PasswordProtected) should be(true)
+  }
+
+  "addFFIDMetadata" should
+      "set multiple file statuses when zip and password protected matches are found for 'judgment' consignment type" in {
+    seedDatabaseWithDefaultEntries("judgment")
+
     runTestMutation("mutation_status_zip_password_protected", validBackendChecksToken("file_format"))
 
     val result = getFileStatusResult(defaultFileId, FFID)
@@ -132,6 +268,7 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
   }
 
   "addFFIDMetadata" should "not allow updating of file format metadata with incorrect authorisation" in {
+    seedDatabaseWithDefaultEntries()
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", invalidBackendChecksToken())
 
     response.errors should have size 1
@@ -140,6 +277,8 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
   }
 
   "addFFIDMetadata" should "not allow updating of file format metadata with incorrect client role" in {
+    seedDatabaseWithDefaultEntries()
+
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
 
     response.errors should have size 1
@@ -148,6 +287,8 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
   }
 
   "addFFIDMetadata" should "throw an error if mandatory fields are missing" in {
+    seedDatabaseWithDefaultEntries()
+
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_mandatory_missing")
     val response: GraphqlMutationData = runTestMutation("mutation_mandatorymissing", validBackendChecksToken("file_format"))
     response.errors.map(e => e.message.trim) should equal (expectedResponse.errors.map(_.message.trim))
@@ -155,6 +296,8 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
   }
 
   "addFFIDMetadata" should "throw an error if the file id does not exist" in {
+    seedDatabaseWithDefaultEntries()
+
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_fileid_not_exists")
     val response: GraphqlMutationData = runTestMutation("mutation_fileidnotexists", validBackendChecksToken("file_format"))
     response.errors.head.message should equal (expectedResponse.errors.head.message)
@@ -162,6 +305,8 @@ class FFIDMetadataRouteSpec extends AnyFlatSpec with Matchers with TestRequest w
   }
 
   "addFFIDMetadata" should "throw an error if there are no ffid matches" in {
+    seedDatabaseWithDefaultEntries()
+
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_ffid_matches")
     val response: GraphqlMutationData = runTestMutation("mutation_no_ffid_matches", validBackendChecksToken("file_format"))
     response.errors.head.extensions should equal (expectedResponse.errors.head.extensions)

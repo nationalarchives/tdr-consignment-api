@@ -23,7 +23,7 @@ object ApiServer extends App {
 
   val routes = new Routes(ConfigFactory.load())
 
-  Http().bindAndHandle(routes.route, "0.0.0.0", PORT)
+  Http().newServerAt("0.0.0.0", PORT).bindFlow(routes.route)
   logger.info(s"Consignment API is running")
 
 

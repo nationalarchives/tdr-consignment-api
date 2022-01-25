@@ -66,7 +66,7 @@ class Routes(val config: Config) extends Cors {
   val route: Route =
     logging {
       handleExceptions(exceptionHandler) {
-        optionalHeaderValueByType[Origin](()) { originHeader =>
+        optionalHeaderValueByType(Origin) { originHeader =>
           corsHandler((post & path("graphql")) {
             authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
               respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
