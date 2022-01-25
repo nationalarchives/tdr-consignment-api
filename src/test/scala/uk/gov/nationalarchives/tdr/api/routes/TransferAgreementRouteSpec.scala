@@ -17,13 +17,11 @@ class TransferAgreementRouteSpec extends AnyFlatSpec with Matchers with TestRequ
 
   private val addTransferAgreementNotComplianceJsonFilePrefix: String = "json/addtransferagreementnotcompliance_"
   private val addTransferAgreementComplianceJsonFilePrefix: String = "json/addtransferagreementcompliance_"
-  private val getTransferAgreementJsonFilePrefix: String = "json/gettransferagreement_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   case class GraphqlTANotComplianceMutationData(data: Option[AddTransferAgreementNotCompliance], errors: List[GraphqlError] = Nil)
   case class GraphqlTAComplianceMutationData(data: Option[AddTransferAgreementCompliance], errors: List[GraphqlError] = Nil)
-  case class GraphqlQueryData(data: Option[TransferAgreementNotCompliance], errors: List[GraphqlError] = Nil)
   case class TransferAgreementNotCompliance(
                                 consignmentId: Option[UUID] = None,
                                 allPublicRecords: Option[Boolean] = None,
