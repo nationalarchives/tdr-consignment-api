@@ -1,0 +1,4 @@
+{
+  "query": "mutation {addTransferAgreementNotCompliance(addTransferAgreementNotComplianceInput: {consignmentId: \"f67d1337-cbd0-4fd1-9eac-611489e7113f\", allEnglish: true, allCrownCopyright: true, allPublicRecords: true}) {consignmentId, allEnglish, allCrownCopyright, allPublicRecords}}"
+}
+

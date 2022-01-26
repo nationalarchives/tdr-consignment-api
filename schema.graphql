@@ -34,6 +34,13 @@ input AddFinalTransferConfirmationInput {
   legalOwnershipTransferConfirmed: Boolean!
 }
 
+input AddTransferAgreementComplianceInput {
+  consignmentId: UUID!
+  appraisalSelectionSignedOff: Boolean!
+  initialOpenRecords: Boolean!
+  sensitivityReviewSignedOff: Boolean!
+}
+
 input AddTransferAgreementInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
@@ -42,6 +49,13 @@ input AddTransferAgreementInput {
   appraisalSelectionSignedOff: Boolean!
   initialOpenRecords: Boolean!
   sensitivityReviewSignedOff: Boolean!
+}
+
+input AddTransferAgreementNotComplianceInput {
+  consignmentId: UUID!
+  allPublicRecords: Boolean!
+  allCrownCopyright: Boolean!
+  allEnglish: Boolean!
 }
 
 type AntivirusMetadata {
@@ -215,6 +229,8 @@ type Mutation {
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
+  addTransferAgreementNotCompliance(addTransferAgreementNotComplianceInput: AddTransferAgreementNotComplianceInput!): TransferAgreementNotCompliance!
+  addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
@@ -267,6 +283,20 @@ type TransferAgreement {
   appraisalSelectionSignedOff: Boolean!
   initialOpenRecords: Boolean!
   sensitivityReviewSignedOff: Boolean!
+}
+
+type TransferAgreementCompliance {
+  consignmentId: UUID!
+  appraisalSelectionSignedOff: Boolean!
+  initialOpenRecords: Boolean!
+  sensitivityReviewSignedOff: Boolean!
+}
+
+type TransferAgreementNotCompliance {
+  consignmentId: UUID!
+  allPublicRecords: Boolean!
+  allCrownCopyright: Boolean!
+  allEnglish: Boolean!
 }
 
 type TransferringBody {
