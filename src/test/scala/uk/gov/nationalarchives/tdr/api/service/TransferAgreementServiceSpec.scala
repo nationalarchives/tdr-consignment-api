@@ -46,11 +46,9 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val statusValue = "InProgress"
 
     val mockTaConsignmentStatus = ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, dateTime, None)
-    val mockTaConsignmentStatusResponse = Future.successful(Seq(mockTaConsignmentStatus))
 
     when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
     when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(Future.successful(mockTaConsignmentStatus))
-    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockTaConsignmentStatusResponse)
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementNotCompliance = service.addTransferAgreementNotCompliance(
@@ -62,18 +60,10 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       userId
     ).futureValue
 
-    val consignmentStatusResult: Seq[ConsignmentstatusRow] =
-      consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId).futureValue
-
     transferAgreementResult.consignmentId shouldBe consignmentId
     transferAgreementResult.allCrownCopyright shouldBe true
     transferAgreementResult.allEnglish shouldBe true
     transferAgreementResult.allPublicRecords shouldBe true
-
-    consignmentStatusResult.head.consignmentid shouldBe consignmentId
-    consignmentStatusResult.head.consignmentstatusid shouldBe consignmentStatusId
-    consignmentStatusResult.head.statustype shouldBe statusType
-    consignmentStatusResult.head.value shouldBe statusValue
   }
 
   "addTransferAgreementCompliance" should "add the correct metadata given correct arguments and set TA status to Completed" in {
@@ -97,11 +87,9 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     ))
 
     val statusValue = "Completed"
-    val mockTaConsignmentStatus = Future.successful(Seq(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, dateTime, None)))
 
     when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
     when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])).thenReturn(Future.successful(1))
-    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockTaConsignmentStatus)
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementCompliance = service.addTransferAgreementCompliance(
@@ -113,18 +101,11 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       userId
     ).futureValue
 
-    val consignmentStatusResult: Seq[ConsignmentstatusRow] =
-      consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId).futureValue
 
     transferAgreementResult.consignmentId shouldBe consignmentId
     transferAgreementResult.initialOpenRecords shouldBe true
     transferAgreementResult.appraisalSelectionSignedOff shouldBe true
     transferAgreementResult.sensitivityReviewSignedOff shouldBe true
-
-    consignmentStatusResult.head.consignmentid shouldBe consignmentId
-    consignmentStatusResult.head.consignmentstatusid shouldBe consignmentStatusId
-    consignmentStatusResult.head.statustype shouldBe statusType
-    consignmentStatusResult.head.value shouldBe statusValue
   }
 
   "addTransferAgreementStatus" should "add the correct Transfer Agreement Status" in {
