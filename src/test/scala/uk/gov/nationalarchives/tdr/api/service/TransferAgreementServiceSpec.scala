@@ -15,6 +15,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{
   TransferAgreementCompliance,
   TransferAgreementNotCompliance
 }
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{createConsignment, createConsignmentStatus}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.time.Instant.now
@@ -84,6 +85,9 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val consignmentStatusId = UUID.randomUUID()
     val userId = UUID.randomUUID()
     val dateTime = Timestamp.from(FixedTimeSource.now)
+    val statusType = "TransferAgreement"
+    createConsignment(consignmentId, userId)
+    createConsignmentStatus(consignmentId, statusType, "InProgress", dateTime)
     def row(name: String, value: String): ConsignmentmetadataRow =
       ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
     val mockResponse = Future.successful(Seq(
@@ -91,15 +95,13 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       row("InitialOpenRecordsConfirmed", "true"),
       row("SensitivityReviewSignOffConfirmed", "true")
     ))
-    val statusType = "TransferAgreement"
-    val statusValue = "Completed"
 
-    val mockTaConsignmentStatus = ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, dateTime, None)
-    val mockTaConsignmentStatusResponse = Future.successful(Seq(mockTaConsignmentStatus))
+    val statusValue = "Completed"
+    val mockTaConsignmentStatus = Future.successful(Seq(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, dateTime, None)))
 
     when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
-    when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(Future.successful(mockTaConsignmentStatus))
-    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockTaConsignmentStatusResponse)
+    when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])).thenReturn(Future.successful(1))
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockTaConsignmentStatus)
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementCompliance = service.addTransferAgreementCompliance(
@@ -145,5 +147,23 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     result.statustype shouldBe statusType
     result.value shouldBe statusValue
     result.createddatetime shouldBe createdTimestamp
+  }
+
+  "updateTransferAgreementStatus" should "add the correct Transfer Agreement Status" in {
+    val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
+    val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
+    val consignmentId = UUID.randomUUID()
+    val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
+    val statusType = "TransferAgreement"
+    val statusValue = "Complete"
+    val createdTimestamp = Timestamp.from(now)
+
+    val mockResponse = Future.successful(1)
+    when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])).thenReturn(mockResponse)
+
+    val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
+    val result: Future[Int] = service.updateTransferAgreementStatus(consignmentId, statusValue)
+
+    result shouldEqual(mockResponse)
   }
 }

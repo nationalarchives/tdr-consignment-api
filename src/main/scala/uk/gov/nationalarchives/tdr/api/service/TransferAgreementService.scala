@@ -74,13 +74,17 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
       transferAgreementCompliance <- consignmentMetadataRepository.addConsignmentMetadata(convertTAComplianceInputToPropertyRows(input, userId)).map(
         rows => convertDbRowsToTransferAgreementCompliance(input.consignmentId, rows)
       )
-      _ <- addTransferAgreementStatus(input.consignmentId, "Completed")
+      _ <- updateTransferAgreementStatus(input.consignmentId, "Completed")
     } yield transferAgreementCompliance
   }
 
   def addTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[ConsignmentstatusRow] = {
     val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "TransferAgreement", statusValue, Timestamp.from(timeSource.now))
     consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
+  }
+
+  def updateTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[Int] = {
+    consignmentStatusRepository.updateConsignmentStatus(consignmentId, "TransferAgreement", statusValue, Timestamp.from(timeSource.now))
   }
 
   private def convertTANotComplianceInputToPropertyRows(input: AddTransferAgreementNotComplianceInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
