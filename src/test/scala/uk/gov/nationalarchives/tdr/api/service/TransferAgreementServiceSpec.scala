@@ -133,14 +133,14 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val consignmentId = UUID.randomUUID()
     val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
     val statusType = "TransferAgreement"
-    val statusValue = "Completed"
+    val statusValue = "InProgress"
     val createdTimestamp = Timestamp.from(now)
 
     val mockResponse = Future.successful(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp))
     when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockResponse)
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
-    val result: ConsignmentstatusRow = service.addTransferAgreementStatus(consignmentId, statusValue).futureValue
+    val result: ConsignmentstatusRow = service.addTransferAgreementStatus(consignmentId).futureValue
 
     result.consignmentstatusid shouldBe consignmentStatusId
     result.consignmentid shouldBe consignmentId
