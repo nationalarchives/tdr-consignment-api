@@ -143,7 +143,7 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])).thenReturn(mockResponse)
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
-    val result: Future[Int] = service.updateTransferAgreementStatus(consignmentId, statusValue)
+    val result: Future[Int] = service.updateExistingTransferAgreementStatus(consignmentId, statusValue)
 
     result shouldEqual(mockResponse)
   }

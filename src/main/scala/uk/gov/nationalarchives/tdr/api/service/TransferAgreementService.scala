@@ -74,7 +74,7 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
       transferAgreementCompliance <- consignmentMetadataRepository.addConsignmentMetadata(convertTAComplianceInputToPropertyRows(input, userId)).map(
         rows => convertDbRowsToTransferAgreementCompliance(input.consignmentId, rows)
       )
-      _ <- updateTransferAgreementStatus(input.consignmentId, "Completed")
+      _ <- updateExistingTransferAgreementStatus(input.consignmentId, "Completed")
     } yield transferAgreementCompliance
   }
 
@@ -83,7 +83,7 @@ class TransferAgreementService(consignmentMetadataRepository: ConsignmentMetadat
     consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 
-  def updateTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[Int] = {
+  def updateExistingTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[Int] = {
     consignmentStatusRepository.updateConsignmentStatus(consignmentId, "TransferAgreement", statusValue, Timestamp.from(timeSource.now))
   }
 
