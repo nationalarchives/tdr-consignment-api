@@ -72,7 +72,6 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
     val metadataId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
-    val consignmentStatusId = UUID.randomUUID()
     val userId = UUID.randomUUID()
     val dateTime = Timestamp.from(FixedTimeSource.now)
     val statusType = "TransferAgreement"
@@ -141,10 +140,8 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
     val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
     val consignmentId = UUID.randomUUID()
-    val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
     val statusType = "TransferAgreement"
     val statusValue = "Complete"
-    val createdTimestamp = Timestamp.from(now)
 
     val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
@@ -162,6 +159,6 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
 
     transferAgreementStatusType shouldBe statusType
     transferAgreementStatusValue shouldBe statusValue
-    result shouldEqual(mockResponse)
+    result shouldEqual mockResponse
   }
 }
