@@ -1,3 +1,0 @@
-{
-  "query": "{getConsignment(consignmentid: \"e72d94d5-ae79-4a05-bee9-86d9dea2bcc9\"){emptyFolders}}"
-}

@@ -4,7 +4,7 @@ import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches, Files}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, fileTypeIdentifier, folderTypeIdentifier}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.FileTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 
@@ -27,26 +27,17 @@ class FileService(
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
 
-  def getEmptyFolders(consignmentId: UUID): Future[Seq[String]] = {
-    for {
-      emptyFolderIds <- fileRepository.getEmptyFolderIds(consignmentId)
-      paths <- Future.sequence(emptyFolderIds.map(id => fileRepository.getFilePath(id)))
-    } yield paths
-  }
-
-
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
     val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
-    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
-    val allFolderNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, folderTypeIdentifier)
+    val allNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths)
 
-    val fileRows: List[FileRow] = ((allFolderNodes ++ allFileNodes) map {
+    val fileRows: List[FileRow] = (allNodes map {
       case (_, treeNode) =>
-        val parentId = treeNode.parentPath.map(v => allFileNodes.getOrElse(v, allFolderNodes(v)).id)
+        val parentId = treeNode.parentPath.map(v => allNodes(v).id)
         FileRow(treeNode.id, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
     }).toList
 

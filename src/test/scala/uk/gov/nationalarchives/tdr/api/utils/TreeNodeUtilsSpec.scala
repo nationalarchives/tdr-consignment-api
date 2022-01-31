@@ -5,12 +5,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.fileTypeIdentifier
 
 class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
 
   "generateNodes" should "generate the correct nodes for a nested path" in {
-    val result = TreeNodesUtils(new FixedUUIDSource).generateNodes(Set("/a/path/with/some/nested/folders/file"), fileTypeIdentifier)
+    val result = TreeNodesUtils(new FixedUUIDSource).generateNodes(Set("/a/path/with/some/nested/folders/file"))
     val expectedSize = 7
     result.size should equal(expectedSize)
     List(
@@ -38,7 +37,7 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
 
   "generateNodes" should "generate the correct nodes for a single file" in {
     val fileName = "file"
-    val result = TreeNodesUtils(new FixedUUIDSource).generateNodes(Set(fileName), fileTypeIdentifier)
+    val result = TreeNodesUtils(new FixedUUIDSource).generateNodes(Set(fileName))
     result.size should equal(1)
     val treeNode = result.get(fileName)
     treeNode.isDefined should be(true)
