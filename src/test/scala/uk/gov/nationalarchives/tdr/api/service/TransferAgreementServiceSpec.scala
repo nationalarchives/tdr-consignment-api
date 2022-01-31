@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.util.UUID
 import org.mockito.ArgumentMatchers.any
-import org.mockito.MockitoSugar
+import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -85,11 +85,14 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       row("InitialOpenRecordsConfirmed", "true"),
       row("SensitivityReviewSignOffConfirmed", "true")
     ))
-
+    val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+    val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val statusValue = "Completed"
 
     when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
-    when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])).thenReturn(Future.successful(1))
+    when(consignmentStatusRepositoryMock
+      .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp]))
+      .thenReturn(Future.successful(1))
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementCompliance = service.addTransferAgreementCompliance(
@@ -101,7 +104,11 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       userId
     ).futureValue
 
+    val transferAgreementStatusType = transferAgreementStatusTypeCaptor.getValue
+    val transferAgreementStatusValue = transferAgreementStatusValueCaptor.getValue
 
+    transferAgreementStatusType shouldBe statusType
+    transferAgreementStatusValue shouldBe statusValue
     transferAgreementResult.consignmentId shouldBe consignmentId
     transferAgreementResult.initialOpenRecords shouldBe true
     transferAgreementResult.appraisalSelectionSignedOff shouldBe true
@@ -139,12 +146,22 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val statusValue = "Complete"
     val createdTimestamp = Timestamp.from(now)
 
+    val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+    val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+
     val mockResponse = Future.successful(1)
-    when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])).thenReturn(mockResponse)
+    when(consignmentStatusRepositoryMock
+      .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp]))
+      .thenReturn(mockResponse)
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val result: Future[Int] = service.updateExistingTransferAgreementStatus(consignmentId, statusValue)
 
+    val transferAgreementStatusType = transferAgreementStatusTypeCaptor.getValue
+    val transferAgreementStatusValue = transferAgreementStatusValueCaptor.getValue
+
+    transferAgreementStatusType shouldBe statusType
+    transferAgreementStatusValue shouldBe statusValue
     result shouldEqual(mockResponse)
   }
 }
