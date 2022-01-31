@@ -25,12 +25,12 @@ object DbConnection {
   val slickSession: SlickSession = SlickSession.forConfig("consignmentapi")
   val slickSessionWithConfig: Config => SlickSession = config => SlickSession.forConfig("consignmentapi", config)
 
-  def db(config: Config) = {
+  def db(config: Config): JdbcBackend#DatabaseDef = {
     val db = slickSessionWithConfig(config).db
     db.source match {
       case hikariDataSource: HikariCPJdbcDataSource =>
         val configBean = hikariDataSource.ds.getHikariConfigMXBean
-        getPassword match {
+        getPassword(config) match {
           case Failure(exception) => throw exception
           case Success(password) =>
             configBean.setPassword(password)
@@ -46,7 +46,7 @@ object DbConnection {
     db.source match {
       case hikariDataSource: HikariCPJdbcDataSource =>
         val configBean = hikariDataSource.ds.getHikariConfigMXBean
-        getPassword match {
+        getPassword(ConfigFactory.load()) match {
           case Failure(exception) => throw exception
           case Success(password) =>
             configBean.setPassword(password)
@@ -60,22 +60,21 @@ object DbConnection {
   //We've chosen the cache to be 5 minutes. This means that we're not making too many requests to AWS while at the same time
   //it gives us a buffer if anything goes wrong getting the password.
   //IAM database passwords are valid for 15 minutes https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
-  def getPassword: Try[String] = memoize[Try, String](Some(5.minutes)) {
-    val configFactory = ConfigFactory.load
-    val useIamAuth = configFactory.getBoolean("consignmentapi.useIamAuth")
+  def getPassword(config: Config): Try[String] = memoize[Try, String](Some(5.minutes)) {
+    val useIamAuth = config.getBoolean("consignmentapi.useIamAuth")
     if (useIamAuth) {
       val rdsClient = RdsUtilities.builder().region(Region.EU_WEST_2).build()
-      val port = configFactory.getInt("consignmentapi.db.port")
+      val port = config.getInt("consignmentapi.db.port")
       val request = GenerateAuthenticationTokenRequest.builder()
         .credentialsProvider(DefaultCredentialsProvider.builder().build())
-        .hostname(configFactory.getString("consignmentapi.db.host"))
+        .hostname(config.getString("consignmentapi.db.host"))
         .port(port)
-        .username(configFactory.getString("consignmentapi.db.user"))
+        .username(config.getString("consignmentapi.db.user"))
         .region(Region.EU_WEST_2)
         .build()
       rdsClient.generateAuthenticationToken(request)
     } else {
-      configFactory.getString("consignmentapi.db.password")
+      config.getString("consignmentapi.db.password")
     }
   }
 }

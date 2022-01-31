@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.utils
 
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{ClientSideFileLastModifiedDate, ClientSideFileSize, SHA256ClientSideChecksum, clientSideProperties}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService.transferAgreementProperties
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{defaultFileId, userId}
 
@@ -28,7 +28,8 @@ class DatabaseUtils(connection: Connection) {
                          consignmentType: String = "standard",
                          bodyId: UUID = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")): Unit = {
     val sql = """INSERT INTO "Consignment" """ +
-      """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime", "ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence")""" +
+      """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
+        |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence")""".stripMargin +
       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
@@ -280,5 +281,5 @@ class DatabaseUtils(connection: Connection) {
 }
 
 object DatabaseUtils {
-  def apply(connection: Connection) = new DatabaseUtils(connection)
+  def apply(connection: Connection): DatabaseUtils = new DatabaseUtils(connection)
 }
