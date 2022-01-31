@@ -4,6 +4,7 @@ on:
   push:
 permissions:
   id-token: write
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,7 +15,7 @@ jobs:
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ env.MANAGEMENT_ACCOUNT }}:role/GithubActionsTest
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/GithubActionsTest
           aws-region: eu-west-2
           role-session-name: APIDownloadDependencies
       - name: Setup JDK
