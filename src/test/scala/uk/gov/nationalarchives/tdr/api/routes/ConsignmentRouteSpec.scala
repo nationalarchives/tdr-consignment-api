@@ -44,7 +44,8 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
                          files: Option[List[File]],
                          currentStatus: Option[CurrentStatus] = None,
                          consignmentType: Option[String],
-                         bodyId: Option[UUID] = None
+                         bodyId: Option[UUID] = None,
+                         emptyFolders: List[String] = Nil
                         )
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
   case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
@@ -375,6 +376,16 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_error_no_consignmentid")
     val response: GraphqlQueryData = runTestQuery("query_no_consignmentid", validUserToken())
     response.errors.head.message should equal(expectedResponse.errors.head.message)
+  }
+
+  "getConsignment" should "return empty directories" in {
+    val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
+    createConsignment(consignmentId, userId)
+    createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier, Option(UUID.randomUUID()))
+    createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier)
+    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_error_no_consignmentid")
+    val response: GraphqlQueryData = runTestQuery("query_empty_folders", validUserToken())
+    println(response)
   }
 
   "updateExportLocation" should "update the export location correctly" in {

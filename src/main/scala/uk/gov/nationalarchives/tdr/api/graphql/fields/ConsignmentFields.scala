@@ -112,6 +112,11 @@ object ConsignmentFields {
         resolve = context => DeferFiles(context.value.consignmentid)
       ),
       Field(
+        "emptyFolders",
+        ListType(StringType),
+        resolve = context => DeferEmptyFolders(context.value.consignmentid)
+      ),
+      Field(
         "consignmentReference",
         StringType,
         resolve = _.value.consignmentReference

@@ -15,6 +15,7 @@ input AddConsignmentInput {
 input AddFileAndMetadataInput {
   consignmentId: UUID!
   metadataInput: [ClientSideMetadataInput!]!
+  emptyDirectories: [String!] = []
 }
 
 input AddFileMetadataInput {
@@ -107,6 +108,7 @@ type Consignment {
   series: Series
   transferringBody: TransferringBody
   files: [File!]!
+  emptyFolders: [String!]!
   consignmentReference: String!
   currentStatus: CurrentStatus!
 }
