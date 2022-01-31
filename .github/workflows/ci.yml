@@ -2,6 +2,8 @@ name: CI
 on:
   pull_request:
   push:
+permissions:
+  id-token: write
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,6 +16,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.MANAGEMENT_ACCOUNT }}:role/GithubActionsTest
           aws-region: eu-west-2
+          role-session-name: APIDownloadDependencies
       - name: Setup JDK
         uses: actions/setup-java@v2
         with:
