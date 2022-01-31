@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "sts" % "2.16.16",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
-  "org.scalatest" %% "scalatest" % "3.1.0" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.11" % Test,
   "org.mockito" %% "mockito-scala" % "1.7.0" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.7.0" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
@@ -91,11 +91,11 @@ libraryDependencies ++= Seq(
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.29",
   "io.github.hakky54" % "logcaptor" % "2.1.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
-  "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
 )
 
 javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
+parallelExecution in Test := false
 fork in Test := true
 
 assemblyJarName in assembly := "consignmentapi.jar"

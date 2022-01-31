@@ -54,7 +54,7 @@ class Routes(val config: Config) extends Cors {
                 case _ => None
               }.getOrElse("Unknown field")
 
-              val errorMessage = s"Request with field $fieldName failed"
+              val errorMessage = s"Request with field $fieldName failed ${ex.getMessage}"
               logger.error(errorMessage, ex)
               complete(HttpResponse(InternalServerError, entity = errorMessage))
           }
@@ -69,7 +69,7 @@ class Routes(val config: Config) extends Cors {
             authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
               respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
                 entity(as[JsValue]) { requestJson =>
-                  GraphQLServer.endpoint(requestJson, accessToken)
+                  GraphQLServer.endpoint(requestJson, accessToken, config)
                 }
               }
             }

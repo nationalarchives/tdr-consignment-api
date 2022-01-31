@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
 import sangria.ast.Document
 import sangria.execution._
@@ -28,7 +28,6 @@ import scala.util.{Failure, Success}
 object GraphQLServer {
 
   private val logger = Logger(s"${GraphQLServer.getClass}")
-  private val config = ConfigFactory.load()
 
   private def handleException(marshaller: ResultMarshaller, errorCode: String, message: String): HandledException = {
     val node = marshaller.scalarNode(errorCode, "String", Set.empty)
@@ -48,7 +47,7 @@ object GraphQLServer {
     case (_, ex: Throwable) => throw ex
   }
 
-  def endpoint(requestJSON: JsValue, accessToken: Token)(implicit ec: ExecutionContext): Route = {
+  def endpoint(requestJSON: JsValue, accessToken: Token, config: Config)(implicit ec: ExecutionContext): Route = {
 
     val JsObject(fields) = requestJSON
 
@@ -63,17 +62,17 @@ object GraphQLServer {
           case Some(obj: JsObject) => obj
           case _ => JsObject.empty
         }
-        complete(executeGraphQLQuery(queryAst, operation, variables, accessToken))
+        complete(executeGraphQLQuery(queryAst, operation, variables, accessToken, config))
       case Failure(error) =>
         complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
     }
   }
 
-  private def generateConsignmentApiContext(accessToken: Token)(implicit ec: ExecutionContext): ConsignmentApiContext = {
+  private def generateConsignmentApiContext(accessToken: Token, config: Config)(implicit ec: ExecutionContext): ConsignmentApiContext = {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
     val timeSource = new CurrentTimeSource
-    val db = DbConnection.db
+    val db = DbConnection.db(config)
     val consignmentRepository = new ConsignmentRepository(db, timeSource)
     val fileMetadataRepository = new FileMetadataRepository(db)
     val fileRepository = new FileRepository(db)
@@ -115,9 +114,9 @@ object GraphQLServer {
     )
   }
 
-  private def executeGraphQLQuery(query: Document, operation: Option[String], vars: JsObject, accessToken: Token)
+  private def executeGraphQLQuery(query: Document, operation: Option[String], vars: JsObject, accessToken: Token, config: Config)
                                  (implicit ec: ExecutionContext): Future[(StatusCode with Serializable, JsValue)] = {
-    val context = generateConsignmentApiContext(accessToken: Token)
+    val context = generateConsignmentApiContext(accessToken: Token, config)
 
     Executor.execute(
       GraphQlTypes.schema,
