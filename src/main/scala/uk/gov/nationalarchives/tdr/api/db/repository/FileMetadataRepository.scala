@@ -41,6 +41,21 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
+  def getClosureMetadataProperty(): Future[Seq[Filepropertyv2Row]] = {
+    val query = Filepropertyv2
+    db.run(query.result)
+  }
+
+  def getClosureMetadataValues(): Future[Seq[Filepropertyvaluesv2Row]] = {
+    val query = Filepropertyvaluesv2
+    db.run(query.result)
+  }
+
+  def getClosureMetadataDependencies(): Future[Seq[Filepropertydependanciesv2Row]] = {
+    val query = Filepropertydependanciesv2
+    db.run(query.result)
+  }
+
   def countProcessedChecksumInConsignment(consignmentId: UUID): Future[Int] = {
     val query = Filemetadata.join(File)
       .on(_.fileid === _.fileid).join(Fileproperty)

@@ -1,21 +1,20 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
-import net.logstash.logback.argument.StructuredArguments._
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddFileMetadataInput, FileMetadata, SHA256ServerSideChecksum}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataFields._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
-import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,6 +22,21 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
+
+  def getPropertyType(propertyType: Option[String]): PropertyType = propertyType match {
+    case Some("System") => System
+    case Some("Defined") => Defined
+    case Some("Supplied") => Supplied
+    case _ => throw new Exception(s"Invalid property type $propertyType")
+  }
+
+  def getDataType(dataType: Option[String]): DataType = dataType match {
+    case Some("text") => Text
+    case Some("datetime") => DateTime
+    case Some("integer") => Integer
+    case Some("decimal") => Decimal
+    case _ => throw new Exception(s"Invalid data type $dataType")
+  }
 
   def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
     val now = Timestamp.from(timeSource.now)
@@ -81,6 +95,52 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
             propertyNameMap.get(FoiExemptionCode.name)
           )
       }
+  }
+
+  def getClosureMetadata(): Future[Seq[MetadataField]] = {
+    (for {
+      properties <- fileMetadataRepository.getClosureMetadataProperty()
+      values <- fileMetadataRepository.getClosureMetadataValues()
+      dependencies <- fileMetadataRepository.getClosureMetadataDependencies()
+    } yield (properties, values, dependencies)).map {
+      case (properties, valuesResult, dependenciesResult) =>
+        val values: Map[String, Seq[Filepropertyvaluesv2Row]] = valuesResult.groupBy(_.propertyname)
+        val dependencies: Map[Int, Seq[Filepropertydependanciesv2Row]] = dependenciesResult.groupBy(_.groupid)
+
+        def rowsToMetadata(fp: Filepropertyv2Row, defaultValueOption: Option[String] = None): MetadataField = {
+          val metadataValues: Seq[MetadataValues] = values.getOrElse(fp.name, Nil).map(value => {
+            value.dependancies.map(groupId => {
+              val deps: Seq[MetadataField] = for {
+                dep <- dependencies.getOrElse(groupId, Nil)
+                dependencyProps <- properties.find(_.name == dep.propertyname).map(fp => {
+                  rowsToMetadata(fp, dep.default)
+                })
+              } yield dependencyProps
+              MetadataValues(deps.toList, value.propertyvalue)
+            }).getOrElse(MetadataValues(Nil, value.propertyvalue))
+          })
+          MetadataField(
+            fp.name,
+            fp.fullname,
+            fp.description,
+            getPropertyType(fp.propertytype),
+            fp.propertygroup,
+            getDataType(fp.datatype),
+            fp.editable.getOrElse(false),
+            fp.mutlivalue.getOrElse(false),
+            defaultValueOption,
+            metadataValues.toList
+          )
+        }
+
+        properties.map(prop => {
+          val defaultValue: Option[String] = for {
+            values <- values.get(prop.name)
+            value <- values.find(_.default.getOrElse(false))
+          } yield value.propertyvalue
+          rowsToMetadata(prop, defaultValue)
+        }).toList
+    }
   }
 }
 

@@ -11,7 +11,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, Filepropertydependanciesv2Row, Filepropertyv2Row, Filepropertyvaluesv2Row, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Mismatch, Success}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -193,5 +193,54 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     response.contains(fileIdTwo) should equal(true)
     response(fileIdOne).clientSideFileSize.get should equal(1)
     response(fileIdTwo).foiExemptionCode.get should equal("valueTwo")
+  }
+
+  "getClosureMetadata" should "correctly return sequence of metadataField" in {
+    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
+    val mockPropertyResponse = Future(Seq(
+      Filepropertyv2Row("closureType",None, Some("Closure Type"), None, None, None, Some("Defined"), Some("text"),Some(true),None,Some("Closure")),
+    ))
+    val mockPropertyValuesResponse = Future(Seq(
+      Filepropertyvaluesv2Row("closureType","closed_for",None, None,None),
+    ))
+    val mockPropertyDependenciesResponse = Future(Seq(
+      Filepropertydependanciesv2Row(3,"ClosurePeriod", None),
+    ))
+
+    when(fileMetadataRepositoryMock.getClosureMetadataProperty()).thenReturn(mockPropertyResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataValues()).thenReturn(mockPropertyValuesResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataDependencies()).thenReturn(mockPropertyDependenciesResponse)
+
+    val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val response = service.getClosureMetadata().futureValue
+    response.foreach(temp => print(s"$temp \n"))
+    response.size should equal(1)
+    response.head.values.head.value should equal("closed_for")
+    response.head.values.head.dependencies.isEmpty should equal(true)
+  }
+
+  "getClosureMetadata" should "correctly return sequence of metadataField with dependencies" in {
+    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
+    val mockPropertyResponse = Future(Seq(
+      Filepropertyv2Row("closureType",None, Some("Closure Type"), None, None, None, Some("Defined"), Some("text"),Some(true),None,Some("Closure")),
+      Filepropertyv2Row("ClosurePeriod",None, Some("Closure Type"), None, None, None, Some("Defined"), Some("text"),Some(true),None,Some("Closure"))
+    ))
+    val mockPropertyValuesResponse = Future(Seq(
+      Filepropertyvaluesv2Row("closureType","closed_for",None,Some(3),None),
+    ))
+    val mockPropertyDependenciesResponse = Future(Seq(
+      Filepropertydependanciesv2Row(3,"ClosurePeriod", None),
+    ))
+
+    when(fileMetadataRepositoryMock.getClosureMetadataProperty()).thenReturn(mockPropertyResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataValues()).thenReturn(mockPropertyValuesResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataDependencies()).thenReturn(mockPropertyDependenciesResponse)
+
+    val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val response = service.getClosureMetadata().futureValue
+    response.foreach(temp => print(s"$temp \n"))
+    response.size should equal(2)
+    response.head.values.size should equal(1)
+    response(1).values.size should equal(0)
   }
 }
