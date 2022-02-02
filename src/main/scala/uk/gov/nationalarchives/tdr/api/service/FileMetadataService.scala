@@ -97,19 +97,19 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       }
   }
 
-  def getClosureMetadata(): Future[Seq[MetadataField]] = {
+  def getClosureMetadata: Future[Seq[MetadataField]] = {
     (for {
-      properties <- fileMetadataRepository.getClosureMetadataProperty()
-      values <- fileMetadataRepository.getClosureMetadataValues()
-      dependencies <- fileMetadataRepository.getClosureMetadataDependencies()
+      properties <- fileMetadataRepository.getClosureMetadataProperty
+      values <- fileMetadataRepository.getClosureMetadataValues
+      dependencies <- fileMetadataRepository.getClosureMetadataDependencies
     } yield (properties, values, dependencies)).map {
       case (properties, valuesResult, dependenciesResult) =>
         val values: Map[String, Seq[Filepropertyvaluesv2Row]] = valuesResult.groupBy(_.propertyname)
-        val dependencies: Map[Int, Seq[Filepropertydependanciesv2Row]] = dependenciesResult.groupBy(_.groupid)
+        val dependencies: Map[Int, Seq[Filepropertydependenciesv2Row]] = dependenciesResult.groupBy(_.groupid)
 
         def rowsToMetadata(fp: Filepropertyv2Row, defaultValueOption: Option[String] = None): MetadataField = {
           val metadataValues: Seq[MetadataValues] = values.getOrElse(fp.name, Nil).map(value => {
-            value.dependancies.map(groupId => {
+            value.dependencies.map(groupId => {
               val deps: Seq[MetadataField] = for {
                 dep <- dependencies.getOrElse(groupId, Nil)
                 dependencyProps <- properties.find(_.name == dep.propertyname).map(fp => {

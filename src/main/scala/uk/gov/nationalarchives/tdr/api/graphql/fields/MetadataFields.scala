@@ -35,7 +35,7 @@ object MetadataFields {
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getMetadata", ListType(MetadataFieldsType),
       arguments= Nil,
-      resolve = ctx => ctx.ctx.fileMetadataService.getClosureMetadata(),
+      resolve = ctx => ctx.ctx.fileMetadataService.getClosureMetadata,
       tags=List() //This is authorisation
     )
   )

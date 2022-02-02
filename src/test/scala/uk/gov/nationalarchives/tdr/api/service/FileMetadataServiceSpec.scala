@@ -11,7 +11,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, Filepropertydependanciesv2Row, Filepropertyv2Row, Filepropertyvaluesv2Row, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, Filepropertydependenciesv2Row, Filepropertyv2Row, Filepropertyvaluesv2Row, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Mismatch, Success}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -204,15 +204,15 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       Filepropertyvaluesv2Row("closureType","closed_for",None, None,None),
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
-      Filepropertydependanciesv2Row(3,"ClosurePeriod", None),
+      Filepropertydependenciesv2Row(3,"ClosurePeriod", None),
     ))
 
-    when(fileMetadataRepositoryMock.getClosureMetadataProperty()).thenReturn(mockPropertyResponse)
-    when(fileMetadataRepositoryMock.getClosureMetadataValues()).thenReturn(mockPropertyValuesResponse)
-    when(fileMetadataRepositoryMock.getClosureMetadataDependencies()).thenReturn(mockPropertyDependenciesResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataProperty).thenReturn(mockPropertyResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataValues).thenReturn(mockPropertyValuesResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-    val response = service.getClosureMetadata().futureValue
+    val response = service.getClosureMetadata.futureValue
     response.foreach(temp => print(s"$temp \n"))
     response.size should equal(1)
     response.head.values.head.value should equal("closed_for")
@@ -229,15 +229,15 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       Filepropertyvaluesv2Row("closureType","closed_for",None,Some(3),None),
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
-      Filepropertydependanciesv2Row(3,"ClosurePeriod", None),
+      Filepropertydependenciesv2Row(3,"ClosurePeriod", None),
     ))
 
-    when(fileMetadataRepositoryMock.getClosureMetadataProperty()).thenReturn(mockPropertyResponse)
-    when(fileMetadataRepositoryMock.getClosureMetadataValues()).thenReturn(mockPropertyValuesResponse)
-    when(fileMetadataRepositoryMock.getClosureMetadataDependencies()).thenReturn(mockPropertyDependenciesResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataProperty).thenReturn(mockPropertyResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataValues).thenReturn(mockPropertyValuesResponse)
+    when(fileMetadataRepositoryMock.getClosureMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-    val response = service.getClosureMetadata().futureValue
+    val response = service.getClosureMetadata.futureValue
     response.foreach(temp => print(s"$temp \n"))
     response.size should equal(2)
     response.head.values.size should equal(1)

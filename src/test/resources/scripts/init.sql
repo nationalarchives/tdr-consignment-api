@@ -139,3 +139,38 @@ CREATE TABLE IF NOT EXISTS "FileStatus"
     FOREIGN KEY (FileId) REFERENCES File(FileId)
 
 );
+
+CREATE TABLE IF NOT EXISTS "FilePropertyV2"
+(
+    "Name" text NOT NULL,
+    "Description" text NULL,
+    "Fullname" text NULL,
+    "CreatedDatetime" timestamp NULL,
+    "ModifiedDatetime" timestamp NULL,
+    "UserId" uuid NULL,
+    "PropertyType" text NULL,
+    "Datatype" text NULL,
+    "Editable" bool NULL,
+    "MutliValue" bool NULL,
+    "PropertyGroup" text NULL
+--     PRIMARY KEY (Name)
+);
+
+
+CREATE TABLE IF NOT EXISTS "FilePropertyValuesV2"
+(
+    "PropertyName" text NOT NULL,
+    "PropertyValue" text NOT NULL,
+    "Default" bool NULL,
+    "Dependencies" int4 NULL,
+    "SecondaryValue" int4 NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS "FilePropertyDependenciesV2"
+(
+    "GroupId" int4 NOT NULL,
+    "PropertyName" text NOT NULL,
+    "Default" text NULL
+);
+

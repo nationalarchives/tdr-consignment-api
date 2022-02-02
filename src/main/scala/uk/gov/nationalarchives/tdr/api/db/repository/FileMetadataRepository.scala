@@ -41,18 +41,18 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def getClosureMetadataProperty(): Future[Seq[Filepropertyv2Row]] = {
+  def getClosureMetadataProperty: Future[Seq[Filepropertyv2Row]] = {
     val query = Filepropertyv2
     db.run(query.result)
   }
 
-  def getClosureMetadataValues(): Future[Seq[Filepropertyvaluesv2Row]] = {
+  def getClosureMetadataValues: Future[Seq[Filepropertyvaluesv2Row]] = {
     val query = Filepropertyvaluesv2
     db.run(query.result)
   }
 
-  def getClosureMetadataDependencies(): Future[Seq[Filepropertydependanciesv2Row]] = {
-    val query = Filepropertydependanciesv2
+  def getClosureMetadataDependencies: Future[Seq[Filepropertydependenciesv2Row]] = {
+    val query = Filepropertydependenciesv2
     db.run(query.result)
   }
 
