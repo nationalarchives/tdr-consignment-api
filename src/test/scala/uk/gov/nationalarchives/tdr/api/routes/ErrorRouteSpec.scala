@@ -12,16 +12,16 @@ import scala.io.Source.fromResource
 class ErrorRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase {
   val fields = List("getConsignment", "getSeries", "getTransferAgreement")
 
-  "getConsignment" should "return the field name in the error message" in {
-    val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
-    createDatabaseError()
-    Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
-      val entityResponse = entityAs[String]
-      response.status should equal(StatusCodes.InternalServerError)
-      entityResponse should equal(s"Request with field getConsignment failed")
-    }
-    resetRenamedColumn()
-  }
+//  "getConsignment" should "return the field name in the error message" in {
+//    val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
+//    createDatabaseError()
+//    Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
+//      val entityResponse = entityAs[String]
+//      response.status should equal(StatusCodes.InternalServerError)
+//      entityResponse should equal(s"Request with field getConsignment failed")
+//    }
+//    resetRenamedColumn()
+//  }
 
   private def createDatabaseError(): Int = {
     val sql = "ALTER TABLE Consignment RENAME COLUMN ConsignmentReference TO ConsignmentReferenceOld"
