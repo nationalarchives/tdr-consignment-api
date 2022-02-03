@@ -1,4 +1,4 @@
-name: CI
+name: Run API tests
 on:
   pull_request:
   push:
@@ -27,5 +27,5 @@ jobs:
         with:
           distribution: temurin
           java-version: 8
-      - name: Build and Test
+      - name: Test
         run: MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'

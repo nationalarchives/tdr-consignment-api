@@ -2,11 +2,12 @@ import rocks.muki.graphql.quietError
 import rocks.muki.graphql.schema.SchemaLoader
 import sbt.File
 import sbt.Keys.libraryDependencies
+import sbtrelease.ReleaseStateTransformations._
 
 
 
 name := "tdr-consignment-api"
-version := "0.1.0-SNAPSHOT"
+version := "0.1.0"
 
 description := "The consignment API for TDR"
 
@@ -92,6 +93,15 @@ libraryDependencies ++= Seq(
   "io.github.hakky54" % "logcaptor" % "2.1.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
+)
+
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  releaseStepTask(assembly),
+  setReleaseVersion,
+  tagRelease,
+  pushChanges
 )
 
 javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"

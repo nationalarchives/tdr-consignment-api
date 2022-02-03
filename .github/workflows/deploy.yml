@@ -1,0 +1,50 @@
+name: Deploy API
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'intg'
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'intg'
+        type: string
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set environment specific account name
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+        run: |
+          echo account_secret_name=${ENVIRONMENT^^}_ACCOUNT >> $GITHUB_ENV
+          echo environment_title=${ENVIRONMENT^} >> $GITHUB_ENV
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/GithubActionsTest
+          aws-region: eu-west-2
+          role-session-name: APIECR
+      - name: Login to ECR
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com
+      - name: Setup JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 8
+      - name: Assemble
+        run: sbt assembly
+      - name: Build docker image
+        run:
