@@ -33,10 +33,10 @@ object MetadataFields {
   implicit val MetadataValuesType: ObjectType[Unit, MetadataValues] = deriveObjectType[Unit, MetadataValues]()
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("getMetadata", ListType(MetadataFieldsType),
+    Field("getClosureMetadata", ListType(MetadataFieldsType),
       arguments= Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.getClosureMetadata,
-      tags=List() //This is authorisation
+      tags=List()
     )
   )
 }

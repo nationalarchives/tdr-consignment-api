@@ -142,35 +142,35 @@ CREATE TABLE IF NOT EXISTS "FileStatus"
 
 CREATE TABLE IF NOT EXISTS "FilePropertyV2"
 (
-    "Name" text NOT NULL,
-    "Description" text NULL,
-    "Fullname" text NULL,
+    "Name" varchar(255) NOT NULL,
+    "Description" varchar(255) NULL,
+    "Fullname" varchar(255) NULL,
     "CreatedDatetime" timestamp NULL,
     "ModifiedDatetime" timestamp NULL,
     "UserId" uuid NULL,
-    "PropertyType" text NULL,
-    "Datatype" text NULL,
-    "Editable" bool NULL,
-    "MutliValue" bool NULL,
-    "PropertyGroup" text NULL
---     PRIMARY KEY (Name)
+    "PropertyType" varchar(255) NULL,
+    "Datatype" varchar(255) NULL,
+    "Editable" boolean NULL,
+    "MutliValue" boolean NULL,
+    "PropertyGroup" varchar(255) NULL,
+    PRIMARY KEY (Name)
 );
 
 
 CREATE TABLE IF NOT EXISTS "FilePropertyValuesV2"
 (
-    "PropertyName" text NOT NULL,
-    "PropertyValue" text NOT NULL,
-    "Default" bool NULL,
-    "Dependencies" int4 NULL,
-    "SecondaryValue" int4 NULL
+    "PropertyName" varchar(255) NOT NULL,
+    "PropertyValue" varchar(255) NOT NULL,
+    "Default" boolean NULL,
+    "Dependencies" integer NULL,
+    "SecondaryValue" integer NULL
 );
 
 
 CREATE TABLE IF NOT EXISTS "FilePropertyDependenciesV2"
 (
-    "GroupId" int4 NOT NULL,
-    "PropertyName" text NOT NULL,
+    "GroupId" integer NOT NULL,
+    "PropertyName" varchar(255) NOT NULL,
     "Default" text NULL
 );
 

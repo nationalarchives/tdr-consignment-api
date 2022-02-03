@@ -134,6 +134,13 @@ type CurrentStatus {
   upload: String
 }
 
+enum DataType {
+  Text
+  Integer
+  DateTime
+  Decimal
+}
+
 type FFIDMetadata {
   fileId: UUID!
   software: String!
@@ -223,6 +230,24 @@ scalar LocalDateTime
 "The `Long` scalar type represents non-fractional signed whole numeric values. Long can represent values between -(2^63) and 2^63 - 1."
 scalar Long
 
+type MetadataField {
+  name: String!
+  fullName: String
+  description: String
+  propertyType: PropertyType!
+  propertyGroup: String
+  dataType: DataType!
+  editable: Boolean!
+  multiValue: Boolean!
+  defaultValue: String
+  values: [MetadataValues!]!
+}
+
+type MetadataValues {
+  dependencies: [MetadataField!]!
+  value: String!
+}
+
 type Mutation {
   addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
   updateTransferInitiated(consignmentid: UUID!): Int
@@ -255,11 +280,18 @@ type PageInfo {
   endCursor: String
 }
 
+enum PropertyType {
+  System
+  Defined
+  Supplied
+}
+
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!): Consignment
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
+  getClosureMetadata: [MetadataField!]!
 }
 
 type Series {
