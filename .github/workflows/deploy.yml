@@ -40,6 +40,14 @@ jobs:
         run: |
           export MANIFEST=$(aws ecr batch-get-image --repository-name consignment-api --image-ids imageTag=${{ github.event.inputs.to_deploy }} --output json | jq --raw-output '.images[0].imageManifest')
           aws ecr put-image --repository-name consignment-api --image-tag ${{ github.event.inputs.environment }} --image-manifest "$MANIFEST"
+      - name: Configure AWS credentials for ECS
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets[account_secret_name] }}:role/TDRGitHubECSUpdateRoleIntg
+          aws-region: eu-west-2
+          role-session-name: APIECRLogin
+      - name: Deploy to ECS
+        run: aws ecs list-clusters
   e2e-tests:
     if: github.event.inputs.environment != 'prod' && ${{ success() }}
     uses: nationalarchives/tdr-e2e-tests/.github/workflows/ci.yml@move-to-github-actions
