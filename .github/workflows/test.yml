@@ -36,6 +36,7 @@ jobs:
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt 'release with-defaults' -Dsbt.release.componentToBump=PATCH
+          git push
           docker build -t ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.version_tag }}
           docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.version_tag }}
           gh workflow run .github/workflows/deploy.yml -f environment=intg -f to_deploy=$(git describe --tags --abbrev=0) --ref add-and-show-empty-folders

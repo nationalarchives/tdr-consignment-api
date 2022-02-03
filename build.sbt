@@ -96,8 +96,7 @@ releaseProcess := Seq[ReleaseStep](
   inquireVersions,
   releaseStepTask(assembly),
   setReleaseVersion,
-  tagRelease,
-  pushChanges
+  tagRelease
 )
 
 javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
