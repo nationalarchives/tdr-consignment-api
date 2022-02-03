@@ -37,10 +37,3 @@ jobs:
           echo version_tag=$(git describe --tags --abbrev=0) >> $GITHUB_ENV
           docker build -t ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.version_tag }}
           docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.version_tag }}
-      
-  deploy:
-    if: github.ref == 'refs/heads/add-and-show-empty-folders'
-    uses: nationalarchives/tdr-consignment-api/.github/workflows/deploy.yml@add-and-show-empty-folders
-    with:
-      environment: intg
-      to_deploy: env.version_tag

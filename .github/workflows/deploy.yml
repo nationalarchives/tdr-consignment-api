@@ -8,18 +8,8 @@ on:
         default: 'intg'
       to_deploy:
         description: 'Version to deploy'
-        required: true
-  workflow_call:
-    inputs:
-      environment:
-        description: 'Environment'
-        required: true
-        default: 'intg'
-        type: string
-      to_deploy:
-        description: 'Version to deploy'
-        required: true
-        type: string
+        required: false
+
 permissions:
   id-token: write
   contents: read
