@@ -50,8 +50,8 @@ jobs:
         run: |
           export MANIFEST=$(aws ecr batch-get-image --repository-name consignment-api --image-ids imageTag=${{ github.event.inputs.to_deploy }} --output json | jq --raw-output '.images[0].imageManifest')
           aws ecr put-image --repository-name consignment-api --image-tag ${{ github.event.inputs.environment }} --image-manifest "$MANIFEST"
-      - name: Run e2e tests
-        if: github.event.inputs.environment != 'prod'
-        uses: nationalarchives/tdr-e2e-tests/.github/workflows/ci.yml@master
-        with:
-          environment: github.event.inputs.environment
+  e2e-tests:
+    if: github.event.inputs.environment != 'prod'
+    uses: nationalarchives/tdr-e2e-tests/.github/workflows/ci.yml@master
+    with:
+      environment: github.event.inputs.environment

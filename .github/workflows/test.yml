@@ -8,7 +8,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    environment: integration
+    environment: intg
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -31,15 +31,16 @@ jobs:
       - name: Test
         run: MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
       - name: Build new image version
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/add-and-show-empty-folders'
         run: |
           MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt 'release with-defaults' -Dsbt.release.componentToBump=PATCH
           echo version_tag=$(git describe --tags --abbrev=0) >> $GITHUB_ENV
           docker build -t ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.version_tag }}
           docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.version_tag }}
-      - name: Deploy
-        if: github.ref == 'refs/heads/add-and-show-empty-folders'
-        uses: nationalarchives/tdr-consignment-api/.github/workflows/deploy.yml@add-and-show-empty-folders
-        with:
-          environment: intg
-          to_deploy: env.version_tag
+      
+  deploy:
+    if: github.ref == 'refs/heads/add-and-show-empty-folders'
+    uses: nationalarchives/tdr-consignment-api/.github/workflows/deploy.yml@add-and-show-empty-folders
+    with:
+      environment: intg
+      to_deploy: env.version_tag
