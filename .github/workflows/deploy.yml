@@ -6,12 +6,19 @@ on:
         description: 'Environment'
         required: true
         default: 'intg'
+      to_deploy:
+        description: 'Version to deploy'
+        required: true
   workflow_call:
     inputs:
       environment:
         description: 'Environment'
         required: true
         default: 'intg'
+        type: string
+      to_deploy:
+        description: 'Version to deploy'
+        required: true
         type: string
 permissions:
   id-token: write
@@ -34,17 +41,17 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/GithubActionsTest
           aws-region: eu-west-2
-          role-session-name: APIECR
+          role-session-name: APIECRLogin
       - name: Login to ECR
         uses: docker/login-action@v1
         with:
           registry: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com
-      - name: Setup JDK
-        uses: actions/setup-java@v2
+      - name: Tag image
+        run: |
+          export MANIFEST=$(aws ecr batch-get-image --repository-name consignment-api --image-ids imageTag=${{ github.event.inputs.to_deploy }} --output json | jq --raw-output '.images[0].imageManifest')
+          aws ecr put-image --repository-name consignment-api --image-tag ${{ github.event.inputs.environment }} --image-manifest "$MANIFEST"
+      - name: Run e2e tests
+        if: github.event.inputs.environment != 'prod'
+        uses: nationalarchives/tdr-e2e-tests/.github/workflows/ci.yml@master
         with:
-          distribution: temurin
-          java-version: 8
-      - name: Assemble
-        run: sbt assembly
-      - name: Build docker image
-        run:
+          environment: github.event.inputs.environment
