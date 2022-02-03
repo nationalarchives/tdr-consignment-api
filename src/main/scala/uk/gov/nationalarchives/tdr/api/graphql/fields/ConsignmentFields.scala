@@ -31,7 +31,9 @@ object ConsignmentFields {
                          bodyId: UUID
                         )
 
+  case class PaginationInput(limit: Option[Int], currentCursor: Option[UUID])
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
+  case class FileEdge(node: File, cursor: String) extends Edge[File]
 
   case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: String)
 
@@ -65,6 +67,19 @@ object ConsignmentFields {
   }
   implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
     deriveObjectType[Unit, CurrentStatus]()
+  implicit val PaginationInputType: InputObjectType[PaginationInput] =
+    deriveInputObjectType[PaginationInput]()
+
+  implicit val ConnectionDefinition(_, fileConnections) =
+    Connection.definition[RequestContext, Connection, File](
+      name = "File",
+      nodeType = FileType
+    )
+
+  val ParentIdArg: Argument[Option[UUID]] = Argument("parentId", OptionInputType(UuidType))
+  val LimitArg: Argument[Option[Int]] = Argument("limit", OptionInputType(IntType))
+  val CurrentCursorArg: Argument[Option[UUID]] = Argument("currentCursor", OptionInputType(UuidType))
+  val PaginationInputArg: Argument[PaginationInput] = Argument("paginationArgs", PaginationInputType)
 
   implicit val ConsignmentType: ObjectType[Unit, Consignment] = ObjectType(
     "Consignment",
@@ -120,6 +135,16 @@ object ConsignmentFields {
         "currentStatus",
         CurrentStatusType,
         resolve = context => DeferCurrentConsignmentStatus(context.value.consignmentid)
+      ),
+      Field(
+        "fileConnections",
+        fileConnections,
+        arguments = PaginationInputArg :: ParentIdArg :: Nil,
+        resolve = context => {
+          val paginationArgs = context.args.arg("paginationArgs")
+          val parentId = context.args.arg("parentId")
+          DeferFileConnections(context.value.consignmentid, parentId, paginationArgs)
+        }
       )
     )
   )
@@ -136,13 +161,11 @@ object ConsignmentFields {
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportLocationArg: Argument[UpdateExportLocationInput] = Argument("exportLocation", UpdateExportLocationInputType)
-  val LimitArg: Argument[Int] = Argument("limit", IntType)
-  val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
-      arguments = ConsignmentIdArg :: Nil,
+      arguments = ConsignmentIdArg :: PaginationInputArg :: ParentIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.getConsignment(ctx.arg(ConsignmentIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),

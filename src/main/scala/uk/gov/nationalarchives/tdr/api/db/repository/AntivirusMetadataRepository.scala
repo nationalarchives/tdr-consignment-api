@@ -18,10 +18,11 @@ class AntivirusMetadataRepository(db: Database)(implicit val executionContext: E
     db.run(allUpdates).map(_ => antivirusMetadataRow)
   }
 
-  def getAntivirusMetadata(consignmentId: UUID): Future[Seq[AvmetadataRow]] = {
+  def getAntivirusMetadata(consignmentId: UUID, fileIds: Option[Set[UUID]] = None): Future[Seq[AvmetadataRow]] = {
     val query = Avmetadata.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
+      .filterOpt(fileIds)(_._2.fileid inSetBind _)
       .map(_._1)
     db.run(query.result)
   }

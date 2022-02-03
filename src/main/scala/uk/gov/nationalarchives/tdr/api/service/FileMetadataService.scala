@@ -63,24 +63,26 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     }
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId).map {
-    rows =>
-      rows.groupBy(_.fileid).map {
-        case (fileId, fileMetadata) =>
-          val propertyNameMap: Map[String, String] = fileMetadata.groupBy(_.propertyname)
-            .transform((_, value) => value.head.value)
-          fileId -> FileMetadataValues(
-            propertyNameMap.get(SHA256ClientSideChecksum),
-            propertyNameMap.get(ClientSideOriginalFilepath),
-            propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
-            propertyNameMap.get(ClientSideFileSize).map(_.toLong),
-            propertyNameMap.get(RightsCopyright.name),
-            propertyNameMap.get(LegalStatus.name),
-            propertyNameMap.get(HeldBy.name),
-            propertyNameMap.get(Language.name),
-            propertyNameMap.get(FoiExemptionCode.name)
-          )
-      }
+  def getFileMetadata(consignmentId: UUID,
+                      fileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId, fileIds)
+    .map {
+      rows =>
+        rows.groupBy(_.fileid).map {
+          case (fileId, fileMetadata) =>
+            val propertyNameMap: Map[String, String] = fileMetadata.groupBy(_.propertyname)
+              .transform((_, value) => value.head.value)
+            fileId -> FileMetadataValues(
+              propertyNameMap.get(SHA256ClientSideChecksum),
+              propertyNameMap.get(ClientSideOriginalFilepath),
+              propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+              propertyNameMap.get(ClientSideFileSize).map(_.toLong),
+              propertyNameMap.get(RightsCopyright.name),
+              propertyNameMap.get(LegalStatus.name),
+              propertyNameMap.get(HeldBy.name),
+              propertyNameMap.get(Language.name),
+              propertyNameMap.get(FoiExemptionCode.name)
+            )
+        }
   }
 }
 
@@ -108,7 +110,14 @@ object FileMetadataService {
   val clientSideProperties = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
   val staticMetadataProperties = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 
-  case class File(fileId: UUID, metadata: FileMetadataValues, ffidMetadata: Option[FFIDMetadata], antivirusMetadata: Option[AntivirusMetadata])
+  case class File(
+                   fileId: UUID,
+                   fileType: Option[String] = None,
+                   fileName: Option[String] = None,
+                   parentId: Option[UUID] = None,
+                   metadata: FileMetadataValues,
+                   ffidMetadata: Option[FFIDMetadata],
+                   antivirusMetadata: Option[AntivirusMetadata])
 
   case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
                                 clientSideOriginalFilePath: Option[String],

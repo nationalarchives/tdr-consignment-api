@@ -9,13 +9,15 @@ import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, Ffidmetada
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, Files, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, Files}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues, clientSideProperties, staticMetadataProperties}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
-
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
+
+import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
@@ -71,7 +73,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileService = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
     )
 
     when(consignmentRepositoryMock.getConsignmentsOfFiles(Seq(fileId1)))
@@ -131,14 +133,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
+          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
     )
     val metadataList: Seq[File] = service.getFileMetadata(consignmentId).futureValue
 
     metadataList.length should equal(1)
 
     val actualFileMetadata: File = metadataList.head
-    val expectedFileMetadata = File(fileId,
+    val expectedFileMetadata = File(fileId, None, None, None,
       FileMetadataValues(
         Some("checksum"),
         Some("filePath"),
@@ -195,14 +197,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
+          ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
     val fileMetadataList = service.getFileMetadata(consignmentId).futureValue
 
     fileMetadataList.length should equal(1)
 
     val actualFileMetadata = fileMetadataList.head
-    val expectedFileMetadata = File(fileId,
+    val expectedFileMetadata = File(fileId, None, None, None,
       FileMetadataValues(None, None, None, None, None, None, None, None, None),
       Some(FFIDMetadata(
         fileId,
@@ -237,7 +239,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
-            ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource)
+            ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
     val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
     val fileRows: List[FileRow] = fileRowCaptor.getValue

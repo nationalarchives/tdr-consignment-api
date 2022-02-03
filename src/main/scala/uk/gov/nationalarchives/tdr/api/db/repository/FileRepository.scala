@@ -54,4 +54,17 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .length
     db.run(query.result)
   }
+
+  def getFiles(consignmentId: UUID, parentId: Option[UUID], limit: Option[Int], after: Option[UUID]): Future[Seq[FileRow]] = {
+    val query = File.filter(_.consignmentid === consignmentId)
+      .filterOpt(parentId){ (f, id) => f.fileid === id || f.parentid === id }
+      .filterOpt(after)(_.fileid > _)
+      .sortBy(_.fileid)
+
+    if (limit.isDefined) {
+      query.take(limit.get)
+    }
+
+    db.run(query.result)
+  }
 }

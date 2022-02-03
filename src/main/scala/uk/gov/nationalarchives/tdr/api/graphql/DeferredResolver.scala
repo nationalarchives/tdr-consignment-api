@@ -2,15 +2,19 @@ package uk.gov.nationalarchives.tdr.api.graphql
 
 
 import java.util.UUID
+
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{CurrentStatus, FileChecks, TransferringBody}
+import sangria.relay.DefaultConnection
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{CurrentStatus, FileChecks, PaginationInput, TransferringBody}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
+import uk.gov.nationalarchives.tdr.api.service.PaginatedFiles
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class DeferredResolver extends sangria.execution.deferred.DeferredResolver[ConsignmentApiContext] {
   // We may at some point need to do authorisation in this method. There is a ensurePermissions method which needs to be called before returning data.
+  // scalastyle:off
   override def resolve(deferred: Vector[Deferred[Any]], context: ConsignmentApiContext, queryState: Any)(implicit ec: ExecutionContext): Vector[Future[Any]] = {
     deferred.map {
       case DeferTotalFiles(consignmentId) => context.fileService.fileCount(consignmentId)
@@ -22,9 +26,12 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case DeferCurrentConsignmentStatus(consignmentId) => context.consignmentStatusService.getConsignmentStatus(consignmentId)
       case DeferFiles(consignmentId) => context.fileService.getFileMetadata(consignmentId)
       case DeferChecksSucceeded(consignmentId) => context.fileStatusService.allChecksSucceeded(consignmentId)
+      case DeferFileConnections(consignmentId, parentId, paginationArgs) =>
+        context.fileService.getFileConnections(consignmentId, parentId, paginationArgs)
       case other => throw UnsupportedDeferError(other)
     }
   }
+  // scalastyle:on
 }
 
 case class DeferTotalFiles(consignmentId: UUID) extends Deferred[Int]
@@ -35,3 +42,4 @@ case class DeferConsignmentBody(consignmentId: UUID) extends Deferred[Transferri
 case class DeferFiles(consignmentId: UUID) extends Deferred[List[File]]
 case class DeferCurrentConsignmentStatus(consignmentId: UUID) extends Deferred[CurrentStatus]
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]
+case class DeferFileConnections(consignmentId: UUID, parentId: Option[UUID], paginationArgs: PaginationInput) extends Deferred[DefaultConnection[File]]
