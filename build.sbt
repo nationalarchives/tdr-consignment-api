@@ -1,10 +1,6 @@
 import rocks.muki.graphql.quietError
-import rocks.muki.graphql.schema.SchemaLoader
-import sbt.File
 import sbt.Keys.libraryDependencies
 import sbtrelease.ReleaseStateTransformations._
-
-
 
 name := "tdr-consignment-api"
 version := "0.1.0"
