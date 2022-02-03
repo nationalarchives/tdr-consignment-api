@@ -42,6 +42,6 @@ jobs:
           aws ecr put-image --repository-name consignment-api --image-tag ${{ github.event.inputs.environment }} --image-manifest "$MANIFEST"
   e2e-tests:
     if: github.event.inputs.environment != 'prod'
-    uses: nationalarchives/tdr-e2e-tests/.github/workflows/ci.yml@master
+    uses: nationalarchives/tdr-e2e-tests/.github/workflows/ci.yml@move-to-github-actions
     with:
       environment: github.event.inputs.environment
