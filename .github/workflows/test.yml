@@ -39,7 +39,7 @@ jobs:
           docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.version_tag }}
       - name: Deploy
         if: github.ref == 'refs/heads/add-and-show-empty-folders'
-        uses: nationalarchives/tdr-consignment-api/.github/workflows/deploy.yml
+        uses: nationalarchives/tdr-consignment-api/.github/workflows/deploy.yml@add-and-show-empty-folders
         with:
           environment: intg
           to_deploy: env.version_tag
