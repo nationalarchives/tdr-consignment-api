@@ -8,7 +8,7 @@ on:
         default: 'intg'
       to_deploy:
         description: 'Version to deploy'
-        required: false
+        required: true
 
 permissions:
   id-token: write
@@ -41,7 +41,7 @@ jobs:
           export MANIFEST=$(aws ecr batch-get-image --repository-name consignment-api --image-ids imageTag=${{ github.event.inputs.to_deploy }} --output json | jq --raw-output '.images[0].imageManifest')
           aws ecr put-image --repository-name consignment-api --image-tag ${{ github.event.inputs.environment }} --image-manifest "$MANIFEST"
   e2e-tests:
-    if: github.event.inputs.environment != 'prod'
+    if: github.event.inputs.environment != 'prod' && ${{ success() }}
     uses: nationalarchives/tdr-e2e-tests/.github/workflows/ci.yml@move-to-github-actions
     with:
       environment: github.event.inputs.environment
