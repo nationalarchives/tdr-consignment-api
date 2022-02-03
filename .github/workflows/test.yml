@@ -30,13 +30,15 @@ jobs:
           java-version: 8
       - name: Test
         run: MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
+      - name: Set git tag
+        if: github.ref == 'refs/heads/add-and-show-empty-folders'
+        run: echo "GIT_TAG=`echo $(git describe --tags --abbrev=0)`" >> $GITHUB_ENV
       - name: Build new image version
         if: github.ref == 'refs/heads/add-and-show-empty-folders'
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt 'release with-defaults' -Dsbt.release.componentToBump=PATCH
-          echo "GIT_TAG=`echo $(git describe --tags --abbrev=0)`" >> $GITHUB_ENV
           docker build -t ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.GIT_TAG }}
           docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.GIT_TAG }}
           gh workflow run .github/workflows/deploy.yml -f environment=intg -f to_deploy=${{ env.GIT_TAG }} --ref add-and-show-empty-folders
