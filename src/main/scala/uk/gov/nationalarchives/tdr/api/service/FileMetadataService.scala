@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.Logger
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-import uk.gov.nationalarchives.Tables._
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow, FilepropertyRow, FilepropertyvaluesRow, FilepropertydependenciesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata

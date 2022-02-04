@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS "FileProperty"
     "MutliValue" boolean NULL,
     "PropertyGroup" varchar(255) NULL,
     PRIMARY KEY (Name)
-    );
+);
 
 CREATE TABLE IF NOT EXISTS FileMetadata (
     MetadataId uuid,
