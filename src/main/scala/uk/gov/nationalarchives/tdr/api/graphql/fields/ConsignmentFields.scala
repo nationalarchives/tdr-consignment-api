@@ -31,7 +31,7 @@ object ConsignmentFields {
                          bodyId: UUID
                         )
 
-  case class PaginationInput(limit: Option[Int], currentCursor: Option[UUID])
+  case class PaginationInput(limit: Option[Int] = None, currentCursor: Option[UUID] = None)
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
   case class FileEdge(node: File, cursor: String) extends Edge[File]
 
@@ -141,8 +141,8 @@ object ConsignmentFields {
         fileConnections,
         arguments = PaginationInputArg :: ParentIdArg :: Nil,
         resolve = context => {
-          val paginationArgs = context.args.arg("paginationArgs")
-          val parentId = context.args.arg("parentId")
+          val paginationArgs: PaginationInput = context.arg("paginationArgs")
+          val parentId: Option[UUID] = context.argOpt("parentId")
           DeferFileConnections(context.value.consignmentid, parentId, paginationArgs)
         }
       )
@@ -165,7 +165,7 @@ object ConsignmentFields {
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
-      arguments = ConsignmentIdArg :: PaginationInputArg :: ParentIdArg :: Nil,
+      arguments = ConsignmentIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.getConsignment(ctx.arg(ConsignmentIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),

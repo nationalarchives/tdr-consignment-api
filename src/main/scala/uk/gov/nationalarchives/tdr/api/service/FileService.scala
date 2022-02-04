@@ -138,7 +138,7 @@ class FileService(
                              avList: List[AntivirusMetadata]): Seq[FileEdge] = {
     fileRows.map(fr => convertRowToFile(
         fr,
-        fileMetadata.get(fr.fileid).get,
+        fileMetadata.getOrElse(fr.fileid, FileMetadataValues(None, None, None, None, None, None, None, None, None)),
         ffidMetadataList.find(_.fileId == fr.fileid),
         avList.find(_.fileId == fr.fileid)))
       .map(f => FileEdge(f, f.fileId.toString))
