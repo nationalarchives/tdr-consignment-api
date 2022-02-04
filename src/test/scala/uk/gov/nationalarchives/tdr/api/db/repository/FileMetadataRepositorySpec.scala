@@ -199,11 +199,12 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
   "getClosureMetadataProperty" should "return the correct closure metadata property" in {
     val db = DbConnection.db
     val fileMetadataRepository = new FileMetadataRepository(db)
-    createFileProperty("LegalStatus", "desc", "Legal Status", "Defined","text", true, false, "Mandatory Data" )
+    deleteTables()
+    createFileProperty("test", "desc", "test2", "Defined","text", true, false, "Mandatory Data" )
     val response = fileMetadataRepository.getClosureMetadataProperty.futureValue.head
-    response.name should equal("LegalStatus")
+    response.name should equal("test")
     response.description should equal(Some("desc"))
-    response.fullname should equal(Some("Legal Status"))
+    response.fullname should equal(Some("test2"))
     response.propertytype should equal(Some("Defined"))
     response.datatype should equal(Some("text"))
     response.editable should equal(Some(true))

@@ -76,12 +76,20 @@ CREATE TABLE IF NOT EXISTS AVMetadata (
     Datetime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS FileProperty (
-    Name varchar(255),
-    Description varchar(255),
-    Shortname varchar(255),
+CREATE TABLE IF NOT EXISTS "FileProperty"
+(
+    "Name" varchar(255) NOT NULL,
+    "Description" varchar(255) NULL,
+    "FullName" varchar(255) NULL,
+    "CreatedDatetime" timestamp NULL,
+    "ModifiedDatetime" timestamp NULL,
+    "PropertyType" varchar(255) NULL,
+    "Datatype" varchar(255) NULL,
+    "Editable" boolean NULL,
+    "MutliValue" boolean NULL,
+    "PropertyGroup" varchar(255) NULL,
     PRIMARY KEY (Name)
-);
+    );
 
 CREATE TABLE IF NOT EXISTS FileMetadata (
     MetadataId uuid,
@@ -140,24 +148,7 @@ CREATE TABLE IF NOT EXISTS "FileStatus"
 
 );
 
-CREATE TABLE IF NOT EXISTS "FilePropertyV2"
-(
-    "Name" varchar(255) NOT NULL,
-    "Description" varchar(255) NULL,
-    "Fullname" varchar(255) NULL,
-    "CreatedDatetime" timestamp NULL,
-    "ModifiedDatetime" timestamp NULL,
-    "UserId" uuid NULL,
-    "PropertyType" varchar(255) NULL,
-    "Datatype" varchar(255) NULL,
-    "Editable" boolean NULL,
-    "MutliValue" boolean NULL,
-    "PropertyGroup" varchar(255) NULL,
-    PRIMARY KEY (Name)
-);
-
-
-CREATE TABLE IF NOT EXISTS "FilePropertyValuesV2"
+CREATE TABLE IF NOT EXISTS "FilePropertyValues"
 (
     "PropertyName" varchar(255) NOT NULL,
     "PropertyValue" varchar(255) NOT NULL,
@@ -167,7 +158,7 @@ CREATE TABLE IF NOT EXISTS "FilePropertyValuesV2"
 );
 
 
-CREATE TABLE IF NOT EXISTS "FilePropertyDependenciesV2"
+CREATE TABLE IF NOT EXISTS "FilePropertyDependencies"
 (
     "GroupId" integer NOT NULL,
     "PropertyName" varchar(255) NOT NULL,

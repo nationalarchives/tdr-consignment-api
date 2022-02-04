@@ -104,10 +104,10 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       dependencies <- fileMetadataRepository.getClosureMetadataDependencies
     } yield (properties, values, dependencies)).map {
       case (properties, valuesResult, dependenciesResult) =>
-        val values: Map[String, Seq[Filepropertyvaluesv2Row]] = valuesResult.groupBy(_.propertyname)
-        val dependencies: Map[Int, Seq[Filepropertydependenciesv2Row]] = dependenciesResult.groupBy(_.groupid)
+        val values: Map[String, Seq[FilepropertyvaluesRow]] = valuesResult.groupBy(_.propertyname)
+        val dependencies: Map[Int, Seq[FilepropertydependenciesRow]] = dependenciesResult.groupBy(_.groupid)
 
-        def rowsToMetadata(fp: Filepropertyv2Row, defaultValueOption: Option[String] = None): MetadataField = {
+        def rowsToMetadata(fp: FilepropertyRow, defaultValueOption: Option[String] = None): MetadataField = {
           val metadataValues: Seq[MetadataValues] = values.getOrElse(fp.name, Nil).map(value => {
             value.dependencies.map(groupId => {
               val deps: Seq[MetadataField] = for {
