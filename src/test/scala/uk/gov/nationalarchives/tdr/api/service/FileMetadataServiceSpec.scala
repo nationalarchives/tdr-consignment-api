@@ -174,7 +174,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     consignmentIdCaptor.getValue should equal(consignmentId)
   }
 
-  "getFileMetadata" should "return mutiple map entries for multiple files" in {
+  "getFileMetadata" should "return multiple map entries for multiple files" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
@@ -199,14 +199,14 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "getClosureMetadata" should "correctly return sequence of metadataField" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("closureType",None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"),Some(true),None,Some("Closure")),
+      FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()),
+        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
     ))
     val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType","closed_for",None, None,None),
+      FilepropertyvaluesRow("closureType", "closed_for", None, None, None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3,"ClosurePeriod", None),
+      FilepropertydependenciesRow(3, "ClosurePeriod", None)
     ))
 
     when(fileMetadataRepositoryMock.getClosureMetadataProperty).thenReturn(mockPropertyResponse)
@@ -215,7 +215,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     val response = service.getClosureMetadata.futureValue
-    response.foreach(temp => print(s"$temp \n"))
+
     response.size should equal(1)
     response.head.values.head.value should equal("closed_for")
     response.head.values.head.dependencies.isEmpty should equal(true)
@@ -224,16 +224,16 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "getClosureMetadata" should "correctly return sequence of metadataField with dependencies" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("closureType",None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"),Some(true),None,Some("Closure")),
-      FilepropertyRow("ClosurePeriod",None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"),Some(true),None,Some("Closure"))
+      FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()),
+        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+      FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()),
+        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
     ))
     val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType","closed_for",None,Some(3),None),
+      FilepropertyvaluesRow("closureType", "closed_for", None, Some(3), None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3,"ClosurePeriod", None),
+      FilepropertydependenciesRow(3, "ClosurePeriod", None)
     ))
 
     when(fileMetadataRepositoryMock.getClosureMetadataProperty).thenReturn(mockPropertyResponse)
@@ -242,7 +242,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     val response = service.getClosureMetadata.futureValue
-    response.foreach(temp => print(s"$temp \n"))
+
     response.size should equal(2)
     response.head.values.size should equal(1)
     response(1).values.size should equal(0)
