@@ -16,7 +16,7 @@ import spray.json.{JsObject, JsString, JsValue}
 import uk.gov.nationalarchives.tdr.api.auth.{AuthorisationException, ValidationAuthoriser}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.{ConsignmentStateException, ConsignmentStateValidator}
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
-import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentRepository, SeriesRepository, _}
+import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, DeferredResolver, ErrorCodes, GraphQlTypes}
 import uk.gov.nationalarchives.tdr.api.service._
@@ -29,6 +29,7 @@ object GraphQLServer {
 
   private val logger = Logger(s"${GraphQLServer.getClass}")
   private val config = ConfigFactory.load()
+
 
   private def handleException(marshaller: ResultMarshaller, errorCode: String, message: String): HandledException = {
     val node = marshaller.scalarNode(errorCode, "String", Set.empty)
