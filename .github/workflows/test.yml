@@ -1,6 +1,5 @@
 name: Run API tests
 on:
-  pull_request:
   push:
 permissions:
   id-token: write
