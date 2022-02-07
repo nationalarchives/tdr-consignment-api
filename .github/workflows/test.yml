@@ -31,6 +31,7 @@ jobs:
       - name: Test
         run: MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
       - name: Get next tag
+        if: github.ref == 'refs/heads/master'
         run: |
           export EXISTING_VERSION=$(curl ${{ github.api_url }}/repos/nationalarchives/tdr-consignment-api/tags | jq -r '.[0].name')
           echo NEW_VERSION=$(echo "${EXISTING_VERSION:1}" | awk -F. '/[0-9]/{$NF+=1;OFS=".";print}' | xargs -I{} echo "v{}") >> $GITHUB_ENV
@@ -46,7 +47,8 @@ jobs:
           docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.NEW_VERSION }}
           git tag ${{ env.NEW_VERSION }}
           git push origin ${{ env.NEW_VERSION }}
-      - name: Send success message if previous run failed
+      - name: Send success message if new version has been pushed
+        if: github.ref == 'refs/heads/master'
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
@@ -56,6 +58,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SUCCESS_WORKFLOW }}
       - name: Deploy to integration
+        if: github.ref == 'refs/heads/master'
         uses: octokit/request-action@v2.x
         with:
           route: POST /repos/nationalarchives/tdr-consignment-api/actions/workflows/deploy.yml/dispatches
