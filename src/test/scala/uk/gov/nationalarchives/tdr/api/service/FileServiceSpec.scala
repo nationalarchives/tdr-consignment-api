@@ -139,7 +139,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val actualFileMetadata: File = metadataList.head
     val expectedFileMetadata = File(fileId,
-      FileMetadataValues(
+      None,
+      None,
+      None,
+      Some(FileMetadataValues(
         Some("checksum"),
         Some("filePath"),
         Some(timestamp.toLocalDateTime),
@@ -148,7 +151,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         Some("legalStatus"),
         Some("heldBy"),
         Some("language"),
-        Some("foiExemption")),
+        Some("foiExemption"))),
       Some(FFIDMetadata(
         fileId,
         "pronom",
@@ -202,8 +205,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     fileMetadataList.length should equal(1)
 
     val actualFileMetadata = fileMetadataList.head
-    val expectedFileMetadata = File(fileId,
-      FileMetadataValues(None, None, None, None, None, None, None, None, None),
+    val expectedFileMetadata = File(fileId, None, None, None,
+      Some(FileMetadataValues(None, None, None, None, None, None, None, None, None)),
       Some(FFIDMetadata(
         fileId,
         "pronom",

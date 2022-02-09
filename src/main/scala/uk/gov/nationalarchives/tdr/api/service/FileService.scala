@@ -1,19 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables
+import java.sql.Timestamp
+import java.util.UUID
+
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches, Files}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.FileTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
-
-import java.sql.Timestamp
-import java.util.UUID
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileService(
@@ -79,7 +77,7 @@ class FileService(
     } yield {
       fileMetadataList map {
         case (fileId, fileMetadata) =>
-          File(fileId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
+          File(fileId, None, None, None, Some(fileMetadata), ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
       }
     }.toList
   }

@@ -8,12 +8,15 @@ import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestUtils}
-
 import java.sql.{PreparedStatement, ResultSet, Timestamp}
 import java.time.Instant
 import java.util.UUID
-import scala.concurrent.ExecutionContext
 
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
+
+import scala.concurrent.ExecutionContext
 
 class FileRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -170,6 +173,65 @@ class FileRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures
 
     files.size shouldBe 1
     files.head.consignmentid shouldBe consignmentId
+  }
+
+  "getFiles" should "return files, folders and file metadata where no type filter applied" in {
+    val db = DbConnection.db
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndMetadata(consignmentId)
+
+    val files = fileRepository.getFiles(consignmentId, FileFilters(None)).futureValue
+    val ids = files.map(_._1.fileid).toSet
+
+    files.size shouldBe 9
+    ids.size shouldBe 3
+  }
+
+  "getFiles" should "return files, and file metadata only where 'file' type filter applied" in {
+    val db = DbConnection.db
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndMetadata(consignmentId)
+
+    val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
+    val ids = files.map(_._1.fileid).toSet
+
+    files.size shouldBe 8
+    ids.size shouldBe 2
+  }
+
+  "getFiles" should "return folders only where 'folder' type filter applied" in {
+    val db = DbConnection.db
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndMetadata(consignmentId)
+
+    val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.folderTypeIdentifier))).futureValue
+    val ids = files.map(_._1.fileid).toSet
+    val folder = files.head
+
+    files.size shouldBe 1
+    ids.size shouldBe 1
+
+    folder._1.fileid.toString shouldBe "92756098-b394-4f46-8b4d-bbd1953660c9"
+    folder._2 shouldBe None
+  }
+
+  private def setUpFilesAndMetadata(consignmentId: UUID): Unit = {
+    val folderOneId = "92756098-b394-4f46-8b4d-bbd1953660c9"
+    val fileOneId = "20e0676a-f0a1-4051-9540-e7df1344ac11"
+    val fileTwoId = "b5111f11-4dca-4f92-8239-505da567b9d0"
+    val metadataId = "f4440f43-20c6-4b6c-811d-349e633617e5"
+
+    TestUtils.createConsignment(consignmentId, userId)
+    TestUtils.createFile(UUID.fromString(folderOneId), consignmentId, NodeType.folderTypeIdentifier)
+    TestUtils.createFile(UUID.fromString(fileOneId), consignmentId)
+    TestUtils.createFile(UUID.fromString(fileTwoId), consignmentId)
+
+    (1 to 7).foreach { _ => TestUtils.addFileMetadata(UUID.randomUUID().toString, fileOneId, SHA256ServerSideChecksum) }
+
+    TestUtils.addFileMetadata(metadataId, fileTwoId, SHA256ServerSideChecksum)
   }
 
   private def checkConsignmentStatusExists(consignmentId: UUID): Unit = {
