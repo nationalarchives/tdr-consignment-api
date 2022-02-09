@@ -110,7 +110,7 @@ object FileMetadataService {
                   fileType: Option[String] = None,
                   fileName: Option[String] = None,
                   parentId: Option[UUID] = None,
-                  metadata: Option[FileMetadataValues] = None,
+                  metadata: FileMetadataValues,
                   ffidMetadata: Option[FFIDMetadata],
                   antivirusMetadata: Option[AntivirusMetadata])
 

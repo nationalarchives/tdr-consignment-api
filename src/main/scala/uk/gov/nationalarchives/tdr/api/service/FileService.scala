@@ -77,7 +77,7 @@ class FileService(
     } yield {
       fileMetadataList map {
         case (fileId, fileMetadata) =>
-          File(fileId, None, None, None, Some(fileMetadata), ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
+          File(fileId, None, None, None, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
       }
     }.toList
   }
