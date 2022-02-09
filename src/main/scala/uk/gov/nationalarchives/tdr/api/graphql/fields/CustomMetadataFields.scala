@@ -1,14 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
-import java.util.UUID
-
 import sangria.macros.derive.{deriveEnumType, deriveObjectType}
-import sangria.schema.{Argument, EnumType, Field, ListType, ObjectType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.ValidateHasClientFileMetadataAccess
+import sangria.schema.{EnumType, Field, ListType, ObjectType, fields}
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 
-object MetadataFields {
+object CustomMetadataFields {
   sealed trait DataType
   case object Text extends DataType
   case object Integer extends DataType
@@ -34,8 +30,8 @@ object MetadataFields {
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getClosureMetadata", ListType(MetadataFieldsType),
-      arguments= Nil,
-      resolve = ctx => ctx.ctx.fileMetadataService.getClosureMetadata,
+      arguments = Nil,
+      resolve = ctx => ctx.ctx.customMetadataPropertiesService.getClosureMetadata,
       tags=List()
     )
   )

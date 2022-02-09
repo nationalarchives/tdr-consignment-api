@@ -195,42 +195,4 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
     fileTwoMetadata.get.head.value should equal("Result of FileMetadata processing")
   }
-
-  "getClosureMetadataProperty" should "return the correct closure metadata property" in {
-    val db = DbConnection.db
-    val fileMetadataRepository = new FileMetadataRepository(db)
-    deleteTables()
-    createFileProperty("test", "desc", "test2", "Defined","text", true, false, "Mandatory Data" )
-    val response = fileMetadataRepository.getClosureMetadataProperty.futureValue.head
-    response.name should equal("test")
-    response.description should equal(Some("desc"))
-    response.fullname should equal(Some("test2"))
-    response.propertytype should equal(Some("Defined"))
-    response.datatype should equal(Some("text"))
-    response.editable should equal(Some(true))
-    response.mutlivalue should equal(Some(false))
-    response.propertygroup should equal(Some("Mandatory Data"))
-  }
-
-  "getClosureMetadataValues" should "return the correct closure metadata values" in {
-    val db = DbConnection.db
-    val fileMetadataRepository = new FileMetadataRepository(db)
-    createFilePropertyValues("LegalStatus","English", true, 0, 1)
-    val response = fileMetadataRepository.getClosureMetadataValues.futureValue.head
-    response.propertyname should equal("LegalStatus")
-    response.propertyvalue should equal("English")
-    response.default should equal(Some(true))
-    response.dependencies should equal(Some(0))
-    response.secondaryvalue should equal(Some(1))
-  }
-
-  "getClosureMetadataDependencies" should "return the correct closure metadata dependencies" in {
-    val db = DbConnection.db
-    val fileMetadataRepository = new FileMetadataRepository(db)
-    createFilePropertyDependencies(1,"test","test2")
-    val response = fileMetadataRepository.getClosureMetadataDependencies.futureValue.head
-    response.groupid should equal(1)
-    response.propertyname should equal("test")
-    response.default should equal(Some("test2"))
-  }
 }

@@ -164,4 +164,3 @@ CREATE TABLE IF NOT EXISTS "FilePropertyDependencies"
     "PropertyName" varchar(255) NOT NULL,
     "Default" text NULL
 );
-

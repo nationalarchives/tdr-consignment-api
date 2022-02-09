@@ -1,11 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
@@ -38,21 +38,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._2.filetype === NodeType.fileTypeIdentifier)
       .map(_._1)
-    db.run(query.result)
-  }
-
-  def getClosureMetadataProperty: Future[Seq[FilepropertyRow]] = {
-    val query = Fileproperty
-    db.run(query.result)
-  }
-
-  def getClosureMetadataValues: Future[Seq[FilepropertyvaluesRow]] = {
-    val query = Filepropertyvalues
-    db.run(query.result)
-  }
-
-  def getClosureMetadataDependencies: Future[Seq[FilepropertydependenciesRow]] = {
-    val query = Filepropertydependencies
     db.run(query.result)
   }
 
