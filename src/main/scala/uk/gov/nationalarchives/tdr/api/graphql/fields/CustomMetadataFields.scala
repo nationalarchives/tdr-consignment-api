@@ -16,17 +16,17 @@ object CustomMetadataFields {
   case object Defined extends PropertyType
   case object Supplied extends PropertyType
 
-  case class MetadataValues(dependencies: List[MetadataField], value: String)
-  case class MetadataField(
+  case class CustomMetadataValues(dependencies: List[CustomMetadataField], value: String)
+  case class CustomMetadataField(
                             name: String, fullName: Option[String], description: Option[String], propertyType: PropertyType,
                             propertyGroup: Option[String], dataType: DataType, editable: Boolean,
-                            multiValue: Boolean, defaultValue: Option[String], values: List[MetadataValues]
+                            multiValue: Boolean, defaultValue: Option[String], values: List[CustomMetadataValues]
                           )
 
   implicit val DataTypeType: EnumType[DataType] = deriveEnumType[DataType]()
   implicit val PropertyTypeType: EnumType[PropertyType] = deriveEnumType[PropertyType]()
-  implicit val MetadataFieldsType: ObjectType[Unit, MetadataField] = deriveObjectType[Unit, MetadataField]()
-  implicit val MetadataValuesType: ObjectType[Unit, MetadataValues] = deriveObjectType[Unit, MetadataValues]()
+  implicit val MetadataFieldsType: ObjectType[Unit, CustomMetadataField] = deriveObjectType[Unit, CustomMetadataField]()
+  implicit val MetadataValuesType: ObjectType[Unit, CustomMetadataValues] = deriveObjectType[Unit, CustomMetadataValues]()
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getClosureMetadata", ListType(MetadataFieldsType),

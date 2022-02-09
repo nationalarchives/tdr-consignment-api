@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class CustomMetadataPropertiesService(customMetadataPropertiesRepository: CustomMetadataPropertiesRepository)
                                       (implicit val ec: ExecutionContext) {
 
-  def getClosureMetadata: Future[Seq[MetadataField]] = {
+  def getClosureMetadata: Future[Seq[CustomMetadataField]] = {
     (for {
       properties <- customMetadataPropertiesRepository.getClosureMetadataProperty
       values <- customMetadataPropertiesRepository.getClosureMetadataValues
@@ -19,19 +19,19 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
         val values: Map[String, Seq[FilepropertyvaluesRow]] = valuesResult.groupBy(_.propertyname)
         val dependencies: Map[Int, Seq[FilepropertydependenciesRow]] = dependenciesResult.groupBy(_.groupid)
 
-        def rowsToMetadata(fp: FilepropertyRow, defaultValueOption: Option[String] = None): MetadataField = {
-          val metadataValues: Seq[MetadataValues] = values.getOrElse(fp.name, Nil).map(value => {
+        def rowsToMetadata(fp: FilepropertyRow, defaultValueOption: Option[String] = None): CustomMetadataField = {
+          val metadataValues: Seq[CustomMetadataValues] = values.getOrElse(fp.name, Nil).map(value => {
             value.dependencies.map(groupId => {
-              val deps: Seq[MetadataField] = for {
+              val deps: Seq[CustomMetadataField] = for {
                 dep <- dependencies.getOrElse(groupId, Nil)
                 dependencyProps <- propertiesResult.find(_.name == dep.propertyname).map(fp => {
                   rowsToMetadata(fp, dep.default)
                 })
               } yield dependencyProps
-              MetadataValues(deps.toList, value.propertyvalue)
-            }).getOrElse(MetadataValues(Nil, value.propertyvalue))
+              CustomMetadataValues(deps.toList, value.propertyvalue)
+            }).getOrElse(CustomMetadataValues(Nil, value.propertyvalue))
           })
-          MetadataField(
+          CustomMetadataField(
             fp.name,
             fp.fullname,
             fp.description,
