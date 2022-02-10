@@ -1,8 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
+import io.circe.generic.auto._
+import sangria.marshalling.circe._
 import sangria.macros.derive.{deriveEnumType, deriveObjectType}
-import sangria.schema.{EnumType, Field, ListType, ObjectType, fields}
+import sangria.schema.{Argument, EnumType, Field, ListType, ObjectType, fields}
+import uk.gov.nationalarchives.tdr.api.auth.ValidateUserHasAccessToConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.UuidType
+
+import java.util.UUID
 
 object CustomMetadataFields {
   sealed trait DataType
@@ -27,12 +33,13 @@ object CustomMetadataFields {
   implicit val PropertyTypeType: EnumType[PropertyType] = deriveEnumType[PropertyType]()
   implicit val MetadataFieldsType: ObjectType[Unit, CustomMetadataField] = deriveObjectType[Unit, CustomMetadataField]()
   implicit val MetadataValuesType: ObjectType[Unit, CustomMetadataValues] = deriveObjectType[Unit, CustomMetadataValues]()
+  val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getClosureMetadata", ListType(MetadataFieldsType),
-      arguments = Nil,
+      arguments = ConsignmentIdArg :: Nil,
       resolve = ctx => ctx.ctx.customMetadataPropertiesService.getClosureMetadata,
-      tags=List()
+      tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     )
   )
 }

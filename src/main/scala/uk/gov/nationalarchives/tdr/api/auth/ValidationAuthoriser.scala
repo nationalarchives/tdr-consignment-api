@@ -21,6 +21,14 @@ class ValidationAuthoriser(implicit executionContext: ExecutionContext)
                            ctx: Context[ConsignmentApiContext, _]
                           ): BeforeFieldResult[ConsignmentApiContext, Unit] = {
 
+    // All fields must have an authorisation tag defined. This means that if we forget to add authorisation, the
+    // query is blocked by default, which prevents some security bugs.
+    val isTopLevelField = ctx.path.path.length == 1
+    val fieldHasAuthTag = ctx.field.tags.exists(tag => tag.isInstanceOf[AuthorisationTag])
+    if (isTopLevelField && !fieldHasAuthTag) {
+      throw new AssertionError(s"Query '${ctx.field.name}' does not have any authorisation steps defined")
+    }
+
     val validationList: Seq[BeforeFieldResult[ConsignmentApiContext, Unit]] = ctx.field.tags.map {
       case v: AuthorisationTag => {
          v.validate(ctx)
