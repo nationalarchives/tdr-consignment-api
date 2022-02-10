@@ -11,9 +11,9 @@ import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentMetadataRepository, ConsignmentStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{
   AddTransferAgreementComplianceInput,
-  AddTransferAgreementNotComplianceInput,
+  AddTransferAgreementPrivateBetaInput,
   TransferAgreementCompliance,
-  TransferAgreementNotCompliance
+  TransferAgreementPrivateBeta
 }
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{createConsignment, createConsignmentStatus}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -26,7 +26,7 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
   val fixedUuidSource = new FixedUUIDSource()
   val fixedTimeSource: FixedTimeSource.type = FixedTimeSource
 
-  "addTransferAgreementNotCompliance" should "add the correct metadata given correct arguments and set TA status to InProgress" in {
+  "addTransferAgreementPrivateBeta" should "add the correct metadata given correct arguments and set TA status to InProgress" in {
 
     val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
     val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
@@ -51,8 +51,8 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(Future.successful(mockTaConsignmentStatus))
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
-    val transferAgreementResult: TransferAgreementNotCompliance = service.addTransferAgreementNotCompliance(
-      AddTransferAgreementNotComplianceInput(
+    val transferAgreementResult: TransferAgreementPrivateBeta = service.addTransferAgreementPrivateBeta(
+      AddTransferAgreementPrivateBetaInput(
         consignmentId,
         allCrownCopyright = true,
         allEnglish = true,
