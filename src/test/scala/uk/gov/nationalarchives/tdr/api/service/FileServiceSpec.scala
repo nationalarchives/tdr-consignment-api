@@ -9,13 +9,15 @@ import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, Ffidmetada
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, Files, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, Files}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues, clientSideProperties, staticMetadataProperties}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
-
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
+
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
@@ -96,7 +98,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fixedUuidSource = new FixedUUIDSource()
 
     val consignmentId = UUID.randomUUID()
+    val userId = UUID.randomUUID()
     val fileId = UUID.randomUUID()
+    val parentId = UUID.randomUUID()
     val timestamp = Timestamp.from(FixedTimeSource.now)
     val datetime = Timestamp.from(Instant.now())
     val ffidMetadataId = UUID.randomUUID()
@@ -106,6 +110,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
 
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(ffidMetadataRows))
+
+    val fileRow = FileRow(
+      fileId, consignmentId, userId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileName"), Some(parentId))
 
     val fileMetadataRows = Seq(
       fileMetadataRow(fileId, "ClientSideFileLastModifiedDate", timestamp.toString),
@@ -121,6 +128,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val mockAvMetadataResponse = Future(
       Seq(AvmetadataRow(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp))
     )
+    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))))
+      .thenReturn(Future(Seq(fileRow)))
     when(fileMetadataRepositoryMock.getFileMetadata(consignmentId)).thenReturn(Future(fileMetadataRows))
     when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(mockAvMetadataResponse)
 
@@ -139,9 +148,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val actualFileMetadata: File = metadataList.head
     val expectedFileMetadata = File(fileId,
-      None,
-      None,
-      None,
+      Some(NodeType.fileTypeIdentifier),
+      Some("fileName"),
+      Some(parentId),
       FileMetadataValues(
         Some("checksum"),
         Some("filePath"),
@@ -182,6 +191,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val ffidMetadataRows = Seq(
       (ffidMetadataRow(ffidMetadataId, fileId, datetime), ffidMetadataMatchesRow(ffidMetadataId))
     )
+    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))))
+      .thenReturn(Future(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(ffidMetadataRows))
     when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
 
@@ -220,6 +231,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
 
     actualFileMetadata should equal(expectedFileMetadata)
+  }
+
+  "getFileMetadata" should "return empty fields if no file row" in {
+
   }
 
   "addFile" should "add a file and the client and static metadata" in {

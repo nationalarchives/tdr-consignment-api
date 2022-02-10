@@ -6,6 +6,7 @@ import java.util.UUID
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.FileTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
@@ -24,6 +25,20 @@ class FileService(
                    timeSource: TimeSource,
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
+
+  implicit class FileRowHelper(fr: Option[FileRow]) {
+    def fileType: Option[String] = {
+      if (fr.isDefined) { fr.get.filetype } else None
+    }
+
+    def fileName: Option[String] = {
+      if (fr.isDefined) { fr.get.filename } else None
+    }
+
+    def parentId: Option[UUID] = {
+      if (fr.isDefined) { fr.get.parentid } else None
+    }
+  }
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
@@ -69,15 +84,19 @@ class FileService(
     fileRepository.countFilesInConsignment(consignmentId)
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[List[File]] = {
+  def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
     for {
+      //For now filter out folders as not required and don't have metadata values
+      fileList <- fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier)))
       fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
     } yield {
       fileMetadataList map {
         case (fileId, fileMetadata) =>
-          File(fileId, None, None, None, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
+          val fr: Option[FileRow] = fileList.find(_.fileid == fileId)
+          File(fileId,
+            fr.fileType, fr.fileName, fr.parentId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
       }
     }.toList
   }
