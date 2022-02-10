@@ -61,7 +61,12 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
   case class AddConsignment(addConsignment: Consignment)
   case class UpdateExportLocation(updateExportLocation: Int)
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
-  case class File(fileId: UUID, metadata: FileMetadataValues, ffidMetadata: Option[FFIDMetadataValues])
+  case class File(fileId: UUID,
+                  fileType: Option[String],
+                  fileName: Option[String],
+                  parentId: Option[UUID],
+                  metadata: FileMetadataValues,
+                  ffidMetadata: Option[FFIDMetadataValues])
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
   case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
                                 clientSideOriginalFilePath: Option[String],
@@ -209,6 +214,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.setString(8, "standard")
     ps.setString(9, bodyId.toString)
     ps.executeUpdate()
+    val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
     val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
     val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
     val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
@@ -217,9 +223,9 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val identificationBasisMatch = "TEST DATA identification"
     val puidMatch = "TEST DATA puid"
 
-    createFile(UUID.fromString(fileOneId), UUID.fromString(consignmentId))
-    createFile(UUID.fromString(fileTwoId), UUID.fromString(consignmentId))
-    createFile(UUID.fromString(fileThreeId), UUID.fromString(consignmentId))
+    createFile(UUID.fromString(fileOneId), UUID.fromString(consignmentId), fileName = "fileOneName", parentId = UUID.fromString(parentId))
+    createFile(UUID.fromString(fileTwoId), UUID.fromString(consignmentId), fileName = "fileTwoName", parentId = UUID.fromString(parentId))
+    createFile(UUID.fromString(fileThreeId), UUID.fromString(consignmentId), fileName = "fileThreeName", parentId = UUID.fromString(parentId))
 
     addAntivirusMetadata(fileOneId)
 

@@ -176,7 +176,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     actualFileMetadata should equal(expectedFileMetadata)
   }
 
-  "getFileMetadata" should "return empty fields if the metadata has an unexpected property name" in {
+  "getFileMetadata" should "return empty fields if the metadata has an unexpected property name and no file data" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
@@ -231,10 +231,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
 
     actualFileMetadata should equal(expectedFileMetadata)
-  }
-
-  "getFileMetadata" should "return empty fields if no file row" in {
-
   }
 
   "addFile" should "add a file and the client and static metadata" in {
