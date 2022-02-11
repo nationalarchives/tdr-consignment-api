@@ -187,14 +187,20 @@ object TestUtils {
     result
   }
 
-  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = NodeType.fileTypeIdentifier): Unit = {
-    val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime, FileType) VALUES (?, ?, ?, ?, ?)"
+  def createFile(fileId: UUID,
+                 consignmentId: UUID,
+                 fileType: String = NodeType.fileTypeIdentifier,
+                 fileName: String = "fileName",
+                 parentId: UUID = UUID.randomUUID()): Unit = {
+    val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime, FileType, FileName, ParentId) VALUES (?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
     ps.setString(2, consignmentId.toString)
     ps.setString(3, userId.toString)
     ps.setTimestamp(4, Timestamp.from(FixedTimeSource.now))
     ps.setString(5, fileType)
+    ps.setString(6, fileName)
+    ps.setString(7, parentId.toString)
     ps.executeUpdate()
   }
 
