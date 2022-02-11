@@ -134,6 +134,31 @@ type CurrentStatus {
   upload: String
 }
 
+type CustomMetadataField {
+  name: String!
+  fullName: String
+  description: String
+  propertyType: PropertyType!
+  propertyGroup: String
+  dataType: DataType!
+  editable: Boolean!
+  multiValue: Boolean!
+  defaultValue: String
+  values: [CustomMetadataValues!]!
+}
+
+type CustomMetadataValues {
+  dependencies: [CustomMetadataField!]!
+  value: String!
+}
+
+enum DataType {
+  Text
+  Integer
+  DateTime
+  Decimal
+}
+
 type FFIDMetadata {
   fileId: UUID!
   software: String!
@@ -258,11 +283,18 @@ type PageInfo {
   endCursor: String
 }
 
+enum PropertyType {
+  System
+  Defined
+  Supplied
+}
+
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!): Consignment
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
+  getClosureMetadata(consignmentid: UUID!): [CustomMetadataField!]!
 }
 
 type Series {

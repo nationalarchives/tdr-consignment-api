@@ -1,11 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
