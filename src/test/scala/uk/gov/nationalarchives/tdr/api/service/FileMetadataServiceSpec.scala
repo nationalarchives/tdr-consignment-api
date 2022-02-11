@@ -163,14 +163,16 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "getFileMetadata" should "call the repository with the correct arguments" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+    val selectedFileIdsCaptor: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val consignmentId = UUID.randomUUID()
     val mockResponse = Future(Seq())
 
-    when(fileMetadataRepositoryMock.getFileMetadata(consignmentIdCaptor.capture())).thenReturn(mockResponse)
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentIdCaptor.capture(), selectedFileIdsCaptor.capture())).thenReturn(mockResponse)
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     service.getFileMetadata(consignmentId).futureValue
     consignmentIdCaptor.getValue should equal(consignmentId)
+    selectedFileIdsCaptor.getValue should equal(None)
   }
 
   "getFileMetadata" should "return mutiple map entries for multiple files" in {
@@ -183,7 +185,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, "valueTwo", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), "FoiExemptionCode")
     ))
 
-    when(fileMetadataRepositoryMock.getFileMetadata(any[UUID])).thenReturn(mockResponse)
+    when(fileMetadataRepositoryMock.getFileMetadata(any[UUID], any[Option[Set[UUID]]])).thenReturn(mockResponse)
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     val response = service.getFileMetadata(consignmentId).futureValue

@@ -234,15 +234,17 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "getFFIDMetadata" should "call the repository with the correct arguments" in {
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+    val selectedFileIdsCaptor: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val consignmentId = UUID.randomUUID()
 
-    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentIdCaptor.capture())).thenReturn(Future(Seq()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentIdCaptor.capture(), selectedFileIdsCaptor.capture())).thenReturn(Future(Seq()))
 
     val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
       mock[FileRepository], FixedTimeSource, new FixedUUIDSource())
     service.getFFIDMetadata(consignmentId)
 
     consignmentIdCaptor.getValue should equal(consignmentId)
+    selectedFileIdsCaptor.getValue should equal(None)
   }
 
   "getFFIDMetadata" should "return multiple rows and matches for multiple files" in {
@@ -275,7 +277,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     )
     val matchesRowTwoMatchOne = FfidmetadatamatchesRow(UUID.randomUUID(), Option("extensionRow2Match1"), "basisRow2Match1", Option("puidRow2Match1"))
 
-    when(ffidMetadataRepositoryMock.getFFIDMetadata(any[UUID])).thenReturn(
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(any[UUID], any[Option[Set[UUID]]])).thenReturn(
       Future(Seq(
         (metadataRowOne, matchesRowOneMatchOne), (metadataRowOne, matchesRowOneMatchTwo), (metadataRowTwo, matchesRowTwoMatchOne)
       ))
