@@ -175,7 +175,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     selectedFileIdsCaptor.getValue should equal(None)
   }
 
-  "getFileMetadata" should "return mutiple map entries for multiple files" in {
+  "getFileMetadata" should "return multiple map entries for multiple files" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
