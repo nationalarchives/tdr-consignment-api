@@ -1,20 +1,18 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import java.sql.{PreparedStatement, ResultSet, Timestamp}
+import java.time.Instant
+import java.util.UUID
+
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestUtils}
-import java.sql.{PreparedStatement, ResultSet, Timestamp}
-import java.time.Instant
-import java.util.UUID
-
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
 
 import scala.concurrent.ExecutionContext
 

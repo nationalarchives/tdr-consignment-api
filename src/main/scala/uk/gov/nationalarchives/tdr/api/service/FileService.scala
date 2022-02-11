@@ -27,17 +27,11 @@ class FileService(
                  )(implicit val executionContext: ExecutionContext) {
 
   implicit class FileRowHelper(fr: Option[FileRow]) {
-    def fileType: Option[String] = {
-      if (fr.isDefined) { fr.get.filetype } else None
-    }
+    def fileType: Option[String] = fr.flatMap(_.filetype)
 
-    def fileName: Option[String] = {
-      if (fr.isDefined) { fr.get.filename } else None
-    }
+    def fileName: Option[String] = fr.flatMap(_.filename)
 
-    def parentId: Option[UUID] = {
-      if (fr.isDefined) { fr.get.parentid } else None
-    }
+    def parentId: Option[UUID] = fr.flatMap(_.parentid)
   }
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)

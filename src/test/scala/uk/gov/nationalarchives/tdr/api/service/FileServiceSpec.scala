@@ -1,5 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import java.sql.Timestamp
+import java.time.Instant
+import java.util.UUID
+
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
@@ -9,14 +13,10 @@ import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, Ffidmetada
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, Files}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues, clientSideProperties, staticMetadataProperties}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
-import java.sql.Timestamp
-import java.time.Instant
-import java.util.UUID
-
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
 import scala.concurrent.{ExecutionContext, Future}
 
