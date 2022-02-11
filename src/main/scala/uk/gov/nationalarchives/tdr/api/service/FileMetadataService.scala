@@ -6,13 +6,11 @@ import java.util.UUID
 
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow, FilepropertyRow, FilepropertyvaluesRow, FilepropertydependenciesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddFileMetadataInput, FileMetadata, SHA256ServerSideChecksum}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
