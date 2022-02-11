@@ -198,6 +198,9 @@ type FFIDProgress {
 
 type File {
   fileId: UUID!
+  fileType: String
+  fileName: String
+  parentId: UUID
   metadata: FileMetadataValues!
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata

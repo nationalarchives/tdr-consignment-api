@@ -1,10 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import com.typesafe.scalalogging.Logger
-
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
+
+import com.typesafe.scalalogging.Logger
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow, FilepropertyRow, FilepropertyvaluesRow, FilepropertydependenciesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -107,7 +108,13 @@ object FileMetadataService {
   val clientSideProperties = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
   val staticMetadataProperties = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 
-  case class File(fileId: UUID, metadata: FileMetadataValues, ffidMetadata: Option[FFIDMetadata], antivirusMetadata: Option[AntivirusMetadata])
+  case class File(fileId: UUID,
+                  fileType: Option[String] = None,
+                  fileName: Option[String] = None,
+                  parentId: Option[UUID] = None,
+                  metadata: FileMetadataValues,
+                  ffidMetadata: Option[FFIDMetadata],
+                  antivirusMetadata: Option[AntivirusMetadata])
 
   case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
                                 clientSideOriginalFilePath: Option[String],
