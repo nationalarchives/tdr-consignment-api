@@ -162,7 +162,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     addFileProperty("FileProperty")
     addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
     createConsignment(consignmentId, userId)
-    val response = fileMetadataRepository.getFileMetadata(fileId, "FileProperty").futureValue.head
+    val response = fileMetadataRepository.getSingleFileMetadata(fileId, "FileProperty").futureValue.head
     response.value should equal("Result of FileMetadata processing")
     response.propertyname should equal("FileProperty")
     response.fileid should equal(fileId)

@@ -25,7 +25,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(allUpdates).map(_ => fileMetadataRow)
   }
 
-  def getFileMetadata(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {
+  def getSingleFileMetadata(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
       .filter(_.fileid === fileId)
       .filter(_.propertyname inSet propertyName.toSet)
