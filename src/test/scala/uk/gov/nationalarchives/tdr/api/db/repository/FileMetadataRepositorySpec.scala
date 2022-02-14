@@ -153,7 +153,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     getFileStatusValue(fileId) should equal("Value")
   }
 
-  "getFileMetadata" should "return the correct metadata" in {
+  "getSingleFileMetadata" should "return the correct metadata" in {
     val db = DbConnection.db
     val fileMetadataRepository = new FileMetadataRepository(db)
     val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
@@ -183,7 +183,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "FilePropertyOne")
     createConsignment(consignmentId, userId)
 
-    val response = fileMetadataRepository.getFileMetadata(consignmentId, None).futureValue
+    val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
 
     response.length should equal(3)
     val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)

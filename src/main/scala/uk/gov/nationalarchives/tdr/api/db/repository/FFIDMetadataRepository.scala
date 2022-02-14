@@ -31,7 +31,7 @@ class FFIDMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def getFFIDMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]]): Future[Seq[FFIDRepositoryMetadata]] = {
+  def getFFIDMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Seq[FFIDRepositoryMetadata]] = {
     val query = Ffidmetadata.join(File)
       .on(_.fileid === _.fileid).join(Ffidmetadatamatches)
       .on(_._1.ffidmetadataid === _.ffidmetadataid)

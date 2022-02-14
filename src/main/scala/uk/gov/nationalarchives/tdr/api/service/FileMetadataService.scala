@@ -61,7 +61,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     }
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId, None).map {
+  def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId).map {
     rows =>
       rows.groupBy(_.fileid).map {
         case (fileId, fileMetadata) =>

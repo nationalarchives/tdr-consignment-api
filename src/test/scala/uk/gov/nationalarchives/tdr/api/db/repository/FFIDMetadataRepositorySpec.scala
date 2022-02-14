@@ -147,7 +147,7 @@ class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val fileThreeFfidMetadataId = TestUtils.addFFIDMetadata(fileThreeId)
     TestUtils.addFFIDMetadataMatches(fileThreeFfidMetadataId.toString)
 
-    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId, None).futureValue
+    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId).futureValue
 
     ffidMetadataRows.length shouldBe 3
   }
@@ -192,7 +192,7 @@ class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
 
     TestUtils.createConsignment(consignmentId, userId)
 
-    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId, None).futureValue
+    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId).futureValue
 
     ffidMetadataRows.length shouldBe 0
   }
@@ -226,7 +226,7 @@ class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val fileFourFfidMetadataId = TestUtils.addFFIDMetadata(fileFourId)
     TestUtils.addFFIDMetadataMatches(fileFourFfidMetadataId.toString)
 
-    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentOneId, None).futureValue
+    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentOneId).futureValue
     val fileIds: Set[UUID] = ffidMetadataRows.toMap.keySet.map(_.fileid)
 
     fileIds should contain(UUID.fromString(fileOneId))
@@ -264,7 +264,7 @@ class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
 
     TestUtils.addFFIDMetadata(fileFourId)
 
-    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId, None).futureValue
+    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId).futureValue
     val fileIds: Set[UUID] = ffidMetadataRows.toMap.keySet.map(_.fileid)
 
     fileIds should contain(UUID.fromString(fileOneId))
@@ -309,7 +309,7 @@ class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val fileThreeFfidMetadataId = TestUtils.addFFIDMetadata(fileThreeId)
     TestUtils.addFFIDMetadataMatches(fileThreeFfidMetadataId.toString)
 
-    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId, None).futureValue
+    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId).futureValue
     val fileOneFfidMetadata = ffidMetadataRows.head._1
     val fileOneFfidMetadataMatches = ffidMetadataRows.head._2
 
@@ -362,7 +362,7 @@ class FFIDMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val fileThreeFfidMetadataId = TestUtils.addFFIDMetadata(fileThreeId)
     TestUtils.addFFIDMetadataMatches(fileThreeFfidMetadataId.toString)
 
-    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId, None).futureValue
+    val ffidMetadataRows = ffidMetadataRepository.getFFIDMetadata(consignmentId).futureValue
     val fileOneFirstFfidMetadataMatches = ffidMetadataRows.head._2
     val fileOneSecondFfidMetadataMatches = ffidMetadataRows(1)._2
 

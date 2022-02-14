@@ -109,7 +109,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (ffidMetadataRow(ffidMetadataId, fileId, datetime), ffidMetadataMatchesRow(ffidMetadataId))
     )
 
-    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, None)).thenReturn(Future(ffidMetadataRows))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(ffidMetadataRows))
 
     val fileRow = FileRow(
       fileId, consignmentId, userId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileName"), Some(parentId))
@@ -130,8 +130,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
     when(fileRepositoryMock.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))))
       .thenReturn(Future(Seq(fileRow)))
-    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId, None)).thenReturn(Future(fileMetadataRows))
-    when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId, None)).thenReturn(mockAvMetadataResponse)
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId)).thenReturn(Future(fileMetadataRows))
+    when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(mockAvMetadataResponse)
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
@@ -142,7 +142,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, consignmentRepositoryMock, consignmentStatusRepositoryMock, fileMetadataService,
           ffidMetadataService, antivirusMetadataService, FixedTimeSource, fixedUuidSource
     )
-    val metadataList: Seq[File] = service.getFileMetadata(consignmentId, None).futureValue
+    val metadataList: Seq[File] = service.getFileMetadata(consignmentId).futureValue
 
     metadataList.length should equal(1)
 
@@ -193,14 +193,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
     when(fileRepositoryMock.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))))
       .thenReturn(Future(Seq()))
-    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, None)).thenReturn(Future(ffidMetadataRows))
-    when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId, None)).thenReturn(Future(List()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(ffidMetadataRows))
+    when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
 
     val fileMetadataRows = Seq(
       fileMetadataRow(fileId, "customPropertyNameOne", "customValueOne"),
       fileMetadataRow(fileId, "customPropertyNameTwo", "customValueTwo")
     )
-    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId, None)).thenReturn(Future(fileMetadataRows))
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId)).thenReturn(Future(fileMetadataRows))
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, FixedTimeSource, fixedUuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
