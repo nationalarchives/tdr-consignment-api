@@ -18,8 +18,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class FileService(
                    fileRepository: FileRepository,
                    consignmentRepository: ConsignmentRepository,
-                   consignmentStatusRepository: ConsignmentStatusRepository,
-                   fileMetadataService: FileMetadataService,
                    ffidMetadataService: FFIDMetadataService,
                    avMetadataService: AntivirusMetadataService,
                    timeSource: TimeSource,
@@ -32,6 +30,30 @@ class FileService(
     def fileName: Option[String] = fr.flatMap(_.filename)
 
     def parentId: Option[UUID] = fr.flatMap(_.parentid)
+  }
+
+  implicit class FileRepositoryResponseHelper(response: Seq[(FileRow, Option[FilemetadataRow])]) {
+    private def convertMetadataRows(rows: Seq[FilemetadataRow]): FileMetadataValues = {
+      val propertyNameMap = rows.groupBy(_.propertyname).transform((_, value) => value.head.value)
+      FileMetadataValues(
+        propertyNameMap.get(SHA256ClientSideChecksum),
+        propertyNameMap.get(ClientSideOriginalFilepath),
+        propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+        propertyNameMap.get(ClientSideFileSize).map(_.toLong),
+        propertyNameMap.get(RightsCopyright.name),
+        propertyNameMap.get(LegalStatus.name),
+        propertyNameMap.get(HeldBy.name),
+        propertyNameMap.get(Language.name),
+        propertyNameMap.get(FoiExemptionCode.name)
+      )
+    }
+
+    def toFileInformation: Seq[FileInformation] = {
+      response.groupBy(_._1).map {
+        case (fr, fmr) =>
+          FileInformation(fr.fileid, fr, convertMetadataRows(fmr.flatMap(_._2)))
+      }.toSeq
+    }
   }
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
@@ -81,19 +103,20 @@ class FileService(
   def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
     for {
       //For now filter out folders as not required and don't have metadata values
-      fileList <- fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier)))
-      fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
+      fileAndMetadataList <- fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier)))
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
     } yield {
-      fileMetadataList map {
-        case (fileId, fileMetadata) =>
-          val fr: Option[FileRow] = fileList.find(_.fileid == fileId)
-          File(fileId,
-            fr.fileType, fr.fileName, fr.parentId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
-      }
+      fileAndMetadataList.toFileInformation.map(i => {
+        val fr = i.fileRow
+        val fileId = i.fileId
+        val fileMetadata = i.fileMetadata
+        File(
+          fileId, fr.filetype, fr.filename, fr.parentid, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
+      })
     }.toList
   }
 }
 
 case class FileOwnership(fileId: UUID, userId: UUID)
+case class FileInformation(fileId: UUID, fileRow: FileRow, fileMetadata: FileMetadataValues)

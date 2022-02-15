@@ -56,10 +56,11 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[FileRow]] = {
-    val query = File
-      .filter(_.consignmentid === consignmentId)
-      .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
+  def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[(FileRow, Option[FilemetadataRow])]] = {
+    val query = File.joinLeft(Filemetadata)
+      .on(_.fileid === _.fileid)
+      .filter(_._1.consignmentid === consignmentId)
+      .filterOpt(fileFilters.fileTypeIdentifier)(_._1.filetype === _)
     db.run(query.result)
   }
 }

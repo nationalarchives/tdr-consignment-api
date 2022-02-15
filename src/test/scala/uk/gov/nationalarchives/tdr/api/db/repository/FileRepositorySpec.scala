@@ -173,24 +173,25 @@ class FileRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures
     files.head.consignmentid shouldBe consignmentId
   }
 
-  "getFiles" should "return files and folders where no type filter applied" in {
+  "getFiles" should "return files, file metadata and folders where no type filter applied" in {
     val db = DbConnection.db
     val fileRepository = new FileRepository(db)
     val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
     setUpFilesAndFolders(consignmentId)
 
     val files = fileRepository.getFiles(consignmentId, FileFilters(None)).futureValue
-    files.size shouldBe 3
+
+    files.size shouldBe 4
   }
 
-  "getFiles" should "return files only where 'file' type filter applied" in {
+  "getFiles" should "return files and file metadata only where 'file' type filter applied" in {
     val db = DbConnection.db
     val fileRepository = new FileRepository(db)
     val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
     setUpFilesAndFolders(consignmentId)
 
     val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
-    files.size shouldBe 2
+    files.size shouldBe 3
   }
 
   "getFiles" should "return folders only where 'folder' type filter applied" in {
@@ -212,6 +213,12 @@ class FileRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures
     TestUtils.createFile(UUID.fromString(folderOneId), consignmentId, NodeType.folderTypeIdentifier)
     TestUtils.createFile(UUID.fromString(fileOneId), consignmentId)
     TestUtils.createFile(UUID.fromString(fileTwoId), consignmentId)
+
+    addFileProperty("FilePropertyOne")
+    addFileProperty("FilePropertyTwo")
+    addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyOne")
+    addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyTwo")
+    addFileMetadata(UUID.randomUUID().toString, fileTwoId, "FilePropertyOne")
   }
 
   private def checkConsignmentStatusExists(consignmentId: UUID): Unit = {
