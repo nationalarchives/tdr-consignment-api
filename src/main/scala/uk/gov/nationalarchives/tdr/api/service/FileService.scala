@@ -5,6 +5,8 @@ import java.util.UUID
 
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.FileTypeHelper
@@ -48,10 +50,13 @@ class FileService(
       )
     }
 
-    def toFileInformation: Seq[FileInformation] = {
+    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata]): Seq[File] = {
       response.groupBy(_._1).map {
         case (fr, fmr) =>
-          FileInformation(fr.fileid, fr, convertMetadataRows(fmr.flatMap(_._2)))
+          val fileId = fr.fileid
+        File(
+          fileId, fr.filetype, fr.filename, fr.parentid,
+          convertMetadataRows(fmr.flatMap(_._2)), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
       }.toSeq
     }
   }
@@ -106,15 +111,7 @@ class FileService(
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier)))
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
-    } yield {
-      fileAndMetadataList.toFileInformation.map(i => {
-        val fr = i.fileRow
-        val fileId = i.fileId
-        val fileMetadata = i.fileMetadata
-        File(
-          fileId, fr.filetype, fr.filename, fr.parentid, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
-      })
-    }.toList
+    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList).toList
   }
 }
 
