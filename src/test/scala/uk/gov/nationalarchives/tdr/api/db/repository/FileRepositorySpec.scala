@@ -1,19 +1,20 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import java.sql.{PreparedStatement, ResultSet, Timestamp}
+import java.time.Instant
+import java.util.UUID
+
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, TestUtils}
 
-import java.sql.{PreparedStatement, ResultSet, Timestamp}
-import java.time.Instant
-import java.util.UUID
 import scala.concurrent.ExecutionContext
-
 
 class FileRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -170,6 +171,47 @@ class FileRepositorySpec extends AnyFlatSpec with TestDatabase with ScalaFutures
 
     files.size shouldBe 1
     files.head.consignmentid shouldBe consignmentId
+  }
+
+  "getFiles" should "return files and folders where no type filter applied" in {
+    val db = DbConnection.db
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndFolders(consignmentId)
+
+    val files = fileRepository.getFiles(consignmentId, FileFilters(None)).futureValue
+    files.size shouldBe 3
+  }
+
+  "getFiles" should "return files only where 'file' type filter applied" in {
+    val db = DbConnection.db
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndFolders(consignmentId)
+
+    val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
+    files.size shouldBe 2
+  }
+
+  "getFiles" should "return folders only where 'folder' type filter applied" in {
+    val db = DbConnection.db
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndFolders(consignmentId)
+
+    val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.folderTypeIdentifier))).futureValue
+    files.size shouldBe 1
+  }
+
+  private def setUpFilesAndFolders(consignmentId: UUID): Unit = {
+    val folderOneId = "92756098-b394-4f46-8b4d-bbd1953660c9"
+    val fileOneId = "20e0676a-f0a1-4051-9540-e7df1344ac11"
+    val fileTwoId = "b5111f11-4dca-4f92-8239-505da567b9d0"
+
+    TestUtils.createConsignment(consignmentId, userId)
+    TestUtils.createFile(UUID.fromString(folderOneId), consignmentId, NodeType.folderTypeIdentifier)
+    TestUtils.createFile(UUID.fromString(fileOneId), consignmentId)
+    TestUtils.createFile(UUID.fromString(fileTwoId), consignmentId)
   }
 
   private def checkConsignmentStatusExists(consignmentId: UUID): Unit = {

@@ -97,6 +97,7 @@ object GraphQLServer {
       ffidMetadataService, antivirusMetadataService, new CurrentTimeSource, uuidSource)
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, timeSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
+    val customMetadataPropertiesService = new CustomMetadataPropertiesService(new CustomMetadataPropertiesRepository(db))
 
     ConsignmentApiContext(
       accessToken,
@@ -111,7 +112,8 @@ object GraphQLServer {
       transferAgreementService,
       transferringBodyService,
       consignmentStatusService,
-      fileStatusService
+      fileStatusService,
+      customMetadataPropertiesService
     )
   }
 

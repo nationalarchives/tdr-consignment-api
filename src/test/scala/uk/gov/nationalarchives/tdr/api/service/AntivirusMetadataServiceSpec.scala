@@ -77,10 +77,12 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
   "getAntivirusMetadata" should "call the repository with the correct arguments" in {
     val avRepositoryMock = mock[AntivirusMetadataRepository]
     val consignmentCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+    val selectFileIdsCaptor: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val consignmentId = UUID.randomUUID()
-    when(avRepositoryMock.getAntivirusMetadata(consignmentCaptor.capture())).thenReturn(Future(Seq()))
+    when(avRepositoryMock.getAntivirusMetadata(consignmentCaptor.capture(), selectFileIdsCaptor.capture())).thenReturn(Future(Seq()))
     new AntivirusMetadataService(avRepositoryMock, new FixedUUIDSource(), FixedTimeSource).getAntivirusMetadata(consignmentId).futureValue
     consignmentCaptor.getValue should equal(consignmentId)
+    selectFileIdsCaptor.getValue should equal(None)
   }
 
   "getAntivirusMetadata" should "return the correct data" in {
