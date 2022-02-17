@@ -132,6 +132,7 @@ type ConsignmentEdge {
 type CurrentStatus {
   transferAgreement: String
   upload: String
+  confirmTransfer: String
 }
 
 type CustomMetadataField {
