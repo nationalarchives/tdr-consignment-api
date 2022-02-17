@@ -26,14 +26,16 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val consignmentId = fixedUUIDSource.uuid
     val consignmentStatusRow1 = generateConsignmentStatusRow(consignmentId, "TransferAgreement","Completed")
     val consignmentStatusRow2 = generateConsignmentStatusRow(consignmentId, "Upload","Completed")
+    val consignmentStatusRow3 = generateConsignmentStatusRow(consignmentId, "ConfirmTransfer","Completed")
 
-    val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future.successful(Seq(consignmentStatusRow1, consignmentStatusRow2))
+    val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future.successful(Seq(consignmentStatusRow1, consignmentStatusRow2, consignmentStatusRow3))
     when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockRepoResponse)
 
     val response: CurrentStatus = consignmentService.getConsignmentStatus(consignmentId).futureValue
 
     response.transferAgreement should be(Some("Completed"))
     response.upload should be(Some("Completed"))
+    response.confirmTransfer should be(Some("Completed"))
   }
 
   "getConsignmentStatus" should

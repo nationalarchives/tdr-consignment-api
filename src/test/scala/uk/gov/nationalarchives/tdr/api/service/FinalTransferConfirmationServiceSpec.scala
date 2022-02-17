@@ -72,4 +72,28 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
     result.consignmentId shouldBe consignmentId
     result.legalCustodyTransferConfirmed shouldBe true
   }
+
+  "addConfirmTransferStatus" should "add the correct Confirm Transfer Status" in {
+    val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
+    val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
+    val consignmentId = UUID.randomUUID()
+    val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
+    val statusType = "ConfirmTransfer"
+    val statusValue = "Complete"
+    val createdTimestamp = Timestamp.from(now)
+    val fixedUuidSource = new FixedUUIDSource()
+    val fixedTimeSource: FixedTimeSource.type = FixedTimeSource
+
+    val mockResponse = Future.successful(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp))
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockResponse)
+
+    val service = new FinalTransferConfirmationService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
+    val result: ConsignmentstatusRow = service.addConfirmTransferStatus(consignmentId).futureValue
+
+    result.consignmentstatusid shouldBe consignmentStatusId
+    result.consignmentid shouldBe consignmentId
+    result.statustype shouldBe statusType
+    result.value shouldBe statusValue
+    result.createddatetime shouldBe createdTimestamp
+  }
 }
