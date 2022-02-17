@@ -29,31 +29,31 @@ object TransferAgreementFields {
                                        initialOpenRecords: Boolean,
                                        sensitivityReviewSignedOff: Boolean) extends UserOwnsConsignment
 
-  case class TransferAgreementNotCompliance(consignmentId: UUID,
-                                            allPublicRecords: Boolean,
-                                            allCrownCopyright: Boolean,
-                                            allEnglish: Boolean)
+  case class TransferAgreementPrivateBeta(consignmentId: UUID,
+                                          allPublicRecords: Boolean,
+                                          allCrownCopyright: Boolean,
+                                          allEnglish: Boolean)
 
   case class TransferAgreementCompliance(consignmentId: UUID,
                                          appraisalSelectionSignedOff: Boolean,
                                          initialOpenRecords: Boolean,
                                          sensitivityReviewSignedOff: Boolean)
 
-  case class AddTransferAgreementNotComplianceInput(consignmentId: UUID,
-                                                    allPublicRecords: Boolean,
-                                                    allCrownCopyright: Boolean,
-                                                    allEnglish: Boolean) extends UserOwnsConsignment
+  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID,
+                                                  allPublicRecords: Boolean,
+                                                  allCrownCopyright: Boolean,
+                                                  allEnglish: Boolean) extends UserOwnsConsignment
 
   case class AddTransferAgreementComplianceInput(consignmentId: UUID,
                                                  appraisalSelectionSignedOff: Boolean,
                                                  initialOpenRecords: Boolean,
                                                  sensitivityReviewSignedOff: Boolean) extends UserOwnsConsignment
 
-  val TransferAgreementNotComplianceType: ObjectType[Unit, TransferAgreementNotCompliance] = deriveObjectType[Unit, TransferAgreementNotCompliance]()
+  val TransferAgreementPrivateBetaType: ObjectType[Unit, TransferAgreementPrivateBeta] = deriveObjectType[Unit, TransferAgreementPrivateBeta]()
   val TransferAgreementComplianceType: ObjectType[Unit, TransferAgreementCompliance] = deriveObjectType[Unit, TransferAgreementCompliance]()
 
-  val AddTransferAgreementNotComplianceInputType: InputObjectType[AddTransferAgreementNotComplianceInput] =
-    deriveInputObjectType[AddTransferAgreementNotComplianceInput]()
+  val AddTransferAgreementPrivateBetaInputType: InputObjectType[AddTransferAgreementPrivateBetaInput] =
+    deriveInputObjectType[AddTransferAgreementPrivateBetaInput]()
   val AddTransferAgreementComplianceInputType: InputObjectType[AddTransferAgreementComplianceInput] =
     deriveInputObjectType[AddTransferAgreementComplianceInput]()
 
@@ -62,8 +62,8 @@ object TransferAgreementFields {
   val AddTransferAgreementInputType: InputObjectType[AddTransferAgreementInput] = deriveInputObjectType[AddTransferAgreementInput]()
 
   val TransferAgreementInputArg: Argument[AddTransferAgreementInput] = Argument("addTransferAgreementInput", AddTransferAgreementInputType)
-  val TransferAgreementNotComplianceInputArg: Argument[AddTransferAgreementNotComplianceInput] =
-    Argument("addTransferAgreementNotComplianceInput", AddTransferAgreementNotComplianceInputType)
+  val TransferAgreementPrivateBetaInputArg: Argument[AddTransferAgreementPrivateBetaInput] =
+    Argument("addTransferAgreementPrivateBetaInput", AddTransferAgreementPrivateBetaInputType)
   val TransferAgreementComplianceInputArg: Argument[AddTransferAgreementComplianceInput] =
     Argument("addTransferAgreementComplianceInput", AddTransferAgreementComplianceInputType)
 
@@ -73,11 +73,11 @@ object TransferAgreementFields {
       resolve = ctx => ctx.ctx.transferAgreementService.addTransferAgreement(ctx.arg(TransferAgreementInputArg), ctx.ctx.accessToken.userId),
       tags=List(ValidateUserHasAccessToConsignment(TransferAgreementInputArg))
     ),
-    Field("addTransferAgreementNotCompliance", TransferAgreementNotComplianceType,
-      arguments=TransferAgreementNotComplianceInputArg :: Nil,
+    Field("addTransferAgreementPrivateBeta", TransferAgreementPrivateBetaType,
+      arguments=TransferAgreementPrivateBetaInputArg :: Nil,
       resolve = ctx =>
-        ctx.ctx.transferAgreementService.addTransferAgreementNotCompliance(ctx.arg(TransferAgreementNotComplianceInputArg), ctx.ctx.accessToken.userId),
-      tags=List(ValidateUserHasAccessToConsignment(TransferAgreementNotComplianceInputArg))
+        ctx.ctx.transferAgreementService.addTransferAgreementPrivateBeta(ctx.arg(TransferAgreementPrivateBetaInputArg), ctx.ctx.accessToken.userId),
+      tags=List(ValidateUserHasAccessToConsignment(TransferAgreementPrivateBetaInputArg))
     ),
     Field("addTransferAgreementCompliance", TransferAgreementComplianceType,
       arguments=TransferAgreementComplianceInputArg :: Nil,
