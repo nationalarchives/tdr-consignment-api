@@ -1,0 +1,3 @@
+{
+  "query": "mutation {addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: {allEnglish: true, allCrownCopyright: true, allPublicRecords: true}) {consignmentId, allEnglish}}"
+}

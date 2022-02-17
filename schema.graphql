@@ -51,7 +51,7 @@ input AddTransferAgreementInput {
   sensitivityReviewSignedOff: Boolean!
 }
 
-input AddTransferAgreementNotComplianceInput {
+input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
@@ -258,7 +258,7 @@ type Mutation {
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
-  addTransferAgreementNotCompliance(addTransferAgreementNotComplianceInput: AddTransferAgreementNotComplianceInput!): TransferAgreementNotCompliance!
+  addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
@@ -328,7 +328,7 @@ type TransferAgreementCompliance {
   sensitivityReviewSignedOff: Boolean!
 }
 
-type TransferAgreementNotCompliance {
+type TransferAgreementPrivateBeta {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
