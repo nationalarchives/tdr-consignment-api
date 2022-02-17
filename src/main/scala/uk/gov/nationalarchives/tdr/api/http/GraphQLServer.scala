@@ -88,7 +88,8 @@ object GraphQLServer {
     val seriesService = new SeriesService(new SeriesRepository(db), uuidSource)
     val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), new ConsignmentStatusRepository(db),
       uuidSource, timeSource)
-    val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), uuidSource, timeSource)
+    val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository,
+      uuidSource, timeSource)
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, timeSource, uuidSource)
