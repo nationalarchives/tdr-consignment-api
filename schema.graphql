@@ -41,16 +41,6 @@ input AddTransferAgreementComplianceInput {
   sensitivityReviewSignedOff: Boolean!
 }
 
-input AddTransferAgreementInput {
-  consignmentId: UUID!
-  allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
-  allEnglish: Boolean!
-  appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
-  sensitivityReviewSignedOff: Boolean!
-}
-
 input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
@@ -257,7 +247,6 @@ type Mutation {
   updateTransferInitiated(consignmentid: UUID!): Int
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
-  addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -309,16 +298,6 @@ type Series {
 input StartUploadInput {
   consignmentId: UUID!
   parentFolder: String!
-}
-
-type TransferAgreement {
-  consignmentId: UUID!
-  allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
-  allEnglish: Boolean!
-  appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
-  sensitivityReviewSignedOff: Boolean!
 }
 
 type TransferAgreementCompliance {
