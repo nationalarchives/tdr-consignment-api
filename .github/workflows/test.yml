@@ -1,6 +1,10 @@
 name: Run API tests
 on:
+  pull_request:
   push:
+    branches-ignore:
+      - main
+      - release-*
 permissions:
   id-token: write
   contents: write
@@ -16,53 +20,8 @@ jobs:
       - name: Configure AWS credentials from management account
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/GithubActionsRoleMgmt
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
           aws-region: eu-west-2
           role-session-name: APIDownloadDependencies
-      - name: Login to ECR
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com
-      - name: Setup JDK
-        uses: actions/setup-java@v2
-        with:
-          distribution: temurin
-          java-version: 8
       - name: Test
         run: MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
-      - name: Get next tag
-        if: github.ref == 'refs/heads/master'
-        run: |
-          export EXISTING_VERSION=$(curl ${{ github.api_url }}/repos/nationalarchives/tdr-consignment-api/tags | jq -r '.[0].name')
-          echo NEW_VERSION=$(echo "${EXISTING_VERSION:1}" | awk -F. '/[0-9]/{$NF+=1;OFS=".";print}' | xargs -I{} echo "v{}") >> $GITHUB_ENV
-      - name: Build new image version
-        if: github.ref == 'refs/heads/master'
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
-        run: |
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt assembly
-          docker build -t ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.NEW_VERSION }} .
-          docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.NEW_VERSION }}
-          git tag ${{ env.NEW_VERSION }}
-          git push origin ${{ env.NEW_VERSION }}
-      - name: Send success message if new version has been pushed
-        if: github.ref == 'refs/heads/master'
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "message": "*Consignment API* :whale: Pushed version ${{ env.NEW_VERSION }} to AWS ECR"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SUCCESS_WORKFLOW }}
-      - name: Deploy to integration
-        if: github.ref == 'refs/heads/master'
-        uses: octokit/request-action@v2.x
-        with:
-          route: POST /repos/nationalarchives/tdr-consignment-api/actions/workflows/deploy.yml/dispatches
-          ref: master
-          inputs: "{\"environment\": \"intg\", \"to_deploy\": ${{ env.NEW_VERSION }}}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
