@@ -33,8 +33,9 @@ jobs:
           registry: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com
       - name: Tag image
         run: |
-          export MANIFEST=$(aws ecr batch-get-image --repository-name consignment-api --image-ids imageTag=${{ github.event.inputs.toDeploy }} --output json | jq --raw-output '.images[0].imageManifest')
-          aws ecr put-image --repository-name consignment-api --image-tag ${{ github.event.inputs.environment }} --image-manifest "$MANIFEST"
+          docker pull ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ github.event.inputs.toDeploy }}
+          docker tag ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ github.event.inputs.toDeploy }} ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ github.event.inputs.environment }}
+          docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ github.event.inputs.environment }}
       - name: Configure AWS credentials for ECS
         uses: aws-actions/configure-aws-credentials@v1
         with:
