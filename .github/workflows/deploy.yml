@@ -44,7 +44,7 @@ jobs:
           aws-region: eu-west-2
           role-session-name: APIECRLogin
       - name: Deploy to ECS
-        run: aws ecs update-service --service consignmentapi_service_${{ github.event.inputs.environment }} --cluster consignmentapi_${{ github.event.inputs.environment }} --force-new-deployment
+        run: aws ecs update-service --service consignmentapi_service_${{ github.event.inputs.environment }} --cluster consignmentapi_${{ github.event.inputs.environment }} --force-new-deployment > /dev/null
       - name: Send service updated message
         uses: slackapi/slack-github-action@v1.18.0
         with:
@@ -58,8 +58,6 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SUCCESS_WORKFLOW }}
       - name: Update release branch
         run: |
-          git config --global user.email digitalpreservation@nationalarchives.gov.uk
-          git config --global user.name tna-digital-archiving-jenkins
           git branch -f release-${{ github.event.inputs.environment }} HEAD
           git push -f origin release-${{ github.event.inputs.environment }}
       - name: Run E2E tests
