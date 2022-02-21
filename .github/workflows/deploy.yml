@@ -1,4 +1,4 @@
-name: Deploy API
+name: TDR Deploy API
 on:
   workflow_dispatch:
     inputs:

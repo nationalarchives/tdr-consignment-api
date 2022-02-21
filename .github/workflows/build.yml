@@ -1,4 +1,4 @@
-name: Tag and pre deploy
+name: TDR Tag and pre deploy
 on:
   push:
     branches:
