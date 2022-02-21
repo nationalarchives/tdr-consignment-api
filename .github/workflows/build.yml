@@ -14,12 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: fregante/setup-git-user@v1
+      - uses: coursier/cache-action@v6
       - name: Configure AWS credentials from management account
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
           aws-region: eu-west-2
           role-session-name: APIDownloadDependencies
+      - name: Login to ECR
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com
       - name: Get next tag
         run: |
           export EXISTING_VERSION=$(curl ${{ github.api_url }}/repos/nationalarchives/tdr-consignment-api/tags | jq -r '.[0].name')
