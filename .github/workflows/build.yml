@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - move-to-github-actions
+      - use-github-actions
 permissions:
   id-token: write
   contents: write
