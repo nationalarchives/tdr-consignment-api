@@ -1,11 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
@@ -25,18 +25,19 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(allUpdates).map(_ => fileMetadataRow)
   }
 
-  def getFileMetadata(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {
+  def getSingleFileMetadata(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
       .filter(_.fileid === fileId)
       .filter(_.propertyname inSet propertyName.toSet)
     db.run(query.result)
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[Seq[FilemetadataRow]] = {
+  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._2.filetype === NodeType.fileTypeIdentifier)
+      .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)
       .map(_._1)
     db.run(query.result)
   }

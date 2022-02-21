@@ -76,10 +76,18 @@ CREATE TABLE IF NOT EXISTS AVMetadata (
     Datetime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS FileProperty (
-    Name varchar(255),
-    Description varchar(255),
-    Shortname varchar(255),
+CREATE TABLE IF NOT EXISTS "FileProperty"
+(
+    "Name" varchar(255) NOT NULL,
+    "Description" varchar(255) NULL,
+    "FullName" varchar(255) NULL,
+    "CreatedDatetime" timestamp NULL,
+    "ModifiedDatetime" timestamp NULL,
+    "PropertyType" varchar(255) NULL,
+    "Datatype" varchar(255) NULL,
+    "Editable" boolean NULL,
+    "MutliValue" boolean NULL,
+    "PropertyGroup" varchar(255) NULL,
     PRIMARY KEY (Name)
 );
 
@@ -138,4 +146,21 @@ CREATE TABLE IF NOT EXISTS "FileStatus"
     PRIMARY KEY (FileStatusId),
     FOREIGN KEY (FileId) REFERENCES File(FileId)
 
+);
+
+CREATE TABLE IF NOT EXISTS "FilePropertyValues"
+(
+    "PropertyName" varchar(255) NOT NULL,
+    "PropertyValue" varchar(255) NOT NULL,
+    "Default" boolean NULL,
+    "Dependencies" integer NULL,
+    "SecondaryValue" integer NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS "FilePropertyDependencies"
+(
+    "GroupId" integer NOT NULL,
+    "PropertyName" varchar(255) NOT NULL,
+    "Default" text NULL
 );
