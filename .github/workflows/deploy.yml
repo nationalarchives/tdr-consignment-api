@@ -13,9 +13,8 @@ on:
 permissions:
   id-token: write
   contents: read
-  actions: write
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
@@ -59,6 +58,8 @@ jobs:
         run: |
           git branch -f release-${{ github.event.inputs.environment }} HEAD
           git push -f origin release-${{ github.event.inputs.environment }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
       - name: Run E2E tests
         if: github.event.inputs.environment != 'prod'
         uses: octokit/request-action@v2.x
