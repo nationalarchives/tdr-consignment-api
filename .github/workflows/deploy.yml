@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.WORKFLOW_PAT }}
       - name: Configure AWS credentials for ECR
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -60,8 +62,6 @@ jobs:
           git config --global user.name tna-digital-archiving-jenkins
           git branch -f release-${{ github.event.inputs.environment }} HEAD
           git push -f origin release-${{ github.event.inputs.environment }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
       - name: Run E2E tests
         if: github.event.inputs.environment != 'prod'
         uses: octokit/request-action@v2.x
