@@ -17,6 +17,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - uses: coursier/cache-action@v6
+      - uses: MancunianSam/github-actions/send-slack-message@v1.0
+        with:
+          message: 'Hello Slack'
+          icon: ':white_check_mark:'
+          channel: '#da-tdr-releases'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       - name: Configure AWS credentials from management account
         uses: aws-actions/configure-aws-credentials@v1
         with:
