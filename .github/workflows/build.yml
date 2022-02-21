@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - use-github-actions
 permissions:
   id-token: write
   contents: write
