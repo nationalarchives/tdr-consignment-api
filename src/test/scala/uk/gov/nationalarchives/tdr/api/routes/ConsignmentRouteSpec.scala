@@ -4,6 +4,7 @@ import java.sql.{DriverManager, PreparedStatement, Timestamp, Types}
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.{ContainerDef, PostgreSQLContainer}
 import com.dimafeng.testcontainers.scalatest.TestContainerForEach
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
@@ -85,7 +86,12 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
 
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
 
-  case class File(fileId: UUID, metadata: FileMetadataValues, ffidMetadata: Option[FFIDMetadataValues])
+  case class File(fileId: UUID,
+                  fileType: Option[String],
+                  fileName: Option[String],
+                  parentId: Option[UUID],
+                  metadata: FileMetadataValues,
+                  ffidMetadata: Option[FFIDMetadataValues])
 
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
 
@@ -290,6 +296,7 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     ps.setObject(9, bodyId, Types.OTHER)
     ps.setInt(10, 1)
     ps.executeUpdate()
+    val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
     val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
     val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
     val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
@@ -298,9 +305,10 @@ class ConsignmentRouteSpec extends AnyFlatSpec with Matchers with TestRequest wi
     val identificationBasisMatch = "TEST DATA identification"
     val puidMatch = "TEST DATA puid"
 
-    utils.createFile(UUID.fromString(fileOneId), UUID.fromString(consignmentId))
-    utils.createFile(UUID.fromString(fileTwoId), UUID.fromString(consignmentId))
-    utils.createFile(UUID.fromString(fileThreeId), UUID.fromString(consignmentId))
+
+    utils.createFile(UUID.fromString(fileOneId), UUID.fromString(consignmentId), fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
+    utils.createFile(UUID.fromString(fileTwoId), UUID.fromString(consignmentId), fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
+    utils.createFile(UUID.fromString(fileThreeId), UUID.fromString(consignmentId), fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
 
     utils.addAntivirusMetadata(fileOneId)
 

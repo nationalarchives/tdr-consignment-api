@@ -22,6 +22,20 @@ trait TestDatabase extends BeforeAndAfterEach {
   val databaseConnection: Connection = DbConnection.db.source.createConnection()
 
   override def beforeEach(): Unit = {
+    deleteTables()
+
+    databaseConnection.prepareStatement("INSERT INTO FileProperty (Name, Description) " +
+      "VALUES ('SHA256ServerSideChecksum', 'The checksum calculated after upload')")
+      .execute()
+
+    addTransferAgreementConsignmentProperties()
+    addTransferAgreementFileProperties()
+    addFinalTransferConfirmationProperties()
+    addFinalJudgmentTransferConfirmationProperties()
+    addClientSideProperties()
+  }
+
+  def deleteTables(): Boolean = {
     databaseConnection.prepareStatement("DELETE FROM FileStatus").execute()
     databaseConnection.prepareStatement("DELETE FROM FileMetadata").execute()
     databaseConnection.prepareStatement("DELETE FROM FileProperty").execute()
@@ -36,16 +50,6 @@ trait TestDatabase extends BeforeAndAfterEach {
     databaseConnection.prepareStatement("DELETE FROM Series").execute()
     databaseConnection.prepareStatement("DELETE FROM Body").execute()
     databaseConnection.prepareStatement("ALTER SEQUENCE consignment_sequence_id RESTART WITH 1").execute()
-
-    databaseConnection.prepareStatement("INSERT INTO FileProperty (Name, Description, Shortname) " +
-      "VALUES ('SHA256ServerSideChecksum', 'The checksum calculated after upload', 'Checksum')")
-      .execute()
-
-    addTransferAgreementConsignmentProperties()
-    addTransferAgreementFileProperties()
-    addFinalTransferConfirmationProperties()
-    addFinalJudgmentTransferConfirmationProperties()
-    addClientSideProperties()
   }
 
   private def addTransferAgreementConsignmentProperties(): Unit = {

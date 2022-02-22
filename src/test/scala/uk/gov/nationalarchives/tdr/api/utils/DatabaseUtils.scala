@@ -83,15 +83,16 @@ class DatabaseUtils(connection: Connection) {
     result
   }
 
-  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = NodeType.fileTypeIdentifier, parentId: Option[UUID] = None): Unit = {
-    val sql = s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "ParentId") VALUES (?, ?, ?, ?, ?, ?)"""
+  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = NodeType.fileTypeIdentifier, fileName: String = "fileName", parentId: Option[UUID] = None): Unit = {
+    val sql = s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId") VALUES (?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setObject(3, userId, Types.OTHER)
     ps.setTimestamp(4, Timestamp.from(FixedTimeSource.now))
     ps.setString(5, fileType)
-    ps.setObject(6, parentId.map(_.toString).orNull, Types.OTHER)
+    ps.setString(6, fileName)
+    ps.setObject(7, parentId.map(_.toString).orNull, Types.OTHER)
     ps.executeUpdate()
   }
 

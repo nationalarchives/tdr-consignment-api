@@ -41,17 +41,7 @@ input AddTransferAgreementComplianceInput {
   sensitivityReviewSignedOff: Boolean!
 }
 
-input AddTransferAgreementInput {
-  consignmentId: UUID!
-  allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
-  allEnglish: Boolean!
-  appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
-  sensitivityReviewSignedOff: Boolean!
-}
-
-input AddTransferAgreementNotComplianceInput {
+input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
@@ -132,6 +122,32 @@ type ConsignmentEdge {
 type CurrentStatus {
   transferAgreement: String
   upload: String
+  confirmTransfer: String
+}
+
+type CustomMetadataField {
+  name: String!
+  fullName: String
+  description: String
+  propertyType: PropertyType!
+  propertyGroup: String
+  dataType: DataType!
+  editable: Boolean!
+  multiValue: Boolean!
+  defaultValue: String
+  values: [CustomMetadataValues!]!
+}
+
+type CustomMetadataValues {
+  dependencies: [CustomMetadataField!]!
+  value: String!
+}
+
+enum DataType {
+  Text
+  Integer
+  DateTime
+  Decimal
 }
 
 type FFIDMetadata {
@@ -173,6 +189,9 @@ type FFIDProgress {
 
 type File {
   fileId: UUID!
+  fileType: String
+  fileName: String
+  parentId: UUID
   metadata: FileMetadataValues!
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
@@ -228,8 +247,7 @@ type Mutation {
   updateTransferInitiated(consignmentid: UUID!): Int
   updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
-  addTransferAgreement(addTransferAgreementInput: AddTransferAgreementInput!): TransferAgreement!
-  addTransferAgreementNotCompliance(addTransferAgreementNotComplianceInput: AddTransferAgreementNotComplianceInput!): TransferAgreementNotCompliance!
+  addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
@@ -255,11 +273,18 @@ type PageInfo {
   endCursor: String
 }
 
+enum PropertyType {
+  System
+  Defined
+  Supplied
+}
+
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!): Consignment
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
+  getClosureMetadata(consignmentid: UUID!): [CustomMetadataField!]!
 }
 
 type Series {
@@ -275,16 +300,6 @@ input StartUploadInput {
   parentFolder: String!
 }
 
-type TransferAgreement {
-  consignmentId: UUID!
-  allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
-  allEnglish: Boolean!
-  appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
-  sensitivityReviewSignedOff: Boolean!
-}
-
 type TransferAgreementCompliance {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
@@ -292,7 +307,7 @@ type TransferAgreementCompliance {
   sensitivityReviewSignedOff: Boolean!
 }
 
-type TransferAgreementNotCompliance {
+type TransferAgreementPrivateBeta {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!

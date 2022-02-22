@@ -15,14 +15,14 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestDatabase, FixedUUIDSource, Tes
 
 class TransferAgreementRouteSpec extends AnyFlatSpec with Matchers with TestRequest with TestDatabase  {
 
-  private val addTransferAgreementNotComplianceJsonFilePrefix: String = "json/addtransferagreementnotcompliance_"
+  private val addTransferAgreementPrivateBetaJsonFilePrefix: String = "json/addtransferagreementprivatebeta_"
   private val addTransferAgreementComplianceJsonFilePrefix: String = "json/addtransferagreementcompliance_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
-  case class GraphqlTANotComplianceMutationData(data: Option[AddTransferAgreementNotCompliance], errors: List[GraphqlError] = Nil)
+  case class GraphqlTAPrivateBetaMutationData(data: Option[AddTransferAgreementPrivateBeta], errors: List[GraphqlError] = Nil)
   case class GraphqlTAComplianceMutationData(data: Option[AddTransferAgreementCompliance], errors: List[GraphqlError] = Nil)
-  case class TransferAgreementNotCompliance(
+  case class TransferAgreementPrivateBeta(
                                 consignmentId: Option[UUID] = None,
                                 allPublicRecords: Option[Boolean] = None,
                                 allCrownCopyright: Option[Boolean] = None,
@@ -34,13 +34,13 @@ class TransferAgreementRouteSpec extends AnyFlatSpec with Matchers with TestRequ
                               appraisalSelectionSignedOff: Option[Boolean] = None,
                               initialOpenRecords: Option[Boolean] = None,
                               sensitivityReviewSignedOff: Option[Boolean] = None)
-  case class AddTransferAgreementNotCompliance(addTransferAgreementNotCompliance: TransferAgreementNotCompliance) extends TestRequest
+  case class AddTransferAgreementPrivateBeta(addTransferAgreementPrivateBeta: TransferAgreementPrivateBeta) extends TestRequest
   case class AddTransferAgreementCompliance(addTransferAgreementCompliance: TransferAgreementCompliance) extends TestRequest
 
-  val runTANotComplianceTestMutation: (String, OAuth2BearerToken) => GraphqlTANotComplianceMutationData =
-    runTestRequest[GraphqlTANotComplianceMutationData](addTransferAgreementNotComplianceJsonFilePrefix)
-  val expectedTANotComplianceMutationResponse: String => GraphqlTANotComplianceMutationData =
-    getDataFromFile[GraphqlTANotComplianceMutationData](addTransferAgreementNotComplianceJsonFilePrefix)
+  val runTAPrivateBetaTestMutation: (String, OAuth2BearerToken) => GraphqlTAPrivateBetaMutationData =
+    runTestRequest[GraphqlTAPrivateBetaMutationData](addTransferAgreementPrivateBetaJsonFilePrefix)
+  val expectedTAPrivateBetaMutationResponse: String => GraphqlTAPrivateBetaMutationData =
+    getDataFromFile[GraphqlTAPrivateBetaMutationData](addTransferAgreementPrivateBetaJsonFilePrefix)
 
   val runTAComplianceTestMutation: (String, OAuth2BearerToken) => GraphqlTAComplianceMutationData =
     runTestRequest[GraphqlTAComplianceMutationData](addTransferAgreementComplianceJsonFilePrefix)
@@ -48,58 +48,59 @@ class TransferAgreementRouteSpec extends AnyFlatSpec with Matchers with TestRequ
     getDataFromFile[GraphqlTAComplianceMutationData](addTransferAgreementComplianceJsonFilePrefix)
 
 
-  "addTransferAgreementNotCompliance" should "return all requested fields from inserted transfer agreement consignment metadata properties" in {
+  "addTransferAgreementPrivateBeta" should "return all requested fields from inserted transfer agreement consignment metadata properties" in {
     seedDatabaseWithDefaultEntries()
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId: UUID = fixedUUIDSource.uuid
     createConsignment(consignmentId, userId)
 
-    val expectedResponse: GraphqlTANotComplianceMutationData = expectedTANotComplianceMutationResponse("data_all")
-    val response: GraphqlTANotComplianceMutationData = runTANotComplianceTestMutation("mutation_alldata", validUserToken())
+    val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_all")
+    val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_alldata", validUserToken())
 
-    response.data.get.addTransferAgreementNotCompliance should equal(expectedResponse.data.get.addTransferAgreementNotCompliance)
+    response.data.get.addTransferAgreementPrivateBeta should equal(expectedResponse.data.get.addTransferAgreementPrivateBeta)
 
     checkTransferAgreementExists(consignmentId)
   }
 
-  "addTransferAgreementNotCompliance" should "return the expected data from inserted transfer agreement consignment metadata properties" in {
+  "addTransferAgreementPrivateBeta" should "return the expected data from inserted transfer agreement consignment metadata properties" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId: UUID = fixedUUIDSource.uuid
     createConsignment(consignmentId, userId)
 
-    val expectedResponse: GraphqlTANotComplianceMutationData = expectedTANotComplianceMutationResponse("data_some")
-    val response: GraphqlTANotComplianceMutationData = runTANotComplianceTestMutation("mutation_somedata", validUserToken())
+    val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_some")
+    val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_somedata", validUserToken())
 
-    response.data.get.addTransferAgreementNotCompliance should equal(expectedResponse.data.get.addTransferAgreementNotCompliance)
+    response.data.get.addTransferAgreementPrivateBeta should equal(expectedResponse.data.get.addTransferAgreementPrivateBeta)
 
     checkTransferAgreementExists(consignmentId)
   }
 
-  "addTransferAgreementNotCompliance" should "throw an error if the consignment id field is not provided" in {
-    val expectedResponse: GraphqlTANotComplianceMutationData = expectedTANotComplianceMutationResponse("data_consignmentid_missing")
-    val response: GraphqlTANotComplianceMutationData = runTANotComplianceTestMutation("mutation_missingconsignmentid", validUserToken())
+  "addTransferAgreementPrivateBeta" should "throw an error if the consignment id field is not provided" in {
+    val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_consignmentid_missing")
+    val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_missingconsignmentid", validUserToken())
+    print(response, "\n\n\n")
     response.errors.head.message should equal (expectedResponse.errors.head.message)
   }
 
-  "addTransferAgreementNotCompliance" should "return an error if a user does not own the transfer agreement's consignment id" in {
+  "addTransferAgreementPrivateBeta" should "return an error if a user does not own the transfer agreement's consignment id" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val otherUserId = UUID.fromString("5ab14990-ed63-4615-8336-56fbb9960300")
     val consignmentId: UUID = fixedUUIDSource.uuid
     createConsignment(consignmentId, otherUserId)
 
-    val expectedResponse: GraphqlTANotComplianceMutationData = expectedTANotComplianceMutationResponse("data_error_not_owner")
-    val response: GraphqlTANotComplianceMutationData = runTANotComplianceTestMutation("mutation_alldata", validUserToken())
+    val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_error_not_owner")
+    val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_alldata", validUserToken())
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)
   }
 
-  "addTransferAgreementNotCompliance" should "return an error if an invalid consignment id is provided" in {
+  "addTransferAgreementPrivateBeta" should "return an error if an invalid consignment id is provided" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId: UUID = fixedUUIDSource.uuid
     createConsignment(consignmentId, userId)
 
-    val expectedResponse: GraphqlTANotComplianceMutationData = expectedTANotComplianceMutationResponse("data_error_invalid_consignmentid")
-    val response: GraphqlTANotComplianceMutationData = runTANotComplianceTestMutation("mutation_invalid_consignmentid", validUserToken())
+    val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_error_invalid_consignmentid")
+    val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_invalid_consignmentid", validUserToken())
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
