@@ -1,19 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches, Files}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, fileTypeIdentifier, folderTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
-
-import java.sql.Timestamp
-import java.util.UUID
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
-import scala.collection.immutable
+import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileService(
@@ -27,13 +25,20 @@ class FileService(
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
 
+  implicit class FileRowHelper(fr: Option[FileRow]) {
+    def fileType: Option[String] = fr.flatMap(_.filetype)
+
+    def fileName: Option[String] = fr.flatMap(_.filename)
+
+    def parentId: Option[UUID] = fr.flatMap(_.parentid)
+  }
+
   def getEmptyFolders(consignmentId: UUID): Future[Seq[String]] = {
     for {
       emptyFolderIds <- fileRepository.getEmptyFolderIds(consignmentId)
       paths <- Future.sequence(emptyFolderIds.map(id => fileRepository.getFilePath(id)))
     } yield paths
   }
-
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
@@ -80,15 +85,19 @@ class FileService(
     fileRepository.countFilesInConsignment(consignmentId)
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[List[File]] = {
+  def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
     for {
+      //For now filter out folders as not required and don't have metadata values
+      fileList <- fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier)))
       fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
     } yield {
       fileMetadataList map {
         case (fileId, fileMetadata) =>
-          File(fileId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
+          val fr: Option[FileRow] = fileList.find(_.fileid == fileId)
+          File(fileId,
+            fr.fileType, fr.fileName, fr.parentId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
       }
     }.toList
   }

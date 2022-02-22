@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import slick.jdbc.PositionedResult
 
 import java.util.UUID
+
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
@@ -83,4 +84,13 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .length
     db.run(query.result)
   }
+
+  def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[FileRow]] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
+      .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
+    db.run(query.result)
+  }
 }
+
+case class FileFilters(fileTypeIdentifier: Option[String])

@@ -16,7 +16,9 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       consignmentStatuses <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
     } yield {
       val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statustype, cs.value)).toMap
-      CurrentStatus(consignmentStatusTypesAndVals.get("TransferAgreement"), consignmentStatusTypesAndVals.get("Upload"))
+      CurrentStatus(consignmentStatusTypesAndVals.get("TransferAgreement"),
+        consignmentStatusTypesAndVals.get("Upload"),
+        consignmentStatusTypesAndVals.get("ConfirmTransfer"))
     }
   }
 

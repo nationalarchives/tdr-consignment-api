@@ -28,7 +28,7 @@ object TestUtils {
   private val testMock: KeycloakVerificationMock = createServer("test", testPort)
 
   private def createServer(realm: String, port: Int): KeycloakVerificationMock = {
-    val mock: KeycloakVerificationMock = new KeycloakVerificationMock(port, "tdr")
+    val mock: KeycloakVerificationMock = new KeycloakVerificationMock(port, realm)
     mock.start()
     mock
   }
@@ -187,15 +187,21 @@ object TestUtils {
     result
   }
 
-  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = NodeType.fileTypeIdentifier, parentId: Option[UUID] = None): Unit = {
-    val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime, FileType, ParentId) VALUES (?, ?, ?, ?, ?, ?)"
+  def createFile(fileId: UUID,
+                 consignmentId: UUID,
+                 fileType: String = NodeType.fileTypeIdentifier,
+                 fileName: String = "fileName",
+                 parentId: UUID = UUID.randomUUID()): Unit = {
+    val sql = s"INSERT INTO File (FileId, ConsignmentId, UserId, Datetime, FileType, FileName, ParentId) VALUES (?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, fileId.toString)
     ps.setString(2, consignmentId.toString)
     ps.setString(3, userId.toString)
     ps.setTimestamp(4, Timestamp.from(FixedTimeSource.now))
     ps.setString(5, fileType)
-    ps.setString(6, parentId.map(_.toString).orNull)
+    ps.setString(6, parentId.toString)
+    ps.setString(6, fileName)
+    ps.setString(7, parentId.toString)
     ps.executeUpdate()
   }
 
@@ -380,5 +386,44 @@ object TestUtils {
       ps.executeUpdate()
     })
   }
+
+  def createFileProperty(name: String, description: String, fullname: String, propertytype: String,
+                         datatype: String, editable: Boolean, mutlivalue: Boolean, propertygroup: String): Unit = {
+    val sql = s"INSERT INTO FileProperty (Name, Description, FullName, CreatedDatetime, ModifiedDatetime," +
+      s"PropertyType, Datatype, Editable, MutliValue, PropertyGroup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setString(1, name)
+    ps.setString(2, description)
+    ps.setString(3, fullname)
+    ps.setTimestamp(4, Timestamp.from(Instant.now()))
+    ps.setTimestamp(5, Timestamp.from(Instant.now()))
+    ps.setString(6, propertytype)
+    ps.setString(7, datatype)
+    ps.setBoolean(8, editable)
+    ps.setBoolean(9, mutlivalue)
+    ps.setString(10, propertygroup)
+    ps.executeUpdate()
+  }
+
+  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int): Unit = {
+    val sql = s"INSERT INTO FilePropertyValues (PropertyName, PropertyValue, Default, Dependencies, SecondaryValue) VALUES (?, ?, ?, ?, ?)"
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setString(1, propertyName)
+    ps.setString(2, propertyValue)
+    ps.setBoolean(3, default)
+    ps.setInt(4, dependencies)
+    ps.setInt(5, secondaryvalue)
+    ps.executeUpdate()
+  }
+
+  def createFilePropertyDependencies(groupId: Int, propertyName: String, default: String): Unit = {
+    val sql = s"INSERT INTO FilePropertyDependencies (GroupId, PropertyName, Default) VALUES (?, ?, ?)"
+    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
+    ps.setInt(1, groupId)
+    ps.setString(2, propertyName)
+    ps.setString(3, default)
+    ps.executeUpdate()
+  }
+
   //scalastyle:on magic.number
 }

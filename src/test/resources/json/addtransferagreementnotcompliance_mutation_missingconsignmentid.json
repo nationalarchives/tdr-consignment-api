@@ -1,3 +1,0 @@
-{
-  "query": "mutation {addTransferAgreementNotCompliance(addTransferAgreementNotComplianceInput: {allEnglish: true, allCrownCopyright: true, allPublicRecords: true}) {consignmentId, allEnglish}}"
-}

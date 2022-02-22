@@ -43,7 +43,7 @@ object ConsignmentFields {
 
   case class FileChecks(antivirusProgress: AntivirusProgress, checksumProgress: ChecksumProgress, ffidProgress: FFIDProgress)
   case class TransferringBody(name: String, tdrCode: String)
-  case class CurrentStatus(transferAgreement: Option[String], upload: Option[String])
+  case class CurrentStatus(transferAgreement: Option[String], upload: Option[String], confirmTransfer: Option[String])
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
   case class UpdateExportLocationInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime])

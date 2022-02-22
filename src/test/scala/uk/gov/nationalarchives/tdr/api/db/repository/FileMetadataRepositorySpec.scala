@@ -153,7 +153,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     getFileStatusValue(fileId) should equal("Value")
   }
 
-  "getFileMetadata" should "return the correct metadata" in {
+  "getSingleFileMetadata" should "return the correct metadata" in {
     val db = DbConnection.db
     val fileMetadataRepository = new FileMetadataRepository(db)
     val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
@@ -162,7 +162,7 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     addFileProperty("FileProperty")
     addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
     createConsignment(consignmentId, userId)
-    val response = fileMetadataRepository.getFileMetadata(fileId, "FileProperty").futureValue.head
+    val response = fileMetadataRepository.getSingleFileMetadata(fileId, "FileProperty").futureValue.head
     response.value should equal("Result of FileMetadata processing")
     response.propertyname should equal("FileProperty")
     response.fileid should equal(fileId)
@@ -192,6 +192,31 @@ class FileMetadataRepositorySpec extends AnyFlatSpec with TestDatabase with Scal
     val fileOneProperties = fileOneMetadata.get.groupBy(_.propertyname)
     fileOneProperties("FilePropertyOne").head.value should equal("Result of FileMetadata processing")
     fileOneProperties("FilePropertyTwo").head.value should equal("Result of FileMetadata processing")
+    fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
+    fileTwoMetadata.get.head.value should equal("Result of FileMetadata processing")
+  }
+
+  "getFileMetadata" should "return the correct metadata for the given consignment and selected file ids" in {
+    val db = DbConnection.db
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+    val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+    val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+    createFile(fileIdOne, consignmentId)
+    createFile(fileIdTwo, consignmentId)
+    addFileProperty("FilePropertyOne")
+    addFileProperty("FilePropertyTwo")
+    addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "FilePropertyOne")
+    addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "FilePropertyTwo")
+    addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "FilePropertyOne")
+    createConsignment(consignmentId, userId)
+
+    val selectedFileIds: Set[UUID] = Set(fileIdTwo)
+    val response = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds)).futureValue
+
+    response.length should equal(1)
+    val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
+    val fileTwoMetadata = filesMap.get(fileIdTwo)
     fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
     fileTwoMetadata.get.head.value should equal("Result of FileMetadata processing")
   }
