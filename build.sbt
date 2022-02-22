@@ -95,7 +95,6 @@ libraryDependencies ++= Seq(
 )
 
 javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
-parallelExecution in Test := false
 fork in Test := true
 
 assemblyJarName in assembly := "consignmentapi.jar"

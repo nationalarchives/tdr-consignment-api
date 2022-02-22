@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Field 'AddConsignmentInput.userid' of required type 'UUID!' was not provided. (line 1, column 47):\nmutation {addConsignment(addConsignmentInput: {seriesid: \"6e3b76c4-1745-4467-8ac5-b4dd736e1b3e\"}) {consignmentid, seriesid, userid}}\n                                              ^",
+      "message": "Field 'AddConsignmentInput.userid' of required type 'UUID!' was not provided. (line 1, column 47):\nmutation {addConsignment(addConsignmentInput: {seriesid: \"1436ad43-73a2-4489-a774-85fa95daff32\"}) {consignmentid, seriesid, userid}}\n                                              ^",
       "locations": [
         {
           "column": 47,

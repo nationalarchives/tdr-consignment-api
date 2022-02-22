@@ -17,14 +17,7 @@ import scala.reflect.ClassTag
 
 trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
 
-  val route: Route = new Routes(ConfigFactory.load()).route
-  def runTestRequest[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken)
-                       (implicit decoder: Decoder[A], classTag: ClassTag[A])
-  : A = {
-    runTestRequestWithConfig[A](prefix)(queryFileName, token, ConfigFactory.load())
-  }
-
-  def runTestRequestWithConfig[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken, config: Config)
+  def runTestRequest[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken, config: Config)
                        (implicit decoder: Decoder[A], classTag: ClassTag[A])
   : A = {
     val route: Route = new Routes(config).route

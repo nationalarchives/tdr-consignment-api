@@ -1,36 +1,118 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import com.typesafe.config.Config
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService.transferAgreementProperties
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils.{fixedBodyId, fixedSeriesId}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{defaultFileId, userId}
 
-import java.sql.{Connection, PreparedStatement, ResultSet, Timestamp, Types}
+import java.sql._
 import java.time.Instant
 import java.util.UUID
 
 class DatabaseUtils(connection: Connection) {
+  def createDatabaseError(): Int = {
+    val sql = """ALTER TABLE "Consignment" RENAME COLUMN "ConsignmentReference" TO "ConsignmentReferenceOld"; """
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.executeUpdate()
+  }
+
+
+  def deleteSeries(): Unit = {
+    val sql = """DELETE FROM "Series" WHERE "SeriesId" = ? """
+    val preparedStatement = connection.prepareStatement(sql)
+    preparedStatement.setObject(1, fixedSeriesId, Types.OTHER)
+    preparedStatement.executeUpdate()
+  }
+
+  def deleteTransferringBody(): Unit = {
+    val sql = """DELETE FROM "Body" WHERE "BodyId" = ? """
+    val preparedStatement = connection.prepareStatement(sql)
+    preparedStatement.setObject(1, fixedBodyId, Types.OTHER)
+    preparedStatement.executeUpdate()
+  }
+
+  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int): Unit = {
+    val sql = s"""INSERT INTO "FilePropertyValues" ("PropertyName", "PropertyValue", "Default", "Dependencies", "SecondaryValue") VALUES (?, ?, ?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, propertyName)
+    ps.setString(2, propertyValue)
+    ps.setBoolean(3, default)
+    ps.setInt(4, dependencies)
+    ps.setInt(5, secondaryvalue)
+    ps.executeUpdate()
+  }
+
+  def createFilePropertyDependencies(groupId: Int, propertyName: String, default: String): Unit = {
+    val sql = s"""INSERT INTO "FilePropertyDependencies" ("GroupId", "PropertyName", "Default") VALUES (?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setInt(1, groupId)
+    ps.setString(2, propertyName)
+    ps.setString(3, default)
+    ps.executeUpdate()
+  }
+
+  def createFileProperty(name: String, description: String, fullname: String, propertytype: String,
+                         datatype: String, editable: Boolean, mutlivalue: Boolean, propertygroup: String): Unit = {
+    val sql =
+      s"""INSERT INTO "FileProperty" ("Name", "Description", "CreatedDatetime", "ModifiedDatetime",""" +
+        s""" "PropertyType", "Datatype", "Editable", "MutliValue", "PropertyGroup") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, name)
+    ps.setString(2, description)
+    ps.setTimestamp(3, Timestamp.from(Instant.now()))
+    ps.setTimestamp(4, Timestamp.from(Instant.now()))
+    ps.setString(5, propertytype)
+    ps.setString(6, datatype)
+    ps.setBoolean(7, editable)
+    ps.setBoolean(8, mutlivalue)
+    ps.setString(9, propertygroup)
+    ps.executeUpdate()
+  }
+
   def seedDatabaseWithDefaultEntries(consignmentType: String = "standard"): Unit = {
     val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
     val seriesId = UUID.fromString("1436ad43-73a2-4489-a774-85fa95daff32")
     createConsignment(consignmentId, userId, seriesId, consignmentType = consignmentType)
     createFile(defaultFileId, consignmentId)
+
     createClientFileMetadata(defaultFileId)
   }
+
+  def getFileStatusResult(fileId: UUID, statusType: String): List[String] = {
+    val sql = s"""SELECT "Value" FROM "FileStatus" where "FileId" = ? AND "StatusType" = ?"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setObject(1, fileId, Types.OTHER)
+    ps.setString(2, statusType)
+    val rs: ResultSet = ps.executeQuery()
+
+    new Iterator[String] {
+      def hasNext: Boolean = rs.next()
+
+      def next(): String = rs.getString(1)
+    }.to(LazyList).toList
+  }
+
 
   //scalastyle:off magic.number
   def createConsignment(
                          consignmentId: UUID,
                          userId: UUID,
-                         seriesId: UUID = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861"),
-                         consignmentRef: String = "TDR-2021-TESTMTB",
+                         seriesId: UUID = fixedSeriesId,
+                         consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
                          consignmentType: String = "standard",
                          bodyId: UUID = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")): Unit = {
-    val sql = """INSERT INTO "Consignment" """ +
-      """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
-        |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence")""".stripMargin +
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    val sql =
+      """INSERT INTO "Consignment" """ +
+        """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
+          |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence")""".stripMargin +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    val nextValStatement = connection.prepareStatement("select nextval('consignment_sequence_id') as Seq")
+    val nextResults: ResultSet = nextValStatement.executeQuery()
+    nextResults.next()
+    val nextSequence: Int = nextResults.getInt("Seq")
+
     val ps: PreparedStatement = connection.prepareStatement(sql)
     val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
     ps.setObject(1, consignmentId, Types.OTHER)
@@ -42,7 +124,7 @@ class DatabaseUtils(connection: Connection) {
     ps.setString(7, consignmentRef)
     ps.setString(8, consignmentType)
     ps.setObject(9, bodyId, Types.OTHER)
-    ps.setInt(10, 1)
+    ps.setInt(10, nextSequence)
     ps.executeUpdate()
   }
   //scalastyle:on magic.number
@@ -74,16 +156,20 @@ class DatabaseUtils(connection: Connection) {
   }
 
   def getConsignmentStatus(consignmentId: UUID, statusType: String): ResultSet = {
-    val sql = "SELECT Value FROM ConsignmentStatus WHERE ConsignmentId = ? AND StatusType = ?"
+    val sql = """SELECT "Value" FROM "ConsignmentStatus" WHERE "ConsignmentId" = ? AND "StatusType" = ?"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setString(1, consignmentId.toString)
+    ps.setObject(1, consignmentId, Types.OTHER)
     ps.setString(2, statusType)
     val result = ps.executeQuery()
     result.next()
     result
   }
 
-  def createFile(fileId: UUID, consignmentId: UUID, fileType: String = NodeType.fileTypeIdentifier, fileName: String = "fileName", parentId: Option[UUID] = None): Unit = {
+  def createFile(fileId: UUID,
+                 consignmentId: UUID,
+                 fileType: String = NodeType.fileTypeIdentifier,
+                 fileName: String = "fileName",
+                 parentId: Option[UUID] = None): Unit = {
     val sql = s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId") VALUES (?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
@@ -123,16 +209,18 @@ class DatabaseUtils(connection: Connection) {
   }
 
   def addFFIDMetadata(fileId: String,
-                      software: String="TEST DATA software",
-                      softwareVersion: String="TEST DATA software version",
-                      binarySigFileVersion: String="TEST DATA binary signature file version",
-                      containerSigFileVersion: String="TEST DATA container signature file version",
-                      method: String="TEST DATA method"
+                      software: String = "TEST DATA software",
+                      softwareVersion: String = "TEST DATA software version",
+                      binarySigFileVersion: String = "TEST DATA binary signature file version",
+                      containerSigFileVersion: String = "TEST DATA container signature file version",
+                      method: String = "TEST DATA method"
                      ): UUID = {
     val ffidMetadataId = java.util.UUID.randomUUID()
-    val sql = s"""INSERT INTO "FFIDMetadata" """ +
-      s"""("FileId", "Software", "SoftwareVersion", "BinarySignatureFileVersion", "ContainerSignatureFileVersion", "Method", "Datetime", "FFIDMetadataId")""" +
-      s"VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    val sql =
+      s"""INSERT INTO "FFIDMetadata" """ +
+        s"""("FileId", "Software", "SoftwareVersion", "BinarySignatureFileVersion",
+           |"ContainerSignatureFileVersion", "Method", "Datetime", "FFIDMetadataId")""".stripMargin +
+        s"VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setString(2, software)
@@ -148,13 +236,14 @@ class DatabaseUtils(connection: Connection) {
   }
 
   def addFFIDMetadataMatches(ffidMetadataId: String,
-                             extension: String="txt",
-                             identificationBasis: String="TEST DATA identification",
-                             puid: String="TEST DATA puid"
+                             extension: String = "txt",
+                             identificationBasis: String = "TEST DATA identification",
+                             puid: String = "TEST DATA puid"
                             ): Unit = {
-    val sql = s"""INSERT INTO "FFIDMetadataMatches" """ +
-      s"""("FFIDMetadataId", "Extension", "IdentificationBasis", "PUID")""" +
-      s"VALUES (?, ?, ?, ?)"
+    val sql =
+      s"""INSERT INTO "FFIDMetadataMatches" """ +
+        s"""("FFIDMetadataId", "Extension", "IdentificationBasis", "PUID")""" +
+        s"VALUES (?, ?, ?, ?)"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, ffidMetadataId, Types.OTHER)
     ps.setString(2, extension)
@@ -165,8 +254,10 @@ class DatabaseUtils(connection: Connection) {
   }
 
   def createClientFileMetadata(fileId: UUID): Unit = {
-    val sql = "INSERT INTO FileMetadata(MetadataId, FileId, Value, Datetime, UserId, PropertyName) VALUES (?,?,?,?,?,?)"
+    val sql = """INSERT INTO "FileMetadata"("MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName") VALUES (?,?,?,?,?,?)"""
+
     clientSideProperties.foreach(propertyName => {
+      addFileProperty(propertyName)
       val value = propertyName match {
         case ClientSideFileLastModifiedDate => Timestamp.from(Instant.now()).toString
         case ClientSideFileSize => "1"
@@ -174,11 +265,11 @@ class DatabaseUtils(connection: Connection) {
         case _ => s"$propertyName Value"
       }
       val ps: PreparedStatement = connection.prepareStatement(sql)
-      ps.setString(1, UUID.randomUUID().toString)
-      ps.setString(2, fileId.toString)
+      ps.setObject(1, UUID.randomUUID(), Types.OTHER)
+      ps.setObject(2, fileId, Types.OTHER)
       ps.setString(3, value)
       ps.setTimestamp(4, Timestamp.from(Instant.now()))
-      ps.setString(5, UUID.randomUUID().toString)
+      ps.setObject(5, UUID.randomUUID(), Types.OTHER)
       ps.setString(6, propertyName)
       ps.executeUpdate()
     })
@@ -236,7 +327,7 @@ class DatabaseUtils(connection: Connection) {
   def addConsignmentProperty(name: String): Unit = {
     // name is primary key check exists before attempting insert to table
     if (!propertyExists(name)) {
-      val sql = s"INSERT INTO ConsignmentProperty (Name) VALUES (?)"
+      val sql = s"""INSERT INTO "ConsignmentProperty" ("Name") VALUES (?)"""
       val ps: PreparedStatement = connection.prepareStatement(sql)
       ps.setString(1, name)
       ps.executeUpdate()
@@ -244,7 +335,7 @@ class DatabaseUtils(connection: Connection) {
   }
 
   private def propertyExists(name: String): Boolean = {
-    val sql = s"SELECT * FROM ConsignmentProperty WHERE Name = ?"
+    val sql = s"""SELECT * FROM "ConsignmentProperty" WHERE "Name" = ?"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
     val rs: ResultSet = ps.executeQuery()
@@ -252,29 +343,29 @@ class DatabaseUtils(connection: Connection) {
   }
 
   //scalastyle:off magic.number
-  def addConsignmentMetadata(metadataId: String, consignmentId: String, propertyName: String): Unit = {
-    val sql = s"insert into ConsignmentMetadata (MetadataId, ConsignmentId, PropertyName, Value, Datetime, UserId) VALUES (?, ?, ?, ?, ?, ?)"
+  def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String): Unit = {
+    val sql = s"""insert into "ConsignmentMetadata" ("MetadataId", "ConsignmentId", "PropertyName", "Value", "Datetime", "UserId") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setString(1, metadataId)
-    ps.setString(2, consignmentId)
+    ps.setObject(1, metadataId, Types.OTHER)
+    ps.setObject(2, consignmentId, Types.OTHER)
     ps.setString(3, propertyName)
     ps.setString(4, "Result of ConsignmentMetadata processing")
     ps.setTimestamp(5, Timestamp.from(FixedTimeSource.now))
-    ps.setString(6, userId.toString)
+    ps.setObject(6, userId, Types.OTHER)
 
     ps.executeUpdate()
   }
 
   def addTransferAgreementMetadata(consignmentId: UUID): Unit = {
-    val sql = "INSERT INTO ConsignmentMetadata(MetadataId, ConsignmentId, PropertyName, Value, Datetime, UserId) VALUES (?,?,?,?,?,?)"
+    val sql = """INSERT INTO "ConsignmentMetadata" ("MetadataId", "ConsignmentId", "PropertyName", "Value", "Datetime", "UserId") VALUES (?,?,?,?,?,?)"""
     transferAgreementProperties.foreach(propertyName => {
       val ps: PreparedStatement = connection.prepareStatement(sql)
-      ps.setString(1, UUID.randomUUID().toString)
+      ps.setObject(1, UUID.randomUUID(), Types.OTHER)
       ps.setString(2, consignmentId.toString)
       ps.setString(3, propertyName)
       ps.setString(4, true.toString)
       ps.setTimestamp(5, Timestamp.from(Instant.now()))
-      ps.setString(6, UUID.randomUUID().toString)
+      ps.setObject(6, UUID.randomUUID(), Types.OTHER)
       ps.executeUpdate()
     })
   }
