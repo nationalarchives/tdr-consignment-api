@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import com.dimafeng.testcontainers.scalatest.{TestContainerForAll, TestContainerForEach}
+import com.dimafeng.testcontainers.scalatest.TestContainerForEach
 import com.dimafeng.testcontainers.{ContainerDef, PostgreSQLContainer}
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -10,7 +10,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import java.sql.DriverManager
 import java.util.UUID
 
-trait TestContainerUtils extends AnyFlatSpec with TestContainerForAll {
+trait TestContainerUtils extends AnyFlatSpec with TestContainerForEach {
 
   override val containerDef: ContainerDef = PostgreSQLContainer.Def(
     dockerImageName = DockerImageName.parse(s"${sys.env("MANAGEMENT_ACCOUNT").trim}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api-data")
