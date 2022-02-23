@@ -9,6 +9,7 @@ permissions:
   id-token: write
   contents: write
   actions: write
+  packages: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,7 +22,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.WORKFLOW_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure AWS credentials from management account
         uses: aws-actions/configure-aws-credentials@v1
         with:
