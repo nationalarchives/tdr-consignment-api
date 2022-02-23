@@ -13,7 +13,7 @@ import java.util.UUID
 trait TestContainerUtils extends AnyFlatSpec with TestContainerForEach {
 
   override val containerDef: ContainerDef = PostgreSQLContainer.Def(
-    dockerImageName = DockerImageName.parse(s"${sys.env("MANAGEMENT_ACCOUNT").trim}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api-data")
+    dockerImageName = DockerImageName.parse("ghcr.io/nationalarchives/tdr-consignment-api-data")
       .asCompatibleSubstituteFor("postgres"),
     databaseName = "consignmentapi",
     username = "tdr",
