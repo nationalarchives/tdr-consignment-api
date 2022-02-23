@@ -195,7 +195,7 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
   private def checkTransferAgreementExists(consignmentId: UUID, config: Config): Unit = {
     val sql = """SELECT * FROM "ConsignmentMetadata" cm JOIN "ConsignmentProperty" cp ON cp."Name" = cm."PropertyName" """ +
       """WHERE "ConsignmentId" = ? AND cp."Name" IN (?,?,?,?,?,?);"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     transferAgreementProperties.zipWithIndex.foreach {
       case (a, b) => ps.setString(b + 2, a)

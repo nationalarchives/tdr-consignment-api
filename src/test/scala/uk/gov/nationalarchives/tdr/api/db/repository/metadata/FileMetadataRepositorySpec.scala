@@ -27,7 +27,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   private def getFileStatusValue(fileId: UUID, config: Config): String = {
     val sql = s"""SELECT "Value" FROM "FileStatus" where "FileId" = ? AND "StatusType" = ?"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setString(2, "Status Type")
     val rs = ps.executeQuery()
@@ -37,7 +37,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   private def checkFileMetadataExists(fileId: UUID, config: Config): Assertion = {
     val sql = s"""SELECT COUNT(*) as count FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?"""
-    val ps = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setString(2, "FileProperty")
     val rs = ps.executeQuery()
@@ -47,7 +47,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedChecksumInConsignment" should "return 0 if a consignment has no files" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("c03fd4be-58c1-4cee-8d3c-d162bb4f7c01")
@@ -61,7 +61,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedChecksumInConsignment" should "return 0 if consignment has no checksum metadata for files" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("64456c78-49bb-4bff-85c8-2fff053b9f8d")
@@ -83,7 +83,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedChecksumInConsignment" should "return the number of fileMetadata for files in a specified consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentOne = UUID.fromString("049a11d7-06f5-4b11-b786-640000de76e2")
@@ -117,7 +117,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedChecksumInConsignment" should "return number of fileMetadata rows with repetitive data filtered out" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
@@ -140,7 +140,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
   "addFileMetadata" should "add metadata with the correct values" in withContainers {
     case container: PostgreSQLContainer =>
       val appConfig = config(container)
-      val db = DbConnection.db(appConfig)
+      val db = DbConnection(appConfig).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("306c526b-d099-470b-87c8-df7bd0aa225a")
@@ -159,7 +159,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
   "addChecksumMetadata" should "update the checksum validation field on the file table" in withContainers {
     case container: PostgreSQLContainer =>
       val appConfig = config(container)
-      val db = DbConnection.db(appConfig)
+      val db = DbConnection(appConfig).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
@@ -176,7 +176,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getSingleFileMetadata" should "return the correct metadata" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
@@ -193,7 +193,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFileMetadata" should "return the correct metadata for the consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
@@ -223,7 +223,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFileMetadata" should "return the correct metadata for the given consignment and selected file ids" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileMetadataRepository = new FileMetadataRepository(db)
       val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")

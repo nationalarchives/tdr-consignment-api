@@ -104,7 +104,7 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
 
   private def checkAntivirusMetadataExists(fileId: UUID, config: Config): Unit = {
     val sql = """select * from "AVMetadata" where "FileId" = ?;"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
@@ -113,7 +113,7 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
 
   private def checkNoAntivirusMetadataAdded(config: Config): Unit = {
     val sql = """select * from "AVMetadata";"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getRow should equal(0)

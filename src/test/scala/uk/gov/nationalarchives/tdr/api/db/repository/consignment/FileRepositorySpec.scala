@@ -25,7 +25,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
   "addFiles" should "create files and update ConsignmentStatus table for a consignment" in withContainers {
     case container: PostgreSQLContainer =>
       val appConfig = config(container)
-      val db = DbConnection.db(appConfig)
+      val db = DbConnection(appConfig).db
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("94abafc4-165e-469b-ba93-eace3f224de5")
       val fileOneId = UUID.fromString("7499a278-2fec-4c47-92fb-dd9024c65d0d")
@@ -55,7 +55,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "countFilesInConsignment" should "return 0 if a consignment has no files" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c03fd4be-58c1-4cee-8d3c-d162bb4f7c02")
 
@@ -68,7 +68,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "countFilesInConsignment" should "return the total number of files in a consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("2e31c0ce-25e6-4bd7-a8a7-dc8bbb9335ba")
       val utils = databaseUtils(container)
@@ -86,7 +86,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "countProcessedAvMetadataInConsignment" should "return 0 if consignment has no AVmetadata for files" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("64456c78-49bb-4bff-85c8-2fff053b9f8e")
       val utils = databaseUtils(container)
@@ -104,7 +104,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "countProcessedAvMetadataInConsignment" should "return the number of AVmetadata for files in a specified consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileRepository = new FileRepository(db)
       val consignmentOne = "049a11d7-06f5-4b11-b786-640000de76e1"
@@ -132,7 +132,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "countProcessedAvMetadataInConsignment" should "return number of AVmetadata rows with repetitive data filtered out" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileRepository = new FileRepository(db)
       val consignmentId = "c6f78fef-704a-46a8-82c0-afa465199e65"
@@ -153,7 +153,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "getFilesWithPassedAntivirus" should "return only files where the antivirus has found no virus" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
@@ -174,7 +174,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "getConsignmentForFile" should "return the correct consignment for the given file id" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
@@ -191,7 +191,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "getFiles" should "return files and folders where no type filter applied" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndFolders(consignmentId, databaseUtils(container))
@@ -202,7 +202,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "getFiles" should "return files only where 'file' type filter applied" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndFolders(consignmentId, databaseUtils(container))
@@ -213,7 +213,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   "getFiles" should "return folders only where 'folder' type filter applied" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndFolders(consignmentId, databaseUtils(container))
@@ -236,7 +236,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   private def checkConsignmentStatusExists(consignmentId: UUID, config: Config): Unit = {
     val sql = """SELECT * FROM "ConsignmentStatus" WHERE "ConsignmentId" = ?"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
     rs.next()

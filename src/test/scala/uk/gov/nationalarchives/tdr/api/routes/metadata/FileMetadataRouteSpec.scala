@@ -145,7 +145,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   private def checkFileMetadataExists(fileId: UUID, config: Config): Unit = {
     val sql = """SELECT * FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setString(2, SHA256ServerSideChecksum)
     val rs: ResultSet = ps.executeQuery()
@@ -156,7 +156,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   private def checkNoFileMetadataAdded(config: Config): Unit = {
 
     val sql = """select * from "FileMetadata" WHERE "PropertyName" = ?;"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setString(1, SHA256ServerSideChecksum)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
@@ -165,7 +165,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   private def checkNoValidationResultExists(fileId: UUID, config: Config): Unit = {
     val sql = s"""SELECT COUNT("Value") FROM "FileStatus" where "FileId" = ? AND "StatusType" = ?"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setString(2, Checksum)
     val rs: ResultSet = ps.executeQuery()

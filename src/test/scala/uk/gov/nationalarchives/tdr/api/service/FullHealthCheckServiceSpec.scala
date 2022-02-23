@@ -18,7 +18,7 @@ class FullHealthCheckServiceSpec extends TestContainerUtils with ScalaFutures wi
 
   "checkDbIsUpAndRunning" should "throw an exception if db has no Transferring Bodies in it" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val fullHealthCheckService: FullHealthCheckService = new FullHealthCheckService()
       val thrownException = intercept[Exception] {
         fullHealthCheckService.checkDbIsUpAndRunning(db).futureValue
@@ -28,7 +28,7 @@ class FullHealthCheckServiceSpec extends TestContainerUtils with ScalaFutures wi
 
   "checkDbIsUpAndRunning" should "return Unit if db has 1 or more Transferring Bodies in it" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       databaseUtils(container).addTransferringBody(UUID.randomUUID(), "MOCK Department", "Code")
       val fullHealthCheckService: FullHealthCheckService = new FullHealthCheckService()
       val result: Unit = fullHealthCheckService.checkDbIsUpAndRunning(db).futureValue

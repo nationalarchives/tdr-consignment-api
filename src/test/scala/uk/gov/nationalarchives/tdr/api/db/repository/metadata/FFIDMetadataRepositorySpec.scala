@@ -18,7 +18,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedFfidMetadata" should "return 0 if consignment has no files" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("40c26c38-b6b4-4325-9d28-c9d0b50e89aa")
@@ -32,7 +32,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedFfidMetadata" should "return 0 if consignment has no FFID metadata for files" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("95dc7b75-e88b-41b4-ac65-004c61874145")
@@ -52,7 +52,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedFfidMetadata" should "return the number of FFIDMetadata for files in a specified consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentOne = UUID.fromString("a9ccec45-5325-4e07-a0cd-1b0f4dc0d6fd")
@@ -84,7 +84,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedFfidMetadata" should "return 0 if file has ffid metadata but no ffid matches" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignment = UUID.fromString("a9ccec45-5325-4e07-a0cd-1b0f4dc0d6fd")
@@ -102,7 +102,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "countProcessedFfidMetadata" should "return number of ffidMetadata rows with repetitive data filtered out" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
@@ -137,7 +137,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFFIDMetadata" should "return the same number of ffidMetadata rows as the number of files added" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
@@ -169,7 +169,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFFIDMetadata" should "return the ffidMetadata rows of the selected file ids" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
@@ -204,7 +204,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFFIDMetadata" should "return 0 ffid metadata rows for a consignment if no files were added" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
@@ -218,7 +218,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFFIDMetadata" should "return the fileIds of the files that belong to that consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentOneId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
@@ -259,7 +259,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFFIDMetadata" should "return only the fileIds of the files that had ffidMetadata & ffidMetadataMatches applied to them" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
@@ -300,7 +300,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFFIDMetadata" should "return files with ffidMetadata and ffidMetadataMatches that match the metadata applied to them" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
@@ -356,7 +356,7 @@ class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
   "getFFIDMetadata" should "return multiple ffidMetadataMatches for the files that were given multiple ffidMetadataMatches" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val ffidMetadataRepository = new FFIDMetadataRepository(db)
       val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")

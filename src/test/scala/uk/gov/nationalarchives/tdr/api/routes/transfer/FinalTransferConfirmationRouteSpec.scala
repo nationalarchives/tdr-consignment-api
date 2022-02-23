@@ -173,7 +173,7 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
     val sql =
       """SELECT * FROM "ConsignmentMetadata"
                  WHERE "ConsignmentId" = ? AND "PropertyName" in ('FinalOpenRecordsConfirmed', 'LegalOwnershipTransferConfirmed');"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
@@ -186,7 +186,7 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
     val sql =
       """SELECT * FROM "ConsignmentMetadata"
                  WHERE "ConsignmentId" = ? AND "PropertyName" in ('LegalCustodyTransferConfirmed');"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
     rs.next()

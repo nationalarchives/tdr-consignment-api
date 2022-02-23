@@ -18,7 +18,7 @@ class TransferringBodyRepositorySpec extends TestContainerUtils with ScalaFuture
 
   "getTransferringBody" should "return the correct transferring body for the given series id" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val transferringBodyRepository = new TransferringBodyRepository(db)
       val seriesId = UUID.randomUUID()
@@ -35,7 +35,7 @@ class TransferringBodyRepositorySpec extends TestContainerUtils with ScalaFuture
 
   "getTransferringBodyByCode" should "return the correct transferring body for the given code value" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val transferringBodyRepository = new TransferringBodyRepository(db)
       val bodyId = UUID.randomUUID()
@@ -50,7 +50,7 @@ class TransferringBodyRepositorySpec extends TestContainerUtils with ScalaFuture
 
   "dbHasTransferringBodies" should "return true if db has 1 Transferring Bodies in it" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val transferringBodyRepository = new TransferringBodyRepository(db)
 
@@ -66,7 +66,7 @@ class TransferringBodyRepositorySpec extends TestContainerUtils with ScalaFuture
       val utils = databaseUtils(container)
       utils.deleteSeries()
       utils.deleteTransferringBody()
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val transferringBodyRepository = new TransferringBodyRepository(db)
 
       val dbHasTransferringBodies: Boolean = transferringBodyRepository.dbHasTransferringBodies.futureValue

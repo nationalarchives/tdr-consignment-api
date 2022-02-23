@@ -14,7 +14,7 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
 
   "getClosureMetadataProperty" should "return the correct closure metadata property" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
 
       val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
       databaseUtils(container).createFileProperty("test", "desc", "test2", "Defined", "text", editable = true, mutlivalue = false, "Mandatory Data")
@@ -30,7 +30,7 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
 
   "getClosureMetadataValues" should "return the correct closure metadata values" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
       databaseUtils(container).createFilePropertyValues("LegalStatus", "English", default = true, 0, 1)
       val response = customMetadataPropertiesRepository.getClosureMetadataValues.futureValue.head
@@ -43,7 +43,7 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
 
   "getClosureMetadataDependencies" should "return the correct closure metadata dependencies" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
       databaseUtils(container).createFilePropertyDependencies(1, "test", "test2")
       val response = customMetadataPropertiesRepository.getClosureMetadataDependencies.futureValue.head

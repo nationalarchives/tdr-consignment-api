@@ -25,7 +25,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "addParentFolder" should "add parent folder name to an existing consignment row" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
@@ -41,7 +41,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getParentFolder" should "get parent folder name for a consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
@@ -56,7 +56,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getParentFolder" should "return nothing if no parent folder exists" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentId = UUID.fromString("8233b9a4-5c2d-4c2d-9355-e6ec5751fea5")
@@ -70,7 +70,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getSeriesOfConsignment" should "get the series for a consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentId = UUID.fromString("b59a8bfd-5709-46c7-a5e9-71bae146e2f1")
@@ -87,7 +87,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getTransferringBodyOfConsignment" should "get the transferring body for a consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
@@ -107,7 +107,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getNextConsignmentSequence" should "get the next sequence ID number for a consignment row" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentIdOne = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
@@ -125,7 +125,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
   "getConsignment" should "return the consignment given the consignment id" in withContainers {
     case container: PostgreSQLContainer =>
       val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
 
@@ -139,7 +139,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getConsignments" should "return all consignments after the cursor up to the limit value" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       createConsignments(utils)
@@ -154,7 +154,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getConsignments" should "return all consignments up to limit where no cursor provided including first consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       createConsignments(utils)
@@ -168,7 +168,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getConsignments" should "return all consignments up to limit where empty cursor provided" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       createConsignments(utils)
@@ -182,7 +182,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getConsignments" should "return no consignments where limit set at '0'" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       createConsignments(utils)
@@ -193,7 +193,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getConsignments" should "return consignments where non-existent cursor value provided, and the reference is greater than cursor value" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       createConsignments(utils)
@@ -207,7 +207,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with Matchers with Sc
 
   "getConsignments" should "return no consignments where there are no consignments" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
 
       val response = consignmentRepository.getConsignments(2, Some("")).futureValue

@@ -365,7 +365,7 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   private def checkFFIDMetadataExists(fileId: UUID, config: Config): Unit = {
     val sql = """select * from "FFIDMetadata" where "FileId" = ?;"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
@@ -375,7 +375,7 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   private def checkNoFFIDMetadataAdded(config: Config): Unit = {
     val sql = """SELECT * FROM "FFIDMetadata";"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getRow should equal(0)

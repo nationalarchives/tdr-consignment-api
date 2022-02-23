@@ -27,7 +27,7 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with Matchers
       val appConfig = config(container)
       val utils = databaseUtils(container)
       utils.addConsignmentProperty(consignmentMetadataProperty)
-      val db = DbConnection.db(appConfig)
+      val db = DbConnection(appConfig).db
       val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
       val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
       utils.createConsignment(consignmentId, userId)
@@ -41,7 +41,7 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with Matchers
 
   "getConsignmentMetadata" should "return the correct metadata" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
       val consignmentId = UUID.fromString("d511ecee-89ac-4643-b62d-76a41984a92b")
@@ -56,7 +56,7 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with Matchers
 
   private def checkMetadataAddedExists(consignmentId: UUID, config: Config): Unit = {
     val sql = """SELECT * FROM "ConsignmentMetadata" WHERE "ConsignmentId" = ?"""
-    val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+    val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
     rs.next()

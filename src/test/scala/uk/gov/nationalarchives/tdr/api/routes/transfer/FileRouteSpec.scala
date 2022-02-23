@@ -53,7 +53,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   def checkStaticMetadataExists(fileId: UUID, config: Config): List[Assertion] = {
     staticMetadataProperties.map(property => {
       val sql = "SELECT * FROM FileMetadata WHERE FileId = ? AND PropertyName = ?"
-      val ps: PreparedStatement = DbConnection.db(config).source.createConnection().prepareStatement(sql)
+      val ps: PreparedStatement = DbConnection(config).db.source.createConnection().prepareStatement(sql)
       ps.setString(1, fileId.toString)
       ps.setString(2, property.name)
       val result = ps.executeQuery()

@@ -21,7 +21,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
 
   "addConsignmentStatus" should "add consignment status data" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentStatusRepository = new ConsignmentStatusRepository(db)
       val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
@@ -45,7 +45,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
 
   "getConsignmentStatus" should "return all data from the consignment status" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentStatusRepository = new ConsignmentStatusRepository(db)
       val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
@@ -68,7 +68,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
 
   "getConsignmentStatus" should "return an empty list if no consignment status rows are found matching a given consignmentId" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentStatusRepository = new ConsignmentStatusRepository(db)
       val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
@@ -83,7 +83,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
 
   "getConsignmentStatus" should "return all consignment statuses for a consignment" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentStatusRepository = new ConsignmentStatusRepository(db)
       val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
@@ -111,7 +111,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
 
   "getConsignmentStatus" should "return only the consignment status for the consignment specified" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentStatusRepository = new ConsignmentStatusRepository(db)
       val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
@@ -137,7 +137,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
 
   "updateConsignmentStatus" should "update a consignments' status value to 'completed'" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentStatusRepository = new ConsignmentStatusRepository(db)
       val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
@@ -162,7 +162,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
 
   "updateConsignmentStatus" should "only update the value of the status type passed in" in withContainers {
     case container: PostgreSQLContainer =>
-      val db = DbConnection.db(config(container))
+      val db = DbConnection(config(container)).db
       val utils = databaseUtils(container)
       val consignmentStatusRepository = new ConsignmentStatusRepository(db)
       val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
