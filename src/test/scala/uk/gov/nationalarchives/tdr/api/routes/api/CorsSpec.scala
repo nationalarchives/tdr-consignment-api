@@ -1,4 +1,4 @@
-package uk.gov.nationalarchives.tdr.api.routes
+package uk.gov.nationalarchives.tdr.api.routes.api
 
 import akka.http.scaladsl.model.HttpMethods.{GET, OPTIONS, POST}
 import akka.http.scaladsl.model.headers._

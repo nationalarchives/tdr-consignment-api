@@ -1,7 +1,5 @@
-package uk.gov.nationalarchives.tdr.api.routes
+package uk.gov.nationalarchives.tdr.api.routes.metadata
 
-import java.sql.{PreparedStatement, ResultSet, Types}
-import java.util.UUID
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.Config
@@ -10,9 +8,12 @@ import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, NonJudgmentFormat, PasswordProtected, Success, Zip}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest}
+
+import java.sql.{PreparedStatement, ResultSet, Types}
+import java.util.UUID
 
 class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 

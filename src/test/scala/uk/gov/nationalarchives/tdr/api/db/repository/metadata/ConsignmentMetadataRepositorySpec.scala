@@ -1,4 +1,4 @@
-package uk.gov.nationalarchives.tdr.api.db.repository
+package uk.gov.nationalarchives.tdr.api.db.repository.metadata
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.Config
@@ -6,6 +6,7 @@ import org.scalatest.concurrent.ScalaFutures._
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentMetadataRepository
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 

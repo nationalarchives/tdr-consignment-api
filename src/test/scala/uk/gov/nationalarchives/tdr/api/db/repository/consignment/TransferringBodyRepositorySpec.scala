@@ -1,11 +1,12 @@
-package uk.gov.nationalarchives.tdr.api.db.repository
+package uk.gov.nationalarchives.tdr.api.db.repository.consignment
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils
 import uk.gov.nationalarchives.Tables.BodyRow
+import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.db.repository.TransferringBodyRepository
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

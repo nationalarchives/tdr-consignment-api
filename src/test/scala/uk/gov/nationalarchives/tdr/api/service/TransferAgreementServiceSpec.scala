@@ -1,12 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import com.dimafeng.testcontainers.PostgreSQLContainer
-
 import java.sql.Timestamp
 import java.util.UUID
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentMetadataRepository, ConsignmentStatusRepository}
@@ -16,12 +15,10 @@ import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, 
 import java.time.Instant.now
 import scala.concurrent.{ExecutionContext, Future}
 
-class TransferAgreementServiceSpec extends TestContainerUtils with MockitoSugar with Matchers with ScalaFutures {
+class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
   val fixedUuidSource = new FixedUUIDSource()
   val fixedTimeSource: FixedTimeSource.type = FixedTimeSource
-
-  override def afterContainersStart(containers: containerDef.Container): Unit = setupBodyAndSeries(containers)
 
   "addTransferAgreementPrivateBeta" should "add the correct metadata given correct arguments and set TA status to InProgress" in {
     val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
@@ -64,55 +61,51 @@ class TransferAgreementServiceSpec extends TestContainerUtils with MockitoSugar 
     transferAgreementResult.allPublicRecords shouldBe true
   }
 
-  "addTransferAgreementCompliance" should "add the correct metadata given correct arguments and set TA status to Completed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = databaseUtils(container)
-      val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
-      val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
-      val metadataId = UUID.randomUUID()
-      val consignmentId = UUID.randomUUID()
-      val userId = UUID.randomUUID()
-      val dateTime = Timestamp.from(FixedTimeSource.now)
-      val statusType = "TransferAgreement"
-      utils.createConsignment(consignmentId, userId)
-      utils.createConsignmentStatus(consignmentId, statusType, "InProgress", dateTime)
+  "addTransferAgreementCompliance" should "add the correct metadata given correct arguments and set TA status to Completed" in {
+    val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
+    val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
+    val metadataId = UUID.randomUUID()
+    val consignmentId = UUID.randomUUID()
+    val userId = UUID.randomUUID()
+    val dateTime = Timestamp.from(FixedTimeSource.now)
+    val statusType = "TransferAgreement"
 
-      def row(name: String, value: String): ConsignmentmetadataRow =
-        ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
+    def row(name: String, value: String): ConsignmentmetadataRow =
+      ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
 
-      val mockResponse = Future.successful(Seq(
-        row("AppraisalSelectionSignOffConfirmed", "true"),
-        row("InitialOpenRecordsConfirmed", "true"),
-        row("SensitivityReviewSignOffConfirmed", "true")
-      ))
-      val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
-      val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
-      val statusValue = "Completed"
+    val mockResponse = Future.successful(Seq(
+      row("AppraisalSelectionSignOffConfirmed", "true"),
+      row("InitialOpenRecordsConfirmed", "true"),
+      row("SensitivityReviewSignOffConfirmed", "true")
+    ))
+    val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+    val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+    val statusValue = "Completed"
 
-      when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
-      when(consignmentStatusRepositoryMock
-        .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp]))
-        .thenReturn(Future.successful(1))
+    when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
+    when(consignmentStatusRepositoryMock
+      .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp]))
+      .thenReturn(Future.successful(1))
 
-      val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
-      val transferAgreementResult: TransferAgreementCompliance = service.addTransferAgreementCompliance(
-        AddTransferAgreementComplianceInput(
-          consignmentId,
-          initialOpenRecords = true,
-          appraisalSelectionSignedOff = true,
-          sensitivityReviewSignedOff = true),
-        userId
-      ).futureValue
+    val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
+    val transferAgreementResult: TransferAgreementCompliance = service.addTransferAgreementCompliance(
+      AddTransferAgreementComplianceInput(
+        consignmentId,
+        initialOpenRecords = true,
+        appraisalSelectionSignedOff = true,
+        sensitivityReviewSignedOff = true),
+      userId
+    ).futureValue
 
-      val transferAgreementStatusType = transferAgreementStatusTypeCaptor.getValue
-      val transferAgreementStatusValue = transferAgreementStatusValueCaptor.getValue
+    val transferAgreementStatusType = transferAgreementStatusTypeCaptor.getValue
+    val transferAgreementStatusValue = transferAgreementStatusValueCaptor.getValue
 
-      transferAgreementStatusType shouldBe statusType
-      transferAgreementStatusValue shouldBe statusValue
-      transferAgreementResult.consignmentId shouldBe consignmentId
-      transferAgreementResult.initialOpenRecords shouldBe true
-      transferAgreementResult.appraisalSelectionSignedOff shouldBe true
-      transferAgreementResult.sensitivityReviewSignedOff shouldBe true
+    transferAgreementStatusType shouldBe statusType
+    transferAgreementStatusValue shouldBe statusValue
+    transferAgreementResult.consignmentId shouldBe consignmentId
+    transferAgreementResult.initialOpenRecords shouldBe true
+    transferAgreementResult.appraisalSelectionSignedOff shouldBe true
+    transferAgreementResult.sensitivityReviewSignedOff shouldBe true
   }
 
   "addTransferAgreementStatus" should "add the correct Transfer Agreement Status" in {

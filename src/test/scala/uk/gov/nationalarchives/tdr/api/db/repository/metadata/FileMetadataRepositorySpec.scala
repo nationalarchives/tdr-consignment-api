@@ -1,11 +1,7 @@
-package uk.gov.nationalarchives.tdr.api.db.repository
+package uk.gov.nationalarchives.tdr.api.db.repository.metadata
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.Config
-
-import java.sql.{PreparedStatement, Timestamp, Types}
-import java.time.Instant
-import java.util.UUID
 import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -13,9 +9,14 @@ import org.scalatest.time.{Seconds, Span}
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
+
+import java.sql.{PreparedStatement, Timestamp, Types}
+import java.time.Instant
+import java.util.UUID
 
 class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
 

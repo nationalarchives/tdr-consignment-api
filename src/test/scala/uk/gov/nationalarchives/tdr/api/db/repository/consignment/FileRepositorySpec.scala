@@ -1,20 +1,20 @@
-package uk.gov.nationalarchives.tdr.api.db.repository
+package uk.gov.nationalarchives.tdr.api.db.repository.consignment
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.Config
-
-import java.sql.{PreparedStatement, ResultSet, Timestamp, Types}
-import java.time.Instant
-import java.util.UUID
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileRepository}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{DatabaseUtils, TestContainerUtils}
 
+import java.sql.{PreparedStatement, ResultSet, Timestamp, Types}
+import java.time.Instant
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {

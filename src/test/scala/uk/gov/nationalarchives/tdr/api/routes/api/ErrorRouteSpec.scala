@@ -1,4 +1,4 @@
-package uk.gov.nationalarchives.tdr.api.routes
+package uk.gov.nationalarchives.tdr.api.routes.api
 
 import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
 import akka.http.scaladsl.server.Route

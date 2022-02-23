@@ -1,4 +1,4 @@
-package uk.gov.nationalarchives.tdr.api.routes
+package uk.gov.nationalarchives.tdr.api.routes.transfer
 
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer

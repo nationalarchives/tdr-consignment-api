@@ -1,9 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
 import com.dimafeng.testcontainers.scalatest.TestContainerForEach
-import com.dimafeng.testcontainers.{ContainerDef, PostgreSQLContainer}
+import com.dimafeng.testcontainers.{ContainerDef, GenericContainer, PostgreSQLContainer}
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.flatspec.AnyFlatSpec
+import org.testcontainers.images.builder.ImageFromDockerfile
 import org.testcontainers.utility.DockerImageName
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 
@@ -13,7 +14,7 @@ import java.util.UUID
 trait TestContainerUtils extends AnyFlatSpec with TestContainerForEach {
 
   override val containerDef: ContainerDef = PostgreSQLContainer.Def(
-    dockerImageName = DockerImageName.parse("ghcr.io/nationalarchives/tdr-consignment-api-data")
+    dockerImageName = DockerImageName.parse("tests")
       .asCompatibleSubstituteFor("postgres"),
     databaseName = "consignmentapi",
     username = "tdr",

@@ -1,7 +1,5 @@
-package uk.gov.nationalarchives.tdr.api.routes
+package uk.gov.nationalarchives.tdr.api.routes.transfer
 
-import java.sql.PreparedStatement
-import java.util.UUID
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.Config
@@ -10,9 +8,12 @@ import io.circe.generic.extras.auto._
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{ClientSideOriginalFilepath, clientSideProperties, staticMetadataProperties}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{clientSideProperties, staticMetadataProperties}
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest}
+
+import java.sql.PreparedStatement
+import java.util.UUID
 
 class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = setupBodyAndSeries(containers)

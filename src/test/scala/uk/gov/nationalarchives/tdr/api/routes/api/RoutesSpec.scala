@@ -1,4 +1,4 @@
-package uk.gov.nationalarchives.tdr.api.routes
+package uk.gov.nationalarchives.tdr.api.routes.api
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpResponse, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.AuthorizationFailedRejection
@@ -7,7 +7,6 @@ import com.typesafe.config.ConfigFactory
 import nl.altindag.log.LogCaptor
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.http.Routes
 import uk.gov.nationalarchives.tdr.api.utils.TestRequest
 

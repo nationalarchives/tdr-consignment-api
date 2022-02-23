@@ -19,8 +19,7 @@ object FileFields {
                                      lastModified: Long,
                                      fileSize: Long,
                                      matchId: Long)
-  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[ClientSideMetadataInput], emptyDirectories: List[String] = Nil)
-    extends UserOwnsConsignment
+  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[ClientSideMetadataInput]) extends UserOwnsConsignment
   implicit val MetadataInputType: InputObjectType[ClientSideMetadataInput] = deriveInputObjectType[ClientSideMetadataInput]()
   implicit val AddFileAndMetadataInputType: InputObjectType[AddFileAndMetadataInput] = deriveInputObjectType[AddFileAndMetadataInput]()
   implicit val FileType: ObjectType[Unit, Files]  = deriveObjectType[Unit, Files]()
