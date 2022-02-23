@@ -4,6 +4,7 @@ import akka.stream.alpakka.slick.scaladsl.SlickSession
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Seconds, Span}
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils
 
@@ -13,6 +14,7 @@ import scala.concurrent.ExecutionContext
 
 class FullHealthCheckServiceSpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(10, Seconds))
 
   "checkDbIsUpAndRunning" should "throw an exception if db has no Transferring Bodies in it" in withContainers {
     case container: PostgreSQLContainer =>
