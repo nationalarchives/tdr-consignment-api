@@ -21,9 +21,9 @@ class FinalTransferConfirmationRouteSpec extends AnyFlatSpec with Matchers with 
   case class GraphqlMutationData(data: Option[AddFinalTransferConfirmation], errors: List[GraphqlError] = Nil)
   case class GraphqlQueryData(data: Option[FinalTransferConfirmation], errors: List[GraphqlError] = Nil)
   case class FinalTransferConfirmation(
-                                consignmentId: Option[UUID] = None,
-                                finalOpenRecordsConfirmed: Option[Boolean] = None,
-                                legalOwnershipTransferConfirmed: Option[Boolean] = None
+                                        consignmentId: Option[UUID] = None,
+                                        finalOpenRecordsConfirmed: Option[Boolean] = None,
+                                        legalCustodyTransferConfirmed: Option[Boolean] = None
                               )
   case class AddFinalTransferConfirmation(addFinalTransferConfirmation: FinalTransferConfirmation)
   private val consignmentId = UUID.fromString("b42dccf0-549a-4204-bc9e-c6b69560b7a5")
@@ -140,7 +140,7 @@ class FinalTransferConfirmationRouteSpec extends AnyFlatSpec with Matchers with 
 
   private def checkFinalTransferConfirmationExists(consignmentId: UUID): Unit = {
     val sql = """SELECT * FROM ConsignmentMetadata
-                 WHERE ConsignmentId = ? AND PropertyName in ('FinalOpenRecordsConfirmed', 'LegalOwnershipTransferConfirmed');"""
+                 WHERE ConsignmentId = ? AND PropertyName in ('FinalOpenRecordsConfirmed', 'LegalCustodyTransferConfirmed');"""
     val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
     ps.setString(1, consignmentId.toString)
     val rs: ResultSet = ps.executeQuery()

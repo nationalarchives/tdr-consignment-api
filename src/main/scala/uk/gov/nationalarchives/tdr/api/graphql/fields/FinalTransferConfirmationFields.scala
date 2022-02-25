@@ -15,12 +15,12 @@ object FinalTransferConfirmationFields {
 
   case class FinalTransferConfirmation(consignmentId: UUID,
                                        finalOpenRecordsConfirmed: Boolean,
-                                       legalOwnershipTransferConfirmed: Boolean
+                                       legalCustodyTransferConfirmed: Boolean
                                       )
 
   case class AddFinalTransferConfirmationInput(consignmentId: UUID,
                                                finalOpenRecordsConfirmed: Boolean,
-                                               legalOwnershipTransferConfirmed: Boolean
+                                               legalCustodyTransferConfirmed: Boolean
                                               ) extends UserOwnsConsignment
 
   case class FinalJudgmentTransferConfirmation(consignmentId: UUID,
