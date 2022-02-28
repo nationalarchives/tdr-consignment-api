@@ -1,3 +1,3 @@
 {
-  "query": "{getSeries(body: \"body-code-xyz\"){seriesid, bodyid, name, code, description}}"
+  "query": "{getSeries(body: \"default-transferring-body-code\"){seriesid, bodyid, name, code, description}}"
 }

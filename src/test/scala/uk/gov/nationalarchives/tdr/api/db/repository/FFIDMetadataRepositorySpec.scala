@@ -4,11 +4,11 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
-import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestDatabase, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import java.util.UUID
 
-class FFIDMetadataRepositorySpec extends TestContainerUtils with TestDatabase with ScalaFutures with Matchers {
+class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 

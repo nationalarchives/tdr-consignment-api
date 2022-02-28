@@ -3,21 +3,18 @@ package uk.gov.nationalarchives.tdr.api.utils
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
-import akka.stream.alpakka.slick.javadsl.SlickSession
 import com.tngtech.keycloakmock.api.KeycloakVerificationMock
 import com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig
-import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Decoder
 import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.{finalJudgmentTransferConfirmationProperties, finalTransferConfirmationProperties}
+import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 
-import java.sql.{Connection, PreparedStatement, ResultSet, Timestamp, Types}
+import java.sql._
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -27,83 +24,7 @@ import scala.io.Source.fromResource
 class TestUtils(db: JdbcBackend#DatabaseDef) {
   val connection: Connection = db.source.createConnection()
 
-  val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
-
-  private val tdrPort: Int = 8000
-  private val testPort: Int = 8001
-  private def tdrMock: KeycloakVerificationMock = createServer("tdr", tdrPort)
-  private def testMock: KeycloakVerificationMock = createServer("test", testPort)
-
-  private def createServer(realm: String, port: Int): KeycloakVerificationMock = {
-    val mock: KeycloakVerificationMock = new KeycloakVerificationMock(port, realm)
-    mock.start()
-    mock
-  }
-
-  def validUserToken(userId: UUID = userId, body: String = "Code", standardUser: String = "true"): OAuth2BearerToken =
-    OAuth2BearerToken(tdrMock.getAccessToken(
-      aTokenConfig()
-        .withResourceRole("tdr", "tdr_user")
-        .withClaim("body", body)
-        .withClaim("user_id", userId)
-        .withClaim("standard_user", standardUser)
-        .build)
-  )
-
-  def validJudgmentUserToken(userId: UUID = userId, body: String = "Code", judgmentUser: String = "true"): OAuth2BearerToken =
-    OAuth2BearerToken(tdrMock.getAccessToken(
-      aTokenConfig()
-        .withResourceRole("tdr", "tdr_user")
-        .withClaim("body", body)
-        .withClaim("user_id", userId)
-        .withClaim("judgment_user", judgmentUser)
-        .build
-    ))
-
-  def validUserTokenNoBody: OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr", "tdr_user")
-      .withClaim("user_id", userId)
-      .build)
-  )
-
-  def validBackendChecksToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr-backend-checks", role)
-      .withClaim("user_id", backendChecksUser)
-      .build
-  ))
-
-  def invalidBackendChecksToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withClaim("user_id", backendChecksUser)
-      .withResourceRole("tdr-backend-checks", "some_role").build
-  ))
-
-  def validReportingToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr-reporting", role)
-      .withClaim("user_id", reportingUser)
-      .build
-  ))
-
-  def invalidReportingToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withClaim("user_id", reportingUser)
-      .withResourceRole("tdr-reporting", "some_role")
-      .build
-  ))
-
-  def invalidToken: OAuth2BearerToken = OAuth2BearerToken(testMock.getAccessToken(aTokenConfig().build))
-
-  case class GraphqlError(message: String, extensions: Option[GraphqlErrorExtensions])
-
-  case class GraphqlErrorExtensions(code: String)
-
-  case class Locations(column: Int, line: Int)
-
   def deleteTables(): Boolean = {
-    val connection = db.source.createConnection()
     connection.prepareStatement("""DELETE FROM "FileStatus";""").execute()
     connection.prepareStatement("""DELETE FROM "FileMetadata";""").execute()
     connection.prepareStatement("""DELETE FROM "FileProperty";""").execute()
@@ -116,6 +37,10 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     connection.prepareStatement("""DELETE FROM "ConsignmentStatus";""").execute()
     connection.prepareStatement("""DELETE FROM "Consignment";""").execute()
     connection.prepareStatement("""ALTER SEQUENCE consignment_sequence_id RESTART WITH 1;""").execute()
+  }
+  def deleteSeriesAndBody(): Int = {
+    connection.prepareStatement("""DELETE FROM "Series"; """).executeUpdate()
+    connection.prepareStatement("""DELETE FROM "Body"; """).executeUpdate()
   }
 
   def addTransferAgreementConsignmentProperties(): Unit = {
@@ -146,6 +71,16 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     clientSideProperties.foreach(propertyName => {
       addFileProperty(propertyName)
     })
+  }
+
+  def countFileMetadata(fileId: UUID): Int = {
+    val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
+    val ps = connection.prepareStatement(sql)
+    ps.setObject(1, fileId, Types.OTHER)
+    ps.setString(2, "FileProperty")
+    val rs = ps.executeQuery()
+    rs.next()
+    rs.getInt("num")
   }
 
   def getFileStatusResult(fileId: UUID, statusType: String): List[String] = {
@@ -202,8 +137,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
 
   def seedDatabaseWithDefaultEntries(consignmentType: String = "standard"): Unit = {
     val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
-    val seriesId = UUID.fromString("1436ad43-73a2-4489-a774-85fa95daff32")
-    createConsignment(consignmentId, userId, seriesId, consignmentType = consignmentType)
+    createConsignment(consignmentId, userId, fixedSeriesId, consignmentType = consignmentType)
     createFile(defaultFileId, consignmentId)
 
     createClientFileMetadata(defaultFileId)
@@ -213,11 +147,11 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
   //scalastyle:off magic.number
   def createConsignment(
                          consignmentId: UUID,
-                         userId: UUID,
+                         userId: UUID = userId,
                          seriesId: UUID = fixedSeriesId,
                          consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
                          consignmentType: String = "standard",
-                         bodyId: UUID = fixedBodyId): Unit = {
+                         bodyId: UUID = fixedBodyId): UUID = {
     val sql =
       """INSERT INTO "Consignment" """ +
         """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
@@ -241,6 +175,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setObject(9, bodyId, Types.OTHER)
     ps.setInt(10, nextSequence)
     ps.executeUpdate()
+    consignmentId
   }
   //scalastyle:on magic.number
 
@@ -271,7 +206,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
   }
 
   def getConsignmentStatus(consignmentId: UUID, statusType: String): ResultSet = {
-    val sql = """SELECT "Value" FROM "ConsignmentStatus" WHERE "ConsignmentId" = ? AND "StatusType" = ?"""
+    val sql = """SELECT "ConsignmentId", "Value" FROM "ConsignmentStatus" WHERE "ConsignmentId" = ? AND "StatusType" = ?"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     ps.setString(2, statusType)
@@ -295,6 +230,15 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setString(6, fileName)
     ps.setObject(7, parentId.map(_.toString).orNull, Types.OTHER)
     ps.executeUpdate()
+  }
+
+  def getAntivirusMetadata(fileId: Option[UUID] = None): ResultSet = {
+    val ps = fileId.map(id => {
+      val ps = connection.prepareStatement("""SELECT * FROM "AVMetadata" WHERE "FileId" = ?; """)
+      ps.setObject(1, id, Types.OTHER)
+      ps
+    }).getOrElse(connection.prepareStatement("""SELECT * FROM "AVMetadata";"""))
+    ps.executeQuery()
   }
 
   //scalastyle:off magic.number
@@ -499,7 +443,7 @@ object TestUtils {
   val fixedSeriesId: UUID = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
   val fixedBodyId: UUID = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")
 
-  def apply(db: JdbcBackend#DatabaseDef) = new TestUtils(db)
+  def apply(db: JdbcBackend#DatabaseDef): TestUtils = new TestUtils(db)
 
   def getDataFromFile[A](prefix: String)(fileName: String)(implicit decoder: Decoder[A]): A = {
     getDataFromString(fromResource(s"$prefix$fileName.json").mkString)
@@ -518,4 +462,80 @@ object TestUtils {
       Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))
     }
   })
+
+  private def createServer(realm: String, port: Int): KeycloakVerificationMock = {
+    val mock: KeycloakVerificationMock = new KeycloakVerificationMock(port, realm)
+    mock.start()
+    mock
+  }
+
+  private val tdrPort: Int = 8000
+  private val testPort: Int = 8001
+  private val tdrMock: KeycloakVerificationMock = createServer("tdr", tdrPort)
+  private val testMock: KeycloakVerificationMock = createServer("test", testPort)
+
+  def validUserToken(userId: UUID = userId, body: String = "Code", standardUser: String = "true"): OAuth2BearerToken =
+    OAuth2BearerToken(tdrMock.getAccessToken(
+      aTokenConfig()
+        .withResourceRole("tdr", "tdr_user")
+        .withClaim("body", body)
+        .withClaim("user_id", userId)
+        .withClaim("standard_user", standardUser)
+        .build)
+    )
+
+  def validJudgmentUserToken(userId: UUID = userId, body: String = "Code", judgmentUser: String = "true"): OAuth2BearerToken =
+    OAuth2BearerToken(tdrMock.getAccessToken(
+      aTokenConfig()
+        .withResourceRole("tdr", "tdr_user")
+        .withClaim("body", body)
+        .withClaim("user_id", userId)
+        .withClaim("judgment_user", judgmentUser)
+        .build
+    ))
+
+  def validUserTokenNoBody: OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+    aTokenConfig()
+      .withResourceRole("tdr", "tdr_user")
+      .withClaim("user_id", userId)
+      .build)
+  )
+
+  def validBackendChecksToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+    aTokenConfig()
+      .withResourceRole("tdr-backend-checks", role)
+      .withClaim("user_id", backendChecksUser)
+      .build
+  ))
+
+  def invalidBackendChecksToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+    aTokenConfig()
+      .withClaim("user_id", backendChecksUser)
+      .withResourceRole("tdr-backend-checks", "some_role").build
+  ))
+
+  def validReportingToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+    aTokenConfig()
+      .withResourceRole("tdr-reporting", role)
+      .withClaim("user_id", reportingUser)
+      .build
+  ))
+
+  def invalidReportingToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
+    aTokenConfig()
+      .withClaim("user_id", reportingUser)
+      .withResourceRole("tdr-reporting", "some_role")
+      .build
+  ))
+
+  def invalidToken: OAuth2BearerToken = OAuth2BearerToken(testMock.getAccessToken(aTokenConfig().build))
+
+  case class GraphqlError(message: String, extensions: Option[GraphqlErrorExtensions])
+
+  case class GraphqlErrorExtensions(code: String)
+
+  case class Locations(column: Int, line: Int)
+
+  val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
+
 }

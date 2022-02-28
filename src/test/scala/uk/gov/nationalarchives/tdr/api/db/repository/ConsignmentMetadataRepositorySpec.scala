@@ -7,14 +7,14 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
-import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestDatabase, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import java.sql._
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
-class ConsignmentMetadataRepositorySpec extends TestContainerUtils with TestDatabase with ScalaFutures with Matchers {
+class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 60.seconds)

@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.stream.alpakka.slick.javadsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import sangria.ast.Document
@@ -25,7 +26,7 @@ import uk.gov.nationalarchives.tdr.keycloak.Token
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object GraphQLServer {
+class GraphQLServer(slickSession: SlickSession) {
 
   private val logger = Logger(s"${GraphQLServer.getClass}")
   private val config = ConfigFactory.load()
@@ -73,7 +74,7 @@ object GraphQLServer {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
     val timeSource = new CurrentTimeSource
-    val db = DbConnection.db
+    val db = DbConnection(slickSession).db
     val consignmentRepository = new ConsignmentRepository(db, timeSource)
     val fileMetadataRepository = new FileMetadataRepository(db)
     val fileRepository = new FileRepository(db)
@@ -135,4 +136,7 @@ object GraphQLServer {
       case error: ErrorWithResolver => InternalServerError -> error.resolveError
     }
   }
+}
+object GraphQLServer {
+  def apply(slickSession: SlickSession): GraphQLServer = new GraphQLServer(slickSession)
 }

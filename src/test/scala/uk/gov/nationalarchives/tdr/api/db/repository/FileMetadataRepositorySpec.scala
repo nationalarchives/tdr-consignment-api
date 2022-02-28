@@ -7,17 +7,16 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
-import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestDatabase, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 
-import java.sql.{PreparedStatement, Timestamp, Types}
+import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
 
-class FileMetadataRepositorySpec extends TestContainerUtils with TestDatabase with ScalaFutures with Matchers {
+class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(2, Seconds))
@@ -26,24 +25,11 @@ class FileMetadataRepositorySpec extends TestContainerUtils with TestDatabase wi
     super.afterContainersStart(containers)
   }
 
-  private def getFileStatusValue(fileId: UUID): String = {
-    val sql = s"""SELECT "Value" FROM "FileStatus" where "FileId" = ? AND "StatusType" = ?"""
-    val ps: PreparedStatement = DbConnection.db.source.createConnection().prepareStatement(sql)
-    ps.setObject(1, fileId, Types.OTHER)
-    ps.setString(2, "Status Type")
-    val rs = ps.executeQuery()
-    rs.next()
-    rs.getString("Value")
-  }
+  private def getFileStatusValue(fileId: UUID, utils: TestUtils): String =
+    utils.getFileStatusResult(fileId, "Status Type").head
 
-  private def checkFileMetadataExists(fileId: UUID): Assertion = {
-    val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
-    val ps = DbConnection.db.source.createConnection().prepareStatement(sql)
-    ps.setObject(1, fileId, Types.OTHER)
-    ps.setString(2, "FileProperty")
-    val rs = ps.executeQuery()
-    rs.next()
-    rs.getInt("num") should be(1)
+  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils): Assertion = {
+    utils.countFileMetadata(fileId) should be(1)
   }
 
   "countProcessedChecksumInConsignment" should "return 0 if a consignment has no files" in withContainers {
@@ -151,7 +137,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with TestDatabase wi
       val result = fileMetadataRepository.addFileMetadata(input).futureValue.head
       result.propertyname should equal("FileProperty")
       result.value should equal("value")
-      checkFileMetadataExists(fileId)
+      checkFileMetadataExists(fileId, utils)
   }
 
   "addChecksumMetadata" should "update the checksum validation field on the file table" in withContainers {
@@ -168,7 +154,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with TestDatabase wi
       val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty")
       val statusInput = FilestatusRow(UUID.randomUUID(), fileId, "Status Type", "Value", Timestamp.from(Instant.now()))
       fileMetadataRepository.addChecksumMetadata(input, statusInput).futureValue
-      getFileStatusValue(fileId) should equal("Value")
+      getFileStatusValue(fileId, utils) should equal("Value")
   }
 
   "getSingleFileMetadata" should "return the correct metadata" in withContainers {

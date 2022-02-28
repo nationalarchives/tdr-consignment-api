@@ -186,7 +186,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       response should have size 0
   }
 
-  "getConsignments" should "return consignments where non-existent cursor value provided, and the consignments reference is greater than the cursor value" in withContainers {
+  "getConsignments" should "return consignments where non-existent cursor value provided, and reference is greater than the cursor value" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)

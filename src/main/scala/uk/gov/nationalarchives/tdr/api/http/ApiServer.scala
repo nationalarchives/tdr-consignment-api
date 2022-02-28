@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.http
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
+import akka.stream.alpakka.slick.javadsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 
@@ -21,7 +22,9 @@ object ApiServer extends App {
 
   scala.sys.addShutdownHook(() -> shutdown())
 
-  val routes = new Routes(ConfigFactory.load())
+  val slickSession = SlickSession.forConfig("consignmentapi")
+
+  val routes = new Routes(ConfigFactory.load(), slickSession)
 
   Http().newServerAt("0.0.0.0", PORT).bindFlow(routes.route)
   logger.info(s"Consignment API is running")

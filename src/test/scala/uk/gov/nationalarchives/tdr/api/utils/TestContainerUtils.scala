@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.testcontainers.utility.DockerImageName
-import slick.jdbc.{DataSourceJdbcDataSource, DriverDataSource, JdbcBackend}
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -53,10 +53,18 @@ trait TestContainerUtils extends AnyFlatSpec with TestContainerForAll with Befor
 }
 object TestContainerUtils {
   implicit class ContainerUtils(container: PostgreSQLContainer) {
-    def database: JdbcBackend#DatabaseDef = {
+    def setUrlProperty(): Unit = {
       System.setProperty("consignmentapi.db.url", container.jdbcUrl)
       ConfigFactory.invalidateCaches()
-      SlickSession.forConfig("consignmentapi").db
+    }
+
+    def session: SlickSession = {
+      setUrlProperty()
+      SlickSession.forConfig("consignmentapi")
+    }
+
+    def database: JdbcBackend#DatabaseDef = {
+      session.db
     }
   }
 }
