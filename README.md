@@ -47,7 +47,6 @@ The generated schema file will be placed in the following location: `target/sbt-
 
 #### Running the tests 
 The repository and route tests now use a docker container for the database. To run the tests locally, you will need to build this database.
-
-```scala
-
+```shell
+docker build -f Dockerfile-tests -t tests .
 ```
