@@ -44,3 +44,10 @@ To generate the Graphql schema locally run the following command:
 `sbt graphqlSchemaGen`
 
 The generated schema file will be placed in the following location: `target/sbt-graphql/schema.graphql`. You can copy the contents of this file into `./schema.graphql` and commit the changes to allow the build to pass.
+
+#### Running the tests 
+The repository and route tests now use a docker container for the database. To run the tests locally, you will need to build this database.
+
+```scala
+
+```
