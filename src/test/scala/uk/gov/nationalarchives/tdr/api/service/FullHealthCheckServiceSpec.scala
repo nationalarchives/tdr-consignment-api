@@ -10,10 +10,13 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 
 
 class FullHealthCheckServiceSpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 60.seconds)
 
   "checkDbIsUpAndRunning" should "throw an exception if db has no Transferring Bodies in it" in withContainers {
     case containers: PostgreSQLContainer =>
