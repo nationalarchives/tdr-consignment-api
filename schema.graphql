@@ -32,7 +32,7 @@ input AddFinalJudgmentTransferConfirmationInput {
 input AddFinalTransferConfirmationInput {
   consignmentId: UUID!
   finalOpenRecordsConfirmed: Boolean!
-  legalOwnershipTransferConfirmed: Boolean!
+  legalCustodyTransferConfirmed: Boolean!
 }
 
 input AddTransferAgreementComplianceInput {
@@ -236,7 +236,7 @@ type FinalJudgmentTransferConfirmation {
 type FinalTransferConfirmation {
   consignmentId: UUID!
   finalOpenRecordsConfirmed: Boolean!
-  legalOwnershipTransferConfirmed: Boolean!
+  legalCustodyTransferConfirmed: Boolean!
 }
 
 scalar LocalDateTime

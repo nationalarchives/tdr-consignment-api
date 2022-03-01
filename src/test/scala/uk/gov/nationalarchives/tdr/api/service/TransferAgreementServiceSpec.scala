@@ -15,7 +15,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{
   TransferAgreementCompliance,
   TransferAgreementPrivateBeta
 }
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{createConsignment, createConsignmentStatus}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.time.Instant.now
@@ -67,7 +66,6 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
   }
 
   "addTransferAgreementCompliance" should "add the correct metadata given correct arguments and set TA status to Completed" in {
-
     val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
     val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
     val metadataId = UUID.randomUUID()
@@ -75,8 +73,6 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val userId = UUID.randomUUID()
     val dateTime = Timestamp.from(FixedTimeSource.now)
     val statusType = "TransferAgreement"
-    createConsignment(consignmentId, userId)
-    createConsignmentStatus(consignmentId, statusType, "InProgress", dateTime)
     def row(name: String, value: String): ConsignmentmetadataRow =
       ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
     val mockResponse = Future.successful(Seq(

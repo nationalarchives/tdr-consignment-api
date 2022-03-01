@@ -87,12 +87,15 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.2.0" % Test,
-  "com.h2database" % "h2" % "1.4.200" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.29",
   "io.github.hakky54" % "logcaptor" % "2.1.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
+<<<<<<< HEAD
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
+=======
+  "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
+>>>>>>> use-postgres-for-tests
 )
 
 javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"

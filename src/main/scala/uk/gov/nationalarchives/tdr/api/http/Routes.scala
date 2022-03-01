@@ -11,6 +11,7 @@ import akka.http.scaladsl.server.directives.{Credentials, DebuggingDirectives, L
 import akka.http.scaladsl.server.{Directive0, ExceptionHandler, Route, RouteResult}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
+import akka.stream.alpakka.slick.scaladsl.SlickSession
 import com.typesafe.config._
 import com.typesafe.scalalogging.Logger
 import sangria.ast.{Field, OperationDefinition}
@@ -25,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-class Routes(val config: Config) extends Cors {
+class Routes(val config: Config, slickSession: SlickSession) extends Cors {
   val url: String = config.getString("auth.url")
 
   implicit val system: ActorSystem = ActorSystem("consignmentApi")
@@ -69,7 +70,7 @@ class Routes(val config: Config) extends Cors {
             authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
               respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
                 entity(as[JsValue]) { requestJson =>
-                  GraphQLServer.endpoint(requestJson, accessToken)
+                  GraphQLServer(slickSession).endpoint(requestJson, accessToken)
                 }
               }
             }
@@ -79,7 +80,7 @@ class Routes(val config: Config) extends Cors {
         complete(StatusCodes.OK)
       } ~ (get & path("healthcheck-full")) {
         val fullHealthCheck = new FullHealthCheckService()
-        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(DbConnection.db)) {
+        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(DbConnection(slickSession).db)) {
           complete(StatusCodes.OK)
         }
       }

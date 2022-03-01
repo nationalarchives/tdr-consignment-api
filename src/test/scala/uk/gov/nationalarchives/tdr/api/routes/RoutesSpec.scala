@@ -3,11 +3,11 @@ package uk.gov.nationalarchives.tdr.api.routes
 import akka.http.scaladsl.model.{HttpProtocol, HttpResponse, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.AuthorizationFailedRejection
 import akka.http.scaladsl.server.Directives._
+import akka.stream.alpakka.slick.javadsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import nl.altindag.log.LogCaptor
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.http.Routes
 import uk.gov.nationalarchives.tdr.api.utils.TestRequest
 
@@ -16,7 +16,7 @@ import scala.jdk.CollectionConverters._
 class RoutesSpec extends AnyFlatSpec with BeforeAndAfterEach with TestRequest {
 
   private val logCaptor = LogCaptor.forClass(classOf[Routes])
-  private val routes = new Routes(ConfigFactory.load())
+  private val routes = new Routes(ConfigFactory.load(), SlickSession.forConfig("consignmentapi"))
 
   override def beforeEach(): Unit = {
     logCaptor.clearLogs()

@@ -1,0 +1,3 @@
+FROM postgres:alpine
+WORKDIR /docker-entrypoint-initdb.d/
+RUN apk add --no-cache wget && wget https://raw.githubusercontent.com/nationalarchives/tdr-consignment-api-data/master/src/main/resources/pg_dump.sql
