@@ -6,7 +6,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.http.Routes
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.validUserToken
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.validUserToken
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 

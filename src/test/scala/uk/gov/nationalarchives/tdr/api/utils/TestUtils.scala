@@ -1,10 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
-import com.tngtech.keycloakmock.api.KeycloakVerificationMock
-import com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig
 import io.circe.Decoder
 import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
@@ -12,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 
 import java.sql._
@@ -38,6 +36,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     connection.prepareStatement("""DELETE FROM "Consignment";""").execute()
     connection.prepareStatement("""ALTER SEQUENCE consignment_sequence_id RESTART WITH 1;""").execute()
   }
+
   def deleteSeriesAndBody(): Int = {
     connection.prepareStatement("""DELETE FROM "Series"; """).executeUpdate()
     connection.prepareStatement("""DELETE FROM "Body"; """).executeUpdate()
@@ -143,8 +142,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     createClientFileMetadata(defaultFileId)
   }
 
-
-  //scalastyle:off magic.number
   def createConsignment(
                          consignmentId: UUID,
                          userId: UUID = userId,
@@ -177,7 +174,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
     consignmentId
   }
-  //scalastyle:on magic.number
 
   def getConsignment(consignmentId: UUID): ResultSet = {
     val sql = s"""SELECT * FROM "Consignment" WHERE "ConsignmentId" = ?"""
@@ -188,7 +184,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     result
   }
 
-  //scalastyle:off magic.number
   def createConsignmentStatus(consignmentId: UUID,
                               statusType: String,
                               statusValue: String,
@@ -241,7 +236,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeQuery()
   }
 
-  //scalastyle:off magic.number
   def addAntivirusMetadata(fileId: String, result: String = "Result of AVMetadata processing"): Unit = {
     val sql = s"""INSERT INTO "AVMetadata" ("FileId", "Software", "SoftwareVersion", "DatabaseVersion", "Result", "Datetime") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
@@ -332,10 +326,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       ps.setString(6, propertyName)
       ps.executeUpdate()
     })
-
   }
-
-  //scalastyle:on magic.number
 
   def addFileProperty(name: String): Unit = {
     val sql = s"""INSERT INTO "FileProperty" ("Name") VALUES (?)"""
@@ -363,7 +354,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
   }
 
-  // scalastyle:off magic.number
   def addSeries(
                  seriesId: UUID,
                  bodyId: UUID,
@@ -381,7 +371,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
 
     ps.executeUpdate()
   }
-  // scalastyle:on magic.number
 
   def addConsignmentProperty(name: String): Unit = {
     // name is primary key check exists before attempting insert to table
@@ -401,7 +390,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     rs.next()
   }
 
-  //scalastyle:off magic.number
   def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String): Unit = {
     val sql = s"""insert into "ConsignmentMetadata" ("MetadataId", "ConsignmentId", "PropertyName", "Value", "Datetime", "UserId") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
@@ -435,11 +423,8 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
   }
 }
-object TestUtils {
-  val userId: UUID = UUID.fromString("4ab14990-ed63-4615-8336-56fbb9960300")
-  val backendChecksUser: UUID = UUID.fromString("6847253d-b9c6-4ea9-b3c9-57542b8c6375")
-  val reportingUser: UUID = UUID.fromString("a863292b-888b-4d88-b5f3-2bb9a11b336a")
 
+object TestUtils {
   val fixedSeriesId: UUID = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
   val fixedBodyId: UUID = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")
 
@@ -463,73 +448,6 @@ object TestUtils {
     }
   })
 
-  private def createServer(realm: String, port: Int): KeycloakVerificationMock = {
-    val mock: KeycloakVerificationMock = new KeycloakVerificationMock(port, realm)
-    mock.start()
-    mock
-  }
-
-  private val tdrPort: Int = 8000
-  private val testPort: Int = 8001
-  private val tdrMock: KeycloakVerificationMock = createServer("tdr", tdrPort)
-  private val testMock: KeycloakVerificationMock = createServer("test", testPort)
-
-  def validUserToken(userId: UUID = userId, body: String = "Code", standardUser: String = "true"): OAuth2BearerToken =
-    OAuth2BearerToken(tdrMock.getAccessToken(
-      aTokenConfig()
-        .withResourceRole("tdr", "tdr_user")
-        .withClaim("body", body)
-        .withClaim("user_id", userId)
-        .withClaim("standard_user", standardUser)
-        .build)
-    )
-
-  def validJudgmentUserToken(userId: UUID = userId, body: String = "Code", judgmentUser: String = "true"): OAuth2BearerToken =
-    OAuth2BearerToken(tdrMock.getAccessToken(
-      aTokenConfig()
-        .withResourceRole("tdr", "tdr_user")
-        .withClaim("body", body)
-        .withClaim("user_id", userId)
-        .withClaim("judgment_user", judgmentUser)
-        .build
-    ))
-
-  def validUserTokenNoBody: OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr", "tdr_user")
-      .withClaim("user_id", userId)
-      .build)
-  )
-
-  def validBackendChecksToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr-backend-checks", role)
-      .withClaim("user_id", backendChecksUser)
-      .build
-  ))
-
-  def invalidBackendChecksToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withClaim("user_id", backendChecksUser)
-      .withResourceRole("tdr-backend-checks", "some_role").build
-  ))
-
-  def validReportingToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr-reporting", role)
-      .withClaim("user_id", reportingUser)
-      .build
-  ))
-
-  def invalidReportingToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withClaim("user_id", reportingUser)
-      .withResourceRole("tdr-reporting", "some_role")
-      .build
-  ))
-
-  def invalidToken: OAuth2BearerToken = OAuth2BearerToken(testMock.getAccessToken(aTokenConfig().build))
-
   case class GraphqlError(message: String, extensions: Option[GraphqlErrorExtensions])
 
   case class GraphqlErrorExtensions(code: String)
@@ -537,5 +455,4 @@ object TestUtils {
   case class Locations(column: Int, line: Int)
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
-
 }

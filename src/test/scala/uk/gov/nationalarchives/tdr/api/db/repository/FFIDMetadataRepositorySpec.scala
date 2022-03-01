@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import java.util.UUID

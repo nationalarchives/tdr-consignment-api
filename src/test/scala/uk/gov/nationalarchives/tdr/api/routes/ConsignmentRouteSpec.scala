@@ -3,17 +3,16 @@ package uk.gov.nationalarchives.tdr.api.routes
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
-import io.circe.Printer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import io.circe.syntax.EncoderOps
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
