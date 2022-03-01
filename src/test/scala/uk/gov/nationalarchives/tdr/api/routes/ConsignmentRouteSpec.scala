@@ -3,10 +3,8 @@ package uk.gov.nationalarchives.tdr.api.routes
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
-import io.circe.Printer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import io.circe.syntax.EncoderOps
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
@@ -392,19 +390,21 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "getConsignment" should "return empty directory where one directory is empty and one is not" in withContainers {
+  "getConsignment" should "return one empty directory where one directory is empty and one is not" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val nonEmptyFolderId = UUID.randomUUID()
+      val emptyParentId = UUID.randomUUID()
       val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
       utils.createConsignment(consignmentId, userId)
-      utils.createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier, "empty", parentId = Option(UUID.randomUUID()))
+      utils.createFile(emptyParentId, consignmentId, NodeType.folderTypeIdentifier, "emptyParent", parentId = Option(UUID.randomUUID()))
+      utils.createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier, "empty", parentId = Option(emptyParentId))
       utils.createFile(nonEmptyFolderId, consignmentId, NodeType.folderTypeIdentifier, "hasFiles")
       utils.createFile(UUID.randomUUID(), consignmentId, NodeType.fileTypeIdentifier, "file", Option(nonEmptyFolderId))
 
-      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_error_no_consignmentid")
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_empty_files")
       val response: GraphqlQueryData = runTestQuery("query_empty_folders", validUserToken())
-      println(response.asJson.printWith(Printer.noSpaces))
+      response.data should equal(expectedResponse.data)
   }
 
   "updateExportLocation" should "update the export location correctly" in withContainers {

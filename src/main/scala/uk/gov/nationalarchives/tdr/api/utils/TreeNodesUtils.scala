@@ -1,11 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import java.io.{File => JIOFile}
-import java.util.UUID
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{fileTypeIdentifier, folderTypeIdentifier}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.folderTypeIdentifier
 import uk.gov.nationalarchives.tdr.api.service.UUIDSource
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils.TreeNode
 
+import java.io.{File => JIOFile}
+import java.util.UUID
 import scala.annotation.tailrec
 
 class TreeNodesUtils(uuidSource: UUIDSource) {

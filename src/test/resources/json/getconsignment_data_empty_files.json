@@ -1,0 +1,10 @@
+{
+  "data": {
+    "getConsignment": {
+      "emptyFolders": [
+        "/emptyParent/empty"
+      ]
+    }
+  },
+  "errors": []
+}

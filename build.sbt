@@ -90,12 +90,7 @@ libraryDependencies ++= Seq(
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.29",
   "io.github.hakky54" % "logcaptor" % "2.1.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
-<<<<<<< HEAD
-  "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
-  "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
-=======
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
->>>>>>> use-postgres-for-tests
 )
 
 javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"

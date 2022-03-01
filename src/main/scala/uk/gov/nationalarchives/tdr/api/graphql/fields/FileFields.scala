@@ -1,14 +1,15 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
-import java.util.UUID
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasExportAccess, ValidateUserHasAccessToConsignment}
+import uk.gov.nationalarchives.tdr.api.auth.ValidateUserHasAccessToConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.UuidType
+
+import java.util.UUID
 
 object FileFields {
   case class Files(fileIds: Seq[UUID])
@@ -25,7 +26,6 @@ object FileFields {
   implicit val FileType: ObjectType[Unit, Files]  = deriveObjectType[Unit, Files]()
   implicit val FileSequenceType: ObjectType[Unit, FileMatches]  = deriveObjectType[Unit, FileMatches]()
   private val FileAndMetadataInputArg = Argument("addFilesAndMetadataInput", AddFileAndMetadataInputType)
-  private val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(

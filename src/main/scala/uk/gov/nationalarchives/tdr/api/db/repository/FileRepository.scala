@@ -1,17 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import slick.jdbc.PositionedResult
-
-import java.util.UUID
-
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.folderTypeIdentifier
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
-
 
 class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
   private val insertFileQuery = File returning File.map(_.fileid)into ((file, fileid) => file.copy(fileid = fileid))
@@ -26,8 +22,6 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .map(_._1.fileid)
     db.run(query.result)
   }
-
-
 
   def getFilePath(fileId: UUID): Future[String] = {
     val query = sql"""WITH RECURSIVE children AS
