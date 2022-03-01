@@ -8,4 +8,4 @@ permissions:
   contents: write
 jobs:
   pre-deploy:
-    uses: MancunianSam/github-actions/.github/ecs_build.yml@v1
+    uses: MancunianSam/github-actions/.github/workflows/ecs_build.yml@v1
