@@ -3,12 +3,9 @@ on:
   push:
     branches:
       - test-reusable-workflows
-permissions:
-  id-token: write
-  contents: write
 jobs:
   pre-deploy:
-    uses: MancunianSam/github-actions/.github/workflows/ecs_build.yml@v2
+    uses: MancunianSam/github-actions/.github/workflows/ecs_build.yml@main
     with:
       repo_name: consignment-api
     secrets:
