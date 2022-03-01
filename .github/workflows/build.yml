@@ -9,3 +9,8 @@ permissions:
 jobs:
   pre-deploy:
     uses: MancunianSam/github-actions/.github/workflows/ecs_build.yml@v2
+    with:
+      repo_name: consignment-api
+    secrets:
+      MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
