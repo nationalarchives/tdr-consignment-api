@@ -24,4 +24,6 @@ jobs:
           aws-region: eu-west-2
           role-session-name: APIDownloadDependencies
       - name: Test
-        run: MANAGEMENT_ACCOUNT=${{ secrets.MANAGEMENT_ACCOUNT }} sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
+        run: |
+          docker build -f Dockerfile-tests -t tests .
+          sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'

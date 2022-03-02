@@ -2,16 +2,16 @@
   "data": {
     "getConsignment": {
       "series": {
-        "code": "Mock series"
+        "code": "MOCK1"
       },
       "exportDatetime": "2020-01-01T09:00:00Z",
-      "seriesid": "fde450c9-09aa-4ba8-b0df-13f9bac1e587",
+      "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
       "createdDatetime": "2020-01-01T09:00:00Z",
       "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
       "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
       "transferringBody": {
-        "name": "Some department name",
-        "tdrCode": "consignment-body-code"
+        "name": "Default transferring body name",
+        "tdrCode": "default-transferring-body-code"
       },
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",

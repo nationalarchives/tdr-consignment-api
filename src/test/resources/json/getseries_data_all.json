@@ -2,12 +2,20 @@
   "data": {
     "getSeries": [
       {
+        "bodyid": "4da472a5-16b3-4521-a630-5917a0722359",
+        "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
         "name": "some-series-name",
-        "description": "some-series-description",
+        "code": "MOCK1",
+        "description": "some-series-description"
+      },
+      {
+        "bodyid": "4da472a5-16b3-4521-a630-5917a0722359",
         "seriesid": "a9f96d9b-ca53-41c3-937d-88c5cb1241da",
+        "name": "some-series-name",
         "code": "some-series-code",
-        "bodyid": "283b28bf-a0cc-475a-9ce9-1ba60631afa7"
+        "description": "some-series-description"
       }
     ]
-  }
+  },
+  "errors": []
 }
