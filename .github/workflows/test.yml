@@ -11,6 +11,7 @@ jobs:
   test:
     uses: MancunianSam/github-actions/.github/workflows/ecs_test.yml@main
     with:
+      repo-name: tdr-consignment-api
       test_command: sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
     secrets:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
