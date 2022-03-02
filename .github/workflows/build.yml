@@ -2,7 +2,7 @@ name: TDR Tag and pre deploy
 on:
   push:
     branches:
-      - test-reusable-workflows
+      - master
 jobs:
   pre-deploy:
     uses: MancunianSam/github-actions/.github/workflows/ecs_build.yml@main
