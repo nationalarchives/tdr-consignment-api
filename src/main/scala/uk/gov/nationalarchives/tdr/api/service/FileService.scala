@@ -33,13 +33,6 @@ class FileService(
     def parentId: Option[UUID] = fr.flatMap(_.parentid)
   }
 
-  def getEmptyFolders(consignmentId: UUID): Future[Seq[String]] = {
-    for {
-      emptyFolderIds <- fileRepository.getEmptyFolderIds(consignmentId)
-      paths <- Future.sequence(emptyFolderIds.map(id => fileRepository.getFilePath(id)))
-    } yield paths
-  }
-
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
@@ -47,11 +40,14 @@ class FileService(
     val consignmentId = addFileAndMetadataInput.consignmentId
     val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
     val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
-    val allFolderNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, folderTypeIdentifier)
+    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, folderTypeIdentifier)
 
-    val fileRows: List[FileRow] = ((allFolderNodes ++ allFileNodes) map {
+    val folderIdTopath: Map[UUID, String] = (allEmptyDirectoryNodes ++ allFileNodes.filter(_._2.treeNodeType == folderTypeIdentifier))
+      .map(f => f._2.id -> f._1)
+
+    val fileRows: List[FileRow] = ((allEmptyDirectoryNodes ++ allFileNodes) map {
       case (_, treeNode) =>
-        val parentId = treeNode.parentPath.map(v => allFileNodes.getOrElse(v, allFolderNodes(v)).id)
+        val parentId = treeNode.parentPath.map(v => allFileNodes.getOrElse(v, allEmptyDirectoryNodes(v)).id)
         FileRow(treeNode.id, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
     }).toList
 
@@ -68,6 +64,9 @@ class FileService(
           row(fileId, input.checksum, SHA256ClientSideChecksum)
         ) ++ staticMetadataProperties.map(property => {
           row(fileId, property.value, property.name)
+        }) ++ fileRows.filter(_.filetype.get.isFolderType).flatMap(folder => {
+          row(folder.fileid, folderIdTopath(folder.fileid), ClientSideOriginalFilepath) ::
+            staticMetadataProperties.map(property => row(folder.fileid, property.value, property.name))
         })
       case _ => Seq()
     }
@@ -87,8 +86,7 @@ class FileService(
 
   def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
     for {
-      //For now filter out folders as not required and don't have metadata values
-      fileList <- fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier)))
+      fileList <- fileRepository.getFiles(consignmentId, FileFilters(None))
       fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
