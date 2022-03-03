@@ -35,6 +35,7 @@ trait TestContainerUtils extends AnyFlatSpec with TestContainerForAll with Befor
     }
     super.afterContainersStart(containers)
   }
+
   def seedDatabase(db: JdbcBackend#DatabaseDef): Unit = {
     val utils = TestUtils(db)
     utils.deleteTables()
@@ -51,6 +52,7 @@ trait TestContainerUtils extends AnyFlatSpec with TestContainerForAll with Befor
     utils.addSeries(fixedSeriesId, fixedBodyId, "MOCK1")
   }
 }
+
 object TestContainerUtils {
   implicit class ContainerUtils(container: PostgreSQLContainer) {
     def setUrlProperty(): Unit = {

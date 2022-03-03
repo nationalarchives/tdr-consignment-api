@@ -9,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{FileMe
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Checksum, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
 import java.sql.{PreparedStatement, ResultSet, Types}

@@ -9,7 +9,7 @@ import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 
 import java.sql.Timestamp

@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.Tables._
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.userId
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import java.sql._

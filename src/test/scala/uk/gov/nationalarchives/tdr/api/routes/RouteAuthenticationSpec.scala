@@ -10,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.http.Routes
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{invalidToken, validUserToken}
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 
 class RouteAuthenticationSpec extends TestContainerUtils with Matchers with ScalatestRouteTest {

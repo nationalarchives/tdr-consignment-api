@@ -9,9 +9,10 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID

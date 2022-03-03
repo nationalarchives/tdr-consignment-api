@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 
 class SeriesRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
