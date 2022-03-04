@@ -14,6 +14,16 @@ jobs:
       repo-name: tdr-consignment-api
       test_command: |
         echo "hello"
+    secrets:
+      MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+  e2e:
+    uses: MancunianSam/github-actions/.github/workflows/run_e2e_tests.yml@main
+    with:
+      repo-name: tdr-consignment-api
+      test_command: |
+        echo "hello"
         ls
         pwd
         sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
