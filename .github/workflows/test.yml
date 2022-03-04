@@ -21,6 +21,7 @@ jobs:
   e2e:
     uses: MancunianSam/github-actions/.github/workflows/run_e2e_tests.yml@main
     secrets:
+      ACCOUNT_NUMBER: ${{ secrets.ACCOUNT_NUMBER }}
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
       SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       USER_ADMIN_SECRET: not-really-a-secret
