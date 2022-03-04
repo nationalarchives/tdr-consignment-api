@@ -72,6 +72,14 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     })
   }
 
+  def countAllFileMetadata(): Int = {
+    val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata";"""
+    val ps = connection.prepareStatement(sql)
+    val rs = ps.executeQuery()
+    rs.next()
+    rs.getInt("num")
+  }
+
   def countFileMetadata(fileId: UUID): Int = {
     val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
     val ps = connection.prepareStatement(sql)

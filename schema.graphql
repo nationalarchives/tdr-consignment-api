@@ -98,7 +98,6 @@ type Consignment {
   series: Series
   transferringBody: TransferringBody
   files: [File!]!
-  emptyFolders: [String!]!
   consignmentReference: String!
   currentStatus: CurrentStatus!
 }

@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.folderTypeIdentifier
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.directoryTypeIdentifier
 import uk.gov.nationalarchives.tdr.api.service.UUIDSource
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils.TreeNode
 
@@ -19,7 +19,7 @@ class TreeNodesUtils(uuidSource: UUIDSource) {
     if (parentPath.isEmpty) {
       nextMap
     } else {
-      innerFunction(parentPath.get, folderTypeIdentifier, nextMap)
+      innerFunction(parentPath.get, directoryTypeIdentifier, nextMap)
     }
   }
 

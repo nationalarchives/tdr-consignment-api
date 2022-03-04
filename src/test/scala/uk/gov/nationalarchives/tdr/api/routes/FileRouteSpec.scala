@@ -50,6 +50,24 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
   }
 
+  "The api" should "add files and metadata entries for files and directories" in withContainers {
+    case container: PostgreSQLContainer =>
+      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      val utils = TestUtils(container.database)
+      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
+      utils.createConsignment(consignmentId, userId)
+
+      val response = runTestMutationFileMetadata("mutation_alldata", validUserToken())
+      val distinctDirectoryCount = 3
+      val fileCount = 2
+      val expectedCount = (staticMetadataProperties.size * distinctDirectoryCount) + //Directories have static metadata
+        (staticMetadataProperties.size * fileCount) + //As do files
+        (clientSideProperties.size * fileCount) + //Files have all client metadata
+        distinctDirectoryCount // Directories only set ClientSideOriginalFilePath
+
+      utils.countAllFileMetadata() should equal(expectedCount)
+ }
+
   def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {
     staticMetadataProperties.map(property => {
       val sql = """SELECT * FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?"""

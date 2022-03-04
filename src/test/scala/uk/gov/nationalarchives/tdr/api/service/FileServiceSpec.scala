@@ -3,7 +3,6 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
-
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
@@ -15,7 +14,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.An
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues, clientSideProperties, staticMetadataProperties}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -128,7 +127,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val mockAvMetadataResponse = Future(
       Seq(AvmetadataRow(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp))
     )
-    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))))
+    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(None)))
       .thenReturn(Future(Seq(fileRow)))
     when(fileMetadataRepositoryMock.getFileMetadata(consignmentId)).thenReturn(Future(fileMetadataRows))
     when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(mockAvMetadataResponse)
@@ -191,7 +190,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val ffidMetadataRows = Seq(
       (ffidMetadataRow(ffidMetadataId, fileId, datetime), ffidMetadataMatchesRow(ffidMetadataId))
     )
-    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))))
+    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(None)))
       .thenReturn(Future(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(ffidMetadataRows))
     when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
@@ -233,7 +232,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     actualFileMetadata should equal(expectedFileMetadata)
   }
 
-  "addFile" should "add a file and the client and static metadata" in {
+  "addFile" should "add files, directories and the client and static metadata for both" in {
     val ffidMetadataService = mock[FFIDMetadataService]
     val antivirusMetadataService = mock[AntivirusMetadataService]
     val fileRepositoryMock = mock[FileRepository]
@@ -269,14 +268,19 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       row.consignmentid should equal(consignmentId)
       row.userid should equal(userId)
     })
-    val expectedSize = 18
+    val expectedSize = 36
     metadataRows.size should equal(expectedSize)
     staticMetadataProperties.foreach(prop => {
-      metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(2)
+      metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(5)
     })
 
     clientSideProperties.foreach(prop => {
-      metadataRows.count(r => r.propertyname == prop) should equal(2)
+      val count = metadataRows.count(r => r.propertyname == prop)
+      prop match {
+        case ClientSideOriginalFilepath => count should equal(5) //Directories have this set
+        case _ => count should equal(2)
+      }
+
     })
 
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])

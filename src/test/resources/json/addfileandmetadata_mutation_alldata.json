@@ -5,14 +5,14 @@
       "consignmentId": "f1a9269d-157b-402c-98d8-1633393634c5",
       "metadataInput": [
         {
-          "originalPath": "originalPath",
+          "originalPath": "/topDirectory/originalPath",
           "checksum": "checksum",
           "lastModified": 1,
           "fileSize": 123,
           "matchId": 1
         },
         {
-          "originalPath": "originalPath2",
+          "originalPath": "/otherTopDirectory/originalDirectory/originalPath2",
           "checksum": "checksum2",
           "lastModified": 112,
           "fileSize": 1233,

@@ -54,8 +54,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                          files: Option[List[File]],
                          currentStatus: Option[CurrentStatus] = None,
                          consignmentType: Option[String],
-                         bodyId: Option[UUID] = None,
-                         emptyFolders: List[String] = Nil
+                         bodyId: Option[UUID] = None
                         )
 
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
@@ -391,20 +390,21 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "getConsignment" should "return one empty directory where one directory is empty and one is not" in withContainers {
+  "getConsignment" should "return directories in the files list" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val nonEmptyFolderId = UUID.randomUUID()
-      val emptyParentId = UUID.randomUUID()
       val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
       utils.createConsignment(consignmentId, userId)
-      utils.createFile(emptyParentId, consignmentId, NodeType.folderTypeIdentifier, "emptyParent", parentId = Option(UUID.randomUUID()))
-      utils.createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier, "empty", parentId = Option(emptyParentId))
-      utils.createFile(nonEmptyFolderId, consignmentId, NodeType.folderTypeIdentifier, "hasFiles")
-      utils.createFile(UUID.randomUUID(), consignmentId, NodeType.fileTypeIdentifier, "file", Option(nonEmptyFolderId))
-
-      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_empty_files")
-      val response: GraphqlQueryData = runTestQuery("query_empty_folders", validUserToken())
+      staticMetadataProperties.map(_.name).foreach(utils.addFileProperty)
+      clientSideProperties.foreach(utils.addFileProperty)
+      val topDirectory = UUID.fromString("ce0a51a5-a224-474f-b3a4-df75effd5b34")
+      val subDirectory = UUID.fromString("2753ceca-4df3-436b-8891-78ad38e2e8c5")
+      val fileId = UUID.fromString("6420152a-aaf2-4401-a309-f67ae35f5702")
+      createDirectoryAndMetadata(consignmentId, topDirectory, utils, "directory")
+      createDirectoryAndMetadata(consignmentId, subDirectory, utils, "subDirectory", topDirectory.some)
+      setUpFileAndStandardMetadata(consignmentId, fileId, utils, subDirectory.some)
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_files_and_folders")
+      val response: GraphqlQueryData = runTestQuery("query_file_data", validUserToken())
       response.data should equal(expectedResponse.data)
   }
 
@@ -548,9 +548,9 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     })
   }
 
-  private def setUpFileAndStandardMetadata(consignmentId: UUID, fileId: UUID, utils: TestUtils): Unit = {
-    utils.createFile(fileId, consignmentId)
-    utils.createFile(UUID.randomUUID(), consignmentId, NodeType.folderTypeIdentifier)
+  private def setUpFileAndStandardMetadata(consignmentId: UUID, fileId: UUID, utils: TestUtils, parentId: Option[UUID] = None): Unit = {
+    utils.createFile(fileId, consignmentId, parentId = parentId)
+    utils.createFile(UUID.randomUUID(), consignmentId, NodeType.directoryTypeIdentifier)
     generateMetadataPropertiesForFile(fileId, utils)
     utils.addAntivirusMetadata(fileId.toString)
     utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ServerSideChecksum)
@@ -568,6 +568,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         }
       )
     }
+  }
+
+  private def createDirectoryAndMetadata(consignmentId: UUID, fileId: UUID, utils: TestUtils, fileName: String, parentId: Option[UUID] = None): UUID = {
+    utils.createFile(fileId, consignmentId, NodeType.directoryTypeIdentifier, fileName, parentId = parentId)
+    staticMetadataProperties.foreach(p => utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, p.name, p.value))
+    utils.addFileMetadata(UUID.randomUUID.toString, fileId.toString, ClientSideOriginalFilepath, fileName)
+    fileId
   }
 
   private def setUpStandardFFIDMatchesForFile(fileId: UUID, utils: TestUtils): Unit = {

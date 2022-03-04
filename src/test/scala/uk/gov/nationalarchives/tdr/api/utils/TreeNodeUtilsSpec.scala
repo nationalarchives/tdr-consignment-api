@@ -24,7 +24,7 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
       val (path, parent, name) = pathWithParent
       val treeNode = result.get(path)
       treeNode.isDefined should be(true)
-      treeNode.get.treeNodeType should equal(NodeType.folderTypeIdentifier)
+      treeNode.get.treeNodeType should equal(NodeType.directoryTypeIdentifier)
       treeNode.get.parentPath should equal(parent)
       treeNode.get.name should equal(name)
     })
