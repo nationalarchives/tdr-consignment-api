@@ -1,19 +1,13 @@
-name: TDR Run API tests
 on:
-  pull_request:
-  push:
-    branches-ignore:
-      - main
-      - release-*
+  pull_request_target:
+    paths:
+      - 'build.sbt'
 permissions:
   id-token: write
-  contents: write
-  actions: write
 jobs:
   test:
+    if: startsWith(github.head_ref, 'update/')
     runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'update/') != true
-    environment: intg
     steps:
       - name: Checkout
         uses: actions/checkout@v2
