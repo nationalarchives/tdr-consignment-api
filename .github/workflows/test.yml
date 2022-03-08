@@ -13,7 +13,7 @@ jobs:
     uses: MancunianSam/github-actions/.github/workflows/ecs_test.yml@main
     with:
       repo-name: tdr-consignment-api
-      test_command: |
+      test-command: |
         sbt test
     secrets:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}

@@ -20,5 +20,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.new-version }}
-        with:
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
