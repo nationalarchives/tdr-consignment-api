@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.routes
 import akka.http.scaladsl.model.HttpMethods.{GET, OPTIONS, POST}
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.stream.alpakka.slick.javadsl.SlickSession
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -18,7 +19,8 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
 
   private val config = ConfigFactory.load()
     .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-  private val route = new Routes(config).route
+  val session: SlickSession = SlickSession.forConfig("consignmentapi")
+  private val route = new Routes(config, session).route
 
   "the pre-flight request" should "allow credentials, required headers and methods" in {
     Options("/graphql") ~> route ~> check {
@@ -40,7 +42,7 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
     val headers = List(Origin(secondaryCrossOriginDomain))
 
     Options("/graphql").withHeaders(headers) ~> route ~> check {
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(secondaryCrossOriginDomain )
+      header[`Access-Control-Allow-Origin`].map(_.value) should contain(secondaryCrossOriginDomain)
     }
   }
 
@@ -64,7 +66,7 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
 
     val testConfig = ConfigFactory.load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-    val testRoute = new Routes(testConfig).route
+    val testRoute = new Routes(testConfig, session).route
 
     val headers = List(Origin(allowedDomain))
 
@@ -80,7 +82,7 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
 
     val testConfig = ConfigFactory.load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-    val testRoute = new Routes(testConfig).route
+    val testRoute = new Routes(testConfig, session).route
 
     val headers = List(Origin(domainWithOtherPort))
 

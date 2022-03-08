@@ -8,21 +8,16 @@ import scalacache.memoization._
 import scalacache.modes.try_._
 import slick.jdbc.JdbcBackend
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
-import software.amazon.awssdk.auth.credentials.{AwsSessionCredentials, DefaultCredentialsProvider, StaticCredentialsProvider}
-import software.amazon.awssdk.http.apache.ApacheHttpClient
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.rds.RdsUtilities
 import software.amazon.awssdk.services.rds.model.GenerateAuthenticationTokenRequest
-import software.amazon.awssdk.services.sts.StsClient
-import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 
-import java.util.UUID
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-object DbConnection {
+class DbConnection(slickSession: SlickSession) {
   implicit val passwordCache: CaffeineCache[String] = CaffeineCache[String](CacheConfig())
-  val slickSession: SlickSession = SlickSession.forConfig("consignmentapi")
 
   def db: JdbcBackend#DatabaseDef = {
     val db = slickSession.db
@@ -61,4 +56,7 @@ object DbConnection {
       configFactory.getString("consignmentapi.db.password")
     }
   }
+}
+object DbConnection {
+  def apply(slickSession: SlickSession): DbConnection = new DbConnection(slickSession)
 }
