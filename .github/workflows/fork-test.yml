@@ -2,8 +2,6 @@ on:
   pull_request_target:
     paths:
       - 'build.sbt'
-    types:
-      - opened
 jobs:
   test:
     if: startsWith(github.head_ref, 'update/')
