@@ -3,11 +3,22 @@ on:
   push:
     branches:
       - master
+      - test-reusable-workflows
 jobs:
   pre-deploy:
     uses: MancunianSam/github-actions/.github/workflows/ecs_build.yml@main
     with:
       repo_name: consignment-api
+      build-command: |
+        docker build -f Dockerfile-tests -t tests .
+        sbt assembly
     secrets:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+  deploy:
+    needs: pre-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.new-version }}
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
