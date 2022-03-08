@@ -15,7 +15,7 @@ permissions:
   contents: read
 jobs:
   deploy:
-    uses: MancunianSam/github-actions/.github/workflows/ecs_test.yml@main
+    uses: MancunianSam/github-actions/.github/workflows/ecs_deploy.yml@main
     with:
       service: consignmentapi
       image-name: consignment-api
