@@ -8,7 +8,7 @@ jobs:
   pre-deploy:
     uses: MancunianSam/github-actions/.github/workflows/ecs_build.yml@main
     with:
-      repo_name: consignment-api
+      repo-name: consignment-api
       build-command: |
         docker build -f Dockerfile-tests -t tests .
         sbt assembly
