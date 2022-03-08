@@ -206,7 +206,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
     val consignmentId = UUID.fromString("d8383f9f-c277-49dc-b082-f6e266a39618")
-    val input = UpdateExportLocationInput(consignmentId, "exportLocation", Some(fixedZonedDatetime))
+    val input = UpdateExportLocationInput(consignmentId, "exportLocation", Some(fixedZonedDatetime), "0.0.Version")
     when(consignmentRepoMock.updateExportLocation(input)).thenReturn(Future(1))
 
     val response = service.updateExportLocation(input).futureValue

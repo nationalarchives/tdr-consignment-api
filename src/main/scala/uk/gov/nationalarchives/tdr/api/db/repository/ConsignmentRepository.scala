@@ -27,8 +27,8 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     }
 
     val update = Consignment.filter(_.consignmentid === exportLocationInput.consignmentId)
-      .map(c => (c.exportlocation, c.exportdatetime))
-      .update((Option(exportLocationInput.exportLocation), Some(exportDatetime)))
+      .map(c => (c.exportlocation, c.exportdatetime, c.exportversion))
+      .update((Option(exportLocationInput.exportLocation), Some(exportDatetime), Option(exportLocationInput.exportVersion)))
     db.run(update)
   }
 

@@ -325,6 +325,7 @@ input UpdateExportLocationInput {
   consignmentId: UUID!
   exportLocation: String!
   exportDatetime: ZonedDateTime
+  exportVersion: String!
 }
 
 scalar ZonedDateTime
