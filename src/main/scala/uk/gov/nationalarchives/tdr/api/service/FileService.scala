@@ -3,7 +3,6 @@ package uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, fileTypeIdentifier, directoryTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
@@ -42,7 +41,7 @@ class FileService(
     val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
     val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
 
-    val folderIdTopath: Map[UUID, String] = (allEmptyDirectoryNodes ++ allFileNodes.filter(_._2.treeNodeType == directoryTypeIdentifier))
+    val folderIdToPath: Map[UUID, String] = (allEmptyDirectoryNodes ++ allFileNodes.filter(_._2.treeNodeType == directoryTypeIdentifier))
       .map(f => f._2.id -> f._1)
 
     val fileRows: List[FileRow] = ((allEmptyDirectoryNodes ++ allFileNodes) map {
@@ -66,9 +65,9 @@ class FileService(
           row(fileId, property.value, property.name)
         })
       case _ => Seq()
-    } ++ fileRows.filter(_.filetype.get.isDirectoryType).flatMap(folder => {
-      row(folder.fileid, folderIdTopath(folder.fileid), ClientSideOriginalFilepath) ::
-        staticMetadataProperties.map(property => row(folder.fileid, property.value, property.name))
+    } ++ fileRows.filter(_.filetype.get.isDirectoryType).flatMap(directory => {
+      row(directory.fileid, folderIdToPath(directory.fileid), ClientSideOriginalFilepath) ::
+        staticMetadataProperties.map(property => row(directory.fileid, property.value, property.name))
     })
     for {
       _ <- fileRepository.addFiles(fileRows, fileMetadataRows)

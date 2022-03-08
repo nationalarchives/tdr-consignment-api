@@ -390,7 +390,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "getConsignment" should "return directories in the files list" in withContainers {
+  "getConsignment" should "return files and directories in the files list" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
@@ -403,7 +403,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       createDirectoryAndMetadata(consignmentId, topDirectory, utils, "directory")
       createDirectoryAndMetadata(consignmentId, subDirectory, utils, "subDirectory", topDirectory.some)
       setUpFileAndStandardMetadata(consignmentId, fileId, utils, subDirectory.some)
-      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_files_and_folders")
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_files_and_directories")
       val response: GraphqlQueryData = runTestQuery("query_file_data", validUserToken())
       response.data should equal(expectedResponse.data)
   }

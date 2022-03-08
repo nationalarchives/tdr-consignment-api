@@ -7,7 +7,6 @@ import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, f
 import uk.gov.nationalarchives.tdr.api.auth.ValidateUserHasAccessToConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.UuidType
 
 import java.util.UUID
 

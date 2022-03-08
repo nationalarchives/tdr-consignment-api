@@ -31,7 +31,6 @@ class GraphQLServer(slickSession: SlickSession) {
   private val logger = Logger(s"${GraphQLServer.getClass}")
   private val config = ConfigFactory.load()
 
-
   private def handleException(marshaller: ResultMarshaller, errorCode: String, message: String): HandledException = {
     val node = marshaller.scalarNode(errorCode, "String", Set.empty)
     val additionalFields = Map("code" -> node)

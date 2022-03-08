@@ -10,11 +10,11 @@ import scala.annotation.tailrec
 
 class TreeNodesUtils(uuidSource: UUIDSource) {
   @tailrec
-  private def innerFunction(originalPath: String, fileType: String, nodes: Map[String, TreeNode]): Map[String, TreeNode] = {
+  private def innerFunction(originalPath: String, typeIdentifier: String, nodes: Map[String, TreeNode]): Map[String, TreeNode] = {
     val jioFile = new JIOFile(originalPath)
     val parentPath = Option(jioFile.getParent)
     val name = jioFile.getName
-    val treeNode = TreeNode(uuidSource.uuid, name, parentPath, fileType)
+    val treeNode = TreeNode(uuidSource.uuid, name, parentPath, typeIdentifier)
     val nextMap = nodes + (originalPath -> treeNode)
     if (parentPath.isEmpty) {
       nextMap

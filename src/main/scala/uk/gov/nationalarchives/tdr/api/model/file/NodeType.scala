@@ -14,7 +14,7 @@ object NodeType {
     def parent: Option[String] =
       if (deconstructed.length == 1) None else Some(deconstructed.dropRight(1).mkString("/"))
 
-    def fileType: String = {
+    def typeIdentifier: String = {
       if (isFile) fileTypeIdentifier else directoryTypeIdentifier
     }
   }
