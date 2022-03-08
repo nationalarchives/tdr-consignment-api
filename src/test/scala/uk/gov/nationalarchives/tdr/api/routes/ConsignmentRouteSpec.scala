@@ -36,7 +36,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlMutationStartUpload(data: Option[StartUpload], errors: List[GraphqlError] = Nil)
 
-  case class GraphqlMutationExportLocation(data: Option[UpdateExportLocation])
+  case class GraphqlMutationExportData(data: Option[UpdateExportData])
 
   case class GraphqlMutationTransferInitiated(data: Option[UpdateTransferInitiated])
 
@@ -81,7 +81,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class AddConsignment(addConsignment: Consignment)
 
-  case class UpdateExportLocation(updateExportLocation: Int)
+  case class UpdateExportData(updateExportData: Int)
 
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
 
@@ -390,14 +390,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "updateExportLocation" should "update the export location correctly" in withContainers {
+  "updateExportData" should "update the export data correctly" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.createConsignment(new FixedUUIDSource().uuid, userId)
-      val prefix = "json/updateexportlocation_"
-      val expectedResponse = getDataFromFile[GraphqlMutationExportLocation](prefix)("data_all")
+      val prefix = "json/updateexportdata_"
+      val expectedResponse = getDataFromFile[GraphqlMutationExportData](prefix)("data_all")
       val token = validBackendChecksToken("export")
-      val response: GraphqlMutationExportLocation = runTestRequest[GraphqlMutationExportLocation](prefix)("mutation_all", token)
+      val response: GraphqlMutationExportData = runTestRequest[GraphqlMutationExportData](prefix)("mutation_all", token)
       response.data should equal(expectedResponse.data)
       val consignmentField = getConsignmentField(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"), "ExportLocation", utils)
       consignmentField should equal("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e.tar.gz")

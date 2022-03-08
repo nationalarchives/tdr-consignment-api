@@ -13,7 +13,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, StartUploadInput, UpdateExportLocationInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, StartUploadInput, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -185,7 +185,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     parentFolderResult shouldBe parentFolder
   }
 
-  "updateExportLocation" should "update the export location for a given consignment" in {
+  "updateExportData" should "update the export data for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
     val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
@@ -206,10 +206,10 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
     val consignmentId = UUID.fromString("d8383f9f-c277-49dc-b082-f6e266a39618")
-    val input = UpdateExportLocationInput(consignmentId, "exportLocation", Some(fixedZonedDatetime), "0.0.Version")
-    when(consignmentRepoMock.updateExportLocation(input)).thenReturn(Future(1))
+    val input = UpdateExportDataInput(consignmentId, "exportLocation", Some(fixedZonedDatetime), "0.0.Version")
+    when(consignmentRepoMock.updateExportData(input)).thenReturn(Future(1))
 
-    val response = service.updateExportLocation(input).futureValue
+    val response = service.updateExportData(input).futureValue
 
     response should be(1)
   }

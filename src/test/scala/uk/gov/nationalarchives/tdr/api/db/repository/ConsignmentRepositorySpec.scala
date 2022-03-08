@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.UpdateExportLocationInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.UpdateExportDataInput
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
@@ -38,16 +38,16 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       parentFolderName should contain only Some("TEST ADD PARENT FOLDER NAME")
   }
 
-  "updateExportLocation" should "update the export location for a given consignment" in withContainers {
+  "updateExportData" should "update the export data for a given consignment" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
       val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
-      val updateExportLocationInput = UpdateExportLocationInput(consignmentId, "exportLocation", Some(fixedZonedDatetime), "0.0.Version")
+      val updateExportDataInput = UpdateExportDataInput(consignmentId, "exportLocation", Some(fixedZonedDatetime), "0.0.Version")
       val utils = TestUtils(db)
       utils.createConsignment(consignmentId, userId)
-      val response = consignmentRepository.updateExportLocation(updateExportLocationInput).futureValue
+      val response = consignmentRepository.updateExportData(updateExportDataInput).futureValue
 
       response should be(1)
   }

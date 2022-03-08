@@ -245,7 +245,7 @@ scalar Long
 type Mutation {
   addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
   updateTransferInitiated(consignmentid: UUID!): Int
-  updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
+  updateExportData(exportData: UpdateExportDataInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
@@ -321,7 +321,7 @@ type TransferringBody {
 
 scalar UUID
 
-input UpdateExportLocationInput {
+input UpdateExportDataInput {
   consignmentId: UUID!
   exportLocation: String!
   exportDatetime: ZonedDateTime
