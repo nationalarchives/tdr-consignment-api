@@ -1,0 +1,17 @@
+pull_request_rules:
+  - name: automatic merge for Scala Steward
+    conditions:
+      - author=scala-steward
+      - check-success=fork-test
+      - "check-success=security/snyk (nationalarchives)"
+      - or:
+          - files=build.sbt
+          - files=project/Dependencies.scala
+          - files=project/plugins.sbt
+      - "#files=1"
+    actions:
+      review:
+        type: APPROVE
+        message: Automatically approving Scala Steward
+      merge:
+        method: merge
