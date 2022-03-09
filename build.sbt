@@ -45,7 +45,7 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val akkaHttpVersion = "10.2.7"
+lazy val akkaHttpVersion = "10.2.9"
 lazy val circeVersion = "0.14.1"
 lazy val testContainersVersion = "0.40.2"
 
@@ -68,10 +68,10 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % circeVersion,
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.0.65",
-  "org.postgresql" % "postgresql" % "42.2.25",
+  "org.postgresql" % "postgresql" % "42.3.3",
   "com.typesafe.slick" %% "slick" % "3.3.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
-  "ch.megard" %% "akka-http-cors" % "0.4.2",
+  "ch.megard" %% "akka-http-cors" % "0.4.3",
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
