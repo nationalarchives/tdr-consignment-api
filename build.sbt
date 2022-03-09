@@ -50,7 +50,7 @@ lazy val circeVersion = "0.13.0"
 lazy val testContainersVersion = "0.40.2"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "2.0.1",
+  "org.sangria-graphql" %% "sangria" % "2.1.6",
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.4",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.2",
