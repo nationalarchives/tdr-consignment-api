@@ -50,9 +50,9 @@ lazy val circeVersion = "0.13.0"
 lazy val testContainersVersion = "0.40.2"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "2.0.0-M3",
+  "org.sangria-graphql" %% "sangria" % "2.0.1",
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.4",
-  "org.sangria-graphql" %% "sangria-circe" % "1.3.0",
+  "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.2",
   "org.sangria-graphql" %% "sangria-relay" % "2.1.0",
 
@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "sts" % "2.16.16",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
-  "org.scalatest" %% "scalatest" % "3.1.4" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.11" % Test,
   "org.mockito" %% "mockito-scala" % "1.7.1" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.7.1" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
