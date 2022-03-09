@@ -3,8 +3,7 @@ on:
   pull_request_target:
     paths:
       - 'build.sbt'
-      - 'project/plugins.sbt'
-      - 'project/Dependencies.scala'
+      - 'project/**'
 permissions:
   id-token: write
 jobs:
