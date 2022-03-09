@@ -1,8 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import com.tngtech.keycloakmock.api.KeycloakVerificationMock
+import com.tngtech.keycloakmock.api.{KeycloakMock, ServerConfig}
 import com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig
+
 import java.util.UUID
 
 object TestAuthUtils {
@@ -13,8 +14,8 @@ object TestAuthUtils {
 
   private val tdrPort: Int = 8000
   private val testPort: Int = 8001
-  private val tdrMock: KeycloakVerificationMock = createServer("tdr", tdrPort)
-  private val testMock: KeycloakVerificationMock = createServer("test", testPort)
+  private val tdrMock: KeycloakMock = createServer("tdr", tdrPort)
+  private val testMock: KeycloakMock = createServer("test", testPort)
 
   def validUserToken(userId: UUID = userId, body: String = "Code", standardUser: String = "true"): OAuth2BearerToken =
     OAuth2BearerToken(tdrMock.getAccessToken(
@@ -72,8 +73,9 @@ object TestAuthUtils {
 
   def invalidToken: OAuth2BearerToken = OAuth2BearerToken(testMock.getAccessToken(aTokenConfig().build))
 
-  private def createServer(realm: String, port: Int): KeycloakVerificationMock = {
-    val mock: KeycloakVerificationMock = new KeycloakVerificationMock(port, realm)
+  private def createServer(realm: String, port: Int): KeycloakMock = {
+    val config = ServerConfig.aServerConfig().withPort(port).withDefaultRealm(realm).build()
+    val mock: KeycloakMock = new KeycloakMock(config)
     mock.start()
     mock
   }
