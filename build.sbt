@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "sts" % "2.16.16",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
-  "org.scalatest" %% "scalatest" % "3.1.4" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.11" % Test,
   "org.mockito" %% "mockito-scala" % "1.7.0" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.7.0" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
