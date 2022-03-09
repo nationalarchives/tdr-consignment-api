@@ -71,7 +71,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.3.3",
   "com.typesafe.slick" %% "slick" % "3.3.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
-  "ch.megard" %% "akka-http-cors" % "0.4.3",
+  "ch.megard" %% "akka-http-cors" % "1.1.3",
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
