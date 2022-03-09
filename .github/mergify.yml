@@ -1,3 +1,8 @@
+queue_rules:
+  - name: default
+    conditions:
+      - check-success=fork-test
+      - "check-success=security/snyk (nationalarchives)"
 pull_request_rules:
   - name: automatic merge for Scala Steward
     conditions:
@@ -6,12 +11,10 @@ pull_request_rules:
       - "check-success=security/snyk (nationalarchives)"
       - or:
           - files=build.sbt
-          - files=project/Dependencies.scala
-          - files=project/plugins.sbt
-      - "#files=1"
+          - files~=^(!?project/)
     actions:
       review:
         type: APPROVE
         message: Automatically approving Scala Steward
-      merge:
-        method: merge
+      queue:
+        name: default
