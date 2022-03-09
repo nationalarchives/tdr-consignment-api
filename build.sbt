@@ -46,7 +46,7 @@ enablePlugins(GraphQLSchemaPlugin)
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
 lazy val akkaHttpVersion = "10.2.7"
-lazy val circeVersion = "0.13.0"
+lazy val circeVersion = "0.14.1"
 lazy val testContainersVersion = "0.40.2"
 
 libraryDependencies ++= Seq(
@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml"        % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream"          % "2.6.3",
+  "com.typesafe.akka" %% "akka-stream"          % "2.6.18",
 
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
@@ -69,10 +69,10 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % circeVersion,
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.0.65",
   "org.postgresql" % "postgresql" % "42.2.25",
-  "com.typesafe.slick" %% "slick" % "3.3.2",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2",
+  "com.typesafe.slick" %% "slick" % "3.3.3",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "ch.megard" %% "akka-http-cors" % "0.4.2",
-  "ch.qos.logback" % "logback-classic" % "1.2.3",
+  "ch.qos.logback" % "logback-classic" % "1.2.11",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
   "org.jboss.logging" % "jboss-logging" % "3.4.3.Final",
@@ -82,13 +82,13 @@ libraryDependencies ++= Seq(
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.11" % Test,
-  "org.mockito" %% "mockito-scala" % "1.7.1" % Test,
-  "org.mockito" %% "mockito-scala-scalatest" % "1.7.1" % Test,
+  "org.mockito" %% "mockito-scala" % "1.17.5" % Test,
+  "org.mockito" %% "mockito-scala-scalatest" % "1.17.5" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.6.3" % Test,
+  "com.typesafe.akka" %% "akka-testkit" % "2.6.18" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.11.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.29",
-  "io.github.hakky54" % "logcaptor" % "2.1.0" % Test,
+  "io.github.hakky54" % "logcaptor" % "2.1.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
 )
