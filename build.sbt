@@ -45,7 +45,7 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val akkaHttpVersion = "10.2.7"
+lazy val akkaHttpVersion = "10.2.9"
 lazy val circeVersion = "0.14.1"
 lazy val testContainersVersion = "0.40.2"
 
@@ -71,14 +71,14 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.3.3",
   "com.typesafe.slick" %% "slick" % "3.3.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
-  "ch.megard" %% "akka-http-cors" % "0.4.3",
+  "ch.megard" %% "akka-http-cors" % "1.1.3",
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
   "org.jboss.logging" % "jboss-logging" % "3.4.3.Final",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "1.1.2",
-  "software.amazon.awssdk" % "rds" % "2.16.16",
-  "software.amazon.awssdk" % "sts" % "2.16.16",
+  "software.amazon.awssdk" % "rds" % "2.17.145",
+  "software.amazon.awssdk" % "sts" % "2.17.145",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.11" % Test,
