@@ -1,11 +1,13 @@
+name: TDR Run API tests for forked PRs
 on:
   pull_request_target:
     paths:
       - 'build.sbt'
+      - 'project/**'
 permissions:
   id-token: write
 jobs:
-  test:
+  fork-test:
     if: startsWith(github.head_ref, 'update/')
     runs-on: ubuntu-latest
     steps:
