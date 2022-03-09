@@ -18,7 +18,7 @@ resolvers ++= Seq[Resolver](
   "TDR Releases" at "s3://tdr-releases-mgmt"
 )
 
-mainClass in (Compile, run) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
+(Compile / run / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
 
 graphqlSchemas += GraphQLSchema(
   "consignmentApi",
@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "sts" % "2.16.16",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
-  "org.scalatest" %% "scalatest" % "3.1.0" % Test,
+  "org.scalatest" %% "scalatest" % "3.1.4" % Test,
   "org.mockito" %% "mockito-scala" % "1.7.1" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.7.1" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
@@ -93,15 +93,15 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
 )
 
-javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
-fork in Test := true
+(Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
+(Test / fork) := true
 
-assemblyJarName in assembly := "consignmentapi.jar"
+(assembly / assemblyJarName) := "consignmentapi.jar"
 
-assemblyMergeStrategy in assembly := {
+(assembly / assemblyMergeStrategy) := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case PathList("reference.conf") => MergeStrategy.concat
   case _ => MergeStrategy.first
 }
 
-mainClass in assembly := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
+(assembly / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
