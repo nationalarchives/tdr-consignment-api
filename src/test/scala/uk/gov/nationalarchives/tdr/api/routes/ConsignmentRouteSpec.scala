@@ -14,6 +14,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
 
+import java.sql.Timestamp
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
@@ -394,13 +395,19 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.createConsignment(new FixedUUIDSource().uuid, userId)
+      val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
       val prefix = "json/updateexportdata_"
       val expectedResponse = getDataFromFile[GraphqlMutationExportData](prefix)("data_all")
       val token = validBackendChecksToken("export")
       val response: GraphqlMutationExportData = runTestRequest[GraphqlMutationExportData](prefix)("mutation_all", token)
       response.data should equal(expectedResponse.data)
-      val consignmentField = getConsignmentField(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"), "ExportLocation", utils)
-      consignmentField should equal("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e.tar.gz")
+      val exportLocationField = getConsignmentField(consignmentId, "ExportLocation", utils)
+      val exportDatetimeField = getConsignmentField(consignmentId, "ExportDatetime", utils)
+      val exportVersionField = getConsignmentField(consignmentId, "ExportVersion", utils)
+
+      exportLocationField should equal("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e.tar.gz")
+      exportDatetimeField should equal("2020-01-01 09:00:00+00")
+      exportVersionField should equal("0.0.0")
   }
 
   "updateTransferInitiated" should "update the transfer initiated date correctly" in withContainers {
