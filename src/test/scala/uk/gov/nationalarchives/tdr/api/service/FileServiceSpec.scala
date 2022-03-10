@@ -127,14 +127,15 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileMetadataRow(fileId, "Language", "language"),
       fileMetadataRow(fileId, "FoiExemptionCode", "foiExemption")
     )
-    val mockAvMetadataResponse = Future(
-      Seq(AvmetadataRow(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp))
-    )
-    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(None)))
     val mockFileStatusResponse = Future(
       Seq(FilestatusRow(UUID.randomUUID(),fileId, "FFID","Success",timestamp))
     )
+    val mockAvMetadataResponse = Future(
+      Seq(AvmetadataRow(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp))
+    )
     when(fileRepositoryMock.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))))
+      .thenReturn(Future(Seq(fileRow)))
+    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(None)))
       .thenReturn(Future(Seq(fileRow)))
     when(fileMetadataRepositoryMock.getFileMetadata(consignmentId)).thenReturn(Future(fileMetadataRows))
     when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(mockAvMetadataResponse)
