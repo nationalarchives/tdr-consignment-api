@@ -1,18 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.util.UUID
-
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.FileTypeHelper
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, fileTypeIdentifier, directoryTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
+import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileService(
@@ -40,11 +38,15 @@ class FileService(
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
     val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
-    val allNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths)
+    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
+    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
 
-    val fileRows: List[FileRow] = (allNodes map {
+    val folderIdToPath: Map[UUID, String] = (allEmptyDirectoryNodes ++ allFileNodes.filter(_._2.treeNodeType == directoryTypeIdentifier))
+      .map(f => f._2.id -> f._1)
+
+    val fileRows: List[FileRow] = ((allEmptyDirectoryNodes ++ allFileNodes) map {
       case (_, treeNode) =>
-        val parentId = treeNode.parentPath.map(v => allNodes(v).id)
+        val parentId = treeNode.parentPath.map(v => allFileNodes.getOrElse(v, allEmptyDirectoryNodes(v)).id)
         FileRow(treeNode.id, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
     }).toList
 
@@ -63,7 +65,10 @@ class FileService(
           row(fileId, property.value, property.name)
         })
       case _ => Seq()
-    }
+    } ++ fileRows.filter(_.filetype.get.isDirectoryType).flatMap(directory => {
+      row(directory.fileid, folderIdToPath(directory.fileid), ClientSideOriginalFilepath) ::
+        staticMetadataProperties.map(property => row(directory.fileid, property.value, property.name))
+    })
     for {
       _ <- fileRepository.addFiles(fileRows, fileMetadataRows)
     } yield metadataWithIds.map(m => (m._1, m._2.matchId)).map(f => FileMatches(f._1, f._2))
@@ -80,8 +85,7 @@ class FileService(
 
   def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
     for {
-      //For now filter out folders as not required and don't have metadata values
-      fileList <- fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier)))
+      fileList <- fileRepository.getFiles(consignmentId, FileFilters(None))
       fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)

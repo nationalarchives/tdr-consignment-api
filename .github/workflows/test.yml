@@ -1,6 +1,6 @@
 name: TDR Run API tests
 on:
-  pull_request:
+  pull_request_target:
   push:
     branches-ignore:
       - main
@@ -12,7 +12,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'update/') != true
     environment: intg
     steps:
       - name: Checkout

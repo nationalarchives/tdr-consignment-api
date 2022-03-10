@@ -1,0 +1,29 @@
+{
+  "data": {
+    "getConsignment": {
+      "files": [
+        {
+          "fileId": "ce0a51a5-a224-474f-b3a4-df75effd5b34",
+          "fileType": "Folder",
+          "metadata": {
+            "clientSideOriginalFilePath": "directory"
+          }
+        },
+        {
+          "fileId": "2753ceca-4df3-436b-8891-78ad38e2e8c5",
+          "fileType": "Folder",
+          "metadata": {
+            "clientSideOriginalFilePath": "subDirectory"
+          }
+        },
+        {
+          "fileId": "6420152a-aaf2-4401-a309-f67ae35f5702",
+          "fileType": "File",
+          "metadata": {
+            "clientSideOriginalFilePath": "ClientSideOriginalFilepath value"
+          }
+        }
+      ]
+    }
+  }
+}

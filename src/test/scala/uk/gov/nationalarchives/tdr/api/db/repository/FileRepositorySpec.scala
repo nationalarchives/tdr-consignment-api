@@ -196,7 +196,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val utils = TestUtils(db)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
-      setUpFilesAndFolders(consignmentId, utils)
+      setUpFilesAndDirectories(consignmentId, utils)
 
       val files = fileRepository.getFiles(consignmentId, FileFilters(None)).futureValue
       files.size shouldBe 3
@@ -208,7 +208,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val utils = TestUtils(db)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
-      setUpFilesAndFolders(consignmentId, utils)
+      setUpFilesAndDirectories(consignmentId, utils)
 
       val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
       files.size shouldBe 2
@@ -220,19 +220,19 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val utils = TestUtils(db)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
-      setUpFilesAndFolders(consignmentId, utils)
+      setUpFilesAndDirectories(consignmentId, utils)
 
-      val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.folderTypeIdentifier))).futureValue
+      val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.directoryTypeIdentifier))).futureValue
       files.size shouldBe 1
   }
 
-  private def setUpFilesAndFolders(consignmentId: UUID, utils: TestUtils): Unit = {
+  private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): Unit = {
     val folderOneId = "92756098-b394-4f46-8b4d-bbd1953660c9"
     val fileOneId = "20e0676a-f0a1-4051-9540-e7df1344ac11"
     val fileTwoId = "b5111f11-4dca-4f92-8239-505da567b9d0"
 
     utils.createConsignment(consignmentId, userId)
-    utils.createFile(UUID.fromString(folderOneId), consignmentId, NodeType.folderTypeIdentifier)
+    utils.createFile(UUID.fromString(folderOneId), consignmentId, NodeType.directoryTypeIdentifier)
     utils.createFile(UUID.fromString(fileOneId), consignmentId)
     utils.createFile(UUID.fromString(fileTwoId), consignmentId)
   }
