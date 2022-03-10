@@ -9,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
 
+import java.sql.Timestamp
 import java.time.{ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -44,12 +45,19 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
       val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
-      val updateExportDataInput = UpdateExportDataInput(consignmentId, "exportLocation", Some(fixedZonedDatetime), "0.0.Version")
+      val exportLocation = "exportLocation"
+      val exportVersion = "0.0.Version"
+      val updateExportDataInput = UpdateExportDataInput(consignmentId, exportLocation, Some(fixedZonedDatetime), exportVersion)
       val utils = TestUtils(db)
       utils.createConsignment(consignmentId, userId)
       val response = consignmentRepository.updateExportData(updateExportDataInput).futureValue
+      val consignmentFromDb = utils.getConsignment(consignmentId)
 
       response should be(1)
+
+      consignmentFromDb.getString("ExportLocation") should equal(exportLocation)
+      consignmentFromDb.getTimestamp("ExportDatetime") should equal(Timestamp.valueOf(fixedZonedDatetime.toLocalDateTime))
+      consignmentFromDb.getString("ExportVersion") should equal(exportVersion)
   }
 
   "getParentFolder" should "get parent folder name for a consignment" in withContainers {
