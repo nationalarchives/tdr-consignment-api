@@ -24,7 +24,18 @@ Run the api:
 * From IntelliJ, run the ApiServer app
 * Or from the command line, run `sbt run`
 
-### Testing within IntelliJ
+### Running the tests 
+
+1. The repository and route tests use a docker container for the database. To run the tests locally, you will need to build this database.
+```shell
+docker build -f Dockerfile-tests -t tests .
+```
+
+2. In order to run the tests run the command `sbt test`
+
+* If you would like to run only one test suite, run the command `sbt "testOnly *{File name without .scala}"` e.g. `sbt "testOnly *ConsignmentRepositorySpec"`
+
+#### Testing within IntelliJ
 
 Running API tests within IntelliJ requires an additional VM option so that IntelliJ does not confuse the normal run config and test run config.
 Within your test run configuration, set the VM of:
@@ -35,7 +46,7 @@ If this is not set, you may see errors with the message:
 
 `Could not resolve substitution to a value: ${DB_PORT}`
 
-#### Graphql Schema
+### Graphql Schema
 
 We are now storing the current Graphql schema in the `schema.graphql` file in the root of the project. If you make changes to the API which cause a schema change, you will need to update this file with the contents of the newly generated schema, otherwise the test build will fail.
 
@@ -44,9 +55,3 @@ To generate the Graphql schema locally run the following command:
 `sbt graphqlSchemaGen`
 
 The generated schema file will be placed in the following location: `target/sbt-graphql/schema.graphql`. You can copy the contents of this file into `./schema.graphql` and commit the changes to allow the build to pass.
-
-#### Running the tests 
-The repository and route tests use a docker container for the database. To run the tests locally, you will need to build this database.
-```shell
-docker build -f Dockerfile-tests -t tests .
-```

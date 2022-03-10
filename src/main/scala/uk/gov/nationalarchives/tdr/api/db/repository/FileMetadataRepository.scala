@@ -36,7 +36,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     val query = Filemetadata.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
-      .filter(_._2.filetype === NodeType.fileTypeIdentifier)
       .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)
       .map(_._1)
     db.run(query.result)

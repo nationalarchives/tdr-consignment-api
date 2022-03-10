@@ -72,6 +72,14 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     })
   }
 
+  def countAllFileMetadata(): Int = {
+    val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata";"""
+    val ps = connection.prepareStatement(sql)
+    val rs = ps.executeQuery()
+    rs.next()
+    rs.getInt("num")
+  }
+
   def countFileMetadata(fileId: UUID): Int = {
     val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
     val ps = connection.prepareStatement(sql)
@@ -222,6 +230,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setObject(3, userId, Types.OTHER)
     ps.setTimestamp(4, Timestamp.from(FixedTimeSource.now))
     ps.setString(5, fileType)
+    ps.setString(6, parentId.toString)
     ps.setString(6, fileName)
     ps.setObject(7, parentId.map(_.toString).orNull, Types.OTHER)
     ps.executeUpdate()
