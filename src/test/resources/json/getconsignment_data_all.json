@@ -32,7 +32,7 @@
             "foiExemptionCode": "FoiExemptionCode value",
             "language": "Language value"
           },
-          "filestatus": "Success",
+          "fileStatus": "Success",
           "ffidMetadata": {
             "method": "TEST DATA method",
             "softwareVersion": "TEST DATA software version",
@@ -54,7 +54,7 @@
           "fileType": "File",
           "fileName": "fileOneName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "filestatus": "Success",
+          "fileStatus": "Success",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
@@ -86,7 +86,7 @@
           "fileType": "File",
           "fileName": "fileTwoName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "filestatus": "Success",
+          "fileStatus": "Success",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",

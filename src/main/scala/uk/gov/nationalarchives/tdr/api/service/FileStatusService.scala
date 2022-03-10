@@ -11,8 +11,8 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val
   def getFileStatus(consignmentId: UUID): Future[Map[UUID, String]] = {
     for {
       ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID)
-      filestatusMap = ffidStatus.flatMap(filestatusRow => Map(filestatusRow.fileid -> filestatusRow.value)).toMap
-    } yield filestatusMap
+      fileStatusMap = ffidStatus.flatMap(fileStatusRow => Map(fileStatusRow.fileid -> fileStatusRow.value)).toMap
+    } yield fileStatusMap
   }
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {

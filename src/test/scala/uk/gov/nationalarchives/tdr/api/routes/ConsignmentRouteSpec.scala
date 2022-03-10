@@ -90,7 +90,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                   fileName: Option[String],
                   parentId: Option[UUID],
                   metadata: FileMetadataValues,
-                  filestatus: Option[String],
+                  fileStatus: Option[String],
                   ffidMetadata: Option[FFIDMetadataValues])
 
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
