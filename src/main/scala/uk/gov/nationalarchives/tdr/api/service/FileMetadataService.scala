@@ -111,6 +111,7 @@ object FileMetadataService {
                   fileName: Option[String] = None,
                   parentId: Option[UUID] = None,
                   metadata: FileMetadataValues,
+                  fileStatus: Option[String] = None,
                   ffidMetadata: Option[FFIDMetadata],
                   antivirusMetadata: Option[AntivirusMetadata])
 

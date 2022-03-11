@@ -194,6 +194,7 @@ type File {
   fileName: String
   parentId: UUID
   metadata: FileMetadataValues!
+  fileStatus: String
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
 }
