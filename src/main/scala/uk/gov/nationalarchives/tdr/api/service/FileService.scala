@@ -20,6 +20,7 @@ class FileService(
                    fileMetadataService: FileMetadataService,
                    ffidMetadataService: FFIDMetadataService,
                    avMetadataService: AntivirusMetadataService,
+                   fileStatusService: FileStatusService,
                    timeSource: TimeSource,
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
@@ -89,12 +90,21 @@ class FileService(
       fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
+      ffidStatus <- fileStatusService.getFileStatus(consignmentId)
     } yield {
       fileMetadataList map {
         case (fileId, fileMetadata) =>
           val fr: Option[FileRow] = fileList.find(_.fileid == fileId)
-          File(fileId,
-            fr.fileType, fr.fileName, fr.parentId, fileMetadata, ffidMetadataList.find(_.fileId == fileId), avList.find(_.fileId == fileId))
+          File(
+            fileId,
+            fr.fileType,
+            fr.fileName,
+            fr.parentId,
+            fileMetadata,
+            ffidStatus.get(fileId),
+            ffidMetadataList.find(_.fileId == fileId),
+            avList.find(_.fileId == fileId)
+          )
       }
     }.toList
   }

@@ -90,6 +90,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                   fileName: Option[String],
                   parentId: Option[UUID],
                   metadata: FileMetadataValues,
+                  fileStatus: Option[String],
                   ffidMetadata: Option[FFIDMetadataValues])
 
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
@@ -213,6 +214,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
       utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
       utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+
+      utils.createFileStatusValues(UUID.randomUUID(),UUID.fromString(fileOneId),"FFID", "Success")
+      utils.createFileStatusValues(UUID.randomUUID(),UUID.fromString(fileTwoId),"FFID", "Success")
+      utils.createFileStatusValues(UUID.randomUUID(),UUID.fromString(fileThreeId),"FFID", "Success")
 
       utils.addAntivirusMetadata(fileOneId)
 

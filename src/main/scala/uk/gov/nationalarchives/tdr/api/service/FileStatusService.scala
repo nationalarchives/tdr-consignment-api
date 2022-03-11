@@ -8,6 +8,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val executionContext: ExecutionContext) {
 
+  def getFileStatus(consignmentId: UUID): Future[Map[UUID, String]] = {
+    for {
+      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID)
+      fileStatusMap = ffidStatus.flatMap(fileStatusRow => Map(fileStatusRow.fileid -> fileStatusRow.value)).toMap
+    } yield fileStatusMap
+  }
+
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
     for {
       checksumStatus <- fileStatusRepository.getFileStatus(consignmentId, Checksum)
