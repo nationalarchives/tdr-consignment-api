@@ -19,16 +19,16 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(insertQuery += consignmentRow)
   }
 
-  def updateExportLocation(exportLocationInput: ConsignmentFields.UpdateExportLocationInput): Future[Int] = {
+  def updateExportData(exportDataInput: ConsignmentFields.UpdateExportDataInput): Future[Int] = {
     //Temporarily generate timestamp until value passed in by clients
-    val exportDatetime = exportLocationInput.exportDatetime match {
+    val exportDatetime = exportDataInput.exportDatetime match {
       case Some(zdt) => zdt.toTimestamp
       case None => Timestamp.from(timeSource.now)
     }
 
-    val update = Consignment.filter(_.consignmentid === exportLocationInput.consignmentId)
-      .map(c => (c.exportlocation, c.exportdatetime))
-      .update((Option(exportLocationInput.exportLocation), Some(exportDatetime)))
+    val update = Consignment.filter(_.consignmentid === exportDataInput.consignmentId)
+      .map(c => (c.exportlocation, c.exportdatetime, c.exportversion))
+      .update((Option(exportDataInput.exportLocation), Some(exportDatetime), Option(exportDataInput.exportVersion)))
     db.run(update)
   }
 

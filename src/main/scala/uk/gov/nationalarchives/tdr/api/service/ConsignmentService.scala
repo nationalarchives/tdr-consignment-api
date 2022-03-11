@@ -50,7 +50,13 @@ class ConsignmentService(
   }
 
   def updateExportLocation(exportLocationInput: UpdateExportLocationInput): Future[Int] = {
-    consignmentRepository.updateExportLocation(exportLocationInput)
+    updateExportData(
+      UpdateExportDataInput(exportLocationInput.consignmentId, exportLocationInput.exportLocation, exportLocationInput.exportDatetime, "")
+    )
+  }
+
+  def updateExportData(exportDataInput: UpdateExportDataInput): Future[Int] = {
+    consignmentRepository.updateExportData(exportDataInput)
   }
 
   def addConsignment(addConsignmentInput: AddConsignmentInput, token: Token): Future[Consignment] = {

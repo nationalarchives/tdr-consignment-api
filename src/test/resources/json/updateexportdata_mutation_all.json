@@ -1,0 +1,11 @@
+{
+  "query": "mutation updateExportData($updateExportDataInput:UpdateExportDataInput!){updateExportData(exportData:$updateExportDataInput)}",
+  "variables": {
+    "updateExportDataInput": {
+      "consignmentId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+      "exportLocation": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e.tar.gz",
+      "exportDatetime": "2020-01-01T09:00:00Z",
+      "exportVersion": "0.0.0"
+    }
+  }
+}

@@ -47,6 +47,7 @@ object ConsignmentFields {
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
   case class UpdateExportLocationInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime])
+  case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -126,6 +127,7 @@ object ConsignmentFields {
 
   implicit val AddConsignmentInputType: InputObjectType[AddConsignmentInput] = deriveInputObjectType[AddConsignmentInput]()
   implicit val UpdateExportLocationInputType: InputObjectType[UpdateExportLocationInput] = deriveInputObjectType[UpdateExportLocationInput]()
+  implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[RequestContext, Connection, Consignment](
@@ -136,6 +138,7 @@ object ConsignmentFields {
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportLocationArg: Argument[UpdateExportLocationInput] = Argument("exportLocation", UpdateExportLocationInputType)
+  val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
@@ -185,6 +188,11 @@ object ConsignmentFields {
       resolve = ctx => ctx.ctx.consignmentService.updateTransferInitiated(ctx.arg(ConsignmentIdArg),
         ctx.ctx.accessToken.userId),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
+    ),
+    Field("updateExportData", OptionType(IntType),
+      arguments = ExportDataArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateExportData(ctx.arg(ExportDataArg)),
+      tags = List(ValidateHasExportAccess)
     ),
     Field("updateExportLocation", OptionType(IntType),
       arguments = ExportLocationArg :: Nil,
