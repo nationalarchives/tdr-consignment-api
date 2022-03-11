@@ -1,6 +1,6 @@
 name: TDR Run API tests
 on:
-  pull_request:
+  pull_request_target:
   push:
     branches-ignore:
       - main
