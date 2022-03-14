@@ -248,7 +248,6 @@ type Mutation {
   addConsignment(addConsignmentInput: AddConsignmentInput!): Consignment!
   updateTransferInitiated(consignmentid: UUID!): Int
   updateExportData(exportData: UpdateExportDataInput!): Int
-  updateExportLocation(exportLocation: UpdateExportLocationInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
@@ -329,12 +328,6 @@ input UpdateExportDataInput {
   exportLocation: String!
   exportDatetime: ZonedDateTime
   exportVersion: String!
-}
-
-input UpdateExportLocationInput {
-  consignmentId: UUID!
-  exportLocation: String!
-  exportDatetime: ZonedDateTime
 }
 
 scalar ZonedDateTime

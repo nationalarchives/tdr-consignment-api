@@ -49,12 +49,6 @@ class ConsignmentService(
     consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
   }
 
-  def updateExportLocation(exportLocationInput: UpdateExportLocationInput): Future[Int] = {
-    updateExportData(
-      UpdateExportDataInput(exportLocationInput.consignmentId, exportLocationInput.exportLocation, exportLocationInput.exportDatetime, "")
-    )
-  }
-
   def updateExportData(exportDataInput: UpdateExportDataInput): Future[Int] = {
     consignmentRepository.updateExportData(exportDataInput)
   }
