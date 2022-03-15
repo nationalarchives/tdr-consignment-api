@@ -1,29 +1,57 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import java.sql.Timestamp
+import java.util.UUID
+
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, fileTypeIdentifier, directoryTypeIdentifier}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
-import java.sql.Timestamp
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileService(
-                   fileRepository: FileRepository,
+class FileService(fileRepository: FileRepository,
                    consignmentRepository: ConsignmentRepository,
-                   consignmentStatusRepository: ConsignmentStatusRepository,
-                   fileMetadataService: FileMetadataService,
                    ffidMetadataService: FFIDMetadataService,
                    avMetadataService: AntivirusMetadataService,
                    fileStatusService: FileStatusService,
                    timeSource: TimeSource,
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
+
+  implicit class FileRepositoryResponseHelper(response: Seq[(FileRow, Option[FilemetadataRow])]) {
+    private def convertMetadataRows(rows: Seq[FilemetadataRow]): FileMetadataValues = {
+      val propertyNameMap = rows.groupBy(_.propertyname).transform((_, value) => value.head.value)
+      FileMetadataValues(
+        propertyNameMap.get(SHA256ClientSideChecksum),
+        propertyNameMap.get(ClientSideOriginalFilepath),
+        propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+        propertyNameMap.get(ClientSideFileSize).map(_.toLong),
+        propertyNameMap.get(RightsCopyright.name),
+        propertyNameMap.get(LegalStatus.name),
+        propertyNameMap.get(HeldBy.name),
+        propertyNameMap.get(Language.name),
+        propertyNameMap.get(FoiExemptionCode.name)
+      )
+    }
+
+    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
+      response.groupBy(_._1).map {
+        case (fr, fmr) =>
+          val fileId = fr.fileid
+          File(
+            fileId, fr.filetype, fr.filename, fr.parentid,
+            convertMetadataRows(fmr.flatMap(_._2)), ffidStatus.get(fileId), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
+      }.toSeq
+    }
+  }
 
   implicit class FileRowHelper(fr: Option[FileRow]) {
     def fileType: Option[String] = fr.flatMap(_.filetype)
@@ -85,29 +113,16 @@ class FileService(
   }
 
   def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
+    val filters = fileFilters.getOrElse(FileFilters())
     for {
-      fileList <- fileRepository.getFiles(consignmentId, FileFilters(None))
-      fileMetadataList <- fileMetadataService.getFileMetadata(consignmentId)
+      //For now filter out folders as not required and don't have metadata values
+      fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
       ffidStatus <- fileStatusService.getFileStatus(consignmentId)
-    } yield {
-      fileMetadataList map {
-        case (fileId, fileMetadata) =>
-          val fr: Option[FileRow] = fileList.find(_.fileid == fileId)
-          File(
-            fileId,
-            fr.fileType,
-            fr.fileName,
-            fr.parentId,
-            fileMetadata,
-            ffidStatus.get(fileId),
-            ffidMetadataList.find(_.fileId == fileId),
-            avList.find(_.fileId == fileId)
-          )
-      }
-    }.toList
+    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
   }
 }
 
 case class FileOwnership(fileId: UUID, userId: UUID)
+case class FileInformation(fileId: UUID, fileRow: FileRow, fileMetadata: FileMetadataValues)

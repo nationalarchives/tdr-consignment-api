@@ -563,7 +563,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   private def setUpFileAndStandardMetadata(consignmentId: UUID, fileId: UUID, utils: TestUtils, parentId: Option[UUID] = None): Unit = {
     utils.createFile(fileId, consignmentId, parentId = parentId)
-    utils.createFile(UUID.randomUUID(), consignmentId, NodeType.directoryTypeIdentifier)
+    //utils.createFile(UUID.randomUUID(), consignmentId, NodeType.directoryTypeIdentifier)
     generateMetadataPropertiesForFile(fileId, utils)
     utils.addAntivirusMetadata(fileId.toString)
     utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ServerSideChecksum)
