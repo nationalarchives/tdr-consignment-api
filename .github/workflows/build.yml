@@ -3,42 +3,22 @@ on:
   push:
     branches:
       - master
-permissions:
-  id-token: write
-  contents: write
 jobs:
   pre-deploy:
+    uses: nationalarchives/tdr-github-actions/.github/workflows/ecs_build.yml@main
+    with:
+      repo-name: tdr-consignment-api
+      build-command: |
+        docker build -f Dockerfile-tests -t tests .
+        sbt assembly
+    secrets:
+      MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+  deploy:
+    needs: pre-deploy
     runs-on: ubuntu-latest
-    environment: intg
     steps:
       - uses: actions/checkout@v2
-      - uses: fregante/setup-git-user@v1
-      - uses: coursier/cache-action@v6
-      - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
-          aws-region: eu-west-2
-          role-session-name: APIDownloadDependencies
-      - name: Login to ECR
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com
-      - name: Get next tag
-        run: |
-          export EXISTING_VERSION=$(curl ${{ github.api_url }}/repos/nationalarchives/tdr-consignment-api/tags | jq -r '.[0].name')
-          echo NEW_VERSION=$(echo "${EXISTING_VERSION:1}" | awk -F. '/[0-9]/{$NF+=1;OFS=".";print}' | xargs -I{} echo "v{}") >> $GITHUB_ENV
-      - name: Build new image version
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
-        run: |
-          docker build -f Dockerfile-tests -t tests .
-          sbt assembly
-          docker build -t ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.NEW_VERSION }} .
-          docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/consignment-api:${{ env.NEW_VERSION }}
-          git tag ${{ env.NEW_VERSION }}
-          git push origin ${{ env.NEW_VERSION }}
-      - name: Deploy to integration
-        run: gh workflow run deploy.yml -f environment=intg -f toDeploy=${{ env.NEW_VERSION }}
+      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.new-version }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
