@@ -115,7 +115,6 @@ class FileService(fileRepository: FileRepository,
   def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
     for {
-      //For now filter out folders as not required and don't have metadata values
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
