@@ -125,4 +125,3 @@ class FileService(fileRepository: FileRepository,
 }
 
 case class FileOwnership(fileId: UUID, userId: UUID)
-case class FileInformation(fileId: UUID, fileRow: FileRow, fileMetadata: FileMetadataValues)
