@@ -4,6 +4,7 @@ import java.sql.Timestamp
 import java.util.UUID
 
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -26,7 +27,7 @@ class FileService(fileRepository: FileRepository,
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
 
-  implicit class FileRepositoryResponseHelper(response: Seq[(FileRow, Option[FilemetadataRow])]) {
+  implicit class FileRepositoryResponseHelper(response: Seq[FileRepositoryMetadata]) {
     private def convertMetadataRows(rows: Seq[FilemetadataRow]): FileMetadataValues = {
       val propertyNameMap = rows.groupBy(_.propertyname).transform((_, value) => value.head.value)
       FileMetadataValues(
