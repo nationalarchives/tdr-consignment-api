@@ -8,6 +8,7 @@ jobs:
     uses: nationalarchives/tdr-github-actions/.github/workflows/ecs_build.yml@main
     with:
       repo-name: tdr-consignment-api
+      image-name: consignment-api
       build-command: |
         docker build -f Dockerfile-tests -t tests .
         sbt assembly
@@ -19,6 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.new-version }}
+      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.next-version }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
