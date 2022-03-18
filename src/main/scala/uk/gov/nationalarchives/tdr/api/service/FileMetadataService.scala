@@ -47,7 +47,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
           cfm <- fileMetadataRepository.getSingleFileMetadata(addFileMetadataInput.fileId, SHA256ClientSideChecksum)
           fileStatus: String = cfm.headOption match {
             case Some(cfm) if cfm.value == addFileMetadataInput.value => Success
-            case Some(cfm) if cfm.value != addFileMetadataInput.value => Mismatch
+            case Some(_) => Mismatch
             case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${addFileMetadataInput.fileId}")
           }
           fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, addFileMetadataInput.fileId, Checksum, fileStatus, timestamp)
