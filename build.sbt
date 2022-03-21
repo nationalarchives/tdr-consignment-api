@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml"        % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream"          % "2.6.18",
+  "com.typesafe.akka" %% "akka-stream"          % "2.6.19",
 
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
@@ -85,7 +85,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "1.17.5" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.5" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.6.18" % Test,
+  "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.11.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.29",
   "io.github.hakky54" % "logcaptor" % "2.7.9" % Test,
