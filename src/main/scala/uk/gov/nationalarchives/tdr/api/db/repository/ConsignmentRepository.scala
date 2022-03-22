@@ -70,6 +70,13 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
+  def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: ConsignmentFields.UpdateConsignmentSeriesIdInput): Future[Int] = {
+    val update = Consignment.filter(_.consignmentid === updateConsignmentSeriesIdInput.consignmentId)
+      .map(t => t.seriesid)
+      .update(Some(updateConsignmentSeriesIdInput.seriesId))
+    db.run(update)
+  }
+
   def getTransferringBodyOfConsignment(consignmentId: UUID)(implicit executionContext: ExecutionContext): Future[Seq[BodyRow]] = {
     val query = Consignment.join(Body)
       .on(_.bodyid === _.bodyid)

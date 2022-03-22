@@ -41,6 +41,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlMutationTransferInitiated(data: Option[UpdateTransferInitiated])
 
+  case class GraphqlMutationUpdateSeriesIdOfConsignment(data: Option[UpdateSeriesIdOfConsignment])
+
   case class Consignment(consignmentid: Option[UUID] = None,
                          userid: Option[UUID] = None,
                          seriesid: Option[UUID] = None,
@@ -85,6 +87,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class UpdateExportData(updateExportData: Int)
 
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
+
+  case class UpdateSeriesIdOfConsignment(updateConsignmentSeriesId: Int)
 
   case class File(fileId: UUID,
                   fileType: Option[String],
@@ -150,6 +154,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       checkConsignmentExists(response.data.get.addConsignment.consignmentid.get, utils)
   }
 
+  //TODO This is broken because of AuthorisationTags.scala validateAsync allowing standard users to create consginment without seriesId
   "addConsignment" should "throw an error if no series id and the user is not a 'judgment' user" in withContainers {
     case _: PostgreSQLContainer =>
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_seriesid")
@@ -157,6 +162,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
+  //TODO This is broken because of AuthorisationTags.scala validateAsync allowing standard users to create consginment without seriesId
   "addConsignment" should "throw an error if no series id, the user is a judgment user but the consignment type is not 'judgment'" in withContainers {
     case _: PostgreSQLContainer =>
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_seriesid_standard_consignment_type")
@@ -536,6 +542,21 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
       response.errors.size should equal(1)
       response.errors.head.message should equal("Existing consignment upload status is 'Complete', so cannot start new upload")
+  }
+
+  "updateSeriesIdOfConsignment" should "update the consignment with a series id" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      utils.createConsignment(new FixedUUIDSource().uuid, userId)
+      val seriesId = "4252c920-b1ac-4b0a-9711-33409b8fae6e"
+      utils.addSeries(UUID.fromString(seriesId), fixedBodyId, "test")
+      val prefix = "json/updateseriesidofconsignment_"
+      val expectedResponse = getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](prefix)("data_all")
+      val response: GraphqlMutationUpdateSeriesIdOfConsignment = runTestRequest
+        [GraphqlMutationUpdateSeriesIdOfConsignment](prefix)("mutation_all", validUserToken())
+      response.data should equal(expectedResponse.data)
+      val field = getConsignmentField(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"), _, utils)
+      field("SeriesId") should equal(seriesId)
   }
 
   private def checkConsignmentExists(consignmentId: UUID, utils: TestUtils): Unit = {

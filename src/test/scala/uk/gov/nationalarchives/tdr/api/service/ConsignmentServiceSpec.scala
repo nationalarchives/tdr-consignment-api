@@ -3,7 +3,6 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
-
 import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
 import org.mockito.{ArgumentCaptor, MockitoSugar}
@@ -13,7 +12,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, StartUploadInput, UpdateExportDataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, FileChecks, StartUploadInput,
+  UpdateConsignmentSeriesIdInput, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -251,6 +251,32 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     series.name shouldBe mockSeries.head.name
     series.code shouldBe mockSeries.head.code
     series.description shouldBe mockSeries.head.description
+  }
+
+  "updateSeriesIdOfConsignment" should "update the seriesId for a given consignment" in {
+    val consignmentRepoMock = mock[ConsignmentRepository]
+    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
+    val fileRepositoryMock = mock[FileRepository]
+    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+    val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
+    val fixedUuidSource = new FixedUUIDSource()
+
+    val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+      consignmentStatusRepoMock,
+      fileMetadataRepositoryMock,
+      fileRepositoryMock,
+      ffidMetadataRepositoryMock,
+      transferringBodyServiceMock,
+      FixedTimeSource,
+      fixedUuidSource,
+      ConfigFactory.load())
+
+    val input = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
+    when(consignmentRepoMock.updateSeriesIdOfConsignment(input)).thenReturn(Future(1))
+
+    val response = service.updateSeriesIdOfConsignment(input).futureValue
+
+    response should be(1)
   }
 
   "getTransferringBodyOfConsignment" should "return the transferring body for a given consignment" in {

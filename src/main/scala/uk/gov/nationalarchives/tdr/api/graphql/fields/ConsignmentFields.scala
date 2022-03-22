@@ -48,6 +48,8 @@ object ConsignmentFields {
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
 
+  case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
+
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
   implicit val AntivirusProgressType: ObjectType[Unit, AntivirusProgress] =
@@ -132,6 +134,7 @@ object ConsignmentFields {
       name = "Consignment",
       nodeType = ConsignmentType
     )
+  implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
@@ -139,6 +142,8 @@ object ConsignmentFields {
   val LimitArg: Argument[Int] = Argument("limit", IntType)
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
+  val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
+    Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
@@ -195,6 +200,11 @@ object ConsignmentFields {
       arguments = StartUploadArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.startUpload(ctx.arg(StartUploadArg)),
       tags = List(ValidateUserHasAccessToConsignment(StartUploadArg), ValidateNoPreviousUploadForConsignment)
+    ),
+    Field("updateConsignmentSeriesId", OptionType(IntType),
+      arguments = UpdateConsignmentSeriesIdArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateSeriesIdOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
+      tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg))
     )
   )
 }
