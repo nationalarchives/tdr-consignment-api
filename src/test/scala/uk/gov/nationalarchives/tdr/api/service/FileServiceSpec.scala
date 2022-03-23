@@ -274,10 +274,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getValue
 
     response.head.fileId should equal(UUID.fromString("47e365a4-fc1e-4375-b2f6-dccb6d361f5f"))
-    response.head.matchId should equal(1)
+    response.head.matchId should equal(2)
 
     response.last.fileId should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
-    response.last.matchId should equal(2)
+    response.last.matchId should equal(1)
 
     val expectedFileRows = 5
     fileRows.size should equal(expectedFileRows)
