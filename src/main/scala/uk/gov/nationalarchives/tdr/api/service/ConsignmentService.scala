@@ -105,7 +105,13 @@ class ConsignmentService(
   }
 
   def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
+    addSeriesStatus(updateConsignmentSeriesIdInput.consignmentId)
     consignmentRepository.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput)
+  }
+
+  def addSeriesStatus(consignmentId: UUID): Future[ConsignmentstatusRow] = {
+    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "Series", "Completed", Timestamp.from(timeSource.now))
+    consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 
   def getTransferringBodyOfConsignment(consignmentId: UUID): Future[Option[TransferringBody]] = {

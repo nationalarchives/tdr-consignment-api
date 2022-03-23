@@ -121,6 +121,7 @@ type ConsignmentEdge {
 }
 
 type CurrentStatus {
+  series: String
   transferAgreement: String
   upload: String
   confirmTransfer: String

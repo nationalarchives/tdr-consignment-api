@@ -19,6 +19,7 @@ import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
+import java.time.Instant.now
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
@@ -454,6 +455,40 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(statusRows))
     val exception = consignmentService.startUpload(StartUploadInput(consignmentId, "parentFolder")).failed.futureValue
     exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
+  }
+
+  "addSeriesStatus" should "update the consignment status for a series" in {
+    val consignmentRepoMock = mock[ConsignmentRepository]
+    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
+    val fileRepositoryMock = mock[FileRepository]
+    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+    val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
+    val fixedUuidSource = new FixedUUIDSource()
+    val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
+    val statusType = "Series"
+    val statusValue = "Complete"
+    val createdTimestamp = Timestamp.from(now)
+
+    val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+      consignmentStatusRepoMock,
+      fileMetadataRepositoryMock,
+      fileRepositoryMock,
+      ffidMetadataRepositoryMock,
+      transferringBodyServiceMock,
+      FixedTimeSource,
+      fixedUuidSource,
+      ConfigFactory.load())
+
+    val mockResponse = Future.successful(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp))
+    when(consignmentStatusRepoMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockResponse)
+
+    val result = service.addSeriesStatus(consignmentId).futureValue
+
+    result.consignmentstatusid shouldBe consignmentStatusId
+    result.consignmentid shouldBe consignmentId
+    result.statustype shouldBe statusType
+    result.value shouldBe statusValue
+    result.createddatetime shouldBe createdTimestamp
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long): ConsignmentRow = {
