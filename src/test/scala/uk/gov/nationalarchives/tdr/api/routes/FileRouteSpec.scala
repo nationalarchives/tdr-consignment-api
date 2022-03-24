@@ -2,10 +2,8 @@ package uk.gov.nationalarchives.tdr.api.routes
 
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
-import io.circe.Printer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import io.circe.syntax.EncoderOps
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{clientSideProperties, staticMetadataProperties}
