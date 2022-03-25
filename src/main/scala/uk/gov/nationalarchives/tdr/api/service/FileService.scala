@@ -27,33 +27,6 @@ class FileService(fileRepository: FileRepository,
                    uuidSource: UUIDSource
                  )(implicit val executionContext: ExecutionContext) {
 
-  implicit class FileRepositoryResponseHelper(response: Seq[FileRepositoryMetadata]) {
-    private def convertMetadataRows(rows: Seq[FilemetadataRow]): FileMetadataValues = {
-      val propertyNameMap = rows.groupBy(_.propertyname).transform((_, value) => value.head.value)
-      FileMetadataValues(
-        propertyNameMap.get(SHA256ClientSideChecksum),
-        propertyNameMap.get(ClientSideOriginalFilepath),
-        propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
-        propertyNameMap.get(ClientSideFileSize).map(_.toLong),
-        propertyNameMap.get(RightsCopyright.name),
-        propertyNameMap.get(LegalStatus.name),
-        propertyNameMap.get(HeldBy.name),
-        propertyNameMap.get(Language.name),
-        propertyNameMap.get(FoiExemptionCode.name)
-      )
-    }
-
-    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
-      response.groupBy(_._1).map {
-        case (fr, fmr) =>
-          val fileId = fr.fileid
-          File(
-            fileId, fr.filetype, fr.filename, fr.parentid,
-            convertMetadataRows(fmr.flatMap(_._2)), ffidStatus.get(fileId), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
-      }.toSeq
-    }
-  }
-
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
@@ -125,6 +98,33 @@ object FileService {
     def fileName: Option[String] = fr.flatMap(_.filename)
 
     def parentId: Option[UUID] = fr.flatMap(_.parentid)
+  }
+
+  implicit class FileRepositoryResponseHelper(response: Seq[FileRepositoryMetadata]) {
+    private def convertMetadataRows(rows: Seq[FilemetadataRow]): FileMetadataValues = {
+      val propertyNameMap = rows.groupBy(_.propertyname).transform((_, value) => value.head.value)
+      FileMetadataValues(
+        propertyNameMap.get(SHA256ClientSideChecksum),
+        propertyNameMap.get(ClientSideOriginalFilepath),
+        propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+        propertyNameMap.get(ClientSideFileSize).map(_.toLong),
+        propertyNameMap.get(RightsCopyright.name),
+        propertyNameMap.get(LegalStatus.name),
+        propertyNameMap.get(HeldBy.name),
+        propertyNameMap.get(Language.name),
+        propertyNameMap.get(FoiExemptionCode.name)
+      )
+    }
+
+    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
+      response.groupBy(_._1).map {
+        case (fr, fmr) =>
+          val fileId = fr.fileid
+          File(
+            fileId, fr.filetype, fr.filename, fr.parentid,
+            convertMetadataRows(fmr.flatMap(_._2)), ffidStatus.get(fileId), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
+      }.toSeq
+    }
   }
 
   trait Rows {
