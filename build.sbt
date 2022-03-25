@@ -47,7 +47,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 
 lazy val akkaHttpVersion = "10.2.9"
 lazy val circeVersion = "0.14.1"
-lazy val testContainersVersion = "0.40.2"
+lazy val testContainersVersion = "0.40.3"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "3.0.0",
@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml"        % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream"          % "2.6.18",
+  "com.typesafe.akka" %% "akka-stream"          % "2.6.19",
 
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
@@ -76,19 +76,19 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
   "org.jboss.logging" % "jboss-logging" % "3.4.3.Final",
-  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "1.1.2",
-  "software.amazon.awssdk" % "rds" % "2.17.148",
-  "software.amazon.awssdk" % "sts" % "2.17.148",
+  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "3.0.4",
+  "software.amazon.awssdk" % "rds" % "2.17.155",
+  "software.amazon.awssdk" % "sts" % "2.17.155",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.11" % Test,
   "org.mockito" %% "mockito-scala" % "1.17.5" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.5" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.6.18" % Test,
+  "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.11.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.29",
-  "io.github.hakky54" % "logcaptor" % "2.7.8" % Test,
+  "io.github.hakky54" % "logcaptor" % "2.7.9" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
 )

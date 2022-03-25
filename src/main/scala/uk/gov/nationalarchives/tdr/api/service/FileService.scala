@@ -1,17 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.util.UUID
-
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.service.FileService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
@@ -71,37 +71,38 @@ class FileService(fileRepository: FileRepository,
     val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
     val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
 
-    val folderIdToPath: Map[UUID, String] = (allEmptyDirectoryNodes ++ allFileNodes.filter(_._2.treeNodeType == directoryTypeIdentifier))
-      .map(f => f._2.id -> f._1)
-
-    val fileRows: List[FileRow] = ((allEmptyDirectoryNodes ++ allFileNodes) map {
-      case (_, treeNode) =>
-        val parentId = treeNode.parentPath.map(v => allFileNodes.getOrElse(v, allEmptyDirectoryNodes(v)).id)
-        FileRow(treeNode.id, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
-    }).toList
-
-    val metadataWithIds: List[(UUID, ClientSideMetadataInput)] =
-      fileRows.filter(_.filetype.get.isFileType).map(_.fileid).zip(addFileAndMetadataInput.metadataInput)
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
 
-    val fileMetadataRows: Seq[FilemetadataRow] = metadataWithIds.flatMap {
-      case (fileId, input) =>
-        Seq(
-          row(fileId, input.originalPath, ClientSideOriginalFilepath),
-          row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
-          row(fileId, input.fileSize.toString, ClientSideFileSize),
-          row(fileId, input.checksum, SHA256ClientSideChecksum)
-        ) ++ staticMetadataProperties.map(property => {
-          row(fileId, property.value, property.name)
-        })
-      case _ => Seq()
-    } ++ fileRows.filter(_.filetype.get.isDirectoryType).flatMap(directory => {
-      row(directory.fileid, folderIdToPath(directory.fileid), ClientSideOriginalFilepath) ::
-        staticMetadataProperties.map(property => row(directory.fileid, property.value, property.name))
-    })
+    val rowsWithMatchId: List[Rows] = ((allEmptyDirectoryNodes ++ allFileNodes) map {
+      case (path, treeNode) =>
+        val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
+        val fileId = treeNode.id
+        val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
+        val commonMetadataRows = row(fileId, path, ClientSideOriginalFilepath) ::
+          staticMetadataProperties.map(property => row(fileId, property.value, property.name))
+        if (treeNode.treeNodeType.isFileType) {
+          val input = addFileAndMetadataInput.metadataInput.filter(m => {
+            val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else path
+            pathWithoutSlash == path
+          }).head
+          val fileMetadataRows = List(
+            row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
+            row(fileId, input.fileSize.toString, ClientSideFileSize),
+            row(fileId, input.checksum, SHA256ClientSideChecksum)
+          )
+          MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId)
+        } else {
+          DirectoryRows(fileRow, commonMetadataRows)
+        }
+    }).toList
+    val fileRows: List[FileRow] = rowsWithMatchId.map(_.fileRow)
+    val fileMetadataRows: List[FilemetadataRow] = rowsWithMatchId.flatMap(_.metadataRows)
     for {
       _ <- fileRepository.addFiles(fileRows, fileMetadataRows)
-    } yield metadataWithIds.map(m => (m._1, m._2.matchId)).map(f => FileMatches(f._1, f._2))
+    } yield rowsWithMatchId.flatMap {
+      case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
+      case _ => Nil
+    }
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
@@ -124,4 +125,24 @@ class FileService(fileRepository: FileRepository,
   }
 }
 
-case class FileOwnership(fileId: UUID, userId: UUID)
+
+object FileService {
+  implicit class FileRowHelper(fr: Option[FileRow]) {
+    def fileType: Option[String] = fr.flatMap(_.filetype)
+
+    def fileName: Option[String] = fr.flatMap(_.filename)
+
+    def parentId: Option[UUID] = fr.flatMap(_.parentid)
+  }
+
+  trait Rows {
+    val fileRow: FileRow
+    val metadataRows: List[FilemetadataRow]
+  }
+
+  case class MatchedFileRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], matchId: Long) extends Rows
+
+  case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow]) extends Rows
+
+  case class FileOwnership(fileId: UUID, userId: UUID)
+}
