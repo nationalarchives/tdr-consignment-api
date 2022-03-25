@@ -1,14 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import java.sql.Timestamp
+import java.util.UUID
+
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
@@ -52,14 +52,6 @@ class FileService(fileRepository: FileRepository,
             convertMetadataRows(fmr.flatMap(_._2)), ffidStatus.get(fileId), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
       }.toSeq
     }
-  }
-
-  implicit class FileRowHelper(fr: Option[FileRow]) {
-    def fileType: Option[String] = fr.flatMap(_.filetype)
-
-    def fileName: Option[String] = fr.flatMap(_.filename)
-
-    def parentId: Option[UUID] = fr.flatMap(_.parentid)
   }
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
