@@ -42,7 +42,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 
 lazy val akkaHttpVersion = "10.2.9"
 lazy val circeVersion = "0.14.1"
-lazy val testContainersVersion = "0.40.3"
+lazy val testContainersVersion = "0.40.4"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "3.0.0",
@@ -72,8 +72,8 @@ libraryDependencies ++= Seq(
   "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
   "org.jboss.logging" % "jboss-logging" % "3.4.3.Final",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "3.0.4",
-  "software.amazon.awssdk" % "rds" % "2.17.158",
-  "software.amazon.awssdk" % "sts" % "2.17.158",
+  "software.amazon.awssdk" % "rds" % "2.17.159",
+  "software.amazon.awssdk" % "sts" % "2.17.159",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.11" % Test,
