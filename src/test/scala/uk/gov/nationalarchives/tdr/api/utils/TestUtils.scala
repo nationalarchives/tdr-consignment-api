@@ -153,12 +153,13 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
   }
 
-  def seedDatabaseWithDefaultEntries(consignmentType: String = "standard"): Unit = {
+  def seedDatabaseWithDefaultEntries(consignmentType: String = "standard"): (UUID, UUID) = {
     val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
     createConsignment(consignmentId, userId, fixedSeriesId, consignmentType = consignmentType)
     createFile(defaultFileId, consignmentId)
 
     createClientFileMetadata(defaultFileId)
+    (consignmentId, defaultFileId)
   }
 
   def createConsignment(

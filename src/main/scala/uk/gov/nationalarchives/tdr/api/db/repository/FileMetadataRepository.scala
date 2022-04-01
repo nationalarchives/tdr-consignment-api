@@ -1,6 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
+import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
@@ -25,7 +26,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(allUpdates).map(_ => fileMetadataRow)
   }
 
-  def getSingleFileMetadata(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {
+  def getFileMetadataByProperty(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
       .filter(_.fileid === fileId)
       .filter(_.propertyname inSet propertyName.toSet)

@@ -28,8 +28,8 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
   private def getFileStatusValue(fileId: UUID, utils: TestUtils): String =
     utils.getFileStatusResult(fileId, "Status Type").head
 
-  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils): Assertion = {
-    utils.countFileMetadata(fileId) should be(1)
+  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int=1): Assertion = {
+    utils.countFileMetadata(fileId) should be(numberOfFileMetadataRows)
   }
 
   "countProcessedChecksumInConsignment" should "return 0 if a consignment has no files" in withContainers {
@@ -140,6 +140,26 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       checkFileMetadataExists(fileId, utils)
   }
 
+  "addFileMetadata" should "add metadata multiple metadata rows and return the correct number" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("306c526b-d099-470b-87c8-df7bd0aa225a")
+      val fileId = UUID.fromString("ba176f90-f0fd-42ef-bb28-81ba3ffb6f05")
+      utils.addFileProperty("FileProperty")
+      utils.createConsignment(consignmentId, userId)
+      utils.createFile(fileId, consignmentId)
+      val numberOfFileMetadataRows = 100
+      val input = (1 to numberOfFileMetadataRows).map(_ =>
+        FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty")
+      )
+
+      val result = fileMetadataRepository.addFileMetadata(input).futureValue
+
+      checkFileMetadataExists(fileId, utils, numberOfFileMetadataRows)
+  }
+
   "addChecksumMetadata" should "update the checksum validation field on the file table" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
@@ -157,7 +177,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       getFileStatusValue(fileId, utils) should equal("Value")
   }
 
-  "getSingleFileMetadata" should "return the correct metadata" in withContainers {
+  "getFileMetadataByProperty" should "return the correct metadata" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -168,7 +188,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       utils.createFile(fileId, consignmentId)
       utils.addFileProperty("FileProperty")
       utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
-      val response = fileMetadataRepository.getSingleFileMetadata(fileId, "FileProperty").futureValue.head
+      val response = fileMetadataRepository.getFileMetadataByProperty(fileId, "FileProperty").futureValue.head
       response.value should equal("Result of FileMetadata processing")
       response.propertyname should equal("FileProperty")
       response.fileid should equal(fileId)
