@@ -5,6 +5,7 @@ import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,12 +57,18 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[FileRow]] = {
-    val query = File
-      .filter(_.consignmentid === consignmentId)
-      .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
+  def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[FileRepositoryMetadata]] = {
+    val query = File.joinLeft(Filemetadata)
+      .on(_.fileid === _.fileid)
+      .filter(_._1.consignmentid === consignmentId)
+      .filterOpt(fileFilters.fileTypeIdentifier)(_._1.filetype === _)
+      .map(res => (res._1, res._2))
     db.run(query.result)
   }
 }
 
-case class FileFilters(fileTypeIdentifier: Option[String])
+case class FileFilters(fileTypeIdentifier: Option[String] = None)
+
+object FileRepository {
+  type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
+}
