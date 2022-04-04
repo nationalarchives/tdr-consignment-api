@@ -26,6 +26,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val getConsignmentJsonFilePrefix: String = "json/getconsignment_"
   private val consignmentsJsonFilePrefix: String = "json/consignments_"
   private val startUploadJsonFilePrefix: String = "json/startupload_"
+  private val updateConsignmentSeriesIdJsonFilePrefix: String = "json/updateconsignmentseriesid_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -41,7 +42,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlMutationTransferInitiated(data: Option[UpdateTransferInitiated])
 
-  case class GraphqlMutationUpdateSeriesIdOfConsignment(data: Option[UpdateSeriesIdOfConsignment])
+  case class GraphqlMutationUpdateSeriesIdOfConsignment(data: Option[UpdateSeriesIdOfConsignment], errors: List[GraphqlError] = Nil)
 
   case class Consignment(consignmentid: Option[UUID] = None,
                          userid: Option[UUID] = None,
@@ -88,7 +89,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
 
-  case class UpdateSeriesIdOfConsignment(updateConsignmentSeriesId: Int)
+  case class UpdateSeriesIdOfConsignment(updateConsignmentSeriesId: Option[Int])
 
   case class File(fileId: UUID,
                   fileType: Option[String],
@@ -129,10 +130,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
   val runTestStartUploadMutation: (String, OAuth2BearerToken) => GraphqlMutationStartUpload =
     runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
+  val runUpdateConsignmentSeriesIdMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateSeriesIdOfConsignment =
+    runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String =>
     GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
+  val expectedUpdateConsignmentSeriesIdMutationResponse: String =>
+    GraphqlMutationUpdateSeriesIdOfConsignment = getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
 
   "addConsignment" should "create a consignment of type 'standard' when standard consignment type provided" in withContainers {
     case container: PostgreSQLContainer =>
@@ -154,30 +159,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       checkConsignmentExists(response.data.get.addConsignment.consignmentid.get, utils)
   }
 
-  //TODO This is broken because of AuthorisationTags.scala validateAsync allowing standard users to create consginment without seriesId
-  "addConsignment" should "throw an error if no series id and the user is not a 'judgment' user" in withContainers {
-    case _: PostgreSQLContainer =>
-      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_seriesid")
-      val response: GraphqlMutationData = runTestMutation("mutation_no_seriesid", validUserToken())
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-  }
-
-  //TODO This is broken because of AuthorisationTags.scala validateAsync allowing standard users to create consginment without seriesId
-  "addConsignment" should "throw an error if no series id, the user is a judgment user but the consignment type is not 'judgment'" in withContainers {
-    case _: PostgreSQLContainer =>
-      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_seriesid_standard_consignment_type")
-      val response: GraphqlMutationData = runTestMutation(
-        "mutation_no_seriesid_standard_consignment_type", validJudgmentUserToken(body = "default-transferring-body-code"))
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-  }
-
-  "addConsignment" should "throw an error if 'standard' user's body is not the same as the series body" in withContainers {
-    case _: PostgreSQLContainer =>
-      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_incorrect_body")
-      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "incorrect"))
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-  }
-
   "addConsignment" should "throw an error if an invalid consignment type is provided" in withContainers {
     case _: PostgreSQLContainer =>
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_invalid_consignment_type")
@@ -192,14 +173,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
       response.data.get.addConsignment.userid should contain(userId)
-  }
-
-  "addConsignment" should "not allow a user to link a consignment to a series from another transferring body" in withContainers {
-    case _: PostgreSQLContainer =>
-      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "some-other-transferring-body"))
-
-      response.errors should have size 1
-      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
   //scalastyle:off magic.number
@@ -548,15 +521,32 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.createConsignment(new FixedUUIDSource().uuid, userId)
+
       val seriesId = "4252c920-b1ac-4b0a-9711-33409b8fae6e"
-      utils.addSeries(UUID.fromString(seriesId), fixedBodyId, "test")
-      val prefix = "json/updateseriesidofconsignment_"
-      val expectedResponse = getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](prefix)("data_all")
-      val response: GraphqlMutationUpdateSeriesIdOfConsignment = runTestRequest
-        [GraphqlMutationUpdateSeriesIdOfConsignment](prefix)("mutation_all", validUserToken())
-      response.data should equal(expectedResponse.data)
+      utils.addSeries(UUID.fromString(seriesId), fixedBodyId, "MOCK1")
+
+      val expectedResponse: GraphqlMutationUpdateSeriesIdOfConsignment =expectedUpdateConsignmentSeriesIdMutationResponse("data_all")
+      val response: GraphqlMutationUpdateSeriesIdOfConsignment =
+        runUpdateConsignmentSeriesIdMutation("mutation_all", validUserToken(body = "default-transferring-body-code"))
+
+      response.data.get.updateConsignmentSeriesId should equal(expectedResponse.data.get.updateConsignmentSeriesId)
       val field = getConsignmentField(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"), _, utils)
       field("SeriesId") should equal(seriesId)
+  }
+
+  "updateSeriesIdOfConsignment" should "throw an error if 'standard' user's body is not the same as the series body" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      utils.createConsignment(new FixedUUIDSource().uuid, userId)
+
+      val seriesId = "4252c920-b1ac-4b0a-9711-33409b8fae6b"
+      utils.addSeries(UUID.fromString(seriesId), fixedBodyId, "MOCK1")
+
+      val expectedResponse: GraphqlMutationUpdateSeriesIdOfConsignment =expectedUpdateConsignmentSeriesIdMutationResponse("data_incorrect_body")
+      val response: GraphqlMutationUpdateSeriesIdOfConsignment =
+        runUpdateConsignmentSeriesIdMutation("mutation_incorrect_body", validUserToken(body = "incorrect"))
+
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   private def checkConsignmentExists(consignmentId: UUID, utils: TestUtils): Unit = {

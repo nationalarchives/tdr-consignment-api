@@ -1,0 +1,9 @@
+{
+  "query": "mutation updateConsignmentSeriesId($updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput!){updateConsignmentSeriesId(updateConsignmentSeriesId: $updateConsignmentSeriesIdInput)}",
+  "variables": {
+    "updateConsignmentSeriesIdInput": {
+      "consignmentId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+      "seriesId": "4252c920-b1ac-4b0a-9711-33409b8fae6b"
+    }
+  }
+}

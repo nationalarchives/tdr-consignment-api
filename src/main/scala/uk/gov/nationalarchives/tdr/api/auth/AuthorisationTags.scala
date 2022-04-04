@@ -1,10 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.auth
 
 import java.util.UUID
-
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.AddConsignmentInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, UpdateConsignmentSeriesIdInput}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
@@ -48,7 +47,7 @@ object ValidateBody extends SyncAuthorisationTag {
 object ValidateConsignmentCreation extends AuthorisationTag {
 
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                       (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
     val userBody = token.transferringBody.getOrElse(
@@ -69,18 +68,45 @@ object ValidateConsignmentCreation extends AuthorisationTag {
               throw AuthorisationException(message)
           }
         })
-      //TODO Do something about this
-      case _ =>//if token.isJudgmentUser && consignmentType.isJudgment =>
+      case _ if token.isJudgmentUser && consignmentType.isJudgment =>
         Future(continue)
-/*      case _ =>
+      case _ =>
         val message = if (!token.isJudgmentUser) {
-            s"User '$userId' is not a judgment user and does not have permission to create a consignment without a series"
-          } else {
-            s"Cannot create consignment without series for consignment type '$consignmentType'"
-          }
+          s"User '$userId' is not a judgment user and does not have permission to create a consignment without a series"
+        } else {
+          s"Cannot create consignment without series for consignment type '$consignmentType'"
+        }
 
-        throw AuthorisationException(message)*/
+        throw AuthorisationException(message)
     }
+  }
+}
+
+object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
+
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
+                       (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+    val token = ctx.ctx.accessToken
+    val userId = token.userId
+    val userBody = token.transferringBody.getOrElse(
+      throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
+    val consignmentSeriesInput = ctx.arg[UpdateConsignmentSeriesIdInput]("updateConsignmentSeriesId")
+    val seriesId: UUID = consignmentSeriesInput.seriesId
+    if(token.isJudgmentUser){
+      val message = "Judgment users cannot update series id"
+      throw AuthorisationException(message)
+    }
+
+val bodyResult = ctx.ctx.transferringBodyService.getBody(seriesId)
+    bodyResult.map(body => {
+      body.tdrCode match {
+        case code if code == userBody => continue
+        case code =>
+          val message = s"User '$userId' is from transferring body '$userBody' and does not have permission " +
+            s"to update a consignment under series '$seriesId' owned by body '$code'"
+          throw AuthorisationException(message)
+      }
+    })
   }
 }
 

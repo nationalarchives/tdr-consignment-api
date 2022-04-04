@@ -183,7 +183,7 @@ object ConsignmentFields {
         ctx.arg(ConsignmentInputArg),
         ctx.ctx.accessToken
       ),
-      tags = List(ValidateConsignmentCreation)
+      tags = Nil
     ),
     Field("updateTransferInitiated", OptionType(IntType),
       arguments = ConsignmentIdArg :: Nil,
@@ -204,7 +204,7 @@ object ConsignmentFields {
     Field("updateConsignmentSeriesId", OptionType(IntType),
       arguments = UpdateConsignmentSeriesIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateSeriesIdOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
-      tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg))
+      tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)
     )
   )
 }
