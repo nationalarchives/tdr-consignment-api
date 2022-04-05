@@ -39,32 +39,30 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
   }
 
   def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInput, userId: UUID): Future[FileMetadataWithFileId] = {
-
-    val filePropertyName = addFileMetadataInput.filePropertyName
-    val timestamp = Timestamp.from(timeSource.now)
     val fileMetadataRow =
       FilemetadataRow(uuidSource.uuid, addFileMetadataInput.fileId,
         addFileMetadataInput.value,
-        timestamp,
+        Timestamp.from(timeSource.now),
         userId, addFileMetadataInput.filePropertyName)
 
-    filePropertyName match {
-      case SHA256ServerSideChecksum =>
-        (for {
-          cfm <- fileMetadataRepository.getFileMetadataByProperty(addFileMetadataInput.fileId, SHA256ClientSideChecksum)
+    fileMetadataRow.propertyname match {
+      case SHA256ServerSideChecksum => {
+        for {
+          cfm <- fileMetadataRepository.getFileMetadataByProperty(fileMetadataRow.fileid, SHA256ClientSideChecksum)
           fileStatus: String = cfm.headOption match {
-            case Some(cfm) if cfm.value == addFileMetadataInput.value => Success
+            case Some(cfm) if cfm.value == fileMetadataRow.value => Success
             case Some(_) => Mismatch
-            case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${addFileMetadataInput.fileId}")
+            case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${fileMetadataRow.fileid}")
           }
-          fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, addFileMetadataInput.fileId, Checksum, fileStatus, timestamp)
-          _ <- Future(loggingUtils.logFileFormatStatus("checksum", addFileMetadataInput.fileId, fileStatus))
+          fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, fileMetadataRow.fileid, Checksum, fileStatus, fileMetadataRow.datetime)
+          _ <- Future(loggingUtils.logFileFormatStatus("checksum", fileMetadataRow.fileid, fileStatus))
           row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
-        } yield FileMetadataWithFileId(filePropertyName, row.fileid, row.value)) recover {
-          case e: Throwable =>
-            throw InputDataException(s"Could not find metadata for file ${addFileMetadataInput.fileId}", Some(e))
-        }
-      case _ => Future.failed(InputDataException(s"$filePropertyName found. We are only expecting checksum updates for now"))
+        } yield FileMetadataWithFileId(fileMetadataRow.propertyname, row.fileid, row.value)
+      } recover {
+        case e: Throwable =>
+          throw InputDataException(s"Could not find metadata for file ${fileMetadataRow.fileid}", Some(e))
+      }
+      case _ => Future.failed(InputDataException(s"${fileMetadataRow.propertyname} found. We are only expecting checksum updates for now"))
     }
   }
 
