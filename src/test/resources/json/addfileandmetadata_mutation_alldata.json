@@ -5,18 +5,39 @@
       "consignmentId": "f1a9269d-157b-402c-98d8-1633393634c5",
       "metadataInput": [
         {
-          "originalPath": "/topDirectory/originalPath",
+          "originalPath": "topDirectory/originalPath",
           "checksum": "checksum",
           "lastModified": 1,
           "fileSize": 123,
           "matchId": 1
         },
         {
-          "originalPath": "/otherTopDirectory/originalDirectory/originalPath2",
+          "originalPath": "otherTopDirectory/originalDirectory/originalPath2",
           "checksum": "checksum2",
           "lastModified": 112,
           "fileSize": 1233,
           "matchId": 2
+        },
+        {
+          "originalPath": "otherTopDirectory/originalDirectory/originalPath3",
+          "checksum": "checksum2",
+          "lastModified": 112,
+          "fileSize": 1233,
+          "matchId": 3
+        },
+        {
+          "originalPath": "otherTopDirectory/originalDirectory/originalPath4",
+          "checksum": "checksum2",
+          "lastModified": 112,
+          "fileSize": 1233,
+          "matchId": 4
+        },
+        {
+          "originalPath": "otherTopDirectory/originalDirectory/originalPath5",
+          "checksum": "checksum2",
+          "lastModified": 112,
+          "fileSize": 1233,
+          "matchId": 5
         }
 
       ]

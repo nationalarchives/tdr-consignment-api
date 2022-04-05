@@ -60,26 +60,6 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       case _ => Future.failed(InputDataException(s"$filePropertyName found. We are only expecting checksum updates for now"))
     }
   }
-
-  def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId).map {
-    rows =>
-      rows.groupBy(_.fileid).map {
-        case (fileId, fileMetadata) =>
-          val propertyNameMap: Map[String, String] = fileMetadata.groupBy(_.propertyname)
-            .transform((_, value) => value.head.value)
-          fileId -> FileMetadataValues(
-            propertyNameMap.get(SHA256ClientSideChecksum),
-            propertyNameMap.get(ClientSideOriginalFilepath),
-            propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
-            propertyNameMap.get(ClientSideFileSize).map(_.toLong),
-            propertyNameMap.get(RightsCopyright.name),
-            propertyNameMap.get(LegalStatus.name),
-            propertyNameMap.get(HeldBy.name),
-            propertyNameMap.get(Language.name),
-            propertyNameMap.get(FoiExemptionCode.name)
-          )
-      }
-  }
 }
 
 object FileMetadataService {
