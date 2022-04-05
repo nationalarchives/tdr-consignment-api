@@ -84,7 +84,9 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   }
 
   def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): FileNameAndPath = {
-    val sql = """SELECT "FileName", "Value" FROM "FileMetadata" fm JOIN "File" f on f."FileId" = fm."FileId" WHERE f."FileId" = ? AND "PropertyName" = 'ClientSideOriginalFilepath' """
+    val sql =
+      """SELECT "FileName", "Value" FROM "FileMetadata" fm
+        |JOIN "File" f on f."FileId" = fm."FileId" WHERE f."FileId" = ? AND "PropertyName" = 'ClientSideOriginalFilepath' """.stripMargin
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     val rs = ps.executeQuery()
