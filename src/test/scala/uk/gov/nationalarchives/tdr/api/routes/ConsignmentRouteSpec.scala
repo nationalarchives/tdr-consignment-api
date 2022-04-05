@@ -19,6 +19,7 @@ import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
 //scalastyle:off number.of.methods
+//scalastyle:off number.of.types
 class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
