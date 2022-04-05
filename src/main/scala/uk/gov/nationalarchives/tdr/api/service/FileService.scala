@@ -47,7 +47,7 @@ class FileService(fileRepository: FileRepository,
           staticMetadataProperties.map(property => row(fileId, property.value, property.name))
         if (treeNode.treeNodeType.isFileType) {
           val input = addFileAndMetadataInput.metadataInput.filter(m => {
-            val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else path
+            val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
             pathWithoutSlash == path
           }).head
           val fileMetadataRows = List(
