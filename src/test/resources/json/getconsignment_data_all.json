@@ -18,9 +18,9 @@
       "totalFiles": 3,
       "files": [
         {
-          "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+          "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
           "fileType": "File",
-          "fileName": "fileThreeName",
+          "fileName": "fileTwoName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
@@ -33,6 +33,38 @@
             "language": "Language value"
           },
           "fileStatus": "Success",
+          "ffidMetadata": {
+            "method": "TEST DATA method",
+            "softwareVersion": "TEST DATA software version",
+            "datetime": 1577869200000,
+            "software": "TEST DATA software",
+            "matches": [
+              {
+                "extension": "txt",
+                "identificationBasis": "TEST DATA identification",
+                "puid": "TEST DATA puid"
+              }
+            ],
+            "containerSignatureFileVersion": "TEST DATA container signature file version",
+            "binarySignatureFileVersion": "TEST DATA binary signature file version"
+          }
+        },
+        {
+          "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+          "fileType": "File",
+          "fileName": "fileThreeName",
+          "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "fileStatus": "Success",
+          "metadata": {
+            "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
+            "legalStatus": "LegalStatus value",
+            "clientSideFileSize": 1,
+            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+            "rightsCopyright": "RightsCopyright value",
+            "heldBy": "HeldBy value",
+            "foiExemptionCode": "FoiExemptionCode value",
+            "language": "Language value"
+          },
           "ffidMetadata": {
             "method": "TEST DATA method",
             "softwareVersion": "TEST DATA software version",
@@ -53,38 +85,6 @@
           "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
           "fileType": "File",
           "fileName": "fileOneName",
-          "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "fileStatus": "Success",
-          "metadata": {
-            "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
-            "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 1,
-            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
-            "rightsCopyright": "RightsCopyright value",
-            "heldBy": "HeldBy value",
-            "foiExemptionCode": "FoiExemptionCode value",
-            "language": "Language value"
-          },
-          "ffidMetadata": {
-            "method": "TEST DATA method",
-            "softwareVersion": "TEST DATA software version",
-            "datetime": 1577869200000,
-            "software": "TEST DATA software",
-            "matches": [
-              {
-                "extension": "txt",
-                "identificationBasis": "TEST DATA identification",
-                "puid": "TEST DATA puid"
-              }
-            ],
-            "containerSignatureFileVersion": "TEST DATA container signature file version",
-            "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          }
-        },
-        {
-          "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
-          "fileType": "File",
-          "fileName": "fileTwoName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
           "fileStatus": "Success",
           "metadata": {

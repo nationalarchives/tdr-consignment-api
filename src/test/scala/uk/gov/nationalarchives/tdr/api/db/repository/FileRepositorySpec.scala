@@ -190,7 +190,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       files.head.consignmentid shouldBe consignmentId
   }
 
-  "getFiles" should "return files and folders where no type filter applied" in withContainers {
+  "getFiles" should "return files, file metadata and folders where no type filter applied" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -199,10 +199,10 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       setUpFilesAndDirectories(consignmentId, utils)
 
       val files = fileRepository.getFiles(consignmentId, FileFilters(None)).futureValue
-      files.size shouldBe 3
+      files.size shouldBe 4
   }
 
-  "getFiles" should "return files only where 'file' type filter applied" in withContainers {
+  "getFiles" should "return files and file metadata only where 'file' type filter applied" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -211,7 +211,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       setUpFilesAndDirectories(consignmentId, utils)
 
       val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
-      files.size shouldBe 2
+      files.size shouldBe 3
   }
 
   "getFiles" should "return folders only where 'folder' type filter applied" in withContainers {
@@ -248,6 +248,12 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier)
     utils.createFile(fileOneId, consignmentId, parentId = Some(folderOneId))
     utils.createFile(fileTwoId, consignmentId, parentId = Some(folderOneId))
+
+    utils.addFileProperty("FilePropertyOne")
+    utils.addFileProperty("FilePropertyTwo")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyOne")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyTwo")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId, "FilePropertyOne")
     folderOneId
   }
 
