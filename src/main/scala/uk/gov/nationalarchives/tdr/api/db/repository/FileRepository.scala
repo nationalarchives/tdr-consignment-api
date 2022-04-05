@@ -1,7 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import java.util.UUID
+import slick.jdbc.GetResult
 
+import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
@@ -10,6 +11,17 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
+  implicit val getFileResult: GetResult[FileRow] = GetResult(r => FileRow(
+    UUID.fromString(r.nextString()),
+    UUID.fromString(r.nextString()),
+    UUID.fromString(r.nextString()),
+    r.nextTimestamp(),
+    r.nextBooleanOption(),
+    r.nextStringOption(),
+    r.nextStringOption(),
+    r.nextStringOption().map(UUID.fromString)
+  ))
+
   private val insertFileQuery = File returning File.map(_.fileid)into ((file, fileid) => file.copy(fileid = fileid))
 
   def getFilesWithPassedAntivirus(consignmentId: UUID): Future[Seq[Tables.FileRow]] = {
@@ -61,6 +73,35 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .filter(_.consignmentid === consignmentId)
       .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
     db.run(query.result)
+  }
+
+  def getAllDescendants(fileIds: Seq[UUID]): Future[Seq[FileRow]] = {
+
+    val sql =
+      sql"""WITH RECURSIVE children AS (
+           SELECT
+            "FileId"::text,
+            "ConsignmentId"::text,
+            "UserId"::text,
+            "Datetime",
+            "ChecksumMatches",
+            "FileType",
+            "FileName",
+            "ParentId"::text
+           FROM "File"
+            WHERE "FileId"::text IN #${fileIds.mkString("('", "','", "')")}
+            UNION SELECT
+             f."FileId"::text,
+             f."ConsignmentId"::text,
+             f."UserId"::text,
+             f."Datetime",
+             f."ChecksumMatches",
+             f."FileType",
+             f."FileName",
+             f."ParentId"::text
+            FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
+        ) SELECT * FROM children;""".stripMargin.as[FileRow]
+    db.run(sql)
   }
 }
 

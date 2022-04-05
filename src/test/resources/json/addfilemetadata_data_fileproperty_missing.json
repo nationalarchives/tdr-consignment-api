@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Field 'AddFileMetadataInput.filePropertyName' of required type 'String!' was not provided. (line 1, column 47):\nmutation{addFileMetadata(addFileMetadataInput:{fileId:\"4e0fd35b-8d6f-4498-b081-f7401ce6b99b\"value:\"value\"}){filePropertyName,fileId,value}}\n                                              ^",
+      "message": "Field 'AddFileMetadataWithFileIdInput.filePropertyName' of required type 'String!' was not provided. (line 1, column 57):\nmutation{addFileMetadata(addFileMetadataWithFileIdInput:{fileId:\"4e0fd35b-8d6f-4498-b081-f7401ce6b99b\"value:\"value\"}){filePropertyName,fileId,value}}\n                                                        ^",
       "locations": [
         {
           "column": 47,

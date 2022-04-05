@@ -3,14 +3,20 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddFileMetadataInput, FileMetadata, SHA256ServerSideChecksum}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{
+  AddBulkFileMetadataInput,
+  AddFileMetadataWithFileIdInput,
+  BulkFileMetadata,
+  FileMetadata,
+  FileMetadataWithFileId,
+  SHA256ServerSideChecksum
+}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
@@ -18,6 +24,7 @@ import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
+                          fileRepository: FileRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
@@ -31,7 +38,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     fileMetadataRepository.addFileMetadata(fileMetadataRows)
   }
 
-  def addFileMetadata(addFileMetadataInput: AddFileMetadataInput, userId: UUID): Future[FileMetadata] = {
+  def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInput, userId: UUID): Future[FileMetadataWithFileId] = {
 
     val filePropertyName = addFileMetadataInput.filePropertyName
     val timestamp = Timestamp.from(timeSource.now)
@@ -53,12 +60,35 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
           fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, addFileMetadataInput.fileId, Checksum, fileStatus, timestamp)
           _ <- Future(loggingUtils.logFileFormatStatus("checksum", addFileMetadataInput.fileId, fileStatus))
           row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
-        } yield FileMetadata(filePropertyName, row.fileid, row.value)) recover {
+        } yield FileMetadataWithFileId(filePropertyName, row.fileid, row.value)) recover {
           case e: Throwable =>
             throw InputDataException(s"Could not find metadata for file ${addFileMetadataInput.fileId}", Some(e))
         }
       case _ => Future.failed(InputDataException(s"$filePropertyName found. We are only expecting checksum updates for now"))
     }
+  }
+
+  def addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
+    val fileMetadataProperties = addBulkFileMetadataInput.metadataProperties.distinct
+    val timestamp = Timestamp.from(timeSource.now)
+    val uniqueFileIds: Seq[UUID] = addBulkFileMetadataInput.fileIds.distinct
+    for {
+      fileRows <- fileRepository.getAllDescendants(uniqueFileIds)
+      fileIds: Seq[UUID] = fileRows.collect{case fileRow if fileRow.filetype.get == "File" => fileRow.fileid}
+      fileMetadataRows: Seq[FilemetadataRow] = for {
+        fileId <- fileIds
+        fileMetadata <- fileMetadataProperties
+      } yield FilemetadataRow(uuidSource.uuid, fileId, fileMetadata.value, timestamp, userId, fileMetadata.filePropertyName)
+      metadataRows <- fileMetadataRepository.addFileMetadata(fileMetadataRows)
+      fileIdsAndMetadata = metadataRows.foldLeft((Set[UUID](), Set[FileMetadata]())) {
+        (fileIdsAndMetadata, fileMetadataRow) => {
+          (
+            fileIdsAndMetadata._1 + fileMetadataRow.fileid,
+            fileIdsAndMetadata._2 + FileMetadata(fileMetadataRow.propertyname, fileMetadataRow.value)
+          )
+        }
+      }
+    } yield BulkFileMetadata(fileIdsAndMetadata._1.toSeq, fileIdsAndMetadata._2.toSeq)
   }
 
   def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] = fileMetadataRepository.getFileMetadata(consignmentId).map {

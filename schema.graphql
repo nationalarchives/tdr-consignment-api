@@ -7,6 +7,11 @@ input AddAntivirusMetadataInput {
   datetime: Long!
 }
 
+input AddBulkFileMetadataInput {
+  fileIds: [UUID!]!
+  metadataProperties: [AddFileMetadataInput!]!
+}
+
 input AddConsignmentInput {
   seriesid: UUID
   consignmentType: String!
@@ -19,6 +24,11 @@ input AddFileAndMetadataInput {
 }
 
 input AddFileMetadataInput {
+  filePropertyName: String!
+  value: String!
+}
+
+input AddFileMetadataWithFileIdInput {
   filePropertyName: String!
   fileId: UUID!
   value: String!
@@ -60,6 +70,11 @@ type AntivirusMetadata {
 
 type AntivirusProgress {
   filesProcessed: Int!
+}
+
+type BulkFileMetadata {
+  fileIds: [UUID!]!
+  metadataProperties: [FileMetadata!]!
 }
 
 type ChecksumProgress {
@@ -212,7 +227,6 @@ type FileMatches {
 
 type FileMetadata {
   filePropertyName: String!
-  fileId: UUID!
   value: String!
 }
 
@@ -226,6 +240,12 @@ type FileMetadataValues {
   heldBy: String
   language: String
   foiExemptionCode: String
+}
+
+type FileMetadataWithFileId {
+  filePropertyName: String!
+  fileId: UUID!
+  value: String!
 }
 
 type FinalJudgmentTransferConfirmation {
@@ -254,7 +274,8 @@ type Mutation {
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
-  addFileMetadata(addFileMetadataInput: AddFileMetadataInput!): FileMetadata!
+  addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
+  addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput!): BulkFileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!

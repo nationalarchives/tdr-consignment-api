@@ -1,0 +1,23 @@
+{
+  "query": "mutation addBulkFileMetadata($addBulkFileMetadataInput: AddBulkFileMetadataInput!) {addBulkFileMetadata(addBulkFileMetadataInput:$addBulkFileMetadataInput) {fileIds,metadataProperties {filePropertyName,value}}}",
+  "variables": {
+    "addBulkFileMetadataInput" : {
+      "fileIds": [
+        "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
+        "d74650ff-21b1-402d-8c59-b114698a8341",
+        "7076f399-b596-4161-a95d-e686c6435710",
+        "d2e64eed-faff-45ac-9825-79548f681323"
+      ],
+      "metadataProperties": [
+        {
+          "filePropertyName": "property1",
+          "value": "value1"
+        },
+        {
+          "filePropertyName": "property2",
+          "value": "value2"
+        }
+      ]
+    }
+  }
+}
