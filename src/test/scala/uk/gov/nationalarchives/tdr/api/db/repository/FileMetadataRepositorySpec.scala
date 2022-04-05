@@ -177,7 +177,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       getFileStatusValue(fileId, utils) should equal("Value")
   }
 
-  "getSingleFileMetadata" should "return the correct metadata" in withContainers {
+  "getFileMetadataByProperty" should "return the correct metadata" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -188,7 +188,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       utils.createFile(fileId, consignmentId)
       utils.addFileProperty("FileProperty")
       utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
-      val response = fileMetadataRepository.getSingleFileMetadata(fileId, "FileProperty").futureValue.head
+      val response = fileMetadataRepository.getFileMetadataByProperty(fileId, "FileProperty").futureValue.head
       response.value should equal("Result of FileMetadata processing")
       response.propertyname should equal("FileProperty")
       response.fileid should equal(fileId)

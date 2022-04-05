@@ -13,7 +13,7 @@ class ClientFileMetadataService(fileMetadataRepository: FileMetadataRepository)
                                (implicit val executionContext: ExecutionContext) {
 
   def getClientFileMetadata(fileId: UUID): Future[ClientFileMetadata] = {
-    fileMetadataRepository.getSingleFileMetadata(fileId, clientSideProperties: _*)
+    fileMetadataRepository.getFileMetadataByProperty(fileId, clientSideProperties: _*)
       .map(rows => convertToResponse(fileId, rows))
       .recover {
         case nse: NoSuchElementException => throw InputDataException(s"Could not find client metadata for file $fileId", Some(nse))

@@ -41,7 +41,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     when(metadataRepositoryMock.addChecksumMetadata(addChecksumCaptor.capture(), any[FilestatusRow]))
       .thenReturn(mockMetadataResponse)
-    when(metadataRepositoryMock.getSingleFileMetadata(getFileMetadataFileCaptor.capture(), getFileMetadataPropertyNameCaptor.capture()))
+    when(metadataRepositoryMock.getFileMetadataByProperty(getFileMetadataFileCaptor.capture(), getFileMetadataPropertyNameCaptor.capture()))
       .thenReturn(Future(mockFileMetadataResponse))
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, FixedTimeSource, fixedUUIDSource)
     service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, "value"), fixedUserId).futureValue
@@ -60,7 +60,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val fileId = UUID.randomUUID()
 
-    when(metadataRepositoryMock.getSingleFileMetadata(fileId, SHA256ClientSideChecksum))
+    when(metadataRepositoryMock.getFileMetadataByProperty(fileId, SHA256ClientSideChecksum))
       .thenReturn(Future(Seq()))
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
@@ -90,7 +90,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(metadataRepositoryMock.addChecksumMetadata(any[FilemetadataRow], fileStatusCaptor.capture()))
       .thenReturn(mockMetadataResponse)
 
-    when(metadataRepositoryMock.getSingleFileMetadata(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
+    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, FixedTimeSource, fixedUUIDSource)
     service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, "Checksum"), fixedUserId).futureValue
     fileStatusCaptor.getValue.fileid should equal(fixedFileUuid)
@@ -118,7 +118,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileStatusCaptor: ArgumentCaptor[FilestatusRow] = ArgumentCaptor.forClass(classOf[FilestatusRow])
     when(metadataRepositoryMock.addChecksumMetadata(any[FilemetadataRow], fileStatusCaptor.capture()))
       .thenReturn(mockMetadataResponse)
-    when(metadataRepositoryMock.getSingleFileMetadata(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
+    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
 
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, FixedTimeSource, fixedUUIDSource)
     service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, "anotherchecksum"), fixedUserId).futureValue
@@ -146,7 +146,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
 
     when(metadataRepositoryMock.addChecksumMetadata(any[FilemetadataRow], any[FilestatusRow])).thenReturn(mockMetadataResponse)
-    when(metadataRepositoryMock.getSingleFileMetadata(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
+    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
 
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, FixedTimeSource, fixedUUIDSource)
     val result: FileMetadataWithFileId =

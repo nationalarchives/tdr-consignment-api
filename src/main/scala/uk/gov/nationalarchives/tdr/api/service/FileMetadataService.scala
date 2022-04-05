@@ -51,7 +51,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     filePropertyName match {
       case SHA256ServerSideChecksum =>
         (for {
-          cfm <- fileMetadataRepository.getSingleFileMetadata(addFileMetadataInput.fileId, SHA256ClientSideChecksum)
+          cfm <- fileMetadataRepository.getFileMetadataByProperty(addFileMetadataInput.fileId, SHA256ClientSideChecksum)
           fileStatus: String = cfm.headOption match {
             case Some(cfm) if cfm.value == addFileMetadataInput.value => Success
             case Some(_) => Mismatch
