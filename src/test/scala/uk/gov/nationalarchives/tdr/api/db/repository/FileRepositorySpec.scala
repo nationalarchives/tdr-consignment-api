@@ -251,9 +251,9 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
     utils.addFileProperty("FilePropertyOne")
     utils.addFileProperty("FilePropertyTwo")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyOne")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyTwo")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId, "FilePropertyOne")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "FilePropertyOne")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "FilePropertyTwo")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId.toString, "FilePropertyOne")
     folderOneId
   }
 

@@ -8,7 +8,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.BulkFil
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
-import uk.gov.nationalarchives.tdr.api.service.FileOwnership
+import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
 import scala.concurrent._
 import scala.language.postfixOps
