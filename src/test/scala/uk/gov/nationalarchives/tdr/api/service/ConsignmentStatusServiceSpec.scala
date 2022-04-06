@@ -46,7 +46,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       | if only the series status exists for given consignment""".stripMargin in {
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId = fixedUUIDSource.uuid
-    val dateTime = Timestamp.from(FixedTimeSource.now)
 
     val mockConsignmentStatusResponse = Future.successful(Seq(
       generateConsignmentStatusRow(consignmentId, "Series", "Complete")
@@ -132,7 +131,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     response should be(CurrentStatus(None, None, None, None))
   }
 
-  "setUploadConsignmentStatusValueToComplete" should "add the correct series status" in {
+  "setUploadConsignmentStatusValueToComplete" should "update a consignments' status when upload is complete" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId = fixedUUIDSource.uuid
     val statusType = "Upload"

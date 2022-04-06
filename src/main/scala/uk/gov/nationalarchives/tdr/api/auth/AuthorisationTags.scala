@@ -44,44 +44,6 @@ object ValidateBody extends SyncAuthorisationTag {
   }
 }
 
-object ValidateConsignmentCreation extends AuthorisationTag {
-
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
-    val token = ctx.ctx.accessToken
-    val userId = token.userId
-    val userBody = token.transferringBody.getOrElse(
-      throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
-    val addConsignmentInput = ctx.arg[AddConsignmentInput]("addConsignmentInput")
-    val seriesId: Option[UUID] = addConsignmentInput.seriesid
-    val consignmentType: String = addConsignmentInput.consignmentType
-
-    seriesId match {
-      case Some(value) =>
-        val bodyResult = ctx.ctx.transferringBodyService.getBody(value)
-        bodyResult.map(body => {
-          body.tdrCode match {
-            case code if code == userBody => continue
-            case code =>
-              val message = s"User '$userId' is from transferring body '$userBody' and does not have permission " +
-                s"to create a consignment under series '$value' owned by body '$code'"
-              throw AuthorisationException(message)
-          }
-        })
-      case _ if token.isJudgmentUser && consignmentType.isJudgment =>
-        Future(continue)
-      case _ =>
-        val message = if (!token.isJudgmentUser) {
-          s"User '$userId' is not a judgment user and does not have permission to create a consignment without a series"
-        } else {
-          s"Cannot create consignment without series for consignment type '$consignmentType'"
-        }
-
-        throw AuthorisationException(message)
-    }
-  }
-}
-
 object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
@@ -92,18 +54,19 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
       throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
     val consignmentSeriesInput = ctx.arg[UpdateConsignmentSeriesIdInput]("updateConsignmentSeriesId")
     val seriesId: UUID = consignmentSeriesInput.seriesId
-    if(token.isJudgmentUser){
+    val consignmentId: UUID = consignmentSeriesInput.consignmentId
+    if (token.isJudgmentUser) {
       val message = "Judgment users cannot update series id"
       throw AuthorisationException(message)
     }
 
-val bodyResult = ctx.ctx.transferringBodyService.getBody(seriesId)
+    val bodyResult = ctx.ctx.transferringBodyService.getBody(seriesId)
     bodyResult.map(body => {
       body.tdrCode match {
         case code if code == userBody => continue
         case code =>
           val message = s"User '$userId' is from transferring body '$userBody' and does not have permission " +
-            s"to update a consignment under series '$seriesId' owned by body '$code'"
+            s"to update a consignment '$consignmentId' under series '$seriesId' owned by body '$code'"
           throw AuthorisationException(message)
       }
     })
