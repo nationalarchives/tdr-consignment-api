@@ -157,6 +157,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
       val result = fileMetadataRepository.addFileMetadata(input).futureValue
 
+      result.length should equal(numberOfFileMetadataRows)
       checkFileMetadataExists(fileId, utils, numberOfFileMetadataRows)
   }
 
