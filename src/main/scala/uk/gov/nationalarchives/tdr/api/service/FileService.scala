@@ -102,18 +102,7 @@ object FileService {
 
   implicit class FileRepositoryResponseHelper(response: Seq[FileRepositoryMetadata]) {
     private def convertMetadataRows(rows: Seq[FilemetadataRow]): FileMetadataValues = {
-      val propertyNameMap = rows.groupBy(_.propertyname).transform((_, value) => value.head.value)
-      FileMetadataValues(
-        propertyNameMap.get(SHA256ClientSideChecksum),
-        propertyNameMap.get(ClientSideOriginalFilepath),
-        propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
-        propertyNameMap.get(ClientSideFileSize).map(_.toLong),
-        propertyNameMap.get(RightsCopyright.name),
-        propertyNameMap.get(LegalStatus.name),
-        propertyNameMap.get(HeldBy.name),
-        propertyNameMap.get(Language.name),
-        propertyNameMap.get(FoiExemptionCode.name)
-      )
+      getFileMetadataValues(rows)
     }
 
     def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
