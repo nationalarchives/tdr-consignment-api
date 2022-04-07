@@ -39,7 +39,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
             fp.propertygroup,
             getDataType(fp.datatype),
             fp.editable.getOrElse(false),
-            fp.mutlivalue.getOrElse(false),
+            fp.multivalue.getOrElse(false),
             defaultValueOption,
             metadataValues.toList
           )

@@ -121,7 +121,6 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
     case _: PostgreSQLContainer =>
       val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_consignmentid_missing")
       val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_missingconsignmentid", validUserToken())
-      print(response.errors.head.message)
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 

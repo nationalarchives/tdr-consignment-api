@@ -136,6 +136,7 @@ type ConsignmentEdge {
 }
 
 type CurrentStatus {
+  series: String
   transferAgreement: String
   upload: String
   confirmTransfer: String
@@ -269,6 +270,7 @@ type Mutation {
   updateTransferInitiated(consignmentid: UUID!): Int
   updateExportData(exportData: UpdateExportDataInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
+  updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -343,6 +345,11 @@ type TransferringBody {
 }
 
 scalar UUID
+
+input UpdateConsignmentSeriesIdInput {
+  consignmentId: UUID!
+  seriesId: UUID!
+}
 
 input UpdateExportDataInput {
   consignmentId: UUID!
