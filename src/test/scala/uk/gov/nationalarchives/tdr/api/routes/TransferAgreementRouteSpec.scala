@@ -91,7 +91,6 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
     case _: PostgreSQLContainer =>
       val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_consignmentid_missing")
       val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_missingconsignmentid", validUserToken())
-      print(response, "\n\n\n")
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
