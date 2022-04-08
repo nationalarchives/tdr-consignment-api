@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Field 'AddFileMetadataInput.value' of required type 'String!' was not provided. (line 1, column 47):\nmutation{addFileMetadata(addFileMetadataInput:{filePropertyName:\"SHA256ServerSideChecksum\",fileId:\"4e0fd35b-8d6f-4498-b081-f7401ce6b99b\"}){filePropertyName,fileId,value}}\n                                              ^",
+      "message": "Field 'AddFileMetadataWithFileIdInput.value' of required type 'String!' was not provided. (line 1, column 57):\nmutation{addFileMetadata(addFileMetadataWithFileIdInput:{filePropertyName:\"SHA256ServerSideChecksum\",fileId:\"4e0fd35b-8d6f-4498-b081-f7401ce6b99b\"}){filePropertyName,fileId,value}}\n                                                        ^",
       "locations": [
         {
           "column": 47,

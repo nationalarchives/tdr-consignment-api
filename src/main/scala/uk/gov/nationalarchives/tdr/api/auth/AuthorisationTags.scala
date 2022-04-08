@@ -4,9 +4,11 @@ import java.util.UUID
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, UpdateConsignmentSeriesIdInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.BulkFileMetadataInputArg
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
+import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
 import scala.concurrent._
 import scala.language.postfixOps
@@ -164,6 +166,32 @@ object ValidateHasExportAccess extends SyncAuthorisationTag {
       val tokenUserId = token.userId
       throw AuthorisationException(s"User '$tokenUserId' does not have permission to export the files")
     }
+  }
+}
+
+object ValidateUserOwnsFiles extends AuthorisationTag {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
+                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+    val userId = ctx.ctx.accessToken.userId
+    val addBulkMetadataInput = ctx.arg(BulkFileMetadataInputArg)
+    val fileIds = addBulkMetadataInput.fileIds.toSeq
+
+    for {
+      fileIdsAndOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
+      fileIdsBelongingToAConsignment: Seq[UUID] = fileIdsAndOwner.map(_.fileId)
+      filesThatDoNotBelongToAConsignment: Seq[UUID] = fileIds.filterNot(fileId => fileIdsBelongingToAConsignment.contains(fileId))
+      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileIdsAndOwner.collect{
+        case fileIdAndOwner if fileIdAndOwner.userId != userId => fileIdAndOwner.fileId
+      }
+      allFilesBelongToAConsignment = filesThatDoNotBelongToAConsignment.isEmpty
+      allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
+      result = if (allFilesBelongToAConsignment && allFilesBelongToTheUser) {
+        continue
+      } else {
+        val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
+        throw AuthorisationException(s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")}")
+      }
+    } yield result
   }
 }
 

@@ -1,0 +1,17 @@
+{
+  "query": "mutation addBulkFileMetadata($addBulkFileMetadataInput: AddBulkFileMetadataInput!) {addBulkFileMetadata(addBulkFileMetadataInput:$addBulkFileMetadataInput) {fileIds,metadataProperties {filePropertyName,value}}}",
+  "variables": {
+    "addBulkFileMetadataInput" : {
+      "metadataProperties": [
+        {
+          "filePropertyName": "property1",
+          "value": "value1"
+        },
+        {
+          "filePropertyName": "property2",
+          "value": "value2"
+        }
+      ]
+    }
+  }
+}

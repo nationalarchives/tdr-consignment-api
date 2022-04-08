@@ -93,7 +93,7 @@ class GraphQLServer(slickSession: SlickSession) {
       uuidSource, timeSource)
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
-    val fileMetadataService = new FileMetadataService(fileMetadataRepository, timeSource, uuidSource)
+    val fileMetadataService = new FileMetadataService(fileMetadataRepository, fileRepository, timeSource, uuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
     val fileService = new FileService(fileRepository,consignmentRepository, ffidMetadataService,

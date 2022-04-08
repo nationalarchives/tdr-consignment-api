@@ -28,5 +28,4 @@ trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
       responseAs[A]
     }
   }
-
 }

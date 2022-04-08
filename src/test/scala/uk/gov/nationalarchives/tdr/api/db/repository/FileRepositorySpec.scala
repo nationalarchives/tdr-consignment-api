@@ -226,21 +226,35 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       files.size shouldBe 1
   }
 
-  private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): Unit = {
-    val folderOneId = "92756098-b394-4f46-8b4d-bbd1953660c9"
-    val fileOneId = "20e0676a-f0a1-4051-9540-e7df1344ac11"
-    val fileTwoId = "b5111f11-4dca-4f92-8239-505da567b9d0"
+  "getAllDescendants" should "return all descendants" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      val folderId = setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getAllDescendants(Seq(folderId)).futureValue
+      files.size shouldBe 3
+
+  }
+
+  private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): UUID = {
+    val folderOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileOneId = UUID.fromString("20e0676a-f0a1-4051-9540-e7df1344ac11")
+    val fileTwoId = UUID.fromString("b5111f11-4dca-4f92-8239-505da567b9d0")
 
     utils.createConsignment(consignmentId, userId)
-    utils.createFile(UUID.fromString(folderOneId), consignmentId, NodeType.directoryTypeIdentifier)
-    utils.createFile(UUID.fromString(fileOneId), consignmentId)
-    utils.createFile(UUID.fromString(fileTwoId), consignmentId)
+    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier)
+    utils.createFile(fileOneId, consignmentId, parentId = Some(folderOneId))
+    utils.createFile(fileTwoId, consignmentId, parentId = Some(folderOneId))
 
     utils.addFileProperty("FilePropertyOne")
     utils.addFileProperty("FilePropertyTwo")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyOne")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, "FilePropertyTwo")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId, "FilePropertyOne")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "FilePropertyOne")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "FilePropertyTwo")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId.toString, "FilePropertyOne")
+    folderOneId
   }
 
   private def checkConsignmentStatusExists(consignmentId: UUID, utils: TestUtils): Unit = {
