@@ -46,7 +46,11 @@ class ConsignmentService(
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
-    consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
+    val updateTransferInitiatedStatus = consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
+    //Later, "Completed" might be changed to "InProgress"
+    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "Export", "Completed", Timestamp.from(timeSource.now))
+    consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
+    updateTransferInitiatedStatus
   }
 
   def updateExportData(exportDataInput: UpdateExportDataInput): Future[Int] = {

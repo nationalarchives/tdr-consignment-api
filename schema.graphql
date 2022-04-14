@@ -140,6 +140,7 @@ type CurrentStatus {
   transferAgreement: String
   upload: String
   confirmTransfer: String
+  export: String
 }
 
 type CustomMetadataField {
