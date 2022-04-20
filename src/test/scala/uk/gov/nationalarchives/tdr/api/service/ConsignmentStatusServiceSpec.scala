@@ -29,9 +29,10 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val consignmentStatusRow2 = generateConsignmentStatusRow(consignmentId, "TransferAgreement","Completed")
     val consignmentStatusRow3 = generateConsignmentStatusRow(consignmentId, "Upload","Completed")
     val consignmentStatusRow4 = generateConsignmentStatusRow(consignmentId, "ConfirmTransfer","Completed")
+    val consignmentStatusRow5 = generateConsignmentStatusRow(consignmentId, "Export","Completed")
 
     val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] =
-      Future.successful(Seq(consignmentStatusRow1, consignmentStatusRow2, consignmentStatusRow3, consignmentStatusRow4))
+      Future.successful(Seq(consignmentStatusRow1, consignmentStatusRow2, consignmentStatusRow3, consignmentStatusRow4, consignmentStatusRow5))
     when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockRepoResponse)
 
     val response: CurrentStatus = consignmentService.getConsignmentStatus(consignmentId).futureValue
@@ -40,6 +41,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     response.transferAgreement should be(Some("Completed"))
     response.upload should be(Some("Completed"))
     response.confirmTransfer should be(Some("Completed"))
+    response.export should be(Some("Completed"))
   }
 
   "getConsignmentStatus" should
@@ -129,7 +131,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
     val response = consignmentService.getConsignmentStatus(consignmentId).futureValue
 
-    response should be(CurrentStatus(None, None, None, None))
+    response should be(CurrentStatus(None, None, None, None, None))
   }
 
   "updateConsignmentStatus" should "pass the correct consignment status and value to the repository method" in {
