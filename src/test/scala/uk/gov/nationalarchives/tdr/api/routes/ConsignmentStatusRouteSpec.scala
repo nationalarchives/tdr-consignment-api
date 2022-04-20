@@ -37,7 +37,7 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
                                modifiedDatetime: Option[ZonedDateTime]
                               )
 
-  "setUploadConsignmentStatusValueToComplete" should "update consignment status" in withContainers {
+  "updateConsignmentStatus" should "update consignment status" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")

@@ -16,7 +16,11 @@ object ConsignmentStatusFields {
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("markUploadAsCompleted", OptionType(IntType),
       arguments = ConsignmentIdArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentStatusService.setUploadConsignmentStatusValueToComplete(ctx.arg(ConsignmentIdArg)),
+      resolve = ctx => ctx.ctx.consignmentStatusService.updateConsignmentStatus(
+        ctx.arg(ConsignmentIdArg),
+        "Upload",
+        "Completed"
+      ),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     )
   )
