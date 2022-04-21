@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.UpdateConsignmentStatusInput
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -28,6 +29,15 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       consignmentId,
       statusType,
       statusValue,
+      Timestamp.from(timeSource.now)
+    )
+  }
+
+  def updateConsignmentStatus(updateConsignmentStatusInput: UpdateConsignmentStatusInput): Future[Int] = {
+    consignmentStatusRepository.updateConsignmentStatus(
+      updateConsignmentStatusInput.consignmentId,
+      updateConsignmentStatusInput.statusType,
+      updateConsignmentStatusInput.statusValue,
       Timestamp.from(timeSource.now)
     )
   }
