@@ -20,7 +20,9 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       CurrentStatus(consignmentStatusTypesAndVals.get("Series"),
         consignmentStatusTypesAndVals.get("TransferAgreement"),
         consignmentStatusTypesAndVals.get("Upload"),
-        consignmentStatusTypesAndVals.get("ConfirmTransfer"))
+        consignmentStatusTypesAndVals.get("ConfirmTransfer"),
+        consignmentStatusTypesAndVals.get("Export")
+      )
     }
   }
 

@@ -46,7 +46,11 @@ class ConsignmentService(
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
-    consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
+    for {
+      updateTransferInitiatedStatus <- consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
+      consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "Export", "Completed", Timestamp.from(timeSource.now))
+      _ <- consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
+    } yield updateTransferInitiatedStatus
   }
 
   def updateExportData(exportDataInput: UpdateExportDataInput): Future[Int] = {
