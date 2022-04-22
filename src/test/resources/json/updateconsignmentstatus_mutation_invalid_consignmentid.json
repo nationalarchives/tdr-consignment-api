@@ -1,6 +1,10 @@
 {
-  "query": "mutation markUploadAsCompleted($consignmentId: UUID!){markUploadAsCompleted(consignmentid:$consignmentId)}",
+  "query": "mutation updateConsignmentStatus($updateConsignmentStatusInput: UpdateConsignmentStatusInput!){updateConsignmentStatus(updateConsignmentStatus: $updateConsignmentStatusInput)}",
   "variables": {
-    "consignmentId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2"
+    "updateConsignmentStatusInput": {
+      "consignmentId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2",
+      "statusType": "Export",
+      "statusValue": "Completed"
+    }
   }
 }

@@ -1,0 +1,11 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Invalid updateConsignmentStatus input: either 'InvalidStatusType' or 'Completed'",
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    }
+  ]
+}

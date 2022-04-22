@@ -276,6 +276,7 @@ type Mutation {
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   markUploadAsCompleted(consignmentid: UUID!): Int
+  updateConsignmentStatus(updateConsignmentStatus: UpdateConsignmentStatusInput!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
   addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput!): BulkFileMetadata!
@@ -350,6 +351,12 @@ scalar UUID
 input UpdateConsignmentSeriesIdInput {
   consignmentId: UUID!
   seriesId: UUID!
+}
+
+input UpdateConsignmentStatusInput {
+  consignmentId: UUID!
+  statusType: String!
+  statusValue: String!
 }
 
 input UpdateExportDataInput {
