@@ -76,7 +76,7 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
   }
 
   "updateConsignmentStatus" should "return an error if a consignment that doesn't exist is queried" in withContainers {
-    case _: PostgreSQLContainer =>
+    case container: PostgreSQLContainer =>
       val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
       val token = validUserToken(userId)
 
@@ -84,5 +84,61 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val response = runTestRequest[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_consignmentid", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
+  }
+
+  "updateConsignmentStatus" should "return an error if an invalid statusType is passed" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+      val token = validUserToken(userId)
+
+      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+      val statusType = "Upload"
+      val statusValue = "InProgress"
+
+      utils.createConsignment(consignmentId, userId)
+      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+      val expectedResponse = getDataFromFile[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_invalid_statustype")
+      val response = runTestRequest[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_statustype", token)
+
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+  }
+
+  "updateConsignmentStatus" should "return an error if an invalid statusValue is passed" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+      val token = validUserToken(userId)
+      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+      val statusType = "Upload"
+      val statusValue = "InProgress"
+      utils.createConsignment(consignmentId, userId)
+      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+      val expectedResponse = getDataFromFile[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_invalid_statusvalue")
+      val response = runTestRequest[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_statusvalue", token)
+
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+  }
+
+  "updateConsignmentStatus" should "return an error if an invalid statusType and statusValue is passed" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+      val token = validUserToken(userId)
+      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+      val statusType = "Upload"
+      val statusValue = "InProgress"
+      utils.createConsignment(consignmentId, userId)
+      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+      val expectedResponse = getDataFromFile[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_invalid_statustype_and_statusvalue")
+      val response = runTestRequest[GraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_statustype_and_statusvalue", token)
+
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 }

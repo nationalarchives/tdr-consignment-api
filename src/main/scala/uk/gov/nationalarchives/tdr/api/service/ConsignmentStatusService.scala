@@ -1,8 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.UpdateConsignmentStatusInput
+import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -36,11 +38,23 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
   }
 
   def updateConsignmentStatus(updateConsignmentStatusInput: UpdateConsignmentStatusInput): Future[Int] = {
-    consignmentStatusRepository.updateConsignmentStatus(
-      updateConsignmentStatusInput.consignmentId,
-      updateConsignmentStatusInput.statusType,
-      updateConsignmentStatusInput.statusValue,
-      Timestamp.from(timeSource.now)
-    )
+    val statusType: String = updateConsignmentStatusInput.statusType
+    val statusValue: String = updateConsignmentStatusInput.statusValue
+
+    if(validStatusTypes.contains(statusType) && validStatusValues.contains(statusValue)) {
+      consignmentStatusRepository.updateConsignmentStatus(
+        updateConsignmentStatusInput.consignmentId,
+        updateConsignmentStatusInput.statusType,
+        updateConsignmentStatusInput.statusValue,
+        Timestamp.from(timeSource.now)
+      )
+    } else {
+      throw InputDataException(s"Invalid updateConsignmentStatus input: either '$statusType' or '$statusValue'")
+    }
   }
+}
+
+object ConsignmentStatusService {
+  val validStatusTypes = Set("Series", "TransferAgreement", "Upload", "ConfirmTransfer", "Export")
+  val validStatusValues = Set("InProgress", "Completed")
 }
