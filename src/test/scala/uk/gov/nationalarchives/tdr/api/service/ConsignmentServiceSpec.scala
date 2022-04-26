@@ -12,13 +12,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
-  AddConsignmentInput,
-  FileChecks,
-  StartUploadInput,
-  UpdateConsignmentSeriesIdInput,
-  UpdateExportDataInput
-}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -136,10 +130,10 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
     when(consignmentRepoMock.getConsignment(any[UUID])).thenReturn(mockResponse)
 
-    val response: Option[ConsignmentFields.Consignment] = consignmentService.getConsignment(consignmentId).futureValue
+    val response: Option[Consignment] = consignmentService.getConsignment(consignmentId).futureValue
 
     verify(consignmentRepoMock, times(1)).getConsignment(any[UUID])
-    val consignment: ConsignmentFields.Consignment = response.get
+    val consignment: Consignment = response.get
     consignment.consignmentid should equal(consignmentId)
     consignment.seriesid should equal(Some(seriesId))
     consignment.userid should equal(userId)
@@ -149,7 +143,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
     when(consignmentRepoMock.getConsignment(any[UUID])).thenReturn(mockResponse)
 
-    val response: Option[ConsignmentFields.Consignment] = consignmentService.getConsignment(UUID.randomUUID()).futureValue
+    val response: Option[Consignment] = consignmentService.getConsignment(UUID.randomUUID()).futureValue
     verify(consignmentRepoMock, times(1)).getConsignment(any[UUID])
 
     response should be(None)
