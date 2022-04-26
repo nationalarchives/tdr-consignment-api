@@ -34,7 +34,7 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
   case class UpdateConsignmentStatusGraphqlMutationData(data: Option[UpdateConsignmentStatusComplete], errors: List[GraphqlError] = Nil)
 
   case class AddConsignmentStatusComplete(addConsignmentStatus: ConsignmentStatus)
-  case class UpdateConsignmentStatusComplete(updateConsignmentStatusUploadComplete: Option[Int])
+  case class UpdateConsignmentStatusComplete(updateConsignmentStatus: Option[Int])
 
   case class ConsignmentStatus(consignmentStatusId: Option[UUID],
                                consignmentId: Option[UUID],
@@ -162,10 +162,10 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = getDataFromFile[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_all")
-      val response = runTestRequest[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_data_all", token)
+      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_all")
+      val response = runUpdateConsignmentStatusTestMutation("mutation_data_all", token)
 
-      response.data.get.updateConsignmentStatusUploadComplete should equal(expectedResponse.data.get.updateConsignmentStatusUploadComplete)
+      response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
   }
 
   "updateConsignmentStatus" should "not allow a user to update the consignment status of a consignment that they did not create" in withContainers {
@@ -182,8 +182,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
       val token = validUserToken(wrongUserId)
 
-      val expectedResponse = getDataFromFile[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_not_owner")
-      val response = runTestRequest[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_not_owner", token)
+      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_not_owner")
+      val response = runUpdateConsignmentStatusTestMutation("mutation_not_owner", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
@@ -193,8 +193,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
       val token = validUserToken(userId)
 
-      val expectedResponse = getDataFromFile[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_invalid_consignmentid")
-      val response = runTestRequest[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_consignmentid", token)
+      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_consignmentid")
+      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_consignmentid", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
@@ -212,8 +212,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = getDataFromFile[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_invalid_statustype")
-      val response = runTestRequest[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_statustype", token)
+      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statustype")
+      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statustype", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
       response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
@@ -230,8 +230,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = getDataFromFile[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_invalid_statusvalue")
-      val response = runTestRequest[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_statusvalue", token)
+      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statusvalue")
+      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statusvalue", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
       response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
@@ -248,10 +248,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse =
-        getDataFromFile[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("data_invalid_statustype_and_statusvalue")
-      val response =
-        runTestRequest[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)("mutation_invalid_statustype_and_statusvalue", token)
+      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statustype_and_statusvalue")
+      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statustype_and_statusvalue", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
       response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
