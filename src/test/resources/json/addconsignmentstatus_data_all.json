@@ -1,0 +1,11 @@
+{
+  "data": {
+    "addConsignmentStatus": {
+      "consignmentStatusId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+      "consignmentId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2",
+      "statusType": "Upload",
+      "value": "Completed",
+      "modifiedDatetime": null
+    }
+  }
+}

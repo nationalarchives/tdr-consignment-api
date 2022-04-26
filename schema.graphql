@@ -135,6 +135,21 @@ type ConsignmentEdge {
   cursor: String!
 }
 
+type ConsignmentStatus {
+  consignmentStatusId: UUID!
+  consignmentId: UUID!
+  statusType: String!
+  value: String!
+  createdDatetime: ZonedDateTime!
+  modifiedDatetime: ZonedDateTime
+}
+
+input ConsignmentStatusInput {
+  consignmentId: UUID!
+  statusType: String!
+  statusValue: String!
+}
+
 type CurrentStatus {
   series: String
   transferAgreement: String
@@ -275,8 +290,9 @@ type Mutation {
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
+  addConsignmentStatus(addConsignmentStatus: ConsignmentStatusInput!): ConsignmentStatus!
   markUploadAsCompleted(consignmentid: UUID!): Int
-  updateConsignmentStatus(updateConsignmentStatus: UpdateConsignmentStatusInput!): Int
+  updateConsignmentStatus(updateConsignmentStatus: ConsignmentStatusInput!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
   addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput!): BulkFileMetadata!
@@ -351,12 +367,6 @@ scalar UUID
 input UpdateConsignmentSeriesIdInput {
   consignmentId: UUID!
   seriesId: UUID!
-}
-
-input UpdateConsignmentStatusInput {
-  consignmentId: UUID!
-  statusType: String!
-  statusValue: String!
 }
 
 input UpdateExportDataInput {
