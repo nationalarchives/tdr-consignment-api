@@ -1,5 +1,5 @@
 {
-  "query": "mutation addConsignmentStatus($addConsignmentStatusInput: ConsignmentStatusInput!){addConsignmentStatus(addConsignmentStatus: $addConsignmentStatusInput){consignmentId}}",
+  "query": "mutation addConsignmentStatus($addConsignmentStatusInput: ConsignmentStatusInput!){addConsignmentStatus(addConsignmentStatusInput: $addConsignmentStatusInput){consignmentId}}",
   "variables": {
     "addConsignmentStatusInput": {
       "consignmentId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2",
