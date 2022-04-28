@@ -30,9 +30,9 @@ object ConsignmentStatusFields {
   implicit val ConsignmentStatusType: ObjectType[Unit, ConsignmentStatus] = deriveObjectType[Unit, ConsignmentStatus]()
 
   val AddConsignmentStatusArg: Argument[ConsignmentStatusInput] =
-    Argument("addConsignmentStatus", ConsignmentStatusInputType)
+    Argument("addConsignmentStatusInput", ConsignmentStatusInputType)
   val UpdateConsignmentStatusArg: Argument[ConsignmentStatusInput] =
-    Argument("updateConsignmentStatus", ConsignmentStatusInputType)
+    Argument("updateConsignmentStatusInput", ConsignmentStatusInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
