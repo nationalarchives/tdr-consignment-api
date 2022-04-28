@@ -52,7 +52,6 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       }
     }
 
-
   def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
     for {
       consignmentStatuses <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
