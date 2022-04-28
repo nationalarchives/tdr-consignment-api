@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.UpdateConsignmentStatusInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -20,7 +20,142 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
-  val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, FixedTimeSource)
+  val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
+
+  "addConsignmentStatus" should "pass the correct consignment status and value to the repository method" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "Upload"
+    val expectedStatusValue = "Completed"
+
+    val consignmentStatusRowCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
+    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+
+    val mockGetConsignmentStatusRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future(Seq())
+    val mockAddConsignmentStatusRepoResponse = Future(
+      generateConsignmentStatusRow(expectedConsignmentId, expectedStatusType, expectedStatusValue, None)
+    )
+
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentIdCaptor.capture())).thenReturn(mockGetConsignmentStatusRepoResponse)
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(consignmentStatusRowCaptor.capture())).thenReturn(mockAddConsignmentStatusRepoResponse)
+
+    val addConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+    consignmentService.addConsignmentStatus(addConsignmentStatusInput).futureValue
+
+    val consignmentStatusRowPassedToRepo = consignmentStatusRowCaptor.getValue
+
+    consignmentIdCaptor.getValue should equal(expectedConsignmentId)
+    consignmentStatusRowPassedToRepo.consignmentid should equal(expectedConsignmentId)
+    consignmentStatusRowPassedToRepo.statustype should equal(expectedStatusType)
+    consignmentStatusRowPassedToRepo.value should equal(expectedStatusValue)
+  }
+
+  "addConsignmentStatus" should "return the consignment status row if a row with same statusType doesn't already exist" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "Upload"
+    val expectedStatusValue = "Completed"
+    val consignmentStatusRow = generateConsignmentStatusRow(
+      expectedConsignmentId, expectedStatusType, expectedStatusValue, None
+    )
+
+    val mockGetConsignmentStatusRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future(Seq())
+    val mockAddConsignmentStatusRepoResponse = Future(consignmentStatusRow)
+
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(any[UUID])).thenReturn(mockGetConsignmentStatusRepoResponse)
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockAddConsignmentStatusRepoResponse)
+
+    val addConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+
+    val response: ConsignmentStatus = consignmentService.addConsignmentStatus(addConsignmentStatusInput).futureValue
+
+    response.consignmentId should equal(expectedConsignmentId)
+    response.statusType should equal(expectedStatusType)
+    response.value should equal(expectedStatusValue)
+  }
+
+  "addConsignmentStatus" should "throw an exception if row with same statusType already exists" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "Upload"
+    val initialStatusValue = "InProgress"
+    val expectedStatusValue = "Completed"
+    val initialConsignmentStatusRow = generateConsignmentStatusRow(
+      expectedConsignmentId, expectedStatusType, initialStatusValue, None
+    )
+    val consignmentStatusRow = generateConsignmentStatusRow(
+      expectedConsignmentId, expectedStatusType, expectedStatusValue, None
+    )
+
+    val mockGetConsignmentStatusRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future(Seq(initialConsignmentStatusRow))
+    val mockAddConsignmentStatusRepoResponse = Future(consignmentStatusRow)
+
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(any[UUID])).thenReturn(mockGetConsignmentStatusRepoResponse)
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockAddConsignmentStatusRepoResponse)
+
+    val addConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+
+    val thrownException = intercept[Exception] {
+      consignmentService.addConsignmentStatus(addConsignmentStatusInput).futureValue
+    }
+
+    thrownException.getMessage should equal(
+            "The future returned an exception of type: " +
+            "uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException, " +
+            s"with message: Existing consignment $expectedStatusType status is '$initialStatusValue'; new entry cannot be added."
+    )
+  }
+
+  "addConsignmentStatus" should "throw an exception if an incorrect statusType has been passed" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "InvalidStatusType"
+    val expectedStatusValue = "Completed"
+
+    val updateConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+
+    val thrownException = intercept[Exception] {
+      consignmentService.addConsignmentStatus(updateConsignmentStatusInput).futureValue
+    }
+
+    thrownException.getMessage should equal(s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
+  }
+
+  "addConsignmentStatus" should "throw an exception if an incorrect statusValue has been passed" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "Upload"
+    val expectedStatusValue = "InvalidStatusValue"
+
+    val updateConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+
+    val thrownException = intercept[Exception] {
+      consignmentService.addConsignmentStatus(updateConsignmentStatusInput).futureValue
+    }
+
+    thrownException.getMessage should equal(s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
+  }
+
+  "addConsignmentStatus" should "throw an exception if an incorrect statusType and statusValue have been passed" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "InvalidStatusType"
+    val expectedStatusValue = "InvalidStatusValue"
+
+    val updateConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+
+    val thrownException = intercept[Exception] {
+      consignmentService.addConsignmentStatus(updateConsignmentStatusInput).futureValue
+    }
+
+    thrownException.getMessage should equal(s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
+  }
 
   "getConsignmentStatus" should
     "return a CurrentStatus object, where all properties have a value, if all consignment status exists for given consignment" in {
@@ -155,7 +290,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     ).thenReturn(mockRepoResponse)
 
     val updateConsignmentStatusInput =
-      UpdateConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
 
     val response: Int = consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
 
@@ -172,13 +307,13 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val expectedStatusValue = "Completed"
 
     val updateConsignmentStatusInput =
-      UpdateConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
 
     val thrownException = intercept[Exception] {
       consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
     }
 
-    thrownException.getMessage should equal(s"Invalid updateConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
+    thrownException.getMessage should equal(s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
   }
 
   "updateConsignmentStatus" should "throw an exception if an incorrect statusValue has been passed" in {
@@ -188,13 +323,13 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val expectedStatusValue = "InvalidStatusValue"
 
     val updateConsignmentStatusInput =
-      UpdateConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
 
     val thrownException = intercept[Exception] {
       consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
     }
 
-    thrownException.getMessage should equal(s"Invalid updateConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
+    thrownException.getMessage should equal(s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
   }
 
   "updateConsignmentStatus" should "throw an exception if an incorrect statusType and statusValue have been passed" in {
@@ -204,22 +339,26 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val expectedStatusValue = "InvalidStatusValue"
 
     val updateConsignmentStatusInput =
-      UpdateConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
 
     val thrownException = intercept[Exception] {
       consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
     }
 
-    thrownException.getMessage should equal(s"Invalid updateConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
+    thrownException.getMessage should equal(s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
   }
 
-  private def generateConsignmentStatusRow(consignmentId: UUID, statusType: String, statusValue: String): ConsignmentstatusRow = {
+  private def generateConsignmentStatusRow(consignmentId: UUID,
+                                           statusType: String,
+                                           statusValue: String,
+                                           modifiedTime: Option[Timestamp] = Option(Timestamp.from(FixedTimeSource.now))): ConsignmentstatusRow = {
     ConsignmentstatusRow(
       UUID.randomUUID(),
       consignmentId,
       statusType,
       statusValue,
-      Timestamp.from(FixedTimeSource.now)
+      Timestamp.from(FixedTimeSource.now),
+      modifiedTime
     )
   }
 }

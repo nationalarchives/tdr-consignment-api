@@ -1,0 +1,11 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Existing consignment Upload status is 'InProgress'; new entry cannot be added",
+      "extensions": {
+        "code": "INVALID_CONSIGNMENT_STATE"
+      }
+    }
+  ]
+}
