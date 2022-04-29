@@ -70,7 +70,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1",
-  "org.jboss.logging" % "jboss-logging" % "3.4.3.Final",
+  "org.jboss.logging" % "jboss-logging" % "3.5.0.Final",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "3.0.4",
   "software.amazon.awssdk" % "rds" % "2.17.162",
   "software.amazon.awssdk" % "sts" % "2.17.162",
