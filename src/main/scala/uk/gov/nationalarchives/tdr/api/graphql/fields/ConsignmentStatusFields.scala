@@ -41,15 +41,6 @@ object ConsignmentStatusFields {
       resolve = ctx => ctx.ctx.consignmentStatusService.addConsignmentStatus(ctx.arg(AddConsignmentStatusArg)),
       tags = List(ValidateUserHasAccessToConsignment(AddConsignmentStatusArg))
     ),
-    Field("markUploadAsCompleted", OptionType(IntType),
-      arguments = ConsignmentIdArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentStatusService.updateConsignmentStatus(
-        ctx.arg(ConsignmentIdArg),
-        "Upload",
-        "Completed"
-      ),
-      tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
-    ),
     Field("updateConsignmentStatus", OptionType(IntType),
       arguments = UpdateConsignmentStatusArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentStatusService.updateConsignmentStatus(

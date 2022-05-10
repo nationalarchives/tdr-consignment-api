@@ -66,15 +66,6 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
     }
   }
 
-  def updateConsignmentStatus(consignmentId: UUID, statusType: String, statusValue: String): Future[Int] = {
-    consignmentStatusRepository.updateConsignmentStatus(
-      consignmentId,
-      statusType,
-      statusValue,
-      Timestamp.from(timeSource.now)
-    )
-  }
-
   def updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput): Future[Int] = {
     validateStatusTypeAndValue(updateConsignmentStatusInput)
     consignmentStatusRepository.updateConsignmentStatus(
