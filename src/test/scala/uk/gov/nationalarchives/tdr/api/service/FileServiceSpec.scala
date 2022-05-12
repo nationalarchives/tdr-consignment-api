@@ -1,14 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import com.typesafe.config.ConfigFactory
+
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
-
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -20,6 +22,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -76,7 +79,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileService = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource
+          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
     )
 
     when(consignmentRepositoryMock.getConsignmentsOfFiles(Seq(fileId1)))
@@ -140,7 +143,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val service = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource)
+      fileRepositoryMock, consignmentRepositoryMock, ffidMetadataService, antivirusMetadataService,
+      fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
+    )
 
     val files = service.getFileMetadata(consignmentId).futureValue
     files.size shouldBe 4
@@ -219,7 +224,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource
+          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
     )
 
     val fileList: Seq[File] = service.getFileMetadata(consignmentId).futureValue
@@ -296,7 +301,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource)
+          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
     val fileMetadataList = service.getFileMetadata(consignmentId).futureValue
 
@@ -337,14 +342,17 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val metadataInputOne = ClientSideMetadataInput("/a/nested/path/OriginalPath1", "Checksum1", 1L, 1L, 1)
     val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, 2)
 
-    when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-            ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource)
+            ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
     val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
-    val fileRows: List[FileRow] = fileRowCaptor.getValue
-    val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getValue
+
+    verify(fileRepositoryMock, times(2)).addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())
+
+    val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
+    val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
+
 
     response.head.fileId should equal(UUID.fromString("47e365a4-fc1e-4375-b2f6-dccb6d361f5f"))
     response.head.matchId should equal(2)

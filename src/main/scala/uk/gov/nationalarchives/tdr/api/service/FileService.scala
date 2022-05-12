@@ -1,8 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import com.typesafe.config.Config
+
 import java.sql.Timestamp
 import java.util.UUID
-
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -19,15 +20,18 @@ import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileService(fileRepository: FileRepository,
-                   consignmentRepository: ConsignmentRepository,
-                   ffidMetadataService: FFIDMetadataService,
-                   avMetadataService: AntivirusMetadataService,
-                   fileStatusService: FileStatusService,
-                   timeSource: TimeSource,
-                   uuidSource: UUIDSource
+                  consignmentRepository: ConsignmentRepository,
+                  ffidMetadataService: FFIDMetadataService,
+                  avMetadataService: AntivirusMetadataService,
+                  fileStatusService: FileStatusService,
+                  timeSource: TimeSource,
+                  uuidSource: UUIDSource,
+                  config: Config
                  )(implicit val executionContext: ExecutionContext) {
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
+
+  private val batchSize: Int = config.getInt("fileUpload.batchSize")
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
@@ -60,14 +64,13 @@ class FileService(fileRepository: FileRepository,
           DirectoryRows(fileRow, commonMetadataRows)
         }
     }).toList
-    val fileRows: List[FileRow] = rowsWithMatchId.map(_.fileRow)
-    val fileMetadataRows: List[FilemetadataRow] = rowsWithMatchId.flatMap(_.metadataRows)
-    for {
-      _ <- fileRepository.addFiles(fileRows, fileMetadataRows)
-    } yield rowsWithMatchId.flatMap {
+
+    rowsWithMatchId.grouped(batchSize).foreach(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows)))
+
+    Future(rowsWithMatchId.flatMap {
       case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
       case _ => Nil
-    }
+    })
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
