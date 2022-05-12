@@ -65,12 +65,12 @@ class FileService(fileRepository: FileRepository,
         }
     }).toList
 
-    rowsWithMatchId.grouped(batchSize).foreach(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows)))
-
-    Future(rowsWithMatchId.flatMap {
+    for {
+      _ <- rowsWithMatchId.grouped(batchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
+    } yield rowsWithMatchId.flatMap {
       case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
       case _ => Nil
-    })
+    }
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
