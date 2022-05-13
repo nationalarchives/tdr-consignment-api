@@ -91,6 +91,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     ps.setObject(1, fileId, Types.OTHER)
     val rs = ps.executeQuery()
     rs.next()
+    
     val fileName = rs.getString("FileName")
     val value = rs.getString("Value")
     FileNameAndPath(fileName, value)
