@@ -39,18 +39,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   val fixedUuidSource = new FixedUUIDSource()
 
-  "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers {
-    case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
-      val utils = TestUtils(container.database)
-      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
-      utils.createConsignment(consignmentId, userId)
-
-      val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
-      val response = runTestMutationFileMetadata("mutation_alldata", validUserToken())
-      expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
-  }
-
   "The api" should "add files and metadata entries for files and directories" in withContainers {
     case container: PostgreSQLContainer =>
       val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
@@ -67,6 +55,18 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
         distinctDirectoryCount
 
       utils.countAllFileMetadata() should equal(expectedCount)
+  }
+
+  "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers {
+    case container: PostgreSQLContainer =>
+      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      val utils = TestUtils(container.database)
+      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
+      utils.createConsignment(consignmentId, userId)
+
+      val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
+      val response = runTestMutationFileMetadata("mutation_alldata", validUserToken())
+      expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
   }
 
   "The api" should "add files and metadata entries with matching file name and path" in withContainers {
