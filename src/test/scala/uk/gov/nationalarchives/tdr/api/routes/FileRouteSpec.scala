@@ -79,22 +79,27 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       val res = runTestMutationFileMetadata("mutation_alldata", validUserToken())
       res.data.get.addFilesAndMetadata.map(_.fileId).foreach(fileId => {
         val nameAndPath = getFileNameAndOriginalPathMatch(fileId, utils)
-        nameAndPath.fileName should equal(nameAndPath.path.split("/").last)
+        nameAndPath.isDefined should equal(true)
+        nameAndPath.get.fileName should equal(nameAndPath.get.path.split("/").last)
       })
   }
 
-  def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): FileNameAndPath = {
+  def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): Option[FileNameAndPath] = {
     val sql =
       """SELECT "FileName", "Value" FROM "FileMetadata" fm
         |JOIN "File" f on f."FileId" = fm."FileId" WHERE f."FileId" = ? AND "PropertyName" = 'ClientSideOriginalFilepath' """.stripMargin
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     val rs = ps.executeQuery()
-    rs.next()
-    
-    val fileName = rs.getString("FileName")
-    val value = rs.getString("Value")
-    FileNameAndPath(fileName, value)
+    if(rs.next()) {
+      val fileName = rs.getString("FileName")
+      val value = rs.getString("Value")
+      Option(FileNameAndPath(fileName, value))
+    } else {
+      None
+    }
+
+
   }
 
   def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {
