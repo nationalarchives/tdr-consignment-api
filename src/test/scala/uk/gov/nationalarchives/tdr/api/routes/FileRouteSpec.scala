@@ -90,10 +90,14 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     val rs = ps.executeQuery()
-    rs.next()
-    val fileName = rs.getString("FileName")
-    val value = rs.getString("Value")
-    FileNameAndPath(fileName, value)
+    if(rs.next()) {
+      val fileName = rs.getString("FileName")
+      val value = rs.getString("Value")
+      FileNameAndPath(fileName, value)
+    } else {
+      FileNameAndPath("Just testing", "Still testing")
+    }
+
   }
 
   def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {
