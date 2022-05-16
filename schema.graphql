@@ -113,6 +113,7 @@ type Consignment {
   series: Series
   transferringBody: TransferringBody
   files: [File!]!
+  paginatedFiles(paginationInput: PaginationInput!): FileConnection!
   consignmentReference: String!
   currentStatus: CurrentStatus!
 }
@@ -237,6 +238,24 @@ type FileChecks {
   ffidProgress: FFIDProgress!
 }
 
+"A connection to a list of items."
+type FileConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "A list of edges."
+  edges: [FileEdge]
+}
+
+"An edge in a connection."
+type FileEdge {
+  "The item at the end of the edge."
+  node: File!
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
 type FileMatches {
   fileId: UUID!
   matchId: Long!
@@ -313,6 +332,11 @@ type PageInfo {
 
   "When paginating forwards, the cursor to continue."
   endCursor: String
+}
+
+input PaginationInput {
+  limit: Int!
+  currentCursor: String
 }
 
 enum PropertyType {

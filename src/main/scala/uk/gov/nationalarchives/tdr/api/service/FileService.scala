@@ -3,10 +3,12 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.util.UUID
 
+import sangria.relay.{DefaultConnection, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
@@ -88,6 +90,34 @@ class FileService(fileRepository: FileRepository,
       ffidStatus <- fileStatusService.getFileStatus(consignmentId)
     } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
   }
+
+  def getPaginatedFiles(consignmentId: UUID,
+                        paginationInput: PaginationInput,
+                        fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
+    val filters = fileFilters.getOrElse(FileFilters())
+    val currentCursor = if (paginationInput.currentCursor.isDefined) Some(UUID.fromString(paginationInput.currentCursor.get)) else None
+    for {
+      response <- fileRepository.getPaginatedFiles(consignmentId, paginationInput.limit, currentCursor, filters)
+      files = response.toFiles(List(), List(), Map())
+      hasNextPage = response.nonEmpty
+      lastCursor: Option[String] = if (hasNextPage) Some(response.last._1.fileid.toString) else None
+      fileEdges = convertToEdges(files)
+    } yield {
+      DefaultConnection(
+        PageInfo(
+          startCursor = fileEdges.headOption.map(_.cursor),
+          endCursor = lastCursor,
+          hasNextPage = lastCursor.isDefined,
+          hasPreviousPage = currentCursor.isDefined
+        ),
+        fileEdges
+      )
+    }
+  }
+
+  private def convertToEdges(files: Seq[File]): Seq[FileEdge] = {
+    files.map(f => FileEdge(f, f.fileId.toString))
+  }
 }
 
 
@@ -126,4 +156,6 @@ object FileService {
   case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow]) extends Rows
 
   case class FileOwnership(fileId: UUID, userId: UUID)
+
+  case class PaginatedFiles(lastCursor: Option[String], fileEdges: Seq[FileEdge])
 }

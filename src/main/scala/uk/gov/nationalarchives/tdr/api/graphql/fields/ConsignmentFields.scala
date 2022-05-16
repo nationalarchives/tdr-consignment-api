@@ -33,6 +33,8 @@ object ConsignmentFields {
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
+  case class FileEdge(node: File, cursor: String) extends Edge[File]
+
   case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: String)
 
   case class AntivirusProgress(filesProcessed: Int)
@@ -48,11 +50,20 @@ object ConsignmentFields {
                            upload: Option[String],
                            confirmTransfer: Option[String],
                            `export`: Option[String])
+
+  case class PaginationInput(limit: Int, currentCursor: Option[String])
+
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
+
+  val LimitArg: Argument[Int] = Argument("limit", IntType)
+  val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
+
+  implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
+  val PaginationInputArg: Argument[PaginationInput] = Argument("paginationInput", PaginationInputType)
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -71,6 +82,12 @@ object ConsignmentFields {
   }
   implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
     deriveObjectType[Unit, CurrentStatus]()
+
+  implicit val ConnectionDefinition(_, fileConnections) =
+    Connection.definition[RequestContext, Connection, File](
+      name = "File",
+      nodeType = FileType
+    )
 
   implicit val ConsignmentType: ObjectType[Unit, Consignment] = ObjectType(
     "Consignment",
@@ -118,6 +135,15 @@ object ConsignmentFields {
         resolve = context => DeferFiles(context.value.consignmentid)
       ),
       Field(
+        "paginatedFiles",
+        fileConnections,
+        arguments = PaginationInputArg :: Nil,
+        resolve = ctx => {
+          val paginationInput = ctx.args.arg("paginationInput")
+          DeferPaginatedFiles(ctx.value.consignmentid, paginationInput)
+        }
+      ),
+      Field(
         "consignmentReference",
         StringType,
         resolve = _.value.consignmentReference
@@ -143,8 +169,7 @@ object ConsignmentFields {
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
-  val LimitArg: Argument[Int] = Argument("limit", IntType)
-  val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
+
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
     Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)

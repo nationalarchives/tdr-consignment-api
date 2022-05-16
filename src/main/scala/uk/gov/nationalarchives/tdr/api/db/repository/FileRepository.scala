@@ -78,6 +78,20 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
+  def getPaginatedFiles(consignmentId: UUID,
+                        limit: Int,
+                        after: Option[UUID],
+                        fileFilters: FileFilters): Future[Seq[FileRepositoryMetadata]] = {
+    val query = File.joinLeft(Filemetadata)
+      .on(_.fileid === _.fileid)
+      .filter(_._1.consignmentid === consignmentId)
+      .filterOpt(after)(_._1.fileid > _)
+      .filterOpt(fileFilters.fileTypeIdentifier)(_._1.filetype === _)
+      .take(limit)
+      .map(res => (res._1, res._2))
+    db.run(query.result)
+  }
+
   def getAllDescendants(fileIds: Seq[UUID]): Future[Seq[FileRow]] = {
 
     val sql =
