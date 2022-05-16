@@ -98,8 +98,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     } else {
       None
     }
-
-
   }
 
   def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {

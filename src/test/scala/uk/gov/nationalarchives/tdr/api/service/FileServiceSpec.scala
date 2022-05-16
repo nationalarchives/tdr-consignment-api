@@ -326,7 +326,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     actualFileMetadata should equal(expectedFileMetadata)
   }
 
-  "addFile" should "add files, directories and the client and static metadata for both when total number of files and folders are greater than batch size" in {
+  "addFile" should "add all files, directories, client and static metadata when total number of files and folders are greater than batch size" in {
     val ffidMetadataService = mock[FFIDMetadataService]
     val antivirusMetadataService = mock[AntivirusMetadataService]
     val fileRepositoryMock = mock[FileRepository]
@@ -385,7 +385,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
-  "addFile" should "add files, directories and the client and static metadata when total number of files and folders are less than batch size" in {
+  "addFile" should "add all files, directories, client and static metadata when total number of files and folders are less than batch size" in {
     val ffidMetadataService = mock[FFIDMetadataService]
     val antivirusMetadataService = mock[AntivirusMetadataService]
     val fileRepositoryMock = mock[FileRepository]
@@ -413,7 +413,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
 
-
     response.head.fileId should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
     response.head.matchId should equal(1)
 
@@ -438,12 +437,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         case ClientSideOriginalFilepath => count should equal(3) //Directories have this set
         case _ => count should equal(2)
       }
-
     })
 
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
-
 
   private def ffidMetadataRow(ffidMetadataid: UUID, fileId: UUID, datetime: Timestamp): FfidmetadataRow =
     FfidmetadataRow(ffidMetadataid, fileId, "pronom", "1.0", datetime, "signaturefileversion", "signature", "pronom")
