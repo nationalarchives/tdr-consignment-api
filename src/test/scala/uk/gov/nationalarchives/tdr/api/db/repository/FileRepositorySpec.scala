@@ -9,7 +9,6 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
-
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
@@ -19,6 +18,10 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
+
+  val folderOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+  val fileOneId = UUID.fromString("20e0676a-f0a1-4051-9540-e7df1344ac11")
+  val fileTwoId = UUID.fromString("b5111f11-4dca-4f92-8239-505da567b9d0")
 
   "addFiles" should "create files and update ConsignmentStatus table for a consignment" in withContainers {
     case container: PostgreSQLContainer =>
@@ -236,14 +239,89 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
       val files = fileRepository.getAllDescendants(Seq(folderId)).futureValue
       files.size shouldBe 3
+  }
 
+  "getPaginatedFiles" should "return all files and folders after the cursor up to the limit value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(fileOneId), FileFilters()).futureValue
+      files.size shouldBe 2
+      files.head.fileid shouldBe folderOneId
+      files.last.fileid shouldBe fileTwoId
+  }
+
+  "getPaginatedFiles" should "return only files when filter applied, after the cursor up to the limit value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(fileOneId), FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
+      files.size shouldBe 1
+      files.head.fileid shouldBe fileTwoId
+  }
+
+  "getPaginatedFiles" should "return all files and folders up to limit where no cursor provided including first file" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, None, FileFilters()).futureValue
+      files.size shouldBe 2
+      files.head.fileid shouldBe fileOneId
+      files.last.fileid shouldBe folderOneId
+  }
+
+  "getPaginatedFiles" should "return no files where limit set at '0'" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getPaginatedFiles(consignmentId, 0, None, FileFilters()).futureValue
+      files.size shouldBe 0
+  }
+
+  "getPaginatedFiles" should "return files where non-existent cursor value provided, and filedId is greater than the cursor value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val nonExistentFileId = UUID.fromString("820e2eed-a979-4982-8627-26c8a0dcdb2d")
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(nonExistentFileId), FileFilters()).futureValue
+      files.size shouldBe 2
+      files.head.fileid shouldBe folderOneId
+      files.last.fileid shouldBe fileTwoId
+  }
+
+  "getPaginatedFiles" should "return no files where there are no files" in withContainers {
+    case container: PostgreSQLContainer =>
+      val nonExistentFileId = UUID.fromString("820e2eed-a979-4982-8627-26c8a0dcdb2d")
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(nonExistentFileId), FileFilters()).futureValue
+      files.size shouldBe 0
   }
 
   private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): UUID = {
-    val folderOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
-    val fileOneId = UUID.fromString("20e0676a-f0a1-4051-9540-e7df1344ac11")
-    val fileTwoId = UUID.fromString("b5111f11-4dca-4f92-8239-505da567b9d0")
-
     utils.createConsignment(consignmentId, userId)
     utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier)
     utils.createFile(fileOneId, consignmentId, parentId = Some(folderOneId))
