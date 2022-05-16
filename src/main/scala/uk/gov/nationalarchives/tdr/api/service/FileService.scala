@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.util.UUID
 
+import com.typesafe.config.Config
 import sangria.relay.{DefaultConnection, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
@@ -19,6 +20,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.math.min
 
 class FileService(fileRepository: FileRepository,
                    consignmentRepository: ConsignmentRepository,
@@ -26,9 +28,11 @@ class FileService(fileRepository: FileRepository,
                    avMetadataService: AntivirusMetadataService,
                    fileStatusService: FileStatusService,
                    timeSource: TimeSource,
-                   uuidSource: UUIDSource
+                   uuidSource: UUIDSource,
+                   config: Config
                  )(implicit val executionContext: ExecutionContext) {
 
+  val maxLimit: Int = config.getInt("pagination.filesMaxLimit")
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
@@ -94,10 +98,14 @@ class FileService(fileRepository: FileRepository,
   def getPaginatedFiles(consignmentId: UUID,
                         paginationInput: PaginationInput,
                         fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
+
+    val limit = paginationInput.limit
+    val maxFiles: Int = min(limit, maxLimit)
     val filters = fileFilters.getOrElse(FileFilters())
     val currentCursor = if (paginationInput.currentCursor.isDefined) Some(UUID.fromString(paginationInput.currentCursor.get)) else None
+    
     for {
-      response <- fileRepository.getPaginatedFiles(consignmentId, paginationInput.limit, currentCursor, filters)
+      response <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
       files = response.toFiles(List(), List(), Map())
       hasNextPage = response.nonEmpty
       lastCursor: Option[String] = if (hasNextPage) Some(response.last._1.fileid.toString) else None
