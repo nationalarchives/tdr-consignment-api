@@ -38,7 +38,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     getDataFromFile[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
 
   val fixedUuidSource = new FixedUUIDSource()
-  
+
   "The api" should "add files and metadata entries for files and directories" in withContainers {
     case container: PostgreSQLContainer =>
       val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
