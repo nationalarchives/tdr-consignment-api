@@ -39,6 +39,21 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   val fixedUuidSource = new FixedUUIDSource()
 
+  "The api" should "add files and metadata entries with matching file name and path" in withContainers {
+    case container: PostgreSQLContainer =>
+      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      val utils = TestUtils(container.database)
+      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
+      utils.createConsignment(consignmentId, userId)
+
+      val res = runTestMutationFileMetadata("mutation_alldata", validUserToken())
+      res.data.get.addFilesAndMetadata.map(_.fileId).foreach(fileId => {
+        val nameAndPath = getFileNameAndOriginalPathMatch(fileId, utils)
+        nameAndPath.isDefined should equal(true)
+        nameAndPath.get.fileName should equal(nameAndPath.get.path.split("/").last)
+      })
+  }
+
   "The api" should "add files and metadata entries for files and directories" in withContainers {
     case container: PostgreSQLContainer =>
       val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
@@ -67,21 +82,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
       val response = runTestMutationFileMetadata("mutation_alldata", validUserToken())
       expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
-  }
-
-  "The api" should "add files and metadata entries with matching file name and path" in withContainers {
-    case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
-      val utils = TestUtils(container.database)
-      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
-      utils.createConsignment(consignmentId, userId)
-
-      val res = runTestMutationFileMetadata("mutation_alldata", validUserToken())
-      res.data.get.addFilesAndMetadata.map(_.fileId).foreach(fileId => {
-        val nameAndPath = getFileNameAndOriginalPathMatch(fileId, utils)
-        nameAndPath.isDefined should equal(true)
-        nameAndPath.get.fileName should equal(nameAndPath.get.path.split("/").last)
-      })
   }
 
   def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): Option[FileNameAndPath] = {
