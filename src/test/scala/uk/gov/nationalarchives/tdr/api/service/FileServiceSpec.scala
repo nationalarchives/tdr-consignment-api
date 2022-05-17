@@ -1,14 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import com.typesafe.config.ConfigFactory
+
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
-
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -20,6 +22,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -76,7 +79,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileService = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource
+          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
     )
 
     when(consignmentRepositoryMock.getConsignmentsOfFiles(Seq(fileId1)))
@@ -140,7 +143,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val service = new FileService(
-      fileRepositoryMock, consignmentRepositoryMock, ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource)
+      fileRepositoryMock, consignmentRepositoryMock, ffidMetadataService, antivirusMetadataService,
+      fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
+    )
 
     val files = service.getFileMetadata(consignmentId).futureValue
     files.size shouldBe 4
@@ -219,7 +224,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource
+          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
     )
 
     val fileList: Seq[File] = service.getFileMetadata(consignmentId).futureValue
@@ -296,7 +301,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource)
+          ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
     val fileMetadataList = service.getFileMetadata(consignmentId).futureValue
 
@@ -321,7 +326,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     actualFileMetadata should equal(expectedFileMetadata)
   }
 
-  "addFile" should "add files, directories and the client and static metadata for both" in {
+  "addFile" should "add all files, directories, client and static metadata when total number of files and folders are greater than batch size" in {
     val ffidMetadataService = mock[FFIDMetadataService]
     val antivirusMetadataService = mock[AntivirusMetadataService]
     val fileRepositoryMock = mock[FileRepository]
@@ -340,11 +345,15 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     val service = new FileService(
       fileRepositoryMock, consignmentRepositoryMock,
-            ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource)
+            ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
     val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
-    val fileRows: List[FileRow] = fileRowCaptor.getValue
-    val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getValue
+
+    verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+
+    val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
+    val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
+
 
     response.head.fileId should equal(UUID.fromString("47e365a4-fc1e-4375-b2f6-dccb6d361f5f"))
     response.head.matchId should equal(2)
@@ -371,6 +380,63 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         case _ => count should equal(2)
       }
 
+    })
+
+    verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
+  }
+
+  "addFile" should "add all files, directories, client and static metadata when total number of files and folders are less than batch size" in {
+    val ffidMetadataService = mock[FFIDMetadataService]
+    val antivirusMetadataService = mock[AntivirusMetadataService]
+    val fileRepositoryMock = mock[FileRepository]
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
+
+    val fixedUuidSource = new FixedUUIDSource()
+    val consignmentId = UUID.randomUUID()
+    val userId = UUID.randomUUID()
+
+    val fileRowCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
+    val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
+
+    val metadataInputOne = ClientSideMetadataInput("/a/OriginalPath1", "Checksum1", 1L, 1L, 1)
+    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, 2)
+
+    when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
+    val service = new FileService(
+      fileRepositoryMock, consignmentRepositoryMock,
+            ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
+
+    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
+
+    verify(fileRepositoryMock, times(1)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+
+    val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
+    val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
+
+    response.head.fileId should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
+    response.head.matchId should equal(1)
+
+    response.last.fileId should equal(UUID.fromString("8e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
+    response.last.matchId should equal(2)
+
+    val expectedFileRows = 3
+    fileRows.size should equal(expectedFileRows)
+    fileRows.foreach(row => {
+      row.consignmentid should equal(consignmentId)
+      row.userid should equal(userId)
+    })
+    val expectedSize = 24
+    metadataRows.size should equal(expectedSize)
+    staticMetadataProperties.foreach(prop => {
+      metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(3)
+    })
+
+    clientSideProperties.foreach(prop => {
+      val count = metadataRows.count(r => r.propertyname == prop)
+      prop match {
+        case ClientSideOriginalFilepath => count should equal(3) //Directories have this set
+        case _ => count should equal(2)
+      }
     })
 
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
