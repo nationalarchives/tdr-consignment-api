@@ -46,7 +46,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId, userId)
 
-      val res = runTestMutationFileMetadata("mutation_alldata", validUserToken())
+      val res = runTestMutationFileMetadata("mutation_alldata_1", validUserToken())
       res.data.get.addFilesAndMetadata.map(_.fileId).foreach(fileId => {
         val nameAndPath = getFileNameAndOriginalPathMatch(fileId, utils)
         nameAndPath.isDefined should equal(true)
@@ -56,12 +56,12 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   "The api" should "add files and metadata entries for files and directories" in withContainers {
     case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
       val utils = TestUtils(container.database)
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId, userId)
 
-      runTestMutationFileMetadata("mutation_alldata", validUserToken())
+      runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
       val distinctDirectoryCount = 3
       val fileCount = 5
       val expectedCount = (staticMetadataProperties.size * distinctDirectoryCount) +
@@ -74,13 +74,13 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers {
     case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
       val utils = TestUtils(container.database)
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId, userId)
 
       val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
-      val response = runTestMutationFileMetadata("mutation_alldata", validUserToken())
+      val response = runTestMutationFileMetadata("mutation_alldata_3", validUserToken())
       expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
   }
 
