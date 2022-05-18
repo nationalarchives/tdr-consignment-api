@@ -39,26 +39,14 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   val fixedUuidSource = new FixedUUIDSource()
 
-  "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers {
-    case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
-      val utils = TestUtils(container.database)
-      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
-      utils.createConsignment(consignmentId, userId)
-
-      val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
-      val response = runTestMutationFileMetadata("mutation_alldata", validUserToken())
-      expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
-  }
-
   "The api" should "add files and metadata entries for files and directories" in withContainers {
     case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
       val utils = TestUtils(container.database)
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId, userId)
 
-      runTestMutationFileMetadata("mutation_alldata", validUserToken())
+      val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
       val distinctDirectoryCount = 3
       val fileCount = 5
       val expectedCount = (staticMetadataProperties.size * distinctDirectoryCount) +
@@ -67,33 +55,40 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
         distinctDirectoryCount
 
       utils.countAllFileMetadata() should equal(expectedCount)
+
+      res.data.get.addFilesAndMetadata.map(_.fileId).foreach(fileId => {
+        val nameAndPath = getFileNameAndOriginalPathMatch(fileId, utils)
+        nameAndPath.isDefined should equal(true)
+        nameAndPath.get.fileName should equal(nameAndPath.get.path.split("/").last)
+      })
   }
 
-  "The api" should "add files and metadata entries with matching file name and path" in withContainers {
+  "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers {
     case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
       val utils = TestUtils(container.database)
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId, userId)
 
-      val res = runTestMutationFileMetadata("mutation_alldata", validUserToken())
-      res.data.get.addFilesAndMetadata.map(_.fileId).foreach(fileId => {
-        val nameAndPath = getFileNameAndOriginalPathMatch(fileId, utils)
-        nameAndPath.fileName should equal(nameAndPath.path.split("/").last)
-      })
+      val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
+      val response = runTestMutationFileMetadata("mutation_alldata_3", validUserToken())
+      expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
   }
 
-  def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): FileNameAndPath = {
+  def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): Option[FileNameAndPath] = {
     val sql =
       """SELECT "FileName", "Value" FROM "FileMetadata" fm
         |JOIN "File" f on f."FileId" = fm."FileId" WHERE f."FileId" = ? AND "PropertyName" = 'ClientSideOriginalFilepath' """.stripMargin
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     val rs = ps.executeQuery()
-    rs.next()
-    val fileName = rs.getString("FileName")
-    val value = rs.getString("Value")
-    FileNameAndPath(fileName, value)
+    if(rs.next()) {
+      val fileName = rs.getString("FileName")
+      val value = rs.getString("Value")
+      Option(FileNameAndPath(fileName, value))
+    } else {
+      None
+    }
   }
 
   def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {
