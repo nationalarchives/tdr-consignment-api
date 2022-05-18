@@ -54,6 +54,8 @@ object ConsignmentFields {
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
+  case class PaginationInput(limit: Int, currentCursor: Option[String])
+
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
   implicit val AntivirusProgressType: ObjectType[Unit, AntivirusProgress] =
