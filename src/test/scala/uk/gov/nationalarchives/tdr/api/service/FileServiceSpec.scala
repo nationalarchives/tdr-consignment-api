@@ -10,6 +10,7 @@ import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sangria.relay.{DefaultConnection, Edge}
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -443,7 +444,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
-  "getPaginatedFiles" should "return all the files after the cursor to the limit" in {
+  "getPaginatedFiles" should "return all the file edges after the cursor to the limit" in {
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
@@ -458,29 +459,39 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
     val limit = 2
-    val input = PaginationInput(limit, Some(fileId1.toString))
+    val input = Some(PaginationInput(limit, Some(fileId1.toString)))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
 
-    response.size shouldBe 2
-    val firstFile = response.head
-    firstFile.fileId shouldBe fileId2
-    firstFile.parentId.get shouldBe parentId
-    firstFile.fileType.get shouldBe NodeType.fileTypeIdentifier
-    firstFile.fileName.get shouldBe "fileName2"
-    val secondFile = response.last
-    secondFile.fileId shouldBe fileId3
-    secondFile.parentId.get shouldBe parentId
-    secondFile.fileType.get shouldBe NodeType.fileTypeIdentifier
-    secondFile.fileName.get shouldBe "fileName3"
+    val pageInfo = response.pageInfo
+    val edges = response.edges
+
+    pageInfo.startCursor.get shouldBe fileId2.toString
+    pageInfo.endCursor.get shouldBe fileId3.toString
+    pageInfo.hasNextPage shouldBe true
+    pageInfo.hasPreviousPage shouldBe true
+
+    edges.size shouldBe 2
+    val firstEdge = edges.head
+    firstEdge.cursor shouldBe fileId2.toString
+    firstEdge.node.fileId shouldBe fileId2
+    firstEdge.node.parentId.get shouldBe parentId
+    firstEdge.node.fileType.get shouldBe NodeType.fileTypeIdentifier
+    firstEdge.node.fileName.get shouldBe "fileName2"
+    val secondEdge = edges.last
+    secondEdge.cursor shouldBe fileId3.toString
+    secondEdge.node.fileId shouldBe fileId3
+    secondEdge.node.parentId.get shouldBe parentId
+    secondEdge.node.fileType.get shouldBe NodeType.fileTypeIdentifier
+    secondEdge.node.fileName.get shouldBe "fileName3"
   }
 
-  "getPaginatedFiles" should "return all the files after the cursor to the maximum limit where the requested limit is greater than the maximum" in {
+  "getPaginatedFiles" should "return all the files edges after the cursor to the maximum limit where the requested limit is greater than the maximum" in {
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
@@ -495,23 +506,36 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
 
-    val limit = 3
+    val limitExceedingMax = 3
     val expectedMaxLimit = 2
-    val input = PaginationInput(limit, Some(fileId1.toString))
+    val input = Some(PaginationInput(limitExceedingMax, Some(fileId1.toString)))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, expectedMaxLimit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
 
-    response.size shouldBe 2
-    response.head.fileId shouldBe fileId2
-    response.last.fileId shouldBe fileId3
+    val pageInfo = response.pageInfo
+    val edges = response.edges
+
+    pageInfo.startCursor.get shouldBe fileId2.toString
+    pageInfo.endCursor.get shouldBe fileId3.toString
+    pageInfo.hasNextPage shouldBe true
+    pageInfo.hasPreviousPage shouldBe true
+
+    edges.size shouldBe 2
+    val firstEdge = edges.head
+    firstEdge.cursor shouldBe fileId2.toString
+    firstEdge.node.fileId shouldBe fileId2
+
+    val secondEdge = edges.last
+    secondEdge.cursor shouldBe fileId3.toString
+    secondEdge.node.fileId shouldBe fileId3
   }
 
-  "getPaginatedFiles" should "return all the files up to the limit where no cursor provided" in {
+  "getPaginatedFiles" should "return all the file edges up to the limit where no cursor provided" in {
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
@@ -526,21 +550,34 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
-    val input = PaginationInput(limit, None)
+    val input = Some(PaginationInput(limit, None))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, None, FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
 
-    response.size shouldBe 2
-    response.head.fileId shouldBe fileId2
-    response.last.fileId shouldBe fileId3
+    val pageInfo = response.pageInfo
+    val edges = response.edges
+
+    pageInfo.startCursor.get shouldBe fileId2.toString
+    pageInfo.endCursor.get shouldBe fileId3.toString
+    pageInfo.hasNextPage shouldBe true
+    pageInfo.hasPreviousPage shouldBe false
+
+    edges.size shouldBe 2
+    val firstEdge = edges.head
+    firstEdge.cursor shouldBe fileId2.toString
+    firstEdge.node.fileId shouldBe fileId2
+
+    val secondEdge = edges.last
+    secondEdge.cursor shouldBe fileId3.toString
+    secondEdge.node.fileId shouldBe fileId3
   }
 
-  "getPaginatedFiles" should "return all the files up to the limit where filters provided" in {
+  "getPaginatedFiles" should "return all the file edges up to the limit where filters provided" in {
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
@@ -556,21 +593,35 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
-    val input = PaginationInput(limit, Some(fileId1.toString))
+    val input = Some(PaginationInput(limit, Some(fileId1.toString)))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters(Some(NodeType.fileTypeIdentifier)))).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, Some(FileFilters(Some(NodeType.fileTypeIdentifier)))).futureValue
+    val response: DefaultConnection[File] = fileService.getPaginatedFiles(
+      consignmentId, input, Some(FileFilters(Some(NodeType.fileTypeIdentifier)))).futureValue
 
-    response.size shouldBe 2
-    response.head.fileId shouldBe fileId2
-    response.last.fileId shouldBe fileId3
+    val pageInfo = response.pageInfo
+    val edges = response.edges
+
+    pageInfo.startCursor.get shouldBe fileId2.toString
+    pageInfo.endCursor.get shouldBe fileId3.toString
+    pageInfo.hasNextPage shouldBe true
+    pageInfo.hasPreviousPage shouldBe true
+
+    edges.size shouldBe 2
+    val firstEdge = edges.head
+    firstEdge.cursor shouldBe fileId2.toString
+    firstEdge.node.fileId shouldBe fileId2
+
+    val secondEdge = edges.last
+    secondEdge.cursor shouldBe fileId3.toString
+    secondEdge.node.fileId shouldBe fileId3
   }
 
-  "getPaginatedFiles" should "return empty list if no files" in {
+  "getPaginatedFiles" should "return no files edges if no files exist" in {
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
     val fileRepositoryMock = mock[FileRepository]
@@ -579,11 +630,19 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val input = PaginationInput(limit, Some(fileId1.toString))
+    val input = Some(PaginationInput(limit, Some(fileId1.toString)))
 
-    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
 
-    response.size shouldBe 0
+    val pageInfo = response.pageInfo
+    val edges = response.edges
+
+    pageInfo.startCursor shouldBe None
+    pageInfo.endCursor shouldBe None
+    pageInfo.hasNextPage shouldBe false
+    pageInfo.hasPreviousPage shouldBe true
+
+    edges.size shouldBe 0
   }
 
   private def setupFileService(fileRepositoryMock: FileRepository): FileService = {
