@@ -1,13 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import com.typesafe.config.Config
-
 import java.sql.Timestamp
 import java.util.UUID
+
+import com.typesafe.config.Config
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
@@ -18,6 +19,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.math.min
 
 class FileService(fileRepository: FileRepository,
                   consignmentRepository: ConsignmentRepository,
@@ -31,7 +33,8 @@ class FileService(fileRepository: FileRepository,
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
-  private val batchSize: Int = config.getInt("fileUpload.batchSize")
+  private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
+  private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
@@ -66,7 +69,7 @@ class FileService(fileRepository: FileRepository,
     }).toList
 
     for {
-      _ <- rowsWithMatchId.grouped(batchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
+      _ <- rowsWithMatchId.grouped(fileUploadBatchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
     } yield rowsWithMatchId.flatMap {
       case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
       case _ => Nil
@@ -91,8 +94,25 @@ class FileService(fileRepository: FileRepository,
       ffidStatus <- fileStatusService.getFileStatus(consignmentId)
     } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
   }
-}
 
+  def getPaginatedFiles(consignmentId: UUID,
+                        paginationInput: PaginationInput,
+                        fileFilters: Option[FileFilters] = None): Future[List[File]] = {
+    val filters = fileFilters.getOrElse(FileFilters())
+    val currentCursor = paginationInput.currentCursor.map(UUID.fromString)
+    val limit = paginationInput.limit
+    val maxFiles: Int = min(limit, filePageMaxLimit)
+
+    for {
+      response <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
+    } yield response.map(fr => {
+      val id = fr.fileid
+      //For now just populate with basic file information
+      File(id, fr.filetype, fr.filename, fr.parentid,
+        FileMetadataValues(None, None, None, None, None, None, None, None, None), None, None, None)
+    }).toList
+  }
+}
 
 object FileService {
   implicit class FileRowHelper(fr: Option[FileRow]) {

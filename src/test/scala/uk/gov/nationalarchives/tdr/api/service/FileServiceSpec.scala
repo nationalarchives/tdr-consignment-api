@@ -1,10 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.ConfigFactory
-
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
+
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
@@ -14,6 +14,7 @@ import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
@@ -442,6 +443,161 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
+  "getPaginatedFiles" should "return all the files after the cursor to the limit" in {
+    val fileRepositoryMock = mock[FileRepository]
+    val consignmentId = UUID.randomUUID()
+    val parentId = UUID.randomUUID()
+    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val fileId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+
+    val fileRowParams = List(
+      (fileId2, consignmentId, "fileName2", parentId),
+      (fileId3, consignmentId, "fileName3", parentId)
+    )
+
+    val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
+    val limit = 2
+    val input = PaginationInput(limit, Some(fileId1.toString))
+
+    val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+
+    response.size shouldBe 2
+    val firstFile = response.head
+    firstFile.fileId shouldBe fileId2
+    firstFile.parentId.get shouldBe parentId
+    firstFile.fileType.get shouldBe NodeType.fileTypeIdentifier
+    firstFile.fileName.get shouldBe "fileName2"
+    val secondFile = response.last
+    secondFile.fileId shouldBe fileId3
+    secondFile.parentId.get shouldBe parentId
+    secondFile.fileType.get shouldBe NodeType.fileTypeIdentifier
+    secondFile.fileName.get shouldBe "fileName3"
+  }
+
+  "getPaginatedFiles" should "return all the files after the cursor to the maximum limit where the requested limit is greater than the maximum" in {
+    val fileRepositoryMock = mock[FileRepository]
+    val consignmentId = UUID.randomUUID()
+    val parentId = UUID.randomUUID()
+    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val fileId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+
+    val fileRowParams = List(
+      (fileId2, consignmentId, "fileName2", parentId),
+      (fileId3, consignmentId, "fileName3", parentId)
+    )
+
+    val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
+
+    val limit = 3
+    val expectedMaxLimit = 2
+    val input = PaginationInput(limit, Some(fileId1.toString))
+
+    val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, expectedMaxLimit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+
+    response.size shouldBe 2
+    response.head.fileId shouldBe fileId2
+    response.last.fileId shouldBe fileId3
+  }
+
+  "getPaginatedFiles" should "return all the files up to the limit where no cursor provided" in {
+    val fileRepositoryMock = mock[FileRepository]
+    val consignmentId = UUID.randomUUID()
+    val parentId = UUID.randomUUID()
+    val fileId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val fileId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+
+    val fileRowParams = List(
+      (fileId2, consignmentId, "fileName2", parentId),
+      (fileId3, consignmentId, "fileName3", parentId)
+    )
+
+    val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
+
+    val limit = 2
+    val input = PaginationInput(limit, None)
+
+    val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, None, FileFilters())).thenReturn(mockResponse)
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+
+    response.size shouldBe 2
+    response.head.fileId shouldBe fileId2
+    response.last.fileId shouldBe fileId3
+  }
+
+  "getPaginatedFiles" should "return all the files up to the limit where filters provided" in {
+    val fileRepositoryMock = mock[FileRepository]
+    val consignmentId = UUID.randomUUID()
+    val parentId = UUID.randomUUID()
+    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val fileId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+
+    val fileRowParams = List(
+      (fileId2, consignmentId, "fileName2", parentId),
+      (fileId3, consignmentId, "fileName3", parentId)
+    )
+
+    val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
+
+    val limit = 2
+    val input = PaginationInput(limit, Some(fileId1.toString))
+
+    val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters(Some(NodeType.fileTypeIdentifier)))).thenReturn(mockResponse)
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, Some(FileFilters(Some(NodeType.fileTypeIdentifier)))).futureValue
+
+    response.size shouldBe 2
+    response.head.fileId shouldBe fileId2
+    response.last.fileId shouldBe fileId3
+  }
+
+  "getPaginatedFiles" should "return empty list if no files" in {
+    val consignmentId = UUID.randomUUID()
+    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileRepositoryMock = mock[FileRepository]
+    val limit = 2
+    val mockResponse: Future[Seq[FileRow]] = Future.successful(Seq())
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val input = PaginationInput(limit, Some(fileId1.toString))
+
+    val response: List[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+
+    response.size shouldBe 0
+  }
+
+  private def setupFileService(fileRepositoryMock: FileRepository): FileService = {
+    val fixedUuidSource = new FixedUUIDSource()
+    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], FixedTimeSource, fixedUuidSource)
+    val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
+
+    new FileService(
+      fileRepositoryMock, consignmentRepositoryMock,
+      ffidMetadataService, antivirusMetadataService, fileStatusService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
+  }
+
   private def ffidMetadataRow(ffidMetadataid: UUID, fileId: UUID, datetime: Timestamp): FfidmetadataRow =
     FfidmetadataRow(ffidMetadataid, fileId, "pronom", "1.0", datetime, "signaturefileversion", "signature", "pronom")
 
@@ -450,4 +606,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
   private def fileMetadataRow(fileId: UUID, propertyName: String, value: String): FilemetadataRow =
     FilemetadataRow(UUID.randomUUID(), fileId, value, Timestamp.from(Instant.now()), UUID.randomUUID(), propertyName)
+
+  private def createFileRow(id: UUID, consignmentId: UUID, fileName: String, parentId: UUID): FileRow = {
+    FileRow(
+      id, consignmentId, userId, Timestamp.from(FixedTimeSource.now), Some(true), Some(NodeType.fileTypeIdentifier), Some(fileName), Some(parentId))
+  }
 }
