@@ -4,11 +4,12 @@ import java.sql.Timestamp
 import java.util.UUID
 
 import com.typesafe.config.Config
+import sangria.relay.{DefaultConnection, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
@@ -96,22 +97,36 @@ class FileService(fileRepository: FileRepository,
   }
 
   def getPaginatedFiles(consignmentId: UUID,
-                        paginationInput: PaginationInput,
-                        fileFilters: Option[FileFilters] = None): Future[List[File]] = {
+                        paginationInput: Option[PaginationInput],
+                        fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
-    val inputCursor = paginationInput.currentCursor
+    val input = if (paginationInput.isDefined) paginationInput.get else PaginationInput(filePageMaxLimit, None)
+    val inputCursor = input.currentCursor
     val currentCursor = if (inputCursor.isDefined) Some(UUID.fromString(inputCursor.get)) else None
-    val limit = paginationInput.limit
+    val limit = input.limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
 
     for {
       response <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
-    } yield response.map(fr => {
-      val id = fr.fileid
-      //For now just populate with basic file information
-      File(id, fr.filetype, fr.filename, fr.parentid,
-        FileMetadataValues(None, None, None, None, None, None, None, None, None), None, None, None)
-    }).toList
+    } yield {
+      val hasNextPage: Boolean = response.nonEmpty
+      val lastCursor: Option[String] = if (hasNextPage) Some(response.last.fileid.toString) else None
+      val files: Seq[File] = response.map(fr => {
+        //For now just populate with basic file information
+        File(fr.fileid, fr.filetype, fr.filename, fr.parentid,
+          FileMetadataValues(None, None, None, None, None, None, None, None, None), None, None, None)
+      })
+      val edges: Seq[FileEdge] = files.map(_.toFileEdge)
+      DefaultConnection(
+        PageInfo(
+          startCursor = edges.headOption.map(_.cursor),
+          endCursor = lastCursor,
+          hasNextPage = lastCursor.isDefined,
+          hasPreviousPage = currentCursor.isDefined
+        ),
+        edges
+      )
+    }
   }
 }
 
@@ -137,6 +152,12 @@ object FileService {
             fileId, fr.filetype, fr.filename, fr.parentid,
             convertMetadataRows(fmr.flatMap(_._2)), ffidStatus.get(fileId), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
       }.toSeq
+    }
+  }
+
+  implicit class FileHelper(file: File) {
+    def toFileEdge: FileEdge = {
+      FileEdge(file, file.fileId.toString)
     }
   }
 

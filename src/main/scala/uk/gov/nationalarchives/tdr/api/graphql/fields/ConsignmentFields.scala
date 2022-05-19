@@ -32,6 +32,7 @@ object ConsignmentFields {
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
+  case class FileEdge(node: File, cursor: String) extends Edge[File]
 
   case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: String)
 
@@ -73,6 +74,15 @@ object ConsignmentFields {
   }
   implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
     deriveObjectType[Unit, CurrentStatus]()
+
+  implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
+  val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
+
+  implicit val ConnectionDefinition(_, fileConnections) =
+    Connection.definition[RequestContext, Connection, File](
+      name = "File",
+      nodeType = FileType
+    )
 
   implicit val ConsignmentType: ObjectType[Unit, Consignment] = ObjectType(
     "Consignment",
@@ -120,6 +130,15 @@ object ConsignmentFields {
         resolve = context => DeferFiles(context.value.consignmentid)
       ),
       Field(
+        "paginatedFiles",
+        fileConnections,
+        arguments = PaginationInputArg :: Nil,
+        resolve = ctx => {
+          val paginationInput = ctx.args.argOpt("paginationInput")
+          DeferPaginatedFiles(ctx.value.consignmentid, paginationInput)
+        }
+      ),
+      Field(
         "consignmentReference",
         StringType,
         resolve = _.value.consignmentReference
@@ -153,7 +172,7 @@ object ConsignmentFields {
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("getConsignment", OptionType(ConsignmentType),
-      arguments = ConsignmentIdArg :: Nil,
+      arguments = ConsignmentIdArg :: PaginationInputArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.getConsignment(ctx.arg(ConsignmentIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),
