@@ -100,8 +100,9 @@ class FileService(fileRepository: FileRepository,
                         paginationInput: Option[PaginationInput],
                         fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
-    val currentCursor = paginationInput.currentCursor.map(UUID.fromString)
-    val limit = paginationInput.limit
+    val input = if (paginationInput.isDefined) paginationInput.get else PaginationInput(filePageMaxLimit, None)
+    val currentCursor = input.currentCursor.map(UUID.fromString)
+    val limit = input.limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
 
     for {
