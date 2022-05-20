@@ -1,0 +1,55 @@
+{
+  "data": {
+    "getConsignment": null
+  },
+  "errors": [
+    {
+      "message": "No pagination input argument provided for 'paginatedFiles' field query",
+      "path": [
+        "getConsignment",
+        "totalFiles"
+      ],
+      "locations": [
+        {
+          "column": 9,
+          "line": 4
+        }
+      ],
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    },
+    {
+      "message": "No pagination input argument provided for 'paginatedFiles' field query",
+      "path": [
+        "getConsignment",
+        "parentFolder"
+      ],
+      "locations": [
+        {
+          "column": 9,
+          "line": 5
+        }
+      ],
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    },
+    {
+      "message": "No pagination input argument provided for 'paginatedFiles' field query",
+      "path": [
+        "getConsignment",
+        "paginatedFiles"
+      ],
+      "locations": [
+        {
+          "column": 9,
+          "line": 6
+        }
+      ],
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    }
+  ]
+}

@@ -520,6 +520,30 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
+  "getConsignment" should "return an error where no 'paginationInput' argument provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
+      utils.createConsignment(consignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
+      val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+      val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
+      val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
+      val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+      val bodyCode = "default-transferring-body-code"
+
+      utils.createFile(UUID.fromString(parentId), consignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
+      utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+      utils.addParentFolderName(consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      utils.createConsignmentStatus(consignmentId, "Upload", "Completed")
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_input")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_input", validUserToken(body = bodyCode))
+
+      response should equal(expectedResponse)
+  }
+
   "updateExportData" should "update the export data correctly" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)

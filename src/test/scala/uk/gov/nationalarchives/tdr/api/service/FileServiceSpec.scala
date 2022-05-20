@@ -645,6 +645,20 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     edges.size shouldBe 0
   }
 
+  "getPaginatedFiles" should "return an error if no pagination input argument provided" in {
+    val consignmentId = UUID.randomUUID()
+    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileRepositoryMock = mock[FileRepository]
+    val limit = 2
+    val mockResponse: Future[Seq[FileRow]] = Future.successful(Seq())
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val thrownException = intercept[Exception] { fileService.getPaginatedFiles(consignmentId, None, None).futureValue }
+
+    thrownException.getMessage should equal("No pagination input argument provided for 'paginatedFiles' field query")
+  }
+
   private def setupFileService(fileRepositoryMock: FileRepository): FileService = {
     val fixedUuidSource = new FixedUUIDSource()
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],

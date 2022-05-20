@@ -8,6 +8,7 @@ import sangria.relay.{DefaultConnection, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -100,7 +101,9 @@ class FileService(fileRepository: FileRepository,
                         paginationInput: Option[PaginationInput],
                         fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
-    val input = if (paginationInput.isDefined) paginationInput.get else PaginationInput(filePageMaxLimit, None)
+    val input = if (paginationInput.isDefined) { paginationInput.get } else {
+      throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query")
+    }
     val currentCursor = input.currentCursor.map(UUID.fromString)
     val limit = input.limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
