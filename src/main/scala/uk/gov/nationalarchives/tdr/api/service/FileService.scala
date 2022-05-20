@@ -101,9 +101,8 @@ class FileService(fileRepository: FileRepository,
                         paginationInput: Option[PaginationInput],
                         fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
-    val input = if (paginationInput.isDefined) { paginationInput.get } else {
-      throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query")
-    }
+    val input = paginationInput.getOrElse(
+      throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
     val currentCursor = input.currentCursor.map(UUID.fromString)
     val limit = input.limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
