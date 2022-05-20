@@ -13,10 +13,11 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
-
 import java.sql.Timestamp
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
+
+import sangria.relay.DefaultConnection
 
 //scalastyle:off number.of.methods
 //scalastyle:off number.of.types
@@ -57,6 +58,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                          series: Option[Series],
                          transferringBody: Option[TransferringBody],
                          files: Option[List[File]],
+                         paginatedFiles: Option[FileConnections],
                          currentStatus: Option[CurrentStatus] = None,
                          consignmentType: Option[String],
                          bodyId: Option[UUID] = None
@@ -65,10 +67,12 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
 
   case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
+  case class FileEdge(node: File, cursor: String)
 
   case class Consignments(pageInfo: PageInfo, edges: List[ConsignmentEdge])
 
   case class ConsignmentConnections(consignments: Consignments)
+  case class FileConnections(pageInfo: PageInfo, edges: List[FileEdge])
 
   case class FileChecks(antivirusProgress: Option[AntivirusProgress], checksumProgress: Option[ChecksumProgress], ffidProgress: Option[FfidProgress])
 
@@ -96,7 +100,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                   fileType: Option[String],
                   fileName: Option[String],
                   parentId: Option[UUID],
-                  metadata: FileMetadataValues,
+                  metadata: FileMetadataValues = FileMetadataValues(None, None, None, None, None, None, None, None, None),
                   fileStatus: Option[String],
                   ffidMetadata: Option[FFIDMetadataValues])
 
@@ -395,6 +399,30 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data should equal(expectedResponse.data)
   }
 
+  "getConsignment" should "return all the file edges after the cursor up to the limit value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
+      utils.createConsignment(consignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
+      val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+      val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
+      val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
+      val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+      val bodyCode = "default-transferring-body-code"
+
+      utils.createFile(UUID.fromString(parentId), consignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
+      utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+      utils.addParentFolderName(consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      utils.createConsignmentStatus(consignmentId, "Upload", "Completed")
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_cursor")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_cursor", validUserToken(body = bodyCode))
+
+      response should equal(expectedResponse)
+  }
+
   "getConsignment" should "return all the file edges up to the limit where no cursor provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
@@ -406,6 +434,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
       val bodyCode = "default-transferring-body-code"
 
+      utils.createFile(UUID.fromString(parentId), consignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
       utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
       utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
       utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
@@ -414,6 +443,79 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_cursor")
       val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_cursor", validUserToken(body = bodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return no file edges where limit set to 0" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
+      utils.createConsignment(consignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
+      val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+      val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
+      val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
+      val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+      val bodyCode = "default-transferring-body-code"
+
+      utils.createFile(UUID.fromString(parentId), consignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
+      utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+      utils.addParentFolderName(consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      utils.createConsignmentStatus(consignmentId, "Upload", "Completed")
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_limit_0")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_limit_0", validUserToken(body = bodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges where non-existent cursor value provided, and filedId is greater than the cursor value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
+      utils.createConsignment(consignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
+      val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+      val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
+      val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
+      val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+      val bodyCode = "default-transferring-body-code"
+
+      utils.createFile(UUID.fromString(parentId), consignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
+      utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+      utils.addParentFolderName(consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      utils.createConsignmentStatus(consignmentId, "Upload", "Completed")
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_non-existent_cursor")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_non-existent_cursor", validUserToken(body = bodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should
+    "return all the file edges after the cursor to the maximum limit where the requested limit is greater than the maximum" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
+      utils.createConsignment(consignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
+      val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+      val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
+      val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
+      val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+      val bodyCode = "default-transferring-body-code"
+
+      utils.createFile(UUID.fromString(parentId), consignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
+      utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+      utils.addParentFolderName(consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      utils.createConsignmentStatus(consignmentId, "Upload", "Completed")
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_limit_greater_max")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_limit_greater_max", validUserToken(body = bodyCode))
 
       response should equal(expectedResponse)
   }

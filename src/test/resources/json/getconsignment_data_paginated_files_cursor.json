@@ -6,21 +6,12 @@
       "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
       "paginatedFiles": {
         "pageInfo": {
-          "startCursor": "42910a85-85c3-40c3-888f-32f697bfadb6",
-          "endCursor": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "startCursor": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "endCursor": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
           "hasNextPage": true,
-          "hasPreviousPage": false
+          "hasPreviousPage": true
         },
         "edges": [
-          {
-            "node": {
-              "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
-              "fileName": "fileTwoName",
-              "fileType": "File",
-              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
-            },
-            "cursor": "42910a85-85c3-40c3-888f-32f697bfadb6"
-          },
           {
             "node": {
               "fileId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
@@ -28,6 +19,15 @@
               "fileType": "Folder"
             },
             "cursor": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+          },
+          {
+            "node": {
+              "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+              "fileName": "fileThreeName",
+              "fileType": "File",
+              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+            },
+            "cursor": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
           }
         ]
       }
