@@ -41,7 +41,7 @@ enablePlugins(GraphQLSchemaPlugin)
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
 lazy val akkaHttpVersion = "10.2.9"
-lazy val circeVersion = "0.14.1"
+lazy val circeVersion = "0.14.2"
 lazy val testContainersVersion = "0.40.7"
 
 libraryDependencies ++= Seq(
@@ -59,9 +59,9 @@ libraryDependencies ++= Seq(
 
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
-  "io.circe" %% "circe-optics" % circeVersion,
+  "io.circe" %% "circe-optics" % "0.14.1",
   "io.circe" %% "circe-generic" % circeVersion,
-  "io.circe" %% "circe-generic-extras" % circeVersion,
+  "io.circe" %% "circe-generic-extras" % "0.14.1",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.13",
   "org.postgresql" % "postgresql" % "42.3.5",
   "com.typesafe.slick" %% "slick" % "3.3.3",
