@@ -10,7 +10,7 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val
 
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
     for {
-      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID)
+      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID, selectedFileIds)
       fileStatusMap = ffidStatus.flatMap(fileStatusRow => Map(fileStatusRow.fileid -> fileStatusRow.value)).toMap
     } yield fileStatusMap
   }

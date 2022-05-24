@@ -20,6 +20,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMe
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.FFID
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -446,6 +447,11 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
   "getPaginatedFiles" should "return all the file edges after the cursor to the limit" in {
     val fileRepositoryMock = mock[FileRepository]
+//    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+//    val antivirusRepositoryMock = mock[AntivirusMetadataRepository]
+//    val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
+//    val fixedUuidSource = new FixedUUIDSource()
+
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
     val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
@@ -462,7 +468,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val input = Some(PaginationInput(limit, Some(fileId1.toString)))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+    val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
 
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
@@ -511,6 +522,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val input = Some(PaginationInput(limitExceedingMax, Some(fileId1.toString)))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+    val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
+
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, expectedMaxLimit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
@@ -553,6 +570,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val input = Some(PaginationInput(limit, None))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+    val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
+
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, None, FileFilters())).thenReturn(mockResponse)
 
@@ -596,6 +619,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val input = Some(PaginationInput(limit, Some(fileId1.toString)))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+    val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
+
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters(Some(NodeType.fileTypeIdentifier)))).thenReturn(mockResponse)
 
@@ -627,6 +656,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRepositoryMock = mock[FileRepository]
     val limit = 2
     val mockResponse: Future[Seq[FileRow]] = Future.successful(Seq())
+    val selectedFileIds: Option[Set[UUID]] = Some(Set())
+
+    when(fileMetadataRepositoryMock.getFileMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
