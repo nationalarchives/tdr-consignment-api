@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val executionContext: ExecutionContext) {
 
-  def getFileStatus(consignmentId: UUID): Future[Map[UUID, String]] = {
+  def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
     for {
       ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID)
       fileStatusMap = ffidStatus.flatMap(fileStatusRow => Map(fileStatusRow.fileid -> fileStatusRow.value)).toMap
