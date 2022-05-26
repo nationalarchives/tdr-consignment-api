@@ -1,5 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
+import java.time.{LocalDateTime, ZonedDateTime}
+import java.util.UUID
+
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
@@ -14,10 +17,6 @@ import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
 
-import java.sql.Timestamp
-import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.UUID
-
 //scalastyle:off number.of.methods
 //scalastyle:off number.of.types
 class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestRequest {
@@ -28,6 +27,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val consignmentsJsonFilePrefix: String = "json/consignments_"
   private val startUploadJsonFilePrefix: String = "json/startupload_"
   private val updateConsignmentSeriesIdJsonFilePrefix: String = "json/updateconsignmentseriesid_"
+
+  val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
+  val parentUUID: Option[UUID] = UUID.fromString("7b19b272-d4d1-4d77-bf25-511dc6489d12").some
+  val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
+  val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
+  val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+  val defaultBodyCode = "default-transferring-body-code"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -57,6 +63,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                          series: Option[Series],
                          transferringBody: Option[TransferringBody],
                          files: Option[List[File]],
+                         paginatedFiles: Option[FileConnections],
                          currentStatus: Option[CurrentStatus] = None,
                          consignmentType: Option[String],
                          bodyId: Option[UUID] = None
@@ -65,10 +72,12 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
 
   case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
+  case class FileEdge(node: File, cursor: String)
 
   case class Consignments(pageInfo: PageInfo, edges: List[ConsignmentEdge])
 
   case class ConsignmentConnections(consignments: Consignments)
+  case class FileConnections(pageInfo: PageInfo, edges: List[FileEdge])
 
   case class FileChecks(antivirusProgress: Option[AntivirusProgress], checksumProgress: Option[ChecksumProgress], ffidProgress: Option[FfidProgress])
 
@@ -96,7 +105,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                   fileType: Option[String],
                   fileName: Option[String],
                   parentId: Option[UUID],
-                  metadata: FileMetadataValues,
+                  metadata: FileMetadataValues = FileMetadataValues(None, None, None, None, None, None, None, None, None),
                   fileStatus: Option[String],
                   ffidMetadata: Option[FFIDMetadataValues])
 
@@ -144,7 +153,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "default-transferring-body-code"))
+      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = defaultBodyCode))
       response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
       checkConsignmentExists(response.data.get.addConsignment.consignmentid.get, utils)
@@ -154,7 +163,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_judgment_consignment_type")
-      val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validJudgmentUserToken(body = "default-transferring-body-code"))
+      val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validJudgmentUserToken(body = defaultBodyCode))
       response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
       checkConsignmentExists(response.data.get.addConsignment.consignmentid.get, utils)
@@ -163,14 +172,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   "addConsignment" should "throw an error if an invalid consignment type is provided" in withContainers {
     case _: PostgreSQLContainer =>
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_invalid_consignment_type")
-      val response: GraphqlMutationData = runTestMutation("mutation_invalid_consignment_type", validUserToken(body = "default-transferring-body-code"))
+      val response: GraphqlMutationData = runTestMutation("mutation_invalid_consignment_type", validUserToken(body = defaultBodyCode))
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "addConsignment" should "link a new consignment to the creating user" in withContainers {
     case _: PostgreSQLContainer =>
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = "default-transferring-body-code"))
+      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = defaultBodyCode))
       response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
       response.data.get.addConsignment.userid should contain(userId)
@@ -180,21 +189,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   "getConsignment" should "return all requested fields" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
-      utils.createConsignment(consignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
-      val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
-      val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
-      val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
-      val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+      utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
 
       val extensionMatch = "txt"
       val identificationBasisMatch = "TEST DATA identification"
       val puidMatch = "TEST DATA puid"
-      val bodyCode = "default-transferring-body-code"
 
-      utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
-      utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
-      utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
+      utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
+      utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
 
       utils.createFileStatusValues(UUID.randomUUID(),UUID.fromString(fileOneId),"FFID", "Success")
       utils.createFileStatusValues(UUID.randomUUID(),UUID.fromString(fileTwoId),"FFID", "Success")
@@ -225,12 +228,12 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val fileThreeFfidMetadataId = utils.addFFIDMetadata(fileThreeId)
       utils.addFFIDMetadataMatches(fileThreeFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
 
-      utils.addParentFolderName(consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+      utils.addParentFolderName(defaultConsignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
 
-      utils.createConsignmentStatus(consignmentId, "Upload", "Completed")
+      utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed")
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
-      val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = bodyCode))
+      val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }
@@ -395,6 +398,73 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data should equal(expectedResponse.data)
   }
 
+  "getConsignment" should "return all the file edges after the cursor up to the limit value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_cursor")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_cursor", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges up to the limit where no cursor provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_cursor")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_cursor", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return no file edges where limit set to 0" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_limit_0")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_limit_0", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges where non-existent cursor value provided, and filedId is greater than the cursor value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_non-existent_cursor")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_non-existent_cursor", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should
+    "return all the file edges after the cursor to the maximum limit where the requested limit is greater than the maximum" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_limit_greater_max")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_limit_greater_max", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return an error where no 'paginationInput' argument provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_input")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_input", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
   "updateExportData" should "update the export data correctly" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
@@ -528,7 +598,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
       val expectedResponse: GraphqlMutationUpdateSeriesIdOfConsignment =expectedUpdateConsignmentSeriesIdMutationResponse("data_all")
       val response: GraphqlMutationUpdateSeriesIdOfConsignment =
-        runUpdateConsignmentSeriesIdMutation("mutation_all", validUserToken(body = "default-transferring-body-code"))
+        runUpdateConsignmentSeriesIdMutation("mutation_all", validUserToken(body = defaultBodyCode))
 
       response.data.get.updateConsignmentSeriesId should equal(expectedResponse.data.get.updateConsignmentSeriesId)
       val field = getConsignmentField(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"), _, utils)
@@ -608,6 +678,16 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val fileFfidMetadataId = utils.addFFIDMetadata(fileId.toString)
     utils.addFFIDMetadataMatches(fileFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
+  }
+
+  private def setUpStandardConsignmentAndFiles(utils: TestUtils): Unit = {
+    utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
+    utils.createFile(parentUUID.get, defaultConsignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
+    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
+    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
+    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
+    utils.addParentFolderName(defaultConsignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+    utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed")
   }
 }
 

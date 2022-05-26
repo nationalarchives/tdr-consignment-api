@@ -1,0 +1,37 @@
+{
+  "data": {
+    "getConsignment": {
+      "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
+      "totalFiles": 3,
+      "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
+      "paginatedFiles": {
+        "pageInfo": {
+          "startCursor": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+          "endCursor": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+          "hasNextPage": true,
+          "hasPreviousPage": true
+        },
+        "edges": [
+          {
+            "node": {
+              "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+              "fileName": "fileThreeName",
+              "fileType": "File",
+              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+            },
+            "cursor": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
+          },
+          {
+            "node": {
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "fileName": "fileOneName",
+              "fileType": "File",
+              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+            },
+            "cursor": "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
+          }
+        ]
+      }
+    }
+  }
+}

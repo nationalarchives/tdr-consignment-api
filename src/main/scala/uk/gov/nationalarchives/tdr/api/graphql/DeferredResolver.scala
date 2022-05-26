@@ -1,11 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.graphql
 
-
 import java.util.UUID
 
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
+import sangria.relay.DefaultConnection
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{CurrentStatus, FileChecks, TransferringBody}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{CurrentStatus, FileChecks, PaginationInput, TransferringBody}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
 
@@ -23,6 +23,8 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case DeferConsignmentBody(consignmentId) => context.consignmentService.getTransferringBodyOfConsignment(consignmentId)
       case DeferCurrentConsignmentStatus(consignmentId) => context.consignmentStatusService.getConsignmentStatus(consignmentId)
       case DeferFiles(consignmentId, fileFilters: Option[FileFilters]) => context.fileService.getFileMetadata(consignmentId, fileFilters)
+      case DeferPaginatedFiles(consignmentId, paginationInput, fileFilters) =>
+        context.fileService.getPaginatedFiles(consignmentId, paginationInput, fileFilters)
       case DeferChecksSucceeded(consignmentId) => context.fileStatusService.allChecksSucceeded(consignmentId)
       case other => throw UnsupportedDeferError(other)
     }
@@ -35,5 +37,7 @@ case class DeferParentFolder(consignmentId: UUID) extends Deferred[Option[String
 case class DeferConsignmentSeries(consignmentId: UUID) extends Deferred[Option[Series]]
 case class DeferConsignmentBody(consignmentId: UUID) extends Deferred[TransferringBody]
 case class DeferFiles(consignmentId: UUID, fileFilters: Option[FileFilters] = None) extends Deferred[List[File]]
+case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], fileFilters: Option[FileFilters] = None)
+  extends Deferred[DefaultConnection[File]]
 case class DeferCurrentConsignmentStatus(consignmentId: UUID) extends Deferred[CurrentStatus]
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]
