@@ -16,8 +16,8 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
     super.afterContainersStart(containers)
   }
 
-  val fileOneId = UUID.fromString("20e0676a-f0a1-4051-9540-e7df1344ac11")
-  val fileTwoId = UUID.fromString("b5111f11-4dca-4f92-8239-505da567b9d0")
+  val fileOneId: UUID = UUID.fromString("20e0676a-f0a1-4051-9540-e7df1344ac11")
+  val fileTwoId: UUID = UUID.fromString("b5111f11-4dca-4f92-8239-505da567b9d0")
 
   "getFileStatus" should "return all the fileStatus rows for the consignment where no selected file ids provided" in withContainers {
     case container: PostgreSQLContainer =>
@@ -51,5 +51,4 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
       response.size shouldBe 1
       response.head.fileid shouldBe fileOneId
   }
-
 }

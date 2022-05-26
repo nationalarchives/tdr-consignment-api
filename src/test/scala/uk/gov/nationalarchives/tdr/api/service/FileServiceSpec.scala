@@ -446,11 +446,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
   "getPaginatedFiles" should "return all the file edges after the cursor to the limit" in {
     val fileRepositoryMock = mock[FileRepository]
-//    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
-//    val antivirusRepositoryMock = mock[AntivirusMetadataRepository]
-//    val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
-//    val fixedUuidSource = new FixedUUIDSource()
-
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
     val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
