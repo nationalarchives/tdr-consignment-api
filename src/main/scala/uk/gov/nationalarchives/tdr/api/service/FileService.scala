@@ -116,8 +116,7 @@ class FileService(fileRepository: FileRepository,
       avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
       ffidStatus <- fileStatusService.getFileStatus(consignmentId, fileIds)
     } yield {
-      val hasNextPage: Boolean = response.nonEmpty
-      val lastCursor: Option[String] = if (hasNextPage) Some(response.last.fileid.toString) else None
+      val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
       DefaultConnection(

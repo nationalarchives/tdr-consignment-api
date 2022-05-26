@@ -1,5 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
+import java.time.{LocalDateTime, ZonedDateTime}
+import java.util.UUID
+
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
@@ -13,11 +16,6 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
-import java.sql.Timestamp
-import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.UUID
-
-import sangria.relay.DefaultConnection
 
 //scalastyle:off number.of.methods
 //scalastyle:off number.of.types
@@ -30,8 +28,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val startUploadJsonFilePrefix: String = "json/startupload_"
   private val updateConsignmentSeriesIdJsonFilePrefix: String = "json/updateconsignmentseriesid_"
 
-  val defaultConsignmentId = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
-  val parentId = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+  val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
+  val parentUUID: Option[UUID] = UUID.fromString("7b19b272-d4d1-4d77-bf25-511dc6489d12").some
   val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
   val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
   val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
@@ -197,9 +195,9 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val identificationBasisMatch = "TEST DATA identification"
       val puidMatch = "TEST DATA puid"
 
-      utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
-      utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
-      utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+      utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
+      utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
+      utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
 
       utils.createFileStatusValues(UUID.randomUUID(),UUID.fromString(fileOneId),"FFID", "Success")
       utils.createFileStatusValues(UUID.randomUUID(),UUID.fromString(fileTwoId),"FFID", "Success")
@@ -684,10 +682,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   private def setUpStandardConsignmentAndFiles(utils: TestUtils): Unit = {
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
-    utils.createFile(UUID.fromString(parentId), defaultConsignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
-    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = UUID.fromString(parentId).some)
-    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = UUID.fromString(parentId).some)
-    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = UUID.fromString(parentId).some)
+    utils.createFile(parentUUID.get, defaultConsignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
+    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
+    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
+    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
     utils.addParentFolderName(defaultConsignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
     utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed")
   }
