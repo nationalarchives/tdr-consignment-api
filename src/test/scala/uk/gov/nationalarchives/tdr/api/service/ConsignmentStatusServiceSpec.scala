@@ -11,16 +11,25 @@ import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
+class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest
+  with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
   val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
+
+  val statusValues: TableFor1[String] = Table(
+    "Value",
+    "Completed",
+    "InProgress",
+    "Failed"
+  )
 
   "addConsignmentStatus" should "pass the correct consignment status and value to the repository method" in {
     val fixedUUIDSource = new FixedUUIDSource()
@@ -270,34 +279,36 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     response should be(CurrentStatus(None, None, None, None, None))
   }
 
-  "updateConsignmentStatus" should "pass the correct consignment status and value to the repository method" in {
-    val fixedUUIDSource = new FixedUUIDSource()
-    val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
-    val expectedStatusValue = "Completed"
-    val modifiedTime = Timestamp.from(FixedTimeSource.now)
-    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
-    val statusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
-    val statusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+  forAll(statusValues) { statusValue =>
+    "updateConsignmentStatus" should s"pass the correct consignment status and value '$statusValue' to the repository method" in {
+      val fixedUUIDSource = new FixedUUIDSource()
+      val expectedConsignmentId = fixedUUIDSource.uuid
+      val expectedStatusType = "Upload"
+      val expectedStatusValue = statusValue
+      val modifiedTime = Timestamp.from(FixedTimeSource.now)
+      val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+      val statusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+      val statusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
 
-    val mockRepoResponse: Future[Int] = Future.successful(1)
-    when(consignmentStatusRepositoryMock.updateConsignmentStatus(
-      consignmentIdCaptor.capture(),
-      statusTypeCaptor.capture(),
-      statusValueCaptor.capture(),
-      any[Timestamp]
+      val mockRepoResponse: Future[Int] = Future.successful(1)
+      when(consignmentStatusRepositoryMock.updateConsignmentStatus(
+        consignmentIdCaptor.capture(),
+        statusTypeCaptor.capture(),
+        statusValueCaptor.capture(),
+        any[Timestamp]
       )
-    ).thenReturn(mockRepoResponse)
+      ).thenReturn(mockRepoResponse)
 
-    val updateConsignmentStatusInput =
-      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
+      val updateConsignmentStatusInput =
+        ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, expectedStatusValue)
 
-    val response: Int = consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
+      val response: Int = consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
 
-    response should be(1)
-    consignmentIdCaptor.getValue should equal(expectedConsignmentId)
-    statusTypeCaptor.getValue should equal(expectedStatusType)
-    statusValueCaptor.getValue should equal(expectedStatusValue)
+      response should be(1)
+      consignmentIdCaptor.getValue should equal(expectedConsignmentId)
+      statusTypeCaptor.getValue should equal(expectedStatusType)
+      statusValueCaptor.getValue should equal(expectedStatusValue)
+    }
   }
 
   "updateConsignmentStatus" should "throw an exception if an incorrect statusType has been passed" in {

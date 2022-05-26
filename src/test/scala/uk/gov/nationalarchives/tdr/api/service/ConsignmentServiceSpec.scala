@@ -237,7 +237,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val userId = UUID.randomUUID()
     val now = Timestamp.from(FixedTimeSource.now)
     val consignmentStatusId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    val expectedConsignmentStatusRow: ConsignmentstatusRow = ConsignmentstatusRow(consignmentStatusId, consignmentId, "Export", "Completed", now)
+    val expectedConsignmentStatusRow: ConsignmentstatusRow = ConsignmentstatusRow(consignmentStatusId, consignmentId, "Export", "InProgress", now)
 
     when(consignmentRepoMock.updateTransferInitiated(consignmentId, userId, now)).thenReturn(Future(1))
     when(consignmentStatusRepoMock.addConsignmentStatus(consignmentStatusCaptor.capture())).thenReturn(Future(expectedConsignmentStatusRow))
