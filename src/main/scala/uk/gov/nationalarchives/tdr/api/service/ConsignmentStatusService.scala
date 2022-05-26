@@ -90,5 +90,5 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
 
 object ConsignmentStatusService {
   val validStatusTypes = Set("Series", "TransferAgreement", "Upload", "ConfirmTransfer", "Export")
-  val validStatusValues = Set("InProgress", "Completed")
+  val validStatusValues = Set("InProgress", "Completed", "Failed")
 }
