@@ -1,17 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import com.typesafe.config.ConfigFactory
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
 
+import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sangria.relay.{DefaultConnection, Edge}
-import uk.gov.nationalarchives.Tables
+import sangria.relay.DefaultConnection
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata

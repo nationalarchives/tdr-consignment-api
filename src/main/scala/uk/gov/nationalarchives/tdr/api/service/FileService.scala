@@ -111,7 +111,7 @@ class FileService(fileRepository: FileRepository,
       response <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
     } yield {
       val hasNextPage: Boolean = response.nonEmpty
-      val lastCursor: Option[String] = if (hasNextPage) Some(response.last.fileid.toString) else None
+      val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.map(fr => {
         //For now just populate with basic file information
         File(fr.fileid, fr.filetype, fr.filename, fr.parentid,
