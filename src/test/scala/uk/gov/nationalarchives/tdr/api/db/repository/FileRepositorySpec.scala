@@ -321,6 +321,41 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       files.size shouldBe 0
   }
 
+  "getConsignmentParentFolder" should "return a parent folder for a consignment" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      val pareFolderId = setUpFilesAndDirectories(consignmentId, utils)
+
+      val parentFolder = fileRepository.getConsignmentParentFolder(consignmentId).futureValue
+      parentFolder.size shouldBe 1
+      parentFolder.head.fileid shouldBe pareFolderId
+  }
+
+  "getConsignmentParentFolder" should "not return a parent folder for a consignment which does not exist" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+
+      val parentFolder = fileRepository.getConsignmentParentFolder(consignmentId).futureValue
+      parentFolder.size shouldBe 0
+  }
+
+  "getConsignmentParentFolder" should "not return a parent folder if it does not exist for a valid consignment" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      utils.createConsignment(consignmentId, userId)
+
+      val parentFolder = fileRepository.getConsignmentParentFolder(consignmentId).futureValue
+      parentFolder.size shouldBe 0
+  }
+
   private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): UUID = {
     utils.createConsignment(consignmentId, userId)
     utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier)
