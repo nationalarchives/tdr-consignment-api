@@ -327,11 +327,11 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val utils = TestUtils(db)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
-      val pareFolderId = setUpFilesAndDirectories(consignmentId, utils)
+      val parentFolderId = setUpFilesAndDirectories(consignmentId, utils)
 
       val parentFolder = fileRepository.getConsignmentParentFolder(consignmentId).futureValue
       parentFolder.size shouldBe 1
-      parentFolder.head.fileid shouldBe pareFolderId
+      parentFolder.head.fileid shouldBe parentFolderId
   }
 
   "getConsignmentParentFolder" should "not return a parent folder for a consignment which does not exist" in withContainers {
