@@ -148,6 +148,7 @@ class ConsignmentService(
       row.datetime.toZonedDateTime,
       row.transferinitiateddatetime.map(ts => ts.toZonedDateTime),
       row.exportdatetime.map(ts => ts.toZonedDateTime),
+      row.exportlocation,
       row.consignmentreference,
       row.consignmenttype,
       row.bodyid)
