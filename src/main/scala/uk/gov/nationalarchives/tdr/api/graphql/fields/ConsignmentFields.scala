@@ -115,6 +115,11 @@ object ConsignmentFields {
         resolve = context => DeferParentFolder(context.value.consignmentid)
       ),
       Field(
+        "parentFolderId",
+        OptionType(UuidType),
+        resolve = context => DeferParentFolderId(context.value.consignmentid)
+      ),
+      Field(
         "series",
         OptionType(SeriesFields.SeriesType),
         resolve = context => DeferConsignmentSeries(context.value.consignmentid)

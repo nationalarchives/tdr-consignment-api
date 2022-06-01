@@ -688,6 +688,29 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     thrownException.getMessage should equal("No pagination input argument provided for 'paginatedFiles' field query")
   }
 
+  "getConsignmentParentFolderId" should "return the parent folder id for a given consignment" in {
+    val consignmentId = UUID.randomUUID()
+    val parentFolderId = UUID.randomUUID()
+    val timestamp = Timestamp.from(FixedTimeSource.now)
+    val parentFolderRow = FileRow(
+      parentFolderId, consignmentId, userId, timestamp, Some(true), Some(NodeType.directoryTypeIdentifier), Some("folderName"))
+
+    val fileService = setupFileService(fileRepositoryMock)
+    when(fileRepositoryMock.getConsignmentParentFolder(consignmentId)).thenReturn(Future.successful(Seq(parentFolderRow)))
+
+    val parentFolderIdResult: Option[UUID] = fileService.getConsignmentParentFolderId(consignmentId).futureValue
+    parentFolderIdResult.get shouldBe parentFolderId
+  }
+
+  "getConsignmentParentFolderId" should "return None if the parent folder does not exist for a given consignment" in {
+    val consignmentId = UUID.randomUUID()
+    when(fileRepositoryMock.getConsignmentParentFolder(consignmentId)).thenReturn(Future.successful(Seq()))
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val parentFolderIdResult: Option[UUID] = fileService.getConsignmentParentFolderId(consignmentId).futureValue
+    parentFolderIdResult shouldBe None
+  }
+
   private def setupFileService(fileRepositoryMock: FileRepository): FileService = {
     val fixedUuidSource = new FixedUUIDSource()
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],

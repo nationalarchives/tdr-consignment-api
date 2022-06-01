@@ -130,6 +130,12 @@ class FileService(fileRepository: FileRepository,
       )
     }
   }
+
+  def getConsignmentParentFolderId(consignmentId: UUID): Future[Option[UUID]] = {
+    for {
+      rows <- fileRepository.getConsignmentParentFolder(consignmentId)
+    } yield rows.map(_.fileid).headOption
+  }
 }
 
 object FileService {

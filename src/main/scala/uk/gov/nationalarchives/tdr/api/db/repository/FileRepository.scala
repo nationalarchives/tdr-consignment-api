@@ -119,6 +119,13 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
         ) SELECT * FROM children;""".stripMargin.as[FileRow]
     db.run(sql)
   }
+
+  def getConsignmentParentFolder(consignmentId: UUID): Future[Seq[Tables.FileRow]] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
+      .filter(_.parentid.isEmpty)
+    db.run(query.result)
+  }
 }
 
 case class FileFilters(fileTypeIdentifier: Option[String] = None)
