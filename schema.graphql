@@ -105,6 +105,7 @@ type Consignment {
   createdDatetime: ZonedDateTime
   transferInitiatedDatetime: ZonedDateTime
   exportDatetime: ZonedDateTime
+  exportLocation: String
   consignmentType: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
