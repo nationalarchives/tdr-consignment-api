@@ -26,6 +26,7 @@ object ConsignmentFields {
                          createdDateTime: ZonedDateTime,
                          transferInitiatedDatetime: Option[ZonedDateTime],
                          exportDatetime: Option[ZonedDateTime],
+                         exportLocation: Option[String],
                          consignmentReference: String,
                          consignmentType: String,
                          bodyId: UUID
@@ -93,6 +94,7 @@ object ConsignmentFields {
       Field("createdDatetime", OptionType(ZonedDateTimeType), resolve = _.value.createdDateTime),
       Field("transferInitiatedDatetime", OptionType(ZonedDateTimeType), resolve = _.value.transferInitiatedDatetime),
       Field("exportDatetime", OptionType(ZonedDateTimeType), resolve = _.value.exportDatetime),
+      Field("exportLocation", OptionType(StringType), resolve = _.value.exportLocation),
       Field("consignmentType", OptionType(StringType), resolve = _.value.consignmentType),
       Field(
         "allChecksSucceeded",

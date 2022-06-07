@@ -126,7 +126,17 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   }
 
   "getConsignment" should "return the specific consignment for the requested consignment id" in {
-    val consignmentRow = mockConsignment
+    val consignmentRow: ConsignmentRow = ConsignmentRow(
+      consignmentId,
+      Some(seriesId),
+      userId,
+      Timestamp.from(FixedTimeSource.now),
+      exportlocation = Some("Location"),
+      consignmentsequence = consignmentSequence,
+      consignmentreference = consignmentReference,
+      consignmenttype = "standard",
+      bodyid = bodyId
+    )
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
     when(consignmentRepoMock.getConsignment(any[UUID])).thenReturn(mockResponse)
 
@@ -137,6 +147,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.consignmentid should equal(consignmentId)
     consignment.seriesid should equal(Some(seriesId))
     consignment.userid should equal(userId)
+    consignment.exportLocation should equal(consignmentRow.exportlocation)
   }
 
   "getConsignment" should "return none when consignment id does not exist" in {
@@ -298,13 +309,15 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "getConsignments" should "return all the consignments after the cursor to the limit" in {
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+    val exportLocation2 = Some("Location2")
+    val exportLocation3 = Some("Location3")
 
     val consignmentRowParams = List(
-      (consignmentId2, "consignment-ref2", 2L),
-      (consignmentId3, "consignment-ref3", 3L)
+      (consignmentId2, "consignment-ref2", 2L, exportLocation2),
+      (consignmentId3, "consignment-ref3", 3L, exportLocation3)
     )
 
-    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
 
@@ -323,18 +336,24 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
     consignmentRefs should contain (consignmentId2)
     consignmentRefs should contain (consignmentId3)
+
+    val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
+    exportLocations should contain (exportLocation2)
+    exportLocations should contain (exportLocation3)
   }
 
   "getConsignments" should "return all the consignments after the cursor to the maximum limit where the requested limit is greater than the maximum" in {
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+    val exportLocation2 = Some("Location2")
+    val exportLocation3 = Some("Location3")
 
     val consignmentRowParams = List(
-      (consignmentId2, "consignment-ref2", 2L),
-      (consignmentId3, "consignment-ref3", 3L)
+      (consignmentId2, "consignment-ref2", 2L, exportLocation2),
+      (consignmentId3, "consignment-ref3", 3L, exportLocation3)
     )
 
-    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3, p._4))
 
     val limit = 3
 
@@ -353,18 +372,24 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
     consignmentRefs should contain (consignmentId2)
     consignmentRefs should contain (consignmentId3)
+
+    val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
+    exportLocations should contain (exportLocation2)
+    exportLocations should contain (exportLocation3)
   }
 
   "getConsignments" should "return all the consignments up to the limit where no cursor provided" in {
     val consignmentId1 = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val exportLocation1 = Some("Location2")
+    val exportLocation2 = Some("Location3")
 
     val consignmentRowParams = List(
-      (consignmentId1, "consignment-ref1", 1L),
-      (consignmentId2, "consignment-ref2", 2L)
+      (consignmentId1, "consignment-ref1", 2L, exportLocation1),
+      (consignmentId2, "consignment-ref2", 3L, exportLocation2)
     )
 
-    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
 
@@ -383,18 +408,25 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
     consignmentRefs should contain (consignmentId1)
     consignmentRefs should contain (consignmentId2)
+
+    val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
+    exportLocations should contain (exportLocation1)
+    exportLocations should contain (exportLocation2)
   }
 
   "getConsignments" should "return all the consignments up to the limit where empty cursor provided" in {
     val consignmentId1 = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val exportLocation1 = Some("Location2")
+    val exportLocation2 = Some("Location3")
 
     val consignmentRowParams = List(
-      (consignmentId1, "consignment-ref1", 1L),
-      (consignmentId2, "consignment-ref2", 2L)
+      (consignmentId1, "consignment-ref1", 2L, exportLocation1),
+      (consignmentId2, "consignment-ref2", 3L, exportLocation2)
     )
 
-    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3))
+
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
 
@@ -413,6 +445,10 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
     consignmentRefs should contain (consignmentId1)
     consignmentRefs should contain (consignmentId2)
+
+    val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
+    exportLocations should contain (exportLocation1)
+    exportLocations should contain (exportLocation2)
   }
 
   "getConsignments" should "return empty list and no cursor if no consignments" in {
@@ -498,7 +534,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     result.createddatetime shouldBe createdTimestamp
   }
 
-  private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long): ConsignmentRow = {
+  private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {
     ConsignmentRow(
       consignmentId,
       Some(seriesId),
@@ -508,7 +544,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       Some(Timestamp.from(fixedTimeSource)),
       None,
       Some(Timestamp.from(fixedTimeSource)),
-      None,
+      exportLocation,
       consignmentSeq,
       consignmentRef,
       "standard",
