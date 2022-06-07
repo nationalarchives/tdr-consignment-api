@@ -89,8 +89,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     } yield BulkFileMetadata(fileIdsAndMetadata._1.toSeq, fileIdsAndMetadata._2.toSeq)
   }
 
-  def getFileMetadata(consignmentId: UUID): Future[Map[UUID, FileMetadataValues]] =
-    fileMetadataRepository.getFileMetadata(consignmentId).map {
+  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
+    fileMetadataRepository.getFileMetadata(consignmentId, selectedFileIds).map {
       rows =>
         rows.groupBy(_.fileid).map {
           case (fileId, fileMetadata) => fileId -> getFileMetadataValues(fileMetadata)

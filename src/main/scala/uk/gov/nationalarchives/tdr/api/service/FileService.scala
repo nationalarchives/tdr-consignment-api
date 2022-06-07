@@ -28,6 +28,7 @@ class FileService(fileRepository: FileRepository,
                   ffidMetadataService: FFIDMetadataService,
                   avMetadataService: AntivirusMetadataService,
                   fileStatusService: FileStatusService,
+                  fileMetadataService: FileMetadataService,
                   timeSource: TimeSource,
                   uuidSource: UUIDSource,
                   config: Config
@@ -108,14 +109,15 @@ class FileService(fileRepository: FileRepository,
     val maxFiles: Int = min(limit, filePageMaxLimit)
 
     for {
-      response <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
+      response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
+      fileIds = Some(response.map(_.fileid).toSet)
+      fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
+      ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
+      avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
+      ffidStatus <- fileStatusService.getFileStatus(consignmentId, fileIds)
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
-      val files: Seq[File] = response.map(fr => {
-        //For now just populate with basic file information
-        File(fr.fileid, fr.filetype, fr.filename, fr.parentid,
-          FileMetadataValues(None, None, None, None, None, None, None, None, None), None, None, None)
-      })
+      val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
       DefaultConnection(
         PageInfo(
@@ -164,6 +166,23 @@ object FileService {
   implicit class FileHelper(file: File) {
     def toFileEdge: FileEdge = {
       FileEdge(file, file.fileId.toString)
+    }
+  }
+
+  implicit class FileRowsHelper(fileRows: Seq[FileRow]) {
+    def toFiles(fileMetadata: Map[UUID, FileMetadataValues], avMetadata: List[AntivirusMetadata],
+                ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
+      fileRows.map(fr => {
+        val id = fr.fileid
+        val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None))
+        File(
+          id, fr.filetype, fr.filename, fr.parentid,
+          metadata,
+          ffidStatus.get(id),
+          ffidMetadata.find(_.fileId == id),
+          avMetadata.find(_.fileId == id)
+        )
+      })
     }
   }
 

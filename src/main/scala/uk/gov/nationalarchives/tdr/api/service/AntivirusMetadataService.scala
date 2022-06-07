@@ -51,8 +51,8 @@ class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRep
     )
   }
 
-  def getAntivirusMetadata(consignmentId: UUID): Future[List[AntivirusMetadata]] = {
-    antivirusMetadataRepository.getAntivirusMetadata(consignmentId)
+  def getAntivirusMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[List[AntivirusMetadata]] = {
+    antivirusMetadataRepository.getAntivirusMetadata(consignmentId, selectedFileIds)
       .map(r => r.map(rowToAntivirusMetadata).toList)
   }
 }
