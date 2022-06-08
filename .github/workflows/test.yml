@@ -12,6 +12,7 @@ jobs:
   setup-tests:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - id: generate-files
         run: |
           FILES=$(find src/test/* -name "*Spec.scala" -type f -printf "%f\n" | sed 's/\.[^.]*$//' | jq -R -s -c 'split("\n")[:-1]')
@@ -23,6 +24,7 @@ jobs:
       matrix:
         file: ${{ fromJSON(needs.setup-tests.outputs.files) }}
     steps:
+      - uses: actions/checkout@v3
       - run: |
           docker build -f Dockerfile-tests -t tests .
           sbt testOnly *${{ matrix.file }}*
@@ -30,4 +32,5 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
+      - uses: actions/checkout@v3
       - run: sbt scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
