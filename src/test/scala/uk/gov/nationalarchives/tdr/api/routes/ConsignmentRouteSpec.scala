@@ -195,6 +195,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val identificationBasisMatch = "TEST DATA identification"
       val puidMatch = "TEST DATA puid"
 
+      utils.addFileProperty(SHA256ServerSideChecksum)
       utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
       utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
       utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
@@ -384,6 +385,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
       utils.createConsignment(consignmentId, userId)
+      utils.addFileProperty(SHA256ServerSideChecksum)
       staticMetadataProperties.map(_.name).foreach(utils.addFileProperty)
       clientSideProperties.foreach(utils.addFileProperty)
       val topDirectory = UUID.fromString("ce0a51a5-a224-474f-b3a4-df75effd5b34")
@@ -511,7 +513,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
           "consignment-ref3",
           List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
       )
-
+      utils.addFileProperty(SHA256ServerSideChecksum)
       setUpConsignments(consignmentParams, utils)
 
       val reportingAccessToken = validReportingToken("reporting")
