@@ -1,18 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
 import akka.stream.alpakka.slick.scaladsl.SlickSession
-import com.dimafeng.testcontainers.scalatest.TestContainerForAll
+import com.dimafeng.testcontainers.scalatest.TestContainerForEach
 import com.dimafeng.testcontainers.{ContainerDef, PostgreSQLContainer}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.testcontainers.utility.DockerImageName
 import slick.jdbc.JdbcBackend
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 
-trait TestContainerUtils extends AnyFlatSpec with TestContainerForAll with BeforeAndAfterEach {
+trait TestContainerUtils extends AnyFlatSpec with TestContainerForEach with BeforeAndAfterEach {
   override val containerDef: ContainerDef = PostgreSQLContainer.Def(
     dockerImageName = DockerImageName.parse("tests")
       .asCompatibleSubstituteFor("postgres"),
@@ -20,13 +19,6 @@ trait TestContainerUtils extends AnyFlatSpec with TestContainerForAll with Befor
     username = "tdr",
     password = "password"
   )
-
-  override def afterEach(): Unit = {
-    val db = SlickSession.forConfig("consignmentapi").db
-    val utils = TestUtils(db)
-    utils.deleteTables()
-    utils.addFileProperty(SHA256ServerSideChecksum)
-  }
 
   override def afterContainersStart(containers: containerDef.Container): Unit = {
     containers match {
@@ -37,8 +29,6 @@ trait TestContainerUtils extends AnyFlatSpec with TestContainerForAll with Befor
   }
 
   def seedDatabase(db: JdbcBackend#DatabaseDef): Unit = {
-    val utils = TestUtils(db)
-    utils.deleteTables()
     setupBodyAndSeries(db)
   }
 

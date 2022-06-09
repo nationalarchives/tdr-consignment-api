@@ -90,7 +90,6 @@ libraryDependencies ++= Seq(
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
 (Test / fork) := true
-Test / parallelExecution := false
 (assembly / assemblyJarName) := "consignmentapi.jar"
 
 (assembly / assemblyMergeStrategy) := {

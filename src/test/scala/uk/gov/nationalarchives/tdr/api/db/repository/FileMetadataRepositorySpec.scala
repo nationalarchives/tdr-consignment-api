@@ -85,6 +85,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       //  Need to create a consignment with files in it
       utils.createConsignment(consignmentOne, userId)
       utils.createConsignment(consignmentTwo, userId)
+      utils.addFileProperty(SHA256ServerSideChecksum)
       utils.createFile(UUID.fromString(fileOneId), consignmentOne)
       utils.createFile(UUID.fromString(fileTwoId), consignmentOne)
       utils.createFile(UUID.fromString(fileThreeId), consignmentTwo)
@@ -112,6 +113,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val metadataId = "f4440f43-20c6-4b6c-811d-349e633617e5"
 
       utils.createConsignment(consignmentId, userId)
+      utils.addFileProperty(SHA256ServerSideChecksum)
       utils.createFile(UUID.fromString(fileOneId), consignmentId)
       utils.createFile(UUID.fromString(fileTwoId), consignmentId)
 

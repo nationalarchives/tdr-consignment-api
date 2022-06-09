@@ -9,12 +9,30 @@ permissions:
   id-token: write
   contents: read
 jobs:
+  setup-tests:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.generate-files.outputs.files }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: generate-files
+        run: |
+          FILES=$(find src/test/* -name "*Spec.scala" -type f -printf "%f\n" | sed 's/\.[^.]*$//' | jq -R -s -c 'split("\n")[:-1]')
+          echo ::set-output name=files::${FILES}
   test:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/tdr_test.yml@main
-    with:
-      repo-name: tdr-consignment-api
-      test-command: |
-        docker build -f Dockerfile-tests -t tests .
-        sbt test scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
-    secrets:
-      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    runs-on: ubuntu-latest
+    needs: setup-tests
+    strategy:
+      matrix:
+        file: ${{ fromJSON(needs.setup-tests.outputs.files) }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          docker build -f Dockerfile-tests -t tests .
+          sbt 'testOnly *${{ matrix.file }}*'
+  validate:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v3
+      - run: sbt scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'

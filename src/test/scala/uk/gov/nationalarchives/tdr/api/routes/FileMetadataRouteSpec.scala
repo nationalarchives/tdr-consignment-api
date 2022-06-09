@@ -137,6 +137,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.seedDatabaseWithDefaultEntries()
+      utils.addFileProperty(SHA256ServerSideChecksum)
       runAddFileMetadataTestMutation("mutation_alldata", validBackendChecksToken("checksum"))
 
       val result = utils.getFileStatusResult(defaultFileId, Checksum)
