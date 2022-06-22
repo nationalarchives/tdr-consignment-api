@@ -1,3 +1,4 @@
+/*
 package uk.gov.nationalarchives.tdr.api.service
 
 import org.mockito.ArgumentMatchers.any
@@ -346,3 +347,4 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       bodyid = bodyId)
   }
 }
+*/

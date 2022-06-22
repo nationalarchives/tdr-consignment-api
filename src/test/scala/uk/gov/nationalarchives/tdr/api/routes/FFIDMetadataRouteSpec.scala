@@ -64,7 +64,7 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.seedDatabaseWithDefaultEntries()
-
+      utils.createDisallowedPuids("x-fmt/111", "stuff", PasswordProtected)
       runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
 
       val result = utils.getFileStatusResult(defaultFileId, FFID)

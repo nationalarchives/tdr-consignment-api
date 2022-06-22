@@ -135,6 +135,28 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
   }
 
+  def createAllowedPuids(puid: String, description: String, consignmentType: String): Unit = {
+    val sql = s"""INSERT INTO "AllowedPuids" ("PUID", "PUID Description", "Created Date", "Modified Date", "ConsignmentType") VALUES (?, ?, ?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, puid)
+    ps.setString(2, description)
+    ps.setTimestamp(3, Timestamp.from(Instant.now()))
+    ps.setTimestamp(4, Timestamp.from(Instant.now()))
+    ps.setString(5, consignmentType)
+    ps.executeUpdate()
+  }
+
+  def createDisallowedPuids(puid: String, description: String, reason: String): Unit = {
+    val sql = s"""INSERT INTO "DisallowedPuids" ("PUID", "PUID Description", "Created Date", "Modified Date", "Reason") VALUES (?, ?, ?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, puid)
+    ps.setString(2, description)
+    ps.setTimestamp(3, Timestamp.from(Instant.now()))
+    ps.setTimestamp(4, Timestamp.from(Instant.now()))
+    ps.setString(5, reason)
+    ps.executeUpdate()
+  }
+
   def createFileProperty(name: String, description: String, propertytype: String,
                          datatype: String, editable: Boolean, multivalue: Boolean, propertygroup: String): Unit = {
     val sql =

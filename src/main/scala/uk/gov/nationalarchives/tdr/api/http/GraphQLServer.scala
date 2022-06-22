@@ -82,6 +82,7 @@ class GraphQLServer(slickSession: SlickSession) {
     val ffidMetadataMatchesRepository = new FFIDMetadataMatchesRepository(db)
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val antivirusMetadataRepository = new AntivirusMetadataRepository(db)
+    val puidRepository = new PUIDRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
     val consignmentService = new ConsignmentService(consignmentRepository, consignmentStatusRepository, fileMetadataRepository, fileRepository,
@@ -94,7 +95,8 @@ class GraphQLServer(slickSession: SlickSession) {
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, fileRepository, timeSource, uuidSource)
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository, timeSource, uuidSource)
+    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository,
+      puidRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
     val fileService = new FileService(fileRepository,consignmentRepository, ffidMetadataService,
       antivirusMetadataService, fileStatusService, fileMetadataService, new CurrentTimeSource, uuidSource, config)

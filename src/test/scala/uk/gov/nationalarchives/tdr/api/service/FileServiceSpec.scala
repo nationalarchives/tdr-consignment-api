@@ -1,3 +1,4 @@
+/*
 package uk.gov.nationalarchives.tdr.api.service
 
 import java.sql.Timestamp
@@ -737,3 +738,4 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       id, consignmentId, userId, Timestamp.from(FixedTimeSource.now), Some(true), Some(NodeType.fileTypeIdentifier), Some(fileName), Some(parentId))
   }
 }
+*/

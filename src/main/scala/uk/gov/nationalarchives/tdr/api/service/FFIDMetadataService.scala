@@ -2,12 +2,11 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import java.sql.{SQLException, Timestamp}
 import java.util.UUID
-
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository, PUIDRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType
@@ -19,6 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
                           matchesRepository: FFIDMetadataMatchesRepository,
                           fileRepository: FileRepository,
+                          puidRepository: PUIDRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val executionContext: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FFIDMetadataService"))
@@ -31,6 +31,10 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
     "fmt/1341", "fmt/1355", "fmt/1361", "fmt/1399", "x-fmt/157", "x-fmt/219", "x-fmt/263", "x-fmt/265", "x-fmt/266", "x-fmt/267",
     "x-fmt/268", "x-fmt/269", "x-fmt/412", "x-fmt/416", "x-fmt/429")
   val judgmentPuidsAllow: List[String] = List("fmt/412")
+
+  val passwordProtectedPuids2 = puidRepository.getDisallowedPUIDs("PasswordProtected")
+  val zipPuids2 = puidRepository.getDisallowedPUIDs("Zip")
+  val allowedPuids = puidRepository.getAllowedPUIDs
 
   def addFFIDMetadata(ffidMetadata: FFIDMetadataInput): Future[FFIDMetadata] = {
 
@@ -75,7 +79,7 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
     }
   }
 
-  private def generateFileStatusRows(ffidMetadata: FFIDMetadataInput): Future[List[FilestatusRow]] = {
+  private def generateFileStatusRowsOLD(ffidMetadata: FFIDMetadataInput): Future[List[FilestatusRow]] = {
     val fileId = ffidMetadata.fileId
     val timestamp = Timestamp.from(timeSource.now)
 
@@ -93,12 +97,57 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
     } yield rows
   }
 
+  private def generateFileStatusRows(ffidMetadata: FFIDMetadataInput): Future[List[FilestatusRow]] = {
+    val fileId = ffidMetadata.fileId
+    val timestamp = Timestamp.from(timeSource.now)
+
+    for {
+      consignments <- fileRepository.getConsignmentForFile(fileId)
+      consignmentType = if (consignments.isEmpty) { throw InputDataException(s"No consignment found for file $fileId") }
+      else { consignments.head.consignmenttype }
+      uniqueStatuses: List[Future[String]] = ffidMetadata.matches.map(m => checkStatus3(m.puid, consignmentType)).distinct
+      futureUniqueStatus: Future[List[String]] = Future.sequence(uniqueStatuses)
+      test <- futureUniqueStatus
+      rows = test match {
+        case s if test.size == 1 =>
+          List(FilestatusRow(uuidSource.uuid, fileId, FFID, s.head, timestamp))
+        case _ => test.filterNot(_.equals(Success)).map(
+          FilestatusRow(uuidSource.uuid, fileId, FFID, _, timestamp))
+      }
+    } yield rows
+  }
+
   def checkStatus(puid: Option[String], consignmentType: String): String = {
     puid.getOrElse("") match {
       case p if passwordProtectedPuids.contains(p) => PasswordProtected
       case p if zipPuids.contains(p) => Zip
       case p if consignmentType == ConsignmentType.judgment && !judgmentPuidsAllow.contains(p) => NonJudgmentFormat
       case _ => Success
+    }
+  }
+  import uk.gov.nationalarchives.Tables.{DisallowedpuidsRow, Allowedpuids}
+  def checkStatus2(puidOption: Option[String], consignmentType: String): Future[String] = {
+    val puid = puidOption.getOrElse("")
+    puidRepository.checkPuidExists(puid)
+      .map {
+        case Some(x) if x == PasswordProtected => PasswordProtected
+        case Some(x) if x == Zip => Zip
+        case _ => Success
+      }
+  }
+
+  def checkStatus3(puidOption: Option[String], consignmentType: String): Future[String] = {
+    val puid = puidOption.getOrElse("")
+    for {
+      checkExist <- puidRepository.checkPuidExists(puid)
+      checkJudg <- puidRepository.checkPuidAllowedExists(puid)
+    } yield {
+      checkExist match {
+        case Some(x) if x == PasswordProtected => PasswordProtected
+        case Some(x) if x == Zip => Zip
+        case Some(x) if consignmentType == ConsignmentType.judgment && !checkJudg => NonJudgmentFormat
+        case _ => Success
+      }
     }
   }
 
