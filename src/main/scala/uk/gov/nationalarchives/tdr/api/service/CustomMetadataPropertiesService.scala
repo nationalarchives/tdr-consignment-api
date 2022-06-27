@@ -67,6 +67,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
     case Some("datetime") => DateTime
     case Some("integer") => Integer
     case Some("decimal") => Decimal
+    case Some("boolean") => Boolean
     case _ => throw new Exception(s"Invalid data type $dataType")
   }
 }
