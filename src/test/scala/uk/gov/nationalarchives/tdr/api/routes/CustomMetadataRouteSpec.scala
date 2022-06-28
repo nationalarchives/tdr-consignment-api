@@ -10,7 +10,6 @@ import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 
-
 import java.util.UUID
 
 class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
@@ -31,7 +30,6 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
     runTestRequest[GraphqlQueryData](closureMetadataJsonFilePrefix)
   val expectedClosureMetadataQueryResponse: String => GraphqlQueryData =
     getDataFromFile[GraphqlQueryData](closureMetadataJsonFilePrefix)
-
 
   case class GraphqlQueryData(data: Option[GetCustomMetadataFields], errors: List[GraphqlError] = Nil)
 
