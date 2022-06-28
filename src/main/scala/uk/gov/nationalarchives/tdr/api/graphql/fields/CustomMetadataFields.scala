@@ -16,6 +16,7 @@ object CustomMetadataFields {
   case object Integer extends DataType
   case object DateTime extends DataType
   case object Decimal extends DataType
+  case object Boolean extends DataType
 
   sealed trait PropertyType
   case object System extends PropertyType
