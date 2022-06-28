@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Checksum, FFID, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Success}
 import java.util.UUID
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,19 +17,19 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
     for {
-      checksumStatus <- fileStatusRepository.getFileStatus(consignmentId, Checksum)
+      checksumMatchStatus <- fileStatusRepository.getFileStatus(consignmentId, ChecksumMatch)
       avStatus <- fileStatusRepository.getFileStatus(consignmentId, Antivirus)
       ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID)
     } yield {
-      checksumStatus.nonEmpty && avStatus.nonEmpty && ffidStatus.nonEmpty &&
-        (checksumStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatus.filter(_.value != Success)).isEmpty
+      checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatus.nonEmpty &&
+        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatus.filter(_.value != Success)).isEmpty
     }
   }
 }
 
 object FileStatusService {
   //Status types
-  val Checksum = "Checksum"
+  val ChecksumMatch = "ChecksumMatch"
   val Antivirus = "Antivirus"
   val FFID = "FFID"
 
