@@ -24,6 +24,9 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
   case object Defined extends PropertyType
   case object Supplied extends PropertyType
 
+  val consignmentId: UUID = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+  val userId: UUID = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
   private val closureMetadataJsonFilePrefix: String = "json/closuremetadata_"
   val runClosureMetadataTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData =
@@ -54,8 +57,6 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
   "closureMetadata" should "return all of the closure metadata with the correct arguments" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
@@ -69,8 +70,6 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
   "closureMetadata" should "return all requested fields" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
@@ -84,8 +83,6 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
   "closureMetadata" should "return an error if the consignmentId was not provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
@@ -99,8 +96,6 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
   "closureMetadata" should "return an error if the consignmentId provided was not valid" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
