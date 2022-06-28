@@ -18,39 +18,39 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
       } yield (properties, values, dependencies)
 
     propertiesValuesAndDependencies.map {
-      case (propertiesResult, valuesResult, dependenciesResult) =>
-        val values: Map[String, Seq[FilepropertyvaluesRow]] = valuesResult.groupBy(_.propertyname)
-        val dependencies: Map[Int, Seq[FilepropertydependenciesRow]] = dependenciesResult.groupBy(_.groupid)
+      case (properties, values, dependencies) =>
+        val valuesByPropertyName: Map[String, Seq[FilepropertyvaluesRow]] = values.groupBy(_.propertyname)
+        val dependenciesByGroupId: Map[Int, Seq[FilepropertydependenciesRow]] = dependencies.groupBy(_.groupid)
 
-        propertiesResult.map{
-          prop => {
+        properties.map{
+          property => {
             val defaultValue: Option[String] = for {
-              values <- values.get(prop.name)
-              value <- values.find(_.default.getOrElse(false))
-            } yield value.propertyvalue
-            rowsToMetadata(prop, values, dependencies, propertiesResult,  defaultValue)
+              valuesOfProperty <- valuesByPropertyName.get(property.name)
+              valueLabelledAsTheDefault <- valuesOfProperty.find(_.default.getOrElse(false))
+            } yield valueLabelledAsTheDefault.propertyvalue
+            rowsToMetadata(property, valuesByPropertyName, dependenciesByGroupId, properties,  defaultValue)
           }
         }.toList
     }
   }
 
   private def rowsToMetadata(fp: FilepropertyRow,
-                     values: Map[String, Seq[FilepropertyvaluesRow]],
-                     dependencies: Map[Int, Seq[FilepropertydependenciesRow]],
-                     propertiesResult: Seq[FilepropertyRow],
-                     defaultValueOption: Option[String] = None): CustomMetadataField = {
+                             values: Map[String, Seq[FilepropertyvaluesRow]],
+                             dependencies: Map[Int, Seq[FilepropertydependenciesRow]],
+                             properties: Seq[FilepropertyRow],
+                             defaultValueOption: Option[String] = None): CustomMetadataField = {
 
     val metadataValues: Seq[CustomMetadataValues] = values.getOrElse(fp.name, Nil).map{
       value =>
         value.dependencies.map{
           groupId => {
-            val deps: Seq[CustomMetadataField] = for {
-              dep <- dependencies.getOrElse(groupId, Nil)
-              dependencyProps <- propertiesResult
-                .find(_.name == dep.propertyname)
-                .map(fp => rowsToMetadata(fp, values, dependencies, propertiesResult, dep.default))
-            } yield dependencyProps
-            CustomMetadataValues(deps.toList, value.propertyvalue)
+            val valueDependencies: Seq[CustomMetadataField] = for {
+              dependencyBelongingToGroupId <- dependencies.getOrElse(groupId, Nil)
+              dependencyProperty <- properties
+                .find(_.name == dependencyBelongingToGroupId.propertyname)
+                .map(fp => rowsToMetadata(fp, values, dependencies, properties, dependencyBelongingToGroupId.default))
+            } yield dependencyProperty
+            CustomMetadataValues(valueDependencies.toList, value.propertyvalue)
           }
         }.getOrElse(CustomMetadataValues(Nil, value.propertyvalue))
     }
