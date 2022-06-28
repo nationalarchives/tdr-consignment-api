@@ -180,10 +180,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Text
-  Integer
-  DateTime
+  Boolean
   Decimal
+  DateTime
+  Integer
+  Text
 }
 
 type FFIDMetadata {
