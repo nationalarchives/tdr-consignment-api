@@ -51,7 +51,7 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
-  "closureMetadata" should "return all of the closure metadata" in withContainers {
+  "closureMetadata" should "return all of the closure metadata with the correct arguments" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
@@ -66,7 +66,7 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
       response.data.get.closureMetadata.head should equal(expectedResponse.data.get.closureMetadata.head)
   }
 
-  "closureMetadata" should "return the closure metadata without the values" in withContainers {
+  "closureMetadata" should "return all requested fields" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
