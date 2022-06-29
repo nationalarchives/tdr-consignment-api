@@ -44,12 +44,14 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
       value =>
         value.dependencies.map{
           groupId => {
-            val valueDependencies: Seq[CustomMetadataField] = for {
-              dependencyBelongingToGroupId <- dependencies.getOrElse(groupId, Nil)
-              dependencyProperty <- properties
-                .find(_.name == dependencyBelongingToGroupId.propertyname)
-                .map(fp => rowsToMetadata(fp, values, dependencies, properties, dependencyBelongingToGroupId.default))
-            } yield dependencyProperty
+            val valueDependencies: Seq[CustomMetadataField] =
+              for {
+                dependencyBelongingToGroupId <- dependencies.getOrElse(groupId, Nil)
+                dependencyProperty <- {
+                  val propertyBelongingToGroupId = properties.find(_.name == dependencyBelongingToGroupId.propertyname)
+                  propertyBelongingToGroupId.map(fp => rowsToMetadata(fp, values, dependencies, properties, dependencyBelongingToGroupId.default))
+                }
+              } yield dependencyProperty
             CustomMetadataValues(valueDependencies.toList, value.propertyvalue)
           }
         }.getOrElse(CustomMetadataValues(Nil, value.propertyvalue))
