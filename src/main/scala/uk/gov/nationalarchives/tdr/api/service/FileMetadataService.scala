@@ -55,7 +55,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
             case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${fileMetadataRow.fileid}")
           }
           fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, fileMetadataRow.fileid, ChecksumMatch, fileStatus, fileMetadataRow.datetime)
-          _ <- Future(loggingUtils.logFileFormatStatus("checksum", fileMetadataRow.fileid, fileStatus))
+          _ <- Future(loggingUtils.logFileFormatStatus("checksumMatch", fileMetadataRow.fileid, fileStatus))
           row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
         } yield FileMetadataWithFileId(fileMetadataRow.propertyname, row.fileid, row.value)
       } recover {
