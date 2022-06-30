@@ -23,15 +23,6 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FFIDMetadataService"))
 
-  val passwordProtectedPuids: List[String] = List("fmt/494", "fmt/754", "fmt/755")
-  val zipPuids: List[String] = List("fmt/289", "fmt/329", "fmt/484", "fmt/508", "fmt/600", "fmt/610", "fmt/613",
-    "fmt/614", "fmt/625", "fmt/626", "fmt/639", "fmt/656", "fmt/726", "fmt/842", "fmt/843", "fmt/844", "fmt/850", "fmt/866",
-    "fmt/887", "fmt/1070", "fmt/1071", "fmt/1087", "fmt/1095", "fmt/1096", "fmt/1097", "fmt/1098", "fmt/1100", "fmt/1102",
-    "fmt/1105", "fmt/1190", "fmt/1242", "fmt/1243", "fmt/1244", "fmt/1245", "fmt/1251", "fmt/1252", "fmt/1281", "fmt/1340",
-    "fmt/1341", "fmt/1355", "fmt/1361", "fmt/1399", "x-fmt/157", "x-fmt/219", "x-fmt/263", "x-fmt/265", "x-fmt/266", "x-fmt/267",
-    "x-fmt/268", "x-fmt/269", "x-fmt/412", "x-fmt/416", "x-fmt/429")
-  val judgmentPuidsAllow: List[String] = List("fmt/412")
-
   def addFFIDMetadata(ffidMetadata: FFIDMetadataInput): Future[FFIDMetadata] = {
 
     if (ffidMetadata.matches.isEmpty) {
@@ -75,24 +66,6 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
     }
   }
 
-  private def generateFileStatusRowsOLD(ffidMetadata: FFIDMetadataInput): Future[List[FilestatusRow]] = {
-    val fileId = ffidMetadata.fileId
-    val timestamp = Timestamp.from(timeSource.now)
-
-    for {
-      consignments <- fileRepository.getConsignmentForFile(fileId)
-      consignmentType = if (consignments.isEmpty) { throw InputDataException(s"No consignment found for file $fileId") }
-        else { consignments.head.consignmenttype }
-      uniqueStatuses: List[String] = ffidMetadata.matches.map(m => checkStatusOld(m.puid, consignmentType)).distinct
-      rows = uniqueStatuses match {
-        case s if uniqueStatuses.size == 1 =>
-          List(FilestatusRow(uuidSource.uuid, fileId, FFID, s.head, timestamp))
-        case _ => uniqueStatuses.filterNot(_.equals(Success)).map(
-          FilestatusRow(uuidSource.uuid, fileId, FFID, _, timestamp))
-      }
-    } yield rows
-  }
-
   private def generateFileStatusRows(ffidMetadata: FFIDMetadataInput): Future[List[FilestatusRow]] = {
     val fileId = ffidMetadata.fileId
     val timestamp = Timestamp.from(timeSource.now)
@@ -113,43 +86,15 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
     } yield rows
   }
 
-  def checkStatusOld(puid: Option[String], consignmentType: String): String = {
-    puid.getOrElse("") match {
-      case p if passwordProtectedPuids.contains(p) => PasswordProtected
-      case p if zipPuids.contains(p) => Zip
-      case p if consignmentType == ConsignmentType.judgment && !judgmentPuidsAllow.contains(p) => NonJudgmentFormat
-      case _ => Success
-    }
-  }
-
-  def checkStatus2(puidOption: Option[String], consignmentType: String): Future[String] = {
-    val puid = puidOption.getOrElse("")
-    for {
-      disallowedPuids <- puidRepository.getDisallowedPUIDs
-      allowedPuids <- puidRepository.getAllowedPUIDs
-      disallowedPuidReasons = disallowedPuids.groupBy(_.reason)
-    } yield {
-      if (disallowedPuidReasons(PasswordProtected).exists(_.puid == puid)) {
-        PasswordProtected
-      } else if (disallowedPuidReasons(Zip).exists(_.puid == puid)) {
-        Zip
-      } else if (consignmentType == ConsignmentType.judgment && allowedPuids.exists(_.puid == puid)) {
-        NonJudgmentFormat
-      } else {
-        Success
-      }
-    }
-  }
-
   def checkStatus(puidOption: Option[String], consignmentType: String): Future[String] = {
     val puid = puidOption.getOrElse("")
     for {
-      disallowedPuidReason <- puidRepository.checkPuidDisallowedExists(puid).map(_.getOrElse(""))
-      allowedPuidExists <- puidRepository.checkPuidAllowedExists(puid)
+      disallowedPuidReason <- puidRepository.getDisallowedPuidReason(puid).map(_.getOrElse(""))
+      allowedPuidExists <- puidRepository.checkAllowedPuidExists(puid)
     } yield {
       disallowedPuidReason match {
-        case x if x == PasswordProtected => PasswordProtected
-        case y if y == Zip => Zip
+        case reason if reason == PasswordProtected => PasswordProtected
+        case reason if reason == Zip => Zip
         case _ if consignmentType == ConsignmentType.judgment && !allowedPuidExists => NonJudgmentFormat
         case _ => Success
       }
