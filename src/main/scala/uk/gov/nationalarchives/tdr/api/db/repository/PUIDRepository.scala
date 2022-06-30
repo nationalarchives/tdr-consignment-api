@@ -11,25 +11,22 @@ class PUIDRepository(db: Database) {
     db.run(Allowedpuids.result)
   }
 
-  def getDisallowedPUIDs(reason: String): Future[Seq[DisallowedpuidsRow]] = {
-    val query = Disallowedpuids.filter(_.reason === reason)
-    db.run(query.result)
-  }
-
   def getDisallowedPUIDs: Future[Seq[DisallowedpuidsRow]] = {
     db.run(Disallowedpuids.result)
   }
 
-  def checkPuidExists(puid: String): Future[Option[String]] = {
-    val query = Disallowedpuids.filter(_.puid === puid).take(1).map(_.reason)
-    db.run(query.result.head)
+//  def getDisallowedPUIDs(reason: String): Future[Seq[DisallowedpuidsRow]] = {
+//    val query = Disallowedpuids.filter(_.reason === reason)
+//    db.run(query.result)
+//  }
+
+  def checkPuidDisallowedExists(puid: String): Future[Option[String]] = {
+    val query = Disallowedpuids.filter(_.puid === puid).map(_.reason)
+    db.run(query.result.headOption)
   }
 
   def checkPuidAllowedExists(puid: String): Future[Boolean] = {
-    val query = Allowedpuids.filter(_.puid === puid).exists//.take(1).map(_.puid)
+    val query = Allowedpuids.filter(_.puid === puid).exists
     db.run(query.result)
   }
-
-  //Filter the tables by Reason?
-
 }

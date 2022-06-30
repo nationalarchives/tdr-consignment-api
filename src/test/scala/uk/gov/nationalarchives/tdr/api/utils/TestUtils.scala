@@ -7,6 +7,7 @@ import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{PasswordProtected, Zip}
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
@@ -34,6 +35,8 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     connection.prepareStatement("""DELETE FROM "ConsignmentProperty";""").execute()
     connection.prepareStatement("""DELETE FROM "ConsignmentStatus";""").execute()
     connection.prepareStatement("""DELETE FROM "Consignment";""").execute()
+    connection.prepareStatement("""DELETE FROM "DisallowedPuids";""").execute()
+    connection.prepareStatement("""DELETE FROM "AllowedPuids";""").execute()
     connection.prepareStatement("""ALTER SEQUENCE consignment_sequence_id RESTART WITH 1;""").execute()
   }
 
@@ -181,6 +184,14 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     createFile(defaultFileId, consignmentId)
 
     createClientFileMetadata(defaultFileId)
+
+    createDisallowedPuids("fmt/289", "WARC", Zip)
+    createDisallowedPuids("fmt/329", "Shell Archive Format", Zip)
+    createDisallowedPuids("fmt/754", "Microsoft Word Document", PasswordProtected)
+    createDisallowedPuids("fmt/494", "Microsoft Office Encrypted Document", PasswordProtected)
+
+    createAllowedPuids("fmt/412", "Microsoft Word for Windows", "judgment")
+
     (consignmentId, defaultFileId)
   }
 

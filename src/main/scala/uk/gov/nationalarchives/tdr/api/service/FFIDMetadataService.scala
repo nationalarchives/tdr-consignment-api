@@ -32,10 +32,6 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
     "x-fmt/268", "x-fmt/269", "x-fmt/412", "x-fmt/416", "x-fmt/429")
   val judgmentPuidsAllow: List[String] = List("fmt/412")
 
-  val passwordProtectedPuids2 = puidRepository.getDisallowedPUIDs("PasswordProtected")
-  val zipPuids2 = puidRepository.getDisallowedPUIDs("Zip")
-  val allowedPuids = puidRepository.getAllowedPUIDs
-
   def addFFIDMetadata(ffidMetadata: FFIDMetadataInput): Future[FFIDMetadata] = {
 
     if (ffidMetadata.matches.isEmpty) {
@@ -87,7 +83,7 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
       consignments <- fileRepository.getConsignmentForFile(fileId)
       consignmentType = if (consignments.isEmpty) { throw InputDataException(s"No consignment found for file $fileId") }
         else { consignments.head.consignmenttype }
-      uniqueStatuses: List[String] = ffidMetadata.matches.map(m => checkStatus(m.puid, consignmentType)).distinct
+      uniqueStatuses: List[String] = ffidMetadata.matches.map(m => checkStatusOld(m.puid, consignmentType)).distinct
       rows = uniqueStatuses match {
         case s if uniqueStatuses.size == 1 =>
           List(FilestatusRow(uuidSource.uuid, fileId, FFID, s.head, timestamp))
@@ -105,19 +101,19 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
       consignments <- fileRepository.getConsignmentForFile(fileId)
       consignmentType = if (consignments.isEmpty) { throw InputDataException(s"No consignment found for file $fileId") }
       else { consignments.head.consignmenttype }
-      uniqueStatuses: List[Future[String]] = ffidMetadata.matches.map(m => checkStatus3(m.puid, consignmentType)).distinct
-      futureUniqueStatus: Future[List[String]] = Future.sequence(uniqueStatuses)
-      test <- futureUniqueStatus
-      rows = test match {
-        case s if test.size == 1 =>
+      statuses: List[Future[String]] = ffidMetadata.matches.map(m => checkStatus(m.puid, consignmentType))
+      futureUniqueStatuses: Future[List[String]] = Future.sequence(statuses).map(statuses => statuses.distinct)
+      uniqueStatuses <- futureUniqueStatuses
+      rows = uniqueStatuses match {
+        case s if uniqueStatuses.size == 1 =>
           List(FilestatusRow(uuidSource.uuid, fileId, FFID, s.head, timestamp))
-        case _ => test.filterNot(_.equals(Success)).map(
+        case _ => uniqueStatuses.filterNot(_.equals(Success)).map(
           FilestatusRow(uuidSource.uuid, fileId, FFID, _, timestamp))
       }
     } yield rows
   }
 
-  def checkStatus(puid: Option[String], consignmentType: String): String = {
+  def checkStatusOld(puid: Option[String], consignmentType: String): String = {
     puid.getOrElse("") match {
       case p if passwordProtectedPuids.contains(p) => PasswordProtected
       case p if zipPuids.contains(p) => Zip
@@ -125,27 +121,36 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
       case _ => Success
     }
   }
-  import uk.gov.nationalarchives.Tables.{DisallowedpuidsRow, Allowedpuids}
+
   def checkStatus2(puidOption: Option[String], consignmentType: String): Future[String] = {
     val puid = puidOption.getOrElse("")
-    puidRepository.checkPuidExists(puid)
-      .map {
-        case Some(x) if x == PasswordProtected => PasswordProtected
-        case Some(x) if x == Zip => Zip
-        case _ => Success
+    for {
+      disallowedPuids <- puidRepository.getDisallowedPUIDs
+      allowedPuids <- puidRepository.getAllowedPUIDs
+      disallowedPuidReasons = disallowedPuids.groupBy(_.reason)
+    } yield {
+      if (disallowedPuidReasons(PasswordProtected).exists(_.puid == puid)) {
+        PasswordProtected
+      } else if (disallowedPuidReasons(Zip).exists(_.puid == puid)) {
+        Zip
+      } else if (consignmentType == ConsignmentType.judgment && allowedPuids.exists(_.puid == puid)) {
+        NonJudgmentFormat
+      } else {
+        Success
       }
+    }
   }
 
-  def checkStatus3(puidOption: Option[String], consignmentType: String): Future[String] = {
+  def checkStatus(puidOption: Option[String], consignmentType: String): Future[String] = {
     val puid = puidOption.getOrElse("")
     for {
-      checkExist <- puidRepository.checkPuidExists(puid)
-      checkJudg <- puidRepository.checkPuidAllowedExists(puid)
+      disallowedPuidReason <- puidRepository.checkPuidDisallowedExists(puid).map(_.getOrElse(""))
+      allowedPuidExists <- puidRepository.checkPuidAllowedExists(puid)
     } yield {
-      checkExist match {
-        case Some(x) if x == PasswordProtected => PasswordProtected
-        case Some(x) if x == Zip => Zip
-        case Some(x) if consignmentType == ConsignmentType.judgment && !checkJudg => NonJudgmentFormat
+      disallowedPuidReason match {
+        case x if x == PasswordProtected => PasswordProtected
+        case y if y == Zip => Zip
+        case _ if consignmentType == ConsignmentType.judgment && !allowedPuidExists => NonJudgmentFormat
         case _ => Success
       }
     }
