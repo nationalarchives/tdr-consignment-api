@@ -9,8 +9,9 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.{AllowedpuidsRow, ConsignmentRow, DisallowedpuidsRow, FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository, PUIDRepository}
+import uk.gov.nationalarchives.Tables.{ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository,
+  AllowedPuidsRepository, DisallowedPuidsRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataInputMatches, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{NonJudgmentFormat, PasswordProtected, Success, Zip}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -22,78 +23,109 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
   "checkStatus" should "return 'Success' status for a valid puid value on 'standard' consignment type" in {
     val validPuid = "fmt/1"
-    val puidRepositoryMock = mockPuidResponse(validPuid)
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(validPuid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(validPuid)
 
     val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
-    val status = service.checkStatus(Some(validPuid), "standard").futureValue
+    val status = service.checkStatus(validPuid, consignmentType = "standard").futureValue
     status shouldBe FileStatusService.Success
-  }
-
-  "checkStatus" should "return 'PasswordProtected' status for a password protected puid value on 'standard' consignment type" in {
-    val passwordProtectedPuid = "fmt/494"
-    val puidRepositoryMock = mockPuidResponse(passwordProtectedPuid, PasswordProtected)
-
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-
-    val status = service.checkStatus(Some(passwordProtectedPuid), "standard").futureValue
-    status shouldBe FileStatusService.PasswordProtected
-  }
-
-  "checkStatus" should "return 'Zip' status for a zip puid value on 'standard' consignment type" in {
-    val zipPuid = "fmt/289"
-    val puidRepositoryMock = mockPuidResponse(zipPuid, Zip)
-
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-
-    val status = service.checkStatus(Some(zipPuid), "standard").futureValue
-    status shouldBe FileStatusService.Zip
   }
 
   "checkStatus" should "return 'Success' status for a valid judgment puid value on 'judgment' consignment type" in {
     val validJudgmentPuid = "fmt/412"
-    val puidRepositoryMock = mockPuidResponse(validJudgmentPuid, existInAllowedPuid = true)
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(validJudgmentPuid, existInAllowedPuid = true)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(validJudgmentPuid)
 
     val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
-    val status = service.checkStatus(Some(validJudgmentPuid), "judgment").futureValue
+    val status = service.checkStatus(validJudgmentPuid, consignmentType = "judgment").futureValue
     status shouldBe FileStatusService.Success
   }
 
-  "checkStatus" should "return 'NonJudgmentFormat' status for a non-judgment puid value on 'judgment' consignment type" in {
-    val nonJudgmentPuid = "fmt/1"
-    val puidRepositoryMock = mockPuidResponse(nonJudgmentPuid, NonJudgmentFormat)
+  "checkStandardStatus" should "return 'Success' status for a valid puid value on 'standard' consignment type" in {
+    val validPuid = "fmt/1"
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(validPuid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(validPuid)
 
     val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
-    val status = service.checkStatus(Some(nonJudgmentPuid), "judgment").futureValue
-    status shouldBe FileStatusService.NonJudgmentFormat
+    val status = service.checkStandardStatus(validPuid).futureValue
+    status shouldBe FileStatusService.Success
   }
 
-  "checkStatus" should "return 'PasswordProtected' status for a password protected puid value on 'judgment' consignment type" in {
+  "checkStandardStatus" should "return 'PasswordProtected' status for a password protected puid value on 'standard' consignment type" in {
     val passwordProtectedPuid = "fmt/494"
-    val puidRepositoryMock = mockPuidResponse(passwordProtectedPuid, PasswordProtected)
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(passwordProtectedPuid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(passwordProtectedPuid, PasswordProtected)
 
     val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
-    val status = service.checkStatus(Some(passwordProtectedPuid), "judgment").futureValue
+    val status = service.checkStandardStatus(passwordProtectedPuid).futureValue
     status shouldBe FileStatusService.PasswordProtected
   }
 
-  "checkStatus" should "return 'Zip' status for a zip puid value on 'judgment' consignment type" in {
+  "checkStandardStatus" should "return 'Zip' status for a zip puid value on 'standard' consignment type" in {
     val zipPuid = "fmt/289"
-    val puidRepositoryMock = mockPuidResponse(zipPuid, Zip)
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(zipPuid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(zipPuid, Zip)
 
     val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
-    val status = service.checkStatus(Some(zipPuid), "judgment").futureValue
+    val status = service.checkStandardStatus(zipPuid).futureValue
+    status shouldBe FileStatusService.Zip
+  }
+
+  "checkJudgmentStatus" should "return 'Success' status for a valid judgment puid value on 'judgment' consignment type" in {
+    val validJudgmentPuid = "fmt/412"
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(validJudgmentPuid, existInAllowedPuid = true)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(validJudgmentPuid)
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkJudgmentStatus(validJudgmentPuid).futureValue
+    status shouldBe FileStatusService.Success
+  }
+
+  "checkJudgmentStatus" should "return 'NonJudgmentFormat' status for a non-judgment puid value on 'judgment' consignment type" in {
+    val nonJudgmentPuid = "fmt/1"
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(nonJudgmentPuid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(nonJudgmentPuid, NonJudgmentFormat)
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkJudgmentStatus(nonJudgmentPuid).futureValue
+    status shouldBe FileStatusService.NonJudgmentFormat
+  }
+
+  "checkJudgmentStatus" should "return 'PasswordProtected' status for a password protected puid value on 'judgment' consignment type" in {
+    val passwordProtectedPuid = "fmt/494"
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(passwordProtectedPuid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(passwordProtectedPuid, PasswordProtected)
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkJudgmentStatus(passwordProtectedPuid).futureValue
+    status shouldBe FileStatusService.PasswordProtected
+  }
+
+  "checkJudgmentStatus" should "return 'Zip' status for a zip puid value on 'judgment' consignment type" in {
+    val zipPuid = "fmt/289"
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(zipPuid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(zipPuid, Zip)
+
+    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+
+    val status = service.checkJudgmentStatus(zipPuid).futureValue
     status shouldBe FileStatusService.Zip
   }
 
@@ -125,13 +157,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockConsignmentRow = getMockConsignmentRow(fixedConsignmentId, fixedUserId, bodyId = fixedBodyId)
     val mockGetConsignmentResponse = Future(List(mockConsignmentRow))
 
-    val puidRepositoryMock = mockPuidResponse(puid)
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(puid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(puid)
 
     when(fileRepository.getConsignmentForFile(fileIdCaptor.capture())).thenReturn(mockGetConsignmentResponse)
     when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository, puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository,
+      allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     service.addFFIDMetadata(getMetadataInput(fixedFileUuid)).futureValue
     fileIdCaptor.getValue shouldBe fixedFileUuid
     metadataCaptor.getValue should equal(mockMetadataRow)
@@ -165,13 +199,14 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockConsignmentRow = getMockConsignmentRow(fixedConsignmentId, fixedUserId, bodyId = fixedBodyId)
     val mockGetConsignmentResponse = Future(List(mockConsignmentRow))
 
-    val puidRepositoryMock = mockPuidResponse(puid)
-
+    val allowedPuidsRepositoryMock = mockAllowedPuidResponse(puid)
+    val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(puid)
     when(fileRepository.getConsignmentForFile(fileIdCaptor.capture())).thenReturn(mockGetConsignmentResponse)
     when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository, puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository,
+      allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     val result = service.addFFIDMetadata(getMetadataInput(fixedFileUuid)).futureValue
     result.fileId shouldEqual fixedFileUuid
     result.software shouldEqual "software"
@@ -193,7 +228,8 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val metadataRepository = mock[FFIDMetadataRepository]
     val matchesRepository = mock[FFIDMetadataMatchesRepository]
     val fileRepository = mock[FileRepository]
-    val puidRepositoryMock = mock[PUIDRepository]
+    val allowedPuidsRepositoryMock = mock[AllowedPuidsRepository]
+    val disallowedPuidsRepositoryMock = mock[DisallowedPuidsRepository]
 
     val inputWithNoMatches = FFIDMetadataInput(
       fixedFileUuid,
@@ -205,7 +241,8 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       List()
     )
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository, puidRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository,
+      allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
     val thrownException = intercept[Exception] {
       service.addFFIDMetadata(inputWithNoMatches)
@@ -226,7 +263,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentIdCaptor.capture(), selectedFileIdsCaptor.capture())).thenReturn(Future(Seq()))
 
     val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], mock[PUIDRepository], FixedTimeSource, new FixedUUIDSource())
+      mock[FileRepository], mock[AllowedPuidsRepository], mock[DisallowedPuidsRepository], FixedTimeSource, new FixedUUIDSource())
     service.getFFIDMetadata(consignmentId)
 
     consignmentIdCaptor.getValue should equal(consignmentId)
@@ -270,7 +307,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     )
 
     val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], mock[PUIDRepository], FixedTimeSource, new FixedUUIDSource())
+      mock[FileRepository], mock[AllowedPuidsRepository], mock[DisallowedPuidsRepository], FixedTimeSource, new FixedUUIDSource())
     val response = service.getFFIDMetadata(consignmentId).futureValue
 
     val ffidMetadataRowOne = response.find(_.fileId == fileIdOne).get
@@ -317,14 +354,6 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FfidmetadataRow(ffidMetadataId, fixedFileUuid, "software", "softwareVersion", dummyTimestamp, "binaryVersion", "containerVersion", "method")
   }
 
-  private def getMockAllowedPuidRow(puid: String, description: String, dummyTimestamp: Timestamp, consignmentType: String = "Standard"): AllowedpuidsRow = {
-    AllowedpuidsRow(puid, description, dummyTimestamp, None, consignmentType)
-  }
-
-  private def getMockDisallowedPuidRow(puid: String, description: String, dummyTimestamp: Timestamp, reason: String): DisallowedpuidsRow = {
-    DisallowedpuidsRow(puid, description, dummyTimestamp, None, reason)
-  }
-
   private def getMockConsignmentRow(
                                      consignmentId: UUID,
                                      userId: UUID,
@@ -340,12 +369,17 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       bodyid = bodyId)
   }
 
-  def mockPuidResponse(puid: String, disallowedReason: String = Success, existInAllowedPuid: Boolean = false): PUIDRepository = {
-    val PUIDRepository: PUIDRepository = mock[PUIDRepository]
-    val mockAllowedPuidResponse = Future(existInAllowedPuid)
-    val mockDisallowedPuidResponse = Future(Option(disallowedReason))
-    when(PUIDRepository.checkAllowedPuidExists(puid)).thenReturn(mockAllowedPuidResponse)
-    when(PUIDRepository.getDisallowedPuidReason(puid)).thenReturn(mockDisallowedPuidResponse)
-    PUIDRepository
+  def mockAllowedPuidResponse(puid: String, existInAllowedPuid: Boolean = false): AllowedPuidsRepository = {
+    val allowedPuidsRepository : AllowedPuidsRepository = mock[AllowedPuidsRepository]
+    val mockAllowedPuidsResponse = Future(existInAllowedPuid)
+    when(allowedPuidsRepository.checkAllowedPuidExists(puid)).thenReturn(mockAllowedPuidsResponse)
+    allowedPuidsRepository
+  }
+
+  def mockDisallowedPuidResponse(puid: String, disallowedReason: String = Success): DisallowedPuidsRepository = {
+    val disallowedPuidsRepository : DisallowedPuidsRepository = mock[DisallowedPuidsRepository]
+    val mockDisallowedPuidsResponse = Future(Option(disallowedReason))
+    when(disallowedPuidsRepository.getDisallowedPuidReason(puid)).thenReturn(mockDisallowedPuidsResponse)
+    disallowedPuidsRepository
   }
 }

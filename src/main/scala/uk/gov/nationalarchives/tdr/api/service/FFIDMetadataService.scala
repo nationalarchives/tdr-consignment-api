@@ -6,7 +6,8 @@ import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository, PUIDRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository,
+  AllowedPuidsRepository, DisallowedPuidsRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType
@@ -18,7 +19,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
                           matchesRepository: FFIDMetadataMatchesRepository,
                           fileRepository: FileRepository,
-                          puidRepository: PUIDRepository,
+                          allowedPuidsRepository: AllowedPuidsRepository,
+                          disallowedPuidsRepository: DisallowedPuidsRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val executionContext: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FFIDMetadataService"))
@@ -74,30 +76,42 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
       consignments <- fileRepository.getConsignmentForFile(fileId)
       consignmentType = if (consignments.isEmpty) { throw InputDataException(s"No consignment found for file $fileId") }
       else { consignments.head.consignmenttype }
-      statuses: List[Future[String]] = ffidMetadata.matches.map(m => checkStatus(m.puid, consignmentType))
-      futureUniqueStatuses: Future[List[String]] = Future.sequence(statuses).map(statuses => statuses.distinct)
-      uniqueStatuses <- futureUniqueStatuses
-      rows = uniqueStatuses match {
-        case s if uniqueStatuses.size == 1 =>
+      statuses: List[Future[String]] = ffidMetadata.matches.map(m => checkStatus(m.puid.getOrElse(""), consignmentType))
+      ffidStatuses: List[String] <- Future.sequence(statuses).map(statuses => statuses.distinct)
+      rows = ffidStatuses match {
+        case s if ffidStatuses.size == 1 =>
           List(FilestatusRow(uuidSource.uuid, fileId, FFID, s.head, timestamp))
-        case _ => uniqueStatuses.filterNot(_.equals(Success)).map(
+        case _ => ffidStatuses.filterNot(_.equals(Success)).map(
           FilestatusRow(uuidSource.uuid, fileId, FFID, _, timestamp))
       }
     } yield rows
   }
 
-  def checkStatus(puidOption: Option[String], consignmentType: String): Future[String] = {
-    val puid = puidOption.getOrElse("")
+  def checkStatus(puid: String, consignmentType: String): Future[String] = {
+    if (consignmentType == ConsignmentType.judgment) {
+      checkJudgmentStatus(puid)
+    }  else {
+      checkStandardStatus(puid)
+    }
+  }
+
+  def checkJudgmentStatus(puid: String): Future[String] = {
     for {
-      disallowedPuidReason <- puidRepository.getDisallowedPuidReason(puid).map(_.getOrElse(""))
-      allowedPuidExists <- puidRepository.checkAllowedPuidExists(puid)
-    } yield {
-      disallowedPuidReason match {
-        case reason if reason == PasswordProtected => PasswordProtected
-        case reason if reason == Zip => Zip
-        case _ if consignmentType == ConsignmentType.judgment && !allowedPuidExists => NonJudgmentFormat
-        case _ => Success
-      }
+      allowedPuidExists <- allowedPuidsRepository.checkAllowedPuidExists(puid)
+      disallowedPuidReason <- disallowedPuidsRepository.getDisallowedPuidReason(puid).map(_.getOrElse(""))
+    } yield disallowedPuidReason match {
+      case reason if reason == PasswordProtected || reason == Zip => reason
+      case _ if !allowedPuidExists => NonJudgmentFormat
+      case _ => Success
+    }
+  }
+
+  def checkStandardStatus(puid: String): Future[String] = {
+    for {
+      disallowedPuidReason <- disallowedPuidsRepository.getDisallowedPuidReason(puid).map(_.getOrElse(""))
+    } yield disallowedPuidReason match {
+      case reason if reason == PasswordProtected || reason == Zip => reason
+      case _ => Success
     }
   }
 
