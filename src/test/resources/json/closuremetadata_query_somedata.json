@@ -1,0 +1,6 @@
+{
+  "query": "query closureMetadata($consignmentId:UUID!){closureMetadata(consignmentid:$consignmentId){name, description, fullName, propertyType, propertyGroup, dataType, editable, multiValue, defaultValue}}",
+  "variables": {
+    "consignmentId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2"
+  }
+}

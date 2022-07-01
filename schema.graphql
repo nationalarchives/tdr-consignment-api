@@ -353,7 +353,7 @@ type Query {
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
-  getClosureMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+  closureMetadata(consignmentid: UUID!): [CustomMetadataField!]!
 }
 
 type Series {
