@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "3.0.1",
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.4",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
-  "org.sangria-graphql" %% "sangria-spray-json" % "1.0.2",
+  "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "2.1.0",
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
