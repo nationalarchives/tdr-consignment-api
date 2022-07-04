@@ -97,11 +97,11 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
 
   def checkJudgmentStatus(puid: String): Future[String] = {
     for {
-      puidAllowed <- allowedPuidsRepository.checkAllowedPuidExists(puid)
+      allowedPuid <- allowedPuidsRepository.checkAllowedPuidExists(puid)
       disallowedPuidReason <- disallowedPuidsRepository.getDisallowedPuidReason(puid).map(_.getOrElse(""))
     } yield disallowedPuidReason match {
       case reason if reason == PasswordProtected || reason == Zip => reason
-      case _ if !puidAllowed => NonJudgmentFormat
+      case _ if !allowedPuid => NonJudgmentFormat
       case _ => Success
     }
   }
