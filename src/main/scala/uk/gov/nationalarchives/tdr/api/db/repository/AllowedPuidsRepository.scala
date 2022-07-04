@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.Tables.{Allowedpuids, Disallowedpuids}
+import uk.gov.nationalarchives.Tables.Allowedpuids
 
 import scala.concurrent.Future
 
