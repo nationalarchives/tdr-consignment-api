@@ -13,7 +13,7 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
     case container: PostgreSQLContainer =>
       val db = container.database
       val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
-      TestUtils(db).createFileProperty("test", "desc", "Defined", "text", editable = true, multivalue = false, "Mandatory Data")
+      TestUtils(db).createFileProperty("test", "desc", "Defined", "text", editable = true, multivalue = false, "Mandatory Data", "test")
       val response = customMetadataPropertiesRepository.getClosureMetadataProperty.futureValue.head
       response.name should equal("test")
       response.description should equal(Some("desc"))

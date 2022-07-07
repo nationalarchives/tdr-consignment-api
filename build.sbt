@@ -45,10 +45,10 @@ lazy val circeVersion = "0.14.2"
 lazy val testContainersVersion = "0.40.8"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "3.0.0",
+  "org.sangria-graphql" %% "sangria" % "3.0.1",
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.4",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
-  "org.sangria-graphql" %% "sangria-spray-json" % "1.0.2",
+  "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "2.1.0",
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
@@ -62,7 +62,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-optics" % "0.14.1",
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.2",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.13",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.14",
   "org.postgresql" % "postgresql" % "42.4.0",
   "com.typesafe.slick" %% "slick" % "3.3.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.12.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.62",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.63",
   "io.github.hakky54" % "logcaptor" % "2.7.10" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test

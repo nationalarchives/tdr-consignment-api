@@ -1,0 +1,29 @@
+{
+  "data": {
+    "closureMetadata": [
+      {
+        "name": "TestProperty",
+        "fullName": "Test Property",
+        "description": "It's the Test Property",
+        "propertyGroup": "Test Property Group",
+        "editable": false,
+        "multiValue": false,
+        "propertyType": "Defined",
+        "dataType": "Text",
+        "defaultValue": "TestValue"
+      },
+      {
+        "name": "TestDependency",
+        "fullName": "Test Dependency",
+        "description": "It's the Test Dependency",
+        "propertyGroup": "Test Dependency Group",
+        "editable": false,
+        "multiValue": false,
+        "propertyType": "Defined",
+        "dataType": "Text",
+        "defaultValue": null,
+        "values": []
+      }
+    ]
+  }
+}

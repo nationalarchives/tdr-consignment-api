@@ -1,0 +1,11 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "User '49762121-4425-4dc4-9194-98f72e04d52e' does not have access to consignment 'f67d1337-cbd0-4fd1-9eac-611489e7113f'",
+      "extensions": {
+        "code": "NOT_AUTHORISED"
+      }
+    }
+  ]
+}
