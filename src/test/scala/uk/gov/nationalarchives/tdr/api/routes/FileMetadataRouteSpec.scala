@@ -7,7 +7,7 @@ import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Checksum, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
@@ -140,7 +140,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.addFileProperty(SHA256ServerSideChecksum)
       runAddFileMetadataTestMutation("mutation_alldata", validBackendChecksToken("checksum"))
 
-      val result = utils.getFileStatusResult(defaultFileId, Checksum)
+      val result = utils.getFileStatusResult(defaultFileId, ChecksumMatch)
       result.size should be(1)
       result.head should equal(Success)
   }
@@ -150,7 +150,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val utils = TestUtils(container.database)
       utils.seedDatabaseWithDefaultEntries()
       runAddFileMetadataTestMutation("mutation_mismatch_checksum", validBackendChecksToken("checksum"))
-      utils.getFileStatusResult(defaultFileId, Checksum)
+      utils.getFileStatusResult(defaultFileId, ChecksumMatch)
   }
 
   "addFileMetadata" should "not add the checksum validation result if this is not a checksum update" in withContainers {
@@ -335,7 +335,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val sql = s"""SELECT COUNT("Value") FROM "FileStatus" where "FileId" = ? AND "StatusType" = ?"""
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
-    ps.setString(2, Checksum)
+    ps.setString(2, ChecksumMatch)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getInt(1) should be(0)
