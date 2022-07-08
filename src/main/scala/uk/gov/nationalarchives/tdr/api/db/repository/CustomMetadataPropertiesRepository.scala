@@ -8,17 +8,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CustomMetadataPropertiesRepository(db: Database)(implicit val executionContext: ExecutionContext) {
 
-  def getClosureMetadataProperty: Future[Seq[FilepropertyRow]] = {
+  def getCustomMetadataProperty: Future[Seq[FilepropertyRow]] = {
     val query = Fileproperty
     db.run(query.result)
   }
 
-  def getClosureMetadataValues: Future[Seq[FilepropertyvaluesRow]] = {
+  def getCustomMetadataValues: Future[Seq[FilepropertyvaluesRow]] = {
     val query = Filepropertyvalues
     db.run(query.result)
   }
 
-  def getClosureMetadataDependencies: Future[Seq[FilepropertydependenciesRow]] = {
+  def getCustomMetadataDependencies: Future[Seq[FilepropertydependenciesRow]] = {
     val query = Filepropertydependencies
     db.run(query.result)
   }

@@ -37,9 +37,9 @@ object CustomMetadataFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("closureMetadata", ListType(MetadataFieldsType),
+    Field("customMetadata", ListType(MetadataFieldsType),
       arguments = ConsignmentIdArg :: Nil,
-      resolve = ctx => ctx.ctx.customMetadataPropertiesService.getClosureMetadata,
+      resolve = ctx => ctx.ctx.customMetadataPropertiesService.getCustomMetadata,
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     )
   )
