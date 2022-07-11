@@ -180,11 +180,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Boolean
   Decimal
-  DateTime
   Integer
+  Boolean
   Text
+  DateTime
 }
 
 type FFIDMetadata {
@@ -353,7 +353,7 @@ type Query {
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
-  closureMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+  customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
 }
 
 type Series {

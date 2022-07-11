@@ -28,15 +28,15 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
   val userId: UUID = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
-  private val closureMetadataJsonFilePrefix: String = "json/closuremetadata_"
-  val runClosureMetadataTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData =
-    runTestRequest[GraphqlQueryData](closureMetadataJsonFilePrefix)
-  val expectedClosureMetadataQueryResponse: String => GraphqlQueryData =
-    getDataFromFile[GraphqlQueryData](closureMetadataJsonFilePrefix)
+  private val customMetadataJsonFilePrefix: String = "json/custommetadata_"
+  val runCustomMetadataTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData =
+    runTestRequest[GraphqlQueryData](customMetadataJsonFilePrefix)
+  val expectedCustomMetadataQueryResponse: String => GraphqlQueryData =
+    getDataFromFile[GraphqlQueryData](customMetadataJsonFilePrefix)
 
   case class GraphqlQueryData(data: Option[GetCustomMetadataFields], errors: List[GraphqlError] = Nil)
 
-  case class GetCustomMetadataFields(closureMetadata: List[CustomMetadataFields])
+  case class GetCustomMetadataFields(customMetadata: List[CustomMetadataFields])
 
   case class CustomMetadataFields(name: String,
                                   fullName: Option[String],
@@ -54,54 +54,54 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
-  "closureMetadata" should "return all of the closure metadata with the correct arguments" in withContainers {
+  "customMetadata" should "return all of the closure metadata with the correct arguments" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
-      val expectedResponse = expectedClosureMetadataQueryResponse("data_all")
-      val response = runClosureMetadataTestQuery("query_alldata", token)
+      val expectedResponse = expectedCustomMetadataQueryResponse("data_all")
+      val response = runCustomMetadataTestQuery("query_alldata", token)
 
-      response.data.get.closureMetadata.head should equal(expectedResponse.data.get.closureMetadata.head)
+      response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
   }
 
-  "closureMetadata" should "return all requested fields" in withContainers {
+  "customMetadata" should "return all requested fields" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
-      val expectedResponse = expectedClosureMetadataQueryResponse("data_some")
-      val response = runClosureMetadataTestQuery("query_somedata", token)
+      val expectedResponse = expectedCustomMetadataQueryResponse("data_some")
+      val response = runCustomMetadataTestQuery("query_somedata", token)
 
-      response.data.get.closureMetadata.head should equal(expectedResponse.data.get.closureMetadata.head)
+      response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
   }
 
-  "closureMetadata" should "return an error if the consignmentId was not provided" in withContainers {
+  "customMetadata" should "return an error if the consignmentId was not provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
-      val expectedResponse = expectedClosureMetadataQueryResponse("data_error_no_consignmentid")
-      val response = runClosureMetadataTestQuery("query_no_consignmentid", token)
+      val expectedResponse = expectedCustomMetadataQueryResponse("data_error_no_consignmentid")
+      val response = runCustomMetadataTestQuery("query_no_consignmentid", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "closureMetadata" should "return an error if the consignmentId provided was not valid" in withContainers {
+  "customMetadata" should "return an error if the consignmentId provided was not valid" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val token = validUserToken(userId)
 
       addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
-      val expectedResponse = expectedClosureMetadataQueryResponse("data_invalid_consignmentid")
-      val response = runClosureMetadataTestQuery("query_invalid_consignmentid", token)
+      val expectedResponse = expectedCustomMetadataQueryResponse("data_invalid_consignmentid")
+      val response = runCustomMetadataTestQuery("query_invalid_consignmentid", token)
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
