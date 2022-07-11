@@ -9,12 +9,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class CustomMetadataPropertiesService(customMetadataPropertiesRepository: CustomMetadataPropertiesRepository)
                                       (implicit val ec: ExecutionContext) {
 
-  def getClosureMetadata: Future[Seq[CustomMetadataField]] = {
+  def getCustomMetadata: Future[Seq[CustomMetadataField]] = {
     val propertiesValuesAndDependencies: Future[(Seq[FilepropertyRow], Seq[FilepropertyvaluesRow], Seq[FilepropertydependenciesRow])] =
       for {
-        properties <- customMetadataPropertiesRepository.getClosureMetadataProperty
-        values <- customMetadataPropertiesRepository.getClosureMetadataValues
-        dependencies <- customMetadataPropertiesRepository.getClosureMetadataDependencies
+        properties <- customMetadataPropertiesRepository.getCustomMetadataProperty
+        values <- customMetadataPropertiesRepository.getCustomMetadataValues
+        dependencies <- customMetadataPropertiesRepository.getCustomMetadataDependencies
       } yield (properties, values, dependencies)
 
     propertiesValuesAndDependencies.map {
