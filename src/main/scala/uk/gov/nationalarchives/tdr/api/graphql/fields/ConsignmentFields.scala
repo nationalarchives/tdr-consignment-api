@@ -56,7 +56,7 @@ object ConsignmentFields {
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
-  case class PaginationInput(limit: Int, currentCursor: Option[String])
+  case class PaginationInput(limit: Int, offset: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -80,6 +80,10 @@ object ConsignmentFields {
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
+
+  implicit val fileFiltersType: InputObjectType[FileFilters] = {
+    deriveInputObjectType[FileFilters]()
+  }
 
   implicit val ConnectionDefinition(_, fileConnections) =
     Connection.definition[RequestContext, Connection, File](

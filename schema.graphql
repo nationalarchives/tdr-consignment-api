@@ -344,7 +344,9 @@ type PageInfo {
 
 input PaginationInput {
   limit: Int!
+  offset: Int
   currentCursor: String
+  fileFilters: FileFilters
 }
 
 enum PropertyType {

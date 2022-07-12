@@ -81,13 +81,31 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
 
   def getPaginatedFiles(consignmentId: UUID,
                         limit: Int,
-                        after: Option[UUID],
+                        offset: Option[Int],
+                        after: Option[String],//This should be a string of the filename
                         fileFilters: FileFilters): Future[Seq[FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)
-      .filterOpt(after)(_.fileid > _)
+      .filterOpt(fileFilters.selectedFilesId)(_.parentid === _)
+      .filterOpt(after)(_.filename > _) //filter on the filename
       .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
-      .sortBy(_.fileid)
+      .sortBy(_.filename)
+      .take(limit)
+    db.run(query.result)
+  }
+
+  def getPaginatedFiles2(consignmentId: UUID,
+                        limit: Int,
+                        offset: Int,
+                        after: Option[String],//This should be a string of the filename
+                        fileFilters: FileFilters): Future[Seq[FileRow]] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
+      .filterOpt(fileFilters.selectedFilesId)(_.parentid === _)
+      .filterOpt(after)(_.filename > _) //filter on the filename
+      .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
+      .sortBy(_.filename)
+      .drop(offset)
       .take(limit)
     db.run(query.result)
   }
