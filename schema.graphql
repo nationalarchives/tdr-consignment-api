@@ -180,10 +180,10 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Boolean
+  Integer
   Decimal
   DateTime
-  Integer
+  Boolean
   Text
 }
 
@@ -257,6 +257,11 @@ type FileEdge {
 
   "A cursor for use in pagination."
   cursor: String!
+}
+
+input FileFilters {
+  fileTypeIdentifier: String
+  selectedFilesId: UUID
 }
 
 type FileMatches {
@@ -339,7 +344,9 @@ type PageInfo {
 
 input PaginationInput {
   limit: Int!
+  offset: Int
   currentCursor: String
+  fileFilters: FileFilters
 }
 
 enum PropertyType {

@@ -101,15 +101,17 @@ class FileService(fileRepository: FileRepository,
   def getPaginatedFiles(consignmentId: UUID,
                         paginationInput: Option[PaginationInput],
                         fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
-    val filters = fileFilters.getOrElse(FileFilters())
+//    val filters = fileFilters.getOrElse(FileFilters())
     val input = paginationInput.getOrElse(
       throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
-    val currentCursor = input.currentCursor.map(UUID.fromString)
+    val filters = input.fileFilters.getOrElse(FileFilters())
+    val currentCursor = input.currentCursor
     val limit = input.limit
+    val offset = input.offset.getOrElse(0) * limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
 
     for {
-      response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
+      response: Seq[FileRow] <- fileRepository.getPaginatedFiles2(consignmentId, maxFiles, offset, currentCursor, filters)
       fileIds = Some(response.map(_.fileid).toSet)
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
