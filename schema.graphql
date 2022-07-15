@@ -345,7 +345,7 @@ type PageInfo {
 
 input PaginationInput {
   limit: Int
-  offset: Int
+  currentPage: Int
   currentCursor: String
   fileFilters: FileFilters
 }

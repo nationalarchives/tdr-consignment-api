@@ -90,7 +90,8 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def getPaginatedFiles(consignmentId: UUID,
+  //Remove This
+/*  def getPaginatedFiles(consignmentId: UUID,
                         limit: Int,
                         offset: Option[Int],
                         after: Option[String],//This should be a string of the filename
@@ -103,9 +104,9 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .sortBy(_.filename)
       .take(limit)
     db.run(query.result)
-  }
+  }*/
 
-  def getPaginatedFiles2(consignmentId: UUID,
+  def getPaginatedFiles(consignmentId: UUID,
                         limit: Int,
                         offset: Int,
                         after: Option[String],//This should be a string of the filename
