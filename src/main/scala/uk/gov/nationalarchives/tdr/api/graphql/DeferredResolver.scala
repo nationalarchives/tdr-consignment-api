@@ -1,13 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.graphql
 
 import java.util.UUID
-
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
 import sangria.relay.DefaultConnection
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{CurrentStatus, FileChecks, PaginationInput, TransferringBody}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields._
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
+import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,6 +42,6 @@ case class DeferConsignmentSeries(consignmentId: UUID) extends Deferred[Option[S
 case class DeferConsignmentBody(consignmentId: UUID) extends Deferred[TransferringBody]
 case class DeferFiles(consignmentId: UUID, fileFilters: Option[FileFilters] = None) extends Deferred[List[File]]
 case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], fileFilters: Option[FileFilters] = None)
-  extends Deferred[DefaultConnection[File]]
+  extends Deferred[TDRConnection[File]]
 case class DeferCurrentConsignmentStatus(consignmentId: UUID) extends Deferred[CurrentStatus]
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]

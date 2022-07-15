@@ -248,6 +248,7 @@ type FileConnection {
 
   "A list of edges."
   edges: [FileEdge]
+  totalPages: Int
 }
 
 "An edge in a connection."
@@ -343,7 +344,7 @@ type PageInfo {
 }
 
 input PaginationInput {
-  limit: Int!
+  limit: Int
   offset: Int
   currentCursor: String
   fileFilters: FileFilters
