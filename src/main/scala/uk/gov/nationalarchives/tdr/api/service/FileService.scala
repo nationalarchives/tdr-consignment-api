@@ -2,9 +2,8 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import java.sql.Timestamp
 import java.util.UUID
-
 import com.typesafe.config.Config
-import sangria.relay.{DefaultConnection, PageInfo}
+import sangria.relay.{Connection, DefaultConnection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -98,7 +97,7 @@ class FileService(fileRepository: FileRepository,
     } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
   }
 
-  def getPaginatedFiles(consignmentId: UUID,
+/*  def getPaginatedFiles(consignmentId: UUID,
                         paginationInput: Option[PaginationInput],
                         fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
 //    val filters = fileFilters.getOrElse(FileFilters())
@@ -106,7 +105,7 @@ class FileService(fileRepository: FileRepository,
       throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
     val filters = input.fileFilters.getOrElse(FileFilters())
     val currentCursor = input.currentCursor
-    val limit = input.limit
+    val limit = input.limit.getOrElse(filePageMaxLimit)
     val offset = input.offset.getOrElse(0) * limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
 
@@ -129,6 +128,46 @@ class FileService(fileRepository: FileRepository,
           hasPreviousPage = currentCursor.isDefined
         ),
         edges
+      )
+    }
+  }*/
+
+  def getPaginatedFiles(consignmentId: UUID,
+                        paginationInput: Option[PaginationInput],
+                        fileFilters: Option[FileFilters] = None): Future[TDRConnection[File]] = {
+    val input = paginationInput.getOrElse(
+      throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
+    val filters = input.fileFilters.getOrElse(FileFilters())
+    val currentCursor = input.currentCursor
+    val limit = input.limit.getOrElse(filePageMaxLimit)
+    val offset = input.offset.getOrElse(0) * limit
+    val maxFiles: Int = min(limit, filePageMaxLimit)
+
+    for {
+      response: Seq[FileRow] <- fileRepository.getPaginatedFiles2(consignmentId, maxFiles, offset, currentCursor, filters)
+      numberOfFilesInFolder: Int <- fileRepository.countFilesOrFoldersInConsignment(consignmentId, filters.selectedFilesId, filters.fileTypeIdentifier)
+      fileIds = Some(response.map(_.fileid).toSet)
+      fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
+      ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
+      avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
+      ffidStatus <- fileStatusService.getFileStatus(consignmentId, fileIds)
+    } yield {
+      val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
+      val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
+      val edges: Seq[FileEdge] = files.map(_.toFileEdge)
+      val totalPages = Math.ceil(numberOfFilesInFolder.toDouble/limit.toDouble).toInt //totalItems divided by the limit rounded up
+      println("limit " + limit)
+      println("total files in folder " + numberOfFilesInFolder)
+      println("total pages " + totalPages)
+      TDRConnection(
+        PageInfo(
+          startCursor = edges.headOption.map(_.cursor),
+          endCursor = lastCursor,
+          hasNextPage = lastCursor.isDefined,
+          hasPreviousPage = currentCursor.isDefined
+        ),
+        edges,
+        totalPages
       )
     }
   }
@@ -198,4 +237,6 @@ object FileService {
   case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow]) extends Rows
 
   case class FileOwnership(fileId: UUID, userId: UUID)
+
+  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalPages: Int) extends Connection[T]
 }

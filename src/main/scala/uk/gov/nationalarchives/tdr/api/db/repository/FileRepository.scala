@@ -58,6 +58,18 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
+  //Maybe rename to say countFilesAndOrFolders
+  def countFilesOrFoldersInConsignment(consignmentId: UUID,
+                               selectedFilesId: Option[UUID] = None,
+                               fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
+      .filterOpt(fileTypeIdentifier)(_.filetype === _)
+      .filterOpt(selectedFilesId)(_.parentid === _)
+      .length
+    db.run(query.result)
+  }
+
   def countProcessedAvMetadataInConsignment(consignmentId: UUID): Future[Int] = {
     val query = Avmetadata.join(File)
       .on(_.fileid === _.fileid)
