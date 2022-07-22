@@ -47,6 +47,14 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     response should equal(true)
   }
 
+  "allChecksSucceeded" should "return true if the ffid status is an inactive disallowed status and the checksum match and antivirus statuses are 'Success'" in {
+    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
+    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
+    mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid)))
+    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    response should equal(true)
+  }
+
   "allChecksSucceeded" should "return false if the checksum match status is 'Mismatch' and the antivirus and ffid statuses are 'Success'" in {
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
@@ -61,14 +69,6 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
     val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
-  }
-
-  "allChecksSucceeded" should "return true if the ffid status is an inactive disallowed status and the checksum match and antivirus statuses are 'Success'" in {
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
-    response should equal(true)
   }
 
   "allChecksSucceeded" should "return false if the ffid status is an active disallowed status and the checksum match and antivirus statuses are 'Success'" in {

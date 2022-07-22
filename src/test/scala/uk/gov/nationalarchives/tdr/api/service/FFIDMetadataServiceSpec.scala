@@ -69,7 +69,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     status shouldBe successStatusValue
   }
 
-  "checkStatus" should "return 'NonJudgmentFormat' status for a non-judgment puid value on 'judgment' consignment type and is an inactive disallowed puid" in {
+  "checkStatus" should "return 'NonJudgmentFormat' status for a non-judgment inactive disallowed puid value on 'judgment' consignment type" in {
     val nonJudgmentPuid = "fmt/1"
     val allowedPuidsRepositoryMock = mockAllowedPuidResponse(nonJudgmentPuid)
     val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(nonJudgmentPuid, "InactiveDisallowedReason", false)

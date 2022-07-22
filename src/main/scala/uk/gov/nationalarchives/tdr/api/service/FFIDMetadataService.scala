@@ -96,7 +96,8 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
 
   def checkJudgmentStatus(puid: String): Future[String] = {
     //Need to check if the disallowed puid is active to prevent the following scenario:
-    //Upload of an exe file this is not a judgment format, but is inactive so would pass through
+    //Upload of a file which is an inactive disallowed puid type, this is not a judgment format, but is inactive
+    //this means it would pass through the all checks succeeded stage and be transferred when it shouldn't
     for {
       allowedPuid <- allowedPuidsRepository.checkAllowedPuidExists(puid)
       disallowedPuidRow <- disallowedPuidsRepository.getDisallowedPuid(puid)
