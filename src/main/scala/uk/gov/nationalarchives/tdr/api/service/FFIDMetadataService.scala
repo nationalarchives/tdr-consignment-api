@@ -1,19 +1,18 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.{SQLException, Timestamp}
-import java.util.UUID
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FFIDMetadataMatchesRepository, FFIDMetadataRepository, FileRepository,
-  AllowedPuidsRepository, DisallowedPuidsRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
+import java.sql.{SQLException, Timestamp}
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
@@ -96,11 +95,13 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
   }
 
   def checkJudgmentStatus(puid: String): Future[String] = {
+    //Need to check if the disallowed puid is active to prevent the following scenario:
+    //Upload of an exe file this is not a judgment format, but is inactive so would pass through
     for {
       allowedPuid <- allowedPuidsRepository.checkAllowedPuidExists(puid)
-      disallowedPuidReason <- disallowedPuidsRepository.getDisallowedPuidReason(puid).map(_.getOrElse(""))
-    } yield disallowedPuidReason match {
-      case reason if reason == PasswordProtected || reason == Zip => reason
+      disallowedPuidRow <- disallowedPuidsRepository.getDisallowedPuid(puid)
+    } yield disallowedPuidRow match {
+      case Some(value) if value.active => value.reason
       case _ if !allowedPuid => NonJudgmentFormat
       case _ => Success
     }
@@ -108,9 +109,9 @@ class FFIDMetadataService(ffidMetadataRepository: FFIDMetadataRepository,
 
   def checkStandardStatus(puid: String): Future[String] = {
     for {
-      disallowedPuidReason <- disallowedPuidsRepository.getDisallowedPuidReason(puid).map(_.getOrElse(""))
-    } yield disallowedPuidReason match {
-      case reason if reason == PasswordProtected || reason == Zip => reason
+      disallowedPuidRow <- disallowedPuidsRepository.getDisallowedPuid(puid)
+    } yield disallowedPuidRow match {
+      case Some(value) => value.reason
       case _ => Success
     }
   }
