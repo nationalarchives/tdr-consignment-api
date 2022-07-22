@@ -57,7 +57,7 @@ class DisallowedPuidsRespositorySpec extends TestContainerUtils with ScalaFuture
       result.contains("reason3") shouldBe true
   }
 
-  "activeReasons" should "return distinct disallowed reasons that are active if more than one puid has the same reason" in withContainers {
+  "activeReasons" should "only return distinct disallowed reasons that are active if more than one puid has the same reason" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
