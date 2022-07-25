@@ -189,4 +189,19 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     val expected = Map(consignmentId -> Success)
     response should equal(expected)
   }
+
+  "'status types'" should "have the correct values assigned" in {
+    FileStatusService.Antivirus should equal("Antivirus")
+    FileStatusService.ChecksumMatch should equal("ChecksumMatch")
+    FileStatusService.FFID should equal("FFID")
+  }
+
+  "'status value'" should "have the correct values assigned" in {
+    FileStatusService.Mismatch should equal("Mismatch")
+    FileStatusService.NonJudgmentFormat should equal("NonJudgmentFormat")
+    FileStatusService.PasswordProtected should equal("PasswordProtected")
+    FileStatusService.VirusDetected should equal("VirusDetected")
+    FileStatusService.ZeroByteFile should equal("ZeroByteFile")
+    FileStatusService.Zip should equal("Zip")
+  }
 }
