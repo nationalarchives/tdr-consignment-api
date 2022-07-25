@@ -114,7 +114,7 @@ type Consignment {
   parentFolderId: UUID
   series: Series
   transferringBody: TransferringBody
-  files: [File!]!
+  files(fileFiltersInput: FileFilters): [File!]!
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
   currentStatus: CurrentStatus!
@@ -257,6 +257,11 @@ type FileEdge {
 
   "A cursor for use in pagination."
   cursor: String!
+}
+
+input FileFilters {
+  fileTypeIdentifier: String
+  selectedFileIds: [UUID!]
 }
 
 type FileMatches {
