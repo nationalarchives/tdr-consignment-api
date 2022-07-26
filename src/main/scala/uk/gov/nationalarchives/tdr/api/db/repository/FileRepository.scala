@@ -95,9 +95,10 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
                         offset: Int,
                         after: Option[String],
                         fileFilters: FileFilters): Future[Seq[FileRow]] = {
+    val selectedFileIds = fileFilters.selectedFileIds.getOrElse(List())
     val query = File
       .filter(_.consignmentid === consignmentId)
-      .filterOpt(fileFilters.selectedFilesId)(_.parentid === _)
+      .filterOpt(selectedFileIds.headOption)(_.parentid === _)
       .filterOpt(after)(_.filename > _)
       .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
       .sortBy(_.filename)

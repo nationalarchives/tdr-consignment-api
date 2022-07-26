@@ -82,10 +82,6 @@ object ConsignmentFields {
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
 
-  implicit val fileFiltersType: InputObjectType[FileFilters] = {
-    deriveInputObjectType[FileFilters]()
-  }
-
   implicit val ConnectionDefinition(_, fileConnections) =
     Connection.definition[ConsignmentApiContext, TDRConnection, File](
       name = "File",

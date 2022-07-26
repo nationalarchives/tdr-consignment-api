@@ -101,6 +101,7 @@ class FileService(fileRepository: FileRepository,
     val input = paginationInput.getOrElse(
       throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
     val filters = input.fileFilters.getOrElse(FileFilters())
+    val selectedFileIds = filters.selectedFileIds.getOrElse(List())
     val currentCursor = input.currentCursor
     val limit = input.limit.getOrElse(filePageMaxLimit)
     val offset = input.currentPage.getOrElse(0) * limit
@@ -108,7 +109,8 @@ class FileService(fileRepository: FileRepository,
 
     for {
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
-      numberOfFilesInFolder: Int <- fileRepository.countFilesOrFoldersInConsignment(consignmentId, filters.selectedFilesId, filters.fileTypeIdentifier)
+      numberOfFilesInFolder: Int <- fileRepository.countFilesOrFoldersInConsignment(consignmentId,
+        selectedFileIds.headOption, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
