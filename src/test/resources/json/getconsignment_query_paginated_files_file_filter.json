@@ -1,0 +1,3 @@
+{
+  "query": "{getConsignment(consignmentid: \"b130e097-2edc-4e67-a7e9-5364a09ae9cb\", paginationInput: {limit: 2, currentPage: 0, fileFilters:{fileTypeIdentifier:\"File\"}}) {consignmentid, totalFiles, parentFolder, paginatedFiles(paginationInput: {limit: 2, currentPage: , fileFilters:{fileTypeIdentifier:\"File\"}}) {pageInfo {startCursor, endCursor, hasNextPage, hasPreviousPage}, edges {node {fileId, fileName, fileType, parentId}, cursor}}}}"
+}
