@@ -411,6 +411,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
+  //Can't seem to add a second file
   "getConsignment" should "return all the file edges up to the limit where no cursor provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
@@ -463,6 +464,39 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_input")
       val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_input", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges up to the limit where no offset provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_offset")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_offset", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges using offset up to the limit value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_offset")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_offset", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return no file edges where offset provided is beyond number of files" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_offset_max")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_offset_max", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }
