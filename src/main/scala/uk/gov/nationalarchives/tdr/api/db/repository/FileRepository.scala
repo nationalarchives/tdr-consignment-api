@@ -58,7 +58,6 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  //Maybe rename to say countFilesAndOrFolders
   def countFilesOrFoldersInConsignment(consignmentId: UUID,
                                selectedFilesId: Option[UUID] = None,
                                fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
@@ -90,31 +89,15 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  //Remove This
-/*  def getPaginatedFiles(consignmentId: UUID,
-                        limit: Int,
-                        offset: Option[Int],
-                        after: Option[String],//This should be a string of the filename
-                        fileFilters: FileFilters): Future[Seq[FileRow]] = {
-    val query = File
-      .filter(_.consignmentid === consignmentId)
-      .filterOpt(fileFilters.selectedFilesId)(_.parentid === _)
-      .filterOpt(after)(_.filename > _) //filter on the filename
-      .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
-      .sortBy(_.filename)
-      .take(limit)
-    db.run(query.result)
-  }*/
-
   def getPaginatedFiles(consignmentId: UUID,
                         limit: Int,
                         offset: Int,
-                        after: Option[String],//This should be a string of the filename
+                        after: Option[String],
                         fileFilters: FileFilters): Future[Seq[FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)
       .filterOpt(fileFilters.selectedFilesId)(_.parentid === _)
-      .filterOpt(after)(_.filename > _) //filter on the filename
+      .filterOpt(after)(_.filename > _)
       .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
       .sortBy(_.filename)
       .drop(offset)

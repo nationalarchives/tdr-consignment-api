@@ -118,10 +118,7 @@ class FileService(fileRepository: FileRepository,
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
-      val totalPages = Math.ceil(numberOfFilesInFolder.toDouble/limit.toDouble).toInt //totalItems divided by the limit rounded up
-      println("limit " + limit)
-      println("total files in folder " + numberOfFilesInFolder)
-      println("total pages " + totalPages)
+      val totalPages = Math.ceil(numberOfFilesInFolder.toDouble/limit.toDouble).toInt
       TDRConnection(
         PageInfo(
           startCursor = edges.headOption.map(_.cursor),
