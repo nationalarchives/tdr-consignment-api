@@ -501,6 +501,39 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
+  "getConsignment" should "return all the folder edges up to the limit where a folder Filter is provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_folder_filter")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_folder_filter", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges up to the limit where a file Filter is provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_file_filter")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_file_filter", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges up to the limit where a folderId Filter is provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_fileid_filter")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_fileid_filter", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
   "updateExportData" should "update the export data correctly" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
