@@ -229,6 +229,30 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       files.size shouldBe 1
   }
 
+  "getFiles" should "return files and file metadata where 'selectedFileIds' filter applied" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getFiles(consignmentId, FileFilters(selectedFileIds = Some(List(fileOneId, folderOneId)))).futureValue
+      files.forall(p => List(fileOneId, folderOneId).contains(p._1.fileid)) shouldBe true
+  }
+
+  "getFiles" should "return files and file metadata for selected files where 'file' type and 'selectedFileIds' filters are applied" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+      setUpFilesAndDirectories(consignmentId, utils)
+
+      val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier), Some(List(fileOneId)))).futureValue
+      files.forall(_._1.fileid == fileOneId) shouldBe true
+  }
+
   "getAllDescendants" should "return all descendants" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
