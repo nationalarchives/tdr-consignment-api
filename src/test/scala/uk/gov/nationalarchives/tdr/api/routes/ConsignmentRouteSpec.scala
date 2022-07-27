@@ -411,7 +411,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
-  //Can't seem to add a second file
   "getConsignment" should "return all the file edges up to the limit where no cursor provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
