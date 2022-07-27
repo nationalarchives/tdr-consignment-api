@@ -148,7 +148,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       consignmentFiles shouldBe 3
   }
 
-  "countFilesInConsignment" should "return the total number of files in a consignment given a parentId filter" in withContainers {
+  "countFilesInConsignment" should "return the total number of files and folders with the same parent given a parentId filter" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -160,11 +160,12 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
       utils.createFile(folderId, consignmentId, NodeType.directoryTypeIdentifier)
       utils.createFile(UUID.fromString("d870fb86-0dd5-4025-98d3-11232690918b"), consignmentId, parentId = Some(folderId))
+      utils.createFile(UUID.fromString("1ad53749-aba4-4369-8fd6-2311111427cc"), consignmentId, NodeType.directoryTypeIdentifier, parentId = Some(folderId))
       utils.createFile(UUID.fromString("2dfa0495-72a3-4e88-9c0e-b105d7802a4e"), consignmentId)
 
-      val consignmentFiles = fileRepository.countFilesInConsignment(consignmentId, parentId = Some(folderId)).futureValue
+      val consignmentFiles = fileRepository.countFilesInConsignment(consignmentId, parentId = Some(folderId), None).futureValue
 
-      consignmentFiles shouldBe 1
+      consignmentFiles shouldBe 2
   }
 
   "countProcessedAvMetadataInConsignment" should "return 0 if consignment has no AVmetadata for files" in withContainers {
