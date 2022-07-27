@@ -501,7 +501,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
-  "getConsignment" should "return all the folder edges up to the limit where a folder Filter is provided" in withContainers {
+  "getConsignment" should "return file edges in folder name alphabetical order, up to the limit where a folder Filter is provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       setUpStandardConsignmentAndFiles(utils)
@@ -512,7 +512,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
-  "getConsignment" should "return all the file edges up to the limit where a file Filter is provided" in withContainers {
+  "getConsignment" should "return file edges in file name alphabetical order, up to the limit where a file Filter is provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       setUpStandardConsignmentAndFiles(utils)
@@ -523,13 +523,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
-  "getConsignment" should "return all the file edges up to the limit where a folderId Filter is provided" in withContainers {
+  "getConsignment" should "return file edges in file name alphabetical order, up to the limit where a parentId Filter is provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       setUpStandardConsignmentAndFiles(utils)
 
-      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_fileid_filter")
-      val response: GraphqlQueryData = runTestQuery("query_paginated_files_fileid_filter", validUserToken(body = defaultBodyCode))
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_parentid_filter")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_parentid_filter", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }

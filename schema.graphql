@@ -263,6 +263,7 @@ type FileEdge {
 input FileFilters {
   fileTypeIdentifier: String
   selectedFileIds: [UUID!]
+  parentId: UUID
 }
 
 type FileMatches {

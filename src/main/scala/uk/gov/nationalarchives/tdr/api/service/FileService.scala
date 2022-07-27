@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import java.sql.Timestamp
 import java.util.UUID
 import com.typesafe.config.Config
-import sangria.relay.{Connection, DefaultConnection, Edge, PageInfo}
+import sangria.relay.{Connection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -101,7 +101,6 @@ class FileService(fileRepository: FileRepository,
     val input = paginationInput.getOrElse(
       throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
     val filters = input.fileFilters.getOrElse(FileFilters())
-    val selectedFileIds = filters.selectedFileIds.getOrElse(List())
     val currentCursor = input.currentCursor
     val limit = input.limit.getOrElse(filePageMaxLimit)
     val offset = input.currentPage.getOrElse(0) * limit
@@ -109,8 +108,7 @@ class FileService(fileRepository: FileRepository,
 
     for {
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
-      numberOfFilesInFolder: Int <- fileRepository.countFilesOrFoldersInConsignment(consignmentId,
-        selectedFileIds.headOption, filters.fileTypeIdentifier)
+      numberOfFilesInFolder: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)

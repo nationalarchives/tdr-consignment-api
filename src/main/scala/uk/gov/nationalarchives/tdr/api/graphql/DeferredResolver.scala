@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.graphql
 
 import java.util.UUID
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
-import sangria.relay.DefaultConnection
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{CurrentStatus, FileChecks, PaginationInput, TransferringBody}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields._
