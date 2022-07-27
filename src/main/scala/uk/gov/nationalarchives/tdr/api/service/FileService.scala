@@ -92,10 +92,13 @@ class FileService(fileRepository: FileRepository,
     val filters = fileFilters.getOrElse(FileFilters())
     for {
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
-      ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
-      avList <- avMetadataService.getAntivirusMetadata(consignmentId)
-      ffidStatus <- fileStatusService.getFileStatus(consignmentId)
-    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
+      getFfidMetadataList: Future[List[FFIDMetadata]] = ffidMetadataService.getFFIDMetadata(consignmentId)
+      getAvList: Future[List[AntivirusMetadata]] = avMetadataService.getAntivirusMetadata(consignmentId)
+      getFfidStatus: Future[Map[UUID, String]] = fileStatusService.getFileStatus(consignmentId)
+      ffidMetadataList <- getFfidMetadataList
+      avList <- getAvList
+      ffidStatus <- getFfidStatus
+      } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
   }
 
   def getPaginatedFiles(consignmentId: UUID,
