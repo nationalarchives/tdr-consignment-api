@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 
 import java.time.ZonedDateTime
 import java.util.UUID
-
 import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
@@ -11,6 +10,7 @@ import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
+import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
@@ -77,7 +77,9 @@ object ConsignmentFields {
     deriveObjectType[Unit, CurrentStatus]()
 
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
+  implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
+  val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
 
   implicit val ConnectionDefinition(_, fileConnections) =
     Connection.definition[RequestContext, Connection, File](
@@ -134,7 +136,11 @@ object ConsignmentFields {
       Field(
         "files",
         ListType(FileType),
-        resolve = context => DeferFiles(context.value.consignmentid)
+        arguments = FileFiltersInputArg :: Nil,
+        resolve = ctx => {
+          val fileFilters = ctx.args.argOpt("fileFiltersInput")
+          DeferFiles(ctx.value.consignmentid, fileFilters)
+        }
       ),
       Field(
         "paginatedFiles",

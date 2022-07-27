@@ -74,6 +74,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .on(_.fileid === _.fileid)
       .filter(_._1.consignmentid === consignmentId)
       .filterOpt(fileFilters.fileTypeIdentifier)(_._1.filetype === _)
+      .filterOpt(fileFilters.selectedFileIds)  (_._1.fileid inSet _)
       .map(res => (res._1, res._2))
     db.run(query.result)
   }
@@ -128,7 +129,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 }
 
-case class FileFilters(fileTypeIdentifier: Option[String] = None)
+case class FileFilters(fileTypeIdentifier: Option[String] = None, selectedFileIds: Option[List[UUID]] = None)
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
