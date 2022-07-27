@@ -109,7 +109,7 @@ class FileService(fileRepository: FileRepository,
 
     for {
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
-      numberOfFilesInFolder: Int <- fileRepository.countFilesOrFoldersInConsignment(consignmentId,
+      numberOfFilesInFolder: Int <- fileRepository.countFilesInConsignment(consignmentId,
         selectedFileIds.headOption, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)

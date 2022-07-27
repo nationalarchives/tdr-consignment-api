@@ -51,23 +51,26 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   def addFiles(fileRows: Seq[FileRow], fileMetadataRows: Seq[FilemetadataRow]): Future[Unit] =
     db.run(DBIO.seq(File ++= fileRows, Filemetadata ++= fileMetadataRows).transactionally)
 
-  def countFilesInConsignment(consignmentId: UUID): Future[Int] = {
+  def countFilesInConsignment(consignmentId: UUID,
+                              parentId: Option[UUID] = None,
+                              fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
     val query = File.filter(_.consignmentid === consignmentId)
-      .filter(_.filetype === NodeType.fileTypeIdentifier)
+      .filterOpt(fileTypeIdentifier)(_.filetype === _)
+      .filterOpt(parentId)(_.parentid === _)
       .length
     db.run(query.result)
   }
 
-  def countFilesOrFoldersInConsignment(consignmentId: UUID,
-                               selectedFilesId: Option[UUID] = None,
-                               fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
-    val query = File
-      .filter(_.consignmentid === consignmentId)
-      .filterOpt(fileTypeIdentifier)(_.filetype === _)
-      .filterOpt(selectedFilesId)(_.parentid === _)
-      .length
-    db.run(query.result)
-  }
+//  def countDirectChildrenInFolder(consignmentId: UUID,
+//                                  parentId: Option[UUID] = None,
+//                                  fileTypeIdentifier: Option[String] = None): Future[Int] = {
+//    val query = File
+//      .filter(_.consignmentid === consignmentId)
+//      .filterOpt(fileTypeIdentifier)(_.filetype === _)
+//      .filterOpt(parentId)(_.parentid === _)
+//      .length
+//    db.run(query.result)
+//  }
 
   def countProcessedAvMetadataInConsignment(consignmentId: UUID): Future[Int] = {
     val query = Avmetadata.join(File)
@@ -95,10 +98,10 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
                         offset: Int,
                         after: Option[String],
                         fileFilters: FileFilters): Future[Seq[FileRow]] = {
-    val selectedFileIds = fileFilters.selectedFileIds.getOrElse(List())
+    //val selectedFileIds = fileFilters.selectedFileIds.getOrElse(List())
     val query = File
       .filter(_.consignmentid === consignmentId)
-      .filterOpt(selectedFileIds.headOption)(_.parentid === _)
+      .filterOpt(fileFilters.parentId)(_.parentid === _)
       .filterOpt(after)(_.filename > _)
       .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
       .sortBy(_.filename)
@@ -144,7 +147,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 }
 
-case class FileFilters(fileTypeIdentifier: Option[String] = None, selectedFileIds: Option[List[UUID]] = None)
+case class FileFilters(fileTypeIdentifier: Option[String] = None, selectedFileIds: Option[List[UUID]] = None, parentId: Option[UUID] = None)
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
