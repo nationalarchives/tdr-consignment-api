@@ -467,7 +467,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
-  "getConsignment" should "return all the file edges up to the limit where no offset provided" in withContainers {
+  "getConsignment" should "return all the file edges in file name alphabetical order, up to the limit where no offset provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       setUpStandardConsignmentAndFiles(utils)
@@ -478,7 +478,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
-  "getConsignment" should "return all the file edges using offset up to the limit value" in withContainers {
+  "getConsignment" should "return all the file edges in file name alphabetical order, using offset up to the limit value" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       setUpStandardConsignmentAndFiles(utils)
