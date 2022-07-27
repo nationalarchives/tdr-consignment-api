@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -27,6 +28,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   val inactiveDisallowedPuid = "InactiveDisallowedPuid"
   val activeDisallowedPuidsResponse: Seq[String] = Seq(activeDisallowedPuid1, activeDisallowedPuid2)
 
+  val fixedUuidSource = new FixedUUIDSource()
+
   when(disallowedPuidsRepositoryMock.activeReasons()).thenReturn(Future(activeDisallowedPuidsResponse))
 
   override def beforeEach(): Unit = {
@@ -43,7 +46,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(true)
   }
 
@@ -51,7 +55,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(true)
   }
 
@@ -59,7 +64,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -67,7 +73,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, VirusDetected)))
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -75,7 +82,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -84,7 +92,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, VirusDetected)))
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -93,7 +102,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, VirusDetected)))
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -101,7 +111,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(Antivirus, Seq())
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -109,7 +120,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq())
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -117,7 +129,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(Antivirus, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq())
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -126,7 +139,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success), fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -135,7 +149,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid), fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -144,7 +159,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, VirusDetected)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, Success), fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -153,7 +169,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, VirusDetected)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid), fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -162,7 +179,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1), fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
@@ -171,7 +189,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid), fileStatusRow(FFID, Success)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(true)
   }
 
@@ -179,13 +198,15 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
     mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
     mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1), fileStatusRow(FFID, activeDisallowedPuid2)))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).allChecksSucceeded(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "getFileStatus" should "return a Map Consisting of a FileId key and status value" in {
     mockResponse(FFID, Seq(FilestatusRow(UUID.randomUUID(), consignmentId, FFID, Success, Timestamp.from(Instant.now))))
-    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock).getFileStatus(consignmentId).futureValue
+    val response = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).getFileStatus(consignmentId).futureValue
     val expected = Map(consignmentId -> Success)
     response should equal(expected)
   }
