@@ -34,6 +34,11 @@ input AddFileMetadataWithFileIdInput {
   value: String!
 }
 
+input AddFileStatusInput {
+  consignmentId: UUID!
+  statusInput: [FileStatusInput!]!
+}
+
 input AddFinalJudgmentTransferConfirmationInput {
   consignmentId: UUID!
   legalCustodyTransferConfirmed: Boolean!
@@ -180,10 +185,10 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  Integer
-  Boolean
   Text
+  Boolean
+  Integer
+  Decimal
   DateTime
 }
 
@@ -292,6 +297,21 @@ type FileMetadataWithFileId {
   value: String!
 }
 
+type FileStatus {
+  fileStatusId: UUID!
+  fileId: UUID!
+  statusType: String!
+  value: String!
+  createdDatetime: ZonedDateTime!
+  modifiedDatetime: ZonedDateTime
+}
+
+input FileStatusInput {
+  fileId: UUID!
+  statusType: String!
+  statusValue: String!
+}
+
 type FinalJudgmentTransferConfirmation {
   consignmentId: UUID!
   legalCustodyTransferConfirmed: Boolean!
@@ -325,6 +345,7 @@ type Mutation {
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
+  addFileStatuses(addFileStatusInput: AddFileStatusInput!): [FileStatus!]!
 }
 
 "Information about pagination in a connection."
