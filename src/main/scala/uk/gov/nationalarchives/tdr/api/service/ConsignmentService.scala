@@ -129,10 +129,13 @@ class ConsignmentService(
   }
 
   def getConsignmentFileProgress(consignmentId: UUID): Future[FileChecks] = {
+    val getAvMetadataCount = fileRepository.countProcessedAvMetadataInConsignment(consignmentId)
+    val getChecksumCount = fileMetadataRepository.countProcessedChecksumInConsignment(consignmentId)
+    val getFileFormatIdCount = ffidMetadataRepository.countProcessedFfidMetadata(consignmentId)
     for {
-      avMetadataCount <- fileRepository.countProcessedAvMetadataInConsignment(consignmentId)
-      checksumCount <- fileMetadataRepository.countProcessedChecksumInConsignment(consignmentId)
-      fileFormatIdCount <- ffidMetadataRepository.countProcessedFfidMetadata(consignmentId)
+      avMetadataCount <- getAvMetadataCount
+      checksumCount <- getChecksumCount
+      fileFormatIdCount <- getFileFormatIdCount
     } yield FileChecks(AntivirusProgress(avMetadataCount), ChecksumProgress(checksumCount), FFIDProgress(fileFormatIdCount))
   }
 
