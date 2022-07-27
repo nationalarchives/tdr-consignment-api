@@ -87,6 +87,27 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       consignmentFiles shouldBe 4
   }
 
+  "countFilesInConsignment" should "return the total number of files and folders in a consignment" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("2e31c0ce-25e6-4bd7-a8a7-dc8bbb9335ba")
+      val folderIdOne = UUID.fromString("4bde68aa-6212-45dc-9097-769b9f77dbd9")
+      val folderIdTwo = UUID.fromString("2dfa0495-72a3-4e88-9c0e-b105d7802a4e")
+
+      utils.createConsignment(consignmentId, userId)
+
+      utils.createFile(folderIdOne, consignmentId, NodeType.directoryTypeIdentifier)
+      utils.createFile(UUID.fromString("d870fb86-0dd5-4025-98d3-11232690918b"), consignmentId, parentId = Some(folderIdOne))
+      utils.createFile(folderIdTwo, consignmentId, NodeType.directoryTypeIdentifier)
+      utils.createFile(UUID.fromString("317c7084-d3d4-435b-acd2-cfb317793843"), consignmentId,  parentId = Some(folderIdTwo))
+
+      val consignmentFiles = fileRepository.countFilesInConsignment(consignmentId, fileTypeIdentifier = None).futureValue
+
+      consignmentFiles shouldBe 4
+  }
+
   "countFilesInConsignment" should "return the total number of folders in a consignment given a folder type filter" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
