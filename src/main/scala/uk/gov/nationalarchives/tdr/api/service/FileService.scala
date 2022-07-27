@@ -110,14 +110,17 @@ class FileService(fileRepository: FileRepository,
     val currentCursor = input.currentCursor.map(UUID.fromString)
     val limit = input.limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
-
     for {
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
       fileIds = Some(response.map(_.fileid).toSet)
-      fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
-      ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
-      avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
-      ffidStatus <- fileStatusService.getFileStatus(consignmentId, fileIds)
+      getFileMetadata = fileMetadataService.getFileMetadata(consignmentId, fileIds)
+      getFfidMetadataList = ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
+      getAvList = avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
+      getFfidStatus = fileStatusService.getFileStatus(consignmentId, fileIds)
+      fileMetadata <- getFileMetadata
+      ffidMetadataList <- getFfidMetadataList
+      avList <- getAvList
+      ffidStatus <- getFfidStatus
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
