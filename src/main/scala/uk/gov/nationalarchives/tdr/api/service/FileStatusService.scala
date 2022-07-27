@@ -16,10 +16,13 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val
   }
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
+    val getChecksumMatchStatus = fileStatusRepository.getFileStatus(consignmentId, ChecksumMatch)
+    val getAvStatus = fileStatusRepository.getFileStatus(consignmentId, Antivirus)
+    val getFfidStatus = fileStatusRepository.getFileStatus(consignmentId, FFID)
     for {
-      checksumMatchStatus <- fileStatusRepository.getFileStatus(consignmentId, ChecksumMatch)
-      avStatus <- fileStatusRepository.getFileStatus(consignmentId, Antivirus)
-      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID)
+      checksumMatchStatus <- getChecksumMatchStatus
+      avStatus <- getAvStatus
+      ffidStatus <- getFfidStatus
     } yield {
       checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatus.nonEmpty &&
         (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatus.filter(_.value != Success)).isEmpty
