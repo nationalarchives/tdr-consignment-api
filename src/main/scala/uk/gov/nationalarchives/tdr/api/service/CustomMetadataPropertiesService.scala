@@ -10,11 +10,14 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
                                       (implicit val ec: ExecutionContext) {
 
   def getCustomMetadata: Future[Seq[CustomMetadataField]] = {
+    val getProperties = customMetadataPropertiesRepository.getCustomMetadataProperty
+    val getValues= customMetadataPropertiesRepository.getCustomMetadataValues
+    val getDependencies = customMetadataPropertiesRepository.getCustomMetadataDependencies
     val propertiesValuesAndDependencies: Future[(Seq[FilepropertyRow], Seq[FilepropertyvaluesRow], Seq[FilepropertydependenciesRow])] =
       for {
-        properties <- customMetadataPropertiesRepository.getCustomMetadataProperty
-        values <- customMetadataPropertiesRepository.getCustomMetadataValues
-        dependencies <- customMetadataPropertiesRepository.getCustomMetadataDependencies
+        properties <- getProperties
+        values <- getValues
+        dependencies <- getDependencies
       } yield (properties, values, dependencies)
 
     propertiesValuesAndDependencies.map {
