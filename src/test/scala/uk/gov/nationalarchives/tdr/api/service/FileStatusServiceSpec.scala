@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.scalatest.BeforeAndAfterEach
@@ -8,8 +9,10 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileStatusRepository}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, FileStatus, FileStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils._
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -209,6 +212,40 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
       fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource).getFileStatus(consignmentId).futureValue
     val expected = Map(consignmentId -> Success)
     response should equal(expected)
+  }
+
+  "addFileStatuses" should "add the file statuses" in {
+    val fixedTimestamp = Timestamp.from(FixedTimeSource.now)
+    val fileId1 = UUID.randomUUID()
+    val fileId2 = UUID.randomUUID()
+    val fileStatusInput1 = FileStatusInput(fileId1, "statusType1", "valueA")
+    val fileStatusInput2 = FileStatusInput(fileId1, "statusType2", "valueB")
+    val fileStatusInput3 = FileStatusInput(fileId2, "statusType1", "valueA")
+    val fileStatusInputs = List(fileStatusInput1, fileStatusInput2, fileStatusInput3)
+
+    val statusId1 = UUID.randomUUID()
+    val statusId2 = UUID.randomUUID()
+    val statusId3 = UUID.randomUUID()
+    val row1 = FilestatusRow(statusId1, fileId1, "statusType1", "valueA", fixedTimestamp)
+    val row2 = FilestatusRow(statusId2, fileId1, "statusType2", "valueB", fixedTimestamp)
+    val row3 = FilestatusRow(statusId3, fileId2, "statusType1", "valueA", fixedTimestamp)
+    val rows = Future(Seq(row1, row2, row3))
+
+    when(fileStatusRepositoryMock.addFileStatuses(any[List[FilestatusRow]])).thenReturn(rows)
+
+    val input = AddFileStatusInput(consignmentId, fileStatusInputs)
+    val service = new FileStatusService(
+      fileStatusRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, fixedUuidSource)
+
+    val response = service.addFileStatuses(input).futureValue
+    val expectedStatus1 = FileStatus(statusId1, fileId1, "statusType1", "valueA", fixedTimestamp.toZonedDateTime, None)
+    val expectedStatus2 = FileStatus(statusId2, fileId1, "statusType2", "valueB", fixedTimestamp.toZonedDateTime, None)
+    val expectedStatus3 = FileStatus(statusId3, fileId2, "statusType1", "valueA", fixedTimestamp.toZonedDateTime, None)
+
+    response.size should equal(3)
+    response.contains(expectedStatus1) should equal(true)
+    response.contains(expectedStatus2) should equal(true)
+    response.contains(expectedStatus3) should equal(true)
   }
 
   "'status types'" should "have the correct values assigned" in {
