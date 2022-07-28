@@ -62,6 +62,8 @@ class FileService(fileRepository: FileRepository,
             pathWithoutSlash == path
           }).head
 
+          //Add the 0 byte status here as know the file size at this point
+          //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
           if (input.fileSize == 0) {
             val statusRow = FilestatusRow(
               uuidSource.uuid, fileId, FFID, ZeroByteFile, Timestamp.from(timeSource.now))

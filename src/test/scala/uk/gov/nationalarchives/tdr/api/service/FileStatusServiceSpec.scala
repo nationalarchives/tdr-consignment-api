@@ -196,7 +196,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.FFID should equal("FFID")
   }
 
-  "'status value'" should "have the correct values assigned" in {
+  "'status values'" should "have the correct values assigned" in {
     FileStatusService.Mismatch should equal("Mismatch")
     FileStatusService.NonJudgmentFormat should equal("NonJudgmentFormat")
     FileStatusService.PasswordProtected should equal("PasswordProtected")

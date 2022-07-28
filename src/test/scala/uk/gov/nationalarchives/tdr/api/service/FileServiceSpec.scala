@@ -15,7 +15,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMe
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.FFID
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, ZeroByteFile}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -481,6 +481,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
     verify(fileStatusRepositoryMock, times(1)).addFileStatuses(any[List[FilestatusRow]]())
+    val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
+    rows.size should equal(1)
+    val row = rows.head
+    row.fileid should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
+    row.statustype should equal(FFID)
+    row.value should equal(ZeroByteFile)
   }
 
   "getPaginatedFiles" should "return all the file edges after the cursor to the limit" in {
