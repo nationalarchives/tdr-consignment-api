@@ -6,7 +6,7 @@
       "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
       "paginatedFiles": {
         "pageInfo": {
-          "startCursor": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "startCursor": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
           "endCursor": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
           "hasNextPage": true,
           "hasPreviousPage": true
@@ -14,11 +14,12 @@
         "edges": [
           {
             "node": {
-              "fileId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-              "fileName": "parentFolderName",
-              "fileType": "Folder"
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "fileName": "fileOneName",
+              "fileType": "File",
+              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
             },
-            "cursor": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+            "cursor": "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
           },
           {
             "node": {

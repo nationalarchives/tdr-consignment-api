@@ -467,6 +467,72 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response should equal(expectedResponse)
   }
 
+  "getConsignment" should "return all the file edges in file name alphabetical order, up to the limit where no offset provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_offset")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_offset", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return all the file edges in file name alphabetical order, using offset up to the limit value" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_offset")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_offset", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return no file edges where offset provided is beyond number of files" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_offset_max")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_offset_max", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return file edges in folder name alphabetical order, up to the limit where a folder Filter is provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_folder_filter")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_folder_filter", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return file edges in file name alphabetical order, up to the limit where a file Filter is provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_file_filter")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_file_filter", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return file edges in file name alphabetical order, up to the limit where a parentId Filter is provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      setUpStandardConsignmentAndFiles(utils)
+
+      val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_parentid_filter")
+      val response: GraphqlQueryData = runTestQuery("query_paginated_files_parentid_filter", validUserToken(body = defaultBodyCode))
+
+      response should equal(expectedResponse)
+  }
+
   "updateExportData" should "update the export data correctly" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)

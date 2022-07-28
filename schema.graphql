@@ -248,6 +248,7 @@ type FileConnection {
 
   "A list of edges."
   edges: [FileEdge]
+  totalPages: Int
 }
 
 "An edge in a connection."
@@ -262,6 +263,7 @@ type FileEdge {
 input FileFilters {
   fileTypeIdentifier: String
   selectedFileIds: [UUID!]
+  parentId: UUID
 }
 
 type FileMatches {
@@ -343,8 +345,10 @@ type PageInfo {
 }
 
 input PaginationInput {
-  limit: Int!
+  limit: Int
+  currentPage: Int
   currentCursor: String
+  fileFilters: FileFilters
 }
 
 enum PropertyType {

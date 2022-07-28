@@ -87,6 +87,87 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       consignmentFiles shouldBe 4
   }
 
+  "countFilesInConsignment" should "return the total number of files and folders in a consignment" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("2e31c0ce-25e6-4bd7-a8a7-dc8bbb9335ba")
+      val folderIdOne = UUID.fromString("4bde68aa-6212-45dc-9097-769b9f77dbd9")
+      val folderIdTwo = UUID.fromString("2dfa0495-72a3-4e88-9c0e-b105d7802a4e")
+
+      utils.createConsignment(consignmentId, userId)
+
+      utils.createFile(folderIdOne, consignmentId, NodeType.directoryTypeIdentifier)
+      utils.createFile(UUID.fromString("d870fb86-0dd5-4025-98d3-11232690918b"), consignmentId, parentId = Some(folderIdOne))
+      utils.createFile(folderIdTwo, consignmentId, NodeType.directoryTypeIdentifier)
+      utils.createFile(UUID.fromString("317c7084-d3d4-435b-acd2-cfb317793843"), consignmentId,  parentId = Some(folderIdTwo))
+
+      val consignmentFiles = fileRepository.countFilesInConsignment(consignmentId, fileTypeIdentifier = None).futureValue
+
+      consignmentFiles shouldBe 4
+  }
+
+  "countFilesInConsignment" should "return the total number of folders in a consignment given a folder type filter" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("2e31c0ce-25e6-4bd7-a8a7-dc8bbb9335ba")
+
+      utils.createConsignment(consignmentId, userId)
+
+      utils.createFile(UUID.fromString("4bde68aa-6212-45dc-9097-769b9f77dbd9"), consignmentId, NodeType.directoryTypeIdentifier)
+      utils.createFile(UUID.fromString("d870fb86-0dd5-4025-98d3-11232690918b"), consignmentId)
+      utils.createFile(UUID.fromString("2dfa0495-72a3-4e88-9c0e-b105d7802a4e"), consignmentId)
+      utils.createFile(UUID.fromString("1ad53749-aba4-4369-8fd6-2311111427cc"), consignmentId)
+
+      val consignmentFiles = fileRepository.countFilesInConsignment(consignmentId,
+        fileTypeIdentifier = Some(NodeType.directoryTypeIdentifier)).futureValue
+
+      consignmentFiles shouldBe 1
+  }
+
+  "countFilesInConsignment" should "return the total number of files in a consignment given a file type filter" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("2e31c0ce-25e6-4bd7-a8a7-dc8bbb9335ba")
+
+      utils.createConsignment(consignmentId, userId)
+
+      utils.createFile(UUID.fromString("4bde68aa-6212-45dc-9097-769b9f77dbd9"), consignmentId, NodeType.directoryTypeIdentifier)
+      utils.createFile(UUID.fromString("d870fb86-0dd5-4025-98d3-11232690918b"), consignmentId)
+      utils.createFile(UUID.fromString("2dfa0495-72a3-4e88-9c0e-b105d7802a4e"), consignmentId)
+      utils.createFile(UUID.fromString("1ad53749-aba4-4369-8fd6-2311111427cc"), consignmentId)
+
+      val consignmentFiles = fileRepository.countFilesInConsignment(consignmentId,
+        fileTypeIdentifier = Some(NodeType.fileTypeIdentifier)).futureValue
+
+      consignmentFiles shouldBe 3
+  }
+
+  "countFilesInConsignment" should "return the total number of files and folders with the same parent given a parentId filter" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileRepository = new FileRepository(db)
+      val consignmentId = UUID.fromString("2e31c0ce-25e6-4bd7-a8a7-dc8bbb9335ba")
+      val folderId = UUID.fromString("4bde68aa-6212-45dc-9097-769b9f77dbd9")
+
+      utils.createConsignment(consignmentId, userId)
+
+      utils.createFile(folderId, consignmentId, NodeType.directoryTypeIdentifier)
+      utils.createFile(UUID.fromString("d870fb86-0dd5-4025-98d3-11232690918b"), consignmentId, parentId = Some(folderId))
+      utils.createFile(UUID.fromString("1ad53749-aba4-4369-8fd6-2311111427cc"), consignmentId, NodeType.directoryTypeIdentifier, parentId = Some(folderId))
+      utils.createFile(UUID.fromString("2dfa0495-72a3-4e88-9c0e-b105d7802a4e"), consignmentId)
+
+      val consignmentFiles = fileRepository.countFilesInConsignment(consignmentId, parentId = Some(folderId), None).futureValue
+
+      consignmentFiles shouldBe 2
+  }
+
   "countProcessedAvMetadataInConsignment" should "return 0 if consignment has no AVmetadata for files" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
@@ -273,9 +354,9 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndDirectories(consignmentId, utils)
 
-      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(fileOneId), FileFilters()).futureValue
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, 0, Some(fileOneId.toString), FileFilters()).futureValue
       files.size shouldBe 2
-      files.head.fileid shouldBe folderOneId
+      files.head.fileid shouldBe fileOneId
       files.last.fileid shouldBe fileTwoId
   }
 
@@ -287,9 +368,9 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndDirectories(consignmentId, utils)
 
-      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(fileOneId), FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
-      files.size shouldBe 1
-      files.head.fileid shouldBe fileTwoId
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, 0, Some(fileOneId.toString), FileFilters(Some(NodeType.fileTypeIdentifier))).futureValue
+      files.size shouldBe 2
+      files.head.fileid shouldBe fileOneId
   }
 
   "getPaginatedFiles" should "return all files and folders up to limit where no cursor provided including first file" in withContainers {
@@ -300,8 +381,8 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndDirectories(consignmentId, utils)
 
-      val files = fileRepository.getPaginatedFiles(consignmentId, 2, None, FileFilters()).futureValue
-      files.size shouldBe 2
+      val files = fileRepository.getPaginatedFiles(consignmentId, 3, 0, None, FileFilters()).futureValue
+      files.size shouldBe 3
       files.head.fileid shouldBe fileOneId
       files.last.fileid shouldBe folderOneId
   }
@@ -314,34 +395,34 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndDirectories(consignmentId, utils)
 
-      val files = fileRepository.getPaginatedFiles(consignmentId, 0, None, FileFilters()).futureValue
+      val files = fileRepository.getPaginatedFiles(consignmentId, 0, 2, None, FileFilters()).futureValue
       files.size shouldBe 0
   }
 
   "getPaginatedFiles" should "return files where non-existent cursor value provided, and filedId is greater than the cursor value" in withContainers {
     case container: PostgreSQLContainer =>
-      val nonExistentFileId = UUID.fromString("820e2eed-a979-4982-8627-26c8a0dcdb2d")
+      val nonExistentFileId = "820e2eed-a979-4982-8627-26c8a0dcdb2d"
       val db = container.database
       val utils = TestUtils(db)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
       setUpFilesAndDirectories(consignmentId, utils)
 
-      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(nonExistentFileId), FileFilters()).futureValue
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, 0, Some(nonExistentFileId), FileFilters()).futureValue
       files.size shouldBe 2
-      files.head.fileid shouldBe folderOneId
+      files.head.fileid shouldBe fileOneId
       files.last.fileid shouldBe fileTwoId
   }
 
   "getPaginatedFiles" should "return no files where there are no files" in withContainers {
     case container: PostgreSQLContainer =>
-      val nonExistentFileId = UUID.fromString("820e2eed-a979-4982-8627-26c8a0dcdb2d")
+      val nonExistentFileId = "820e2eed-a979-4982-8627-26c8a0dcdb2d"
       val db = container.database
       val utils = TestUtils(db)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
 
-      val files = fileRepository.getPaginatedFiles(consignmentId, 2, Some(nonExistentFileId), FileFilters()).futureValue
+      val files = fileRepository.getPaginatedFiles(consignmentId, 2, 2, Some(nonExistentFileId), FileFilters()).futureValue
       files.size shouldBe 0
   }
 
@@ -382,9 +463,9 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
   private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): UUID = {
     utils.createConsignment(consignmentId, userId)
-    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier)
-    utils.createFile(fileOneId, consignmentId, parentId = Some(folderOneId))
-    utils.createFile(fileTwoId, consignmentId, parentId = Some(folderOneId))
+    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+    utils.createFile(fileOneId, consignmentId, fileName="FileName1", parentId = Some(folderOneId))
+    utils.createFile(fileTwoId, consignmentId, fileName="FileName2", parentId = Some(folderOneId))
 
     utils.addFileProperty("FilePropertyOne")
     utils.addFileProperty("FilePropertyTwo")

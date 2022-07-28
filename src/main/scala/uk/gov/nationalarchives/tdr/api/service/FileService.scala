@@ -2,9 +2,8 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import java.sql.Timestamp
 import java.util.UUID
-
 import com.typesafe.config.Config
-import sangria.relay.{DefaultConnection, PageInfo}
+import sangria.relay.{Connection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -101,17 +100,17 @@ class FileService(fileRepository: FileRepository,
       } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
   }
 
-  def getPaginatedFiles(consignmentId: UUID,
-                        paginationInput: Option[PaginationInput],
-                        fileFilters: Option[FileFilters] = None): Future[DefaultConnection[File]] = {
-    val filters = fileFilters.getOrElse(FileFilters())
+  def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]): Future[TDRConnection[File]] = {
     val input = paginationInput.getOrElse(
       throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
-    val currentCursor = input.currentCursor.map(UUID.fromString)
-    val limit = input.limit
+    val filters = input.fileFilters.getOrElse(FileFilters())
+    val currentCursor = input.currentCursor
+    val limit = input.limit.getOrElse(filePageMaxLimit)
+    val offset = input.currentPage.getOrElse(0) * limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
     for {
-      response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, currentCursor, filters)
+      response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
+      numberOfFilesInFolder: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
       getFileMetadata = fileMetadataService.getFileMetadata(consignmentId, fileIds)
       getFfidMetadataList = ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
@@ -125,14 +124,16 @@ class FileService(fileRepository: FileRepository,
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
-      DefaultConnection(
+      val totalPages = Math.ceil(numberOfFilesInFolder.toDouble/limit.toDouble).toInt
+      TDRConnection(
         PageInfo(
           startCursor = edges.headOption.map(_.cursor),
           endCursor = lastCursor,
           hasNextPage = lastCursor.isDefined,
           hasPreviousPage = currentCursor.isDefined
         ),
-        edges
+        edges,
+        totalPages
       )
     }
   }
@@ -202,4 +203,6 @@ object FileService {
   case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow]) extends Rows
 
   case class FileOwnership(fileId: UUID, userId: UUID)
+
+  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalPages: Int) extends Connection[T]
 }
