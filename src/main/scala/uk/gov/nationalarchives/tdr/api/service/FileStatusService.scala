@@ -1,12 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
+import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Success}
-import java.util.UUID
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val executionContext: ExecutionContext) {
+class FileStatusService(
+                         fileStatusRepository: FileStatusRepository,
+                         disallowedPuidsRepository: DisallowedPuidsRepository)(implicit val executionContext: ExecutionContext) {
 
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
     for {
@@ -19,10 +21,12 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit val
     for {
       checksumMatchStatus <- fileStatusRepository.getFileStatus(consignmentId, ChecksumMatch)
       avStatus <- fileStatusRepository.getFileStatus(consignmentId, Antivirus)
-      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID)
+      ffidStatusRows <- fileStatusRepository.getFileStatus(consignmentId, FFID)
+      ffidStatuses = ffidStatusRows.map(_.value)
+      failedFFIDStatuses <- disallowedPuidsRepository.activeReasons()
     } yield {
-      checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatus.nonEmpty &&
-        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatus.filter(_.value != Success)).isEmpty
+      checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
+        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter(failedFFIDStatuses.contains(_))).isEmpty
     }
   }
 }
