@@ -6,7 +6,6 @@ import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sangria.relay.DefaultConnection
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -16,7 +15,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMeta
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.FFID
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, ZeroByteFile}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 

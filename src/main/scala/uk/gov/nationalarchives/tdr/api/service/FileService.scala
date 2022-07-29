@@ -1,10 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.util.UUID
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -15,6 +13,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMeta
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, ZeroByteFile}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
