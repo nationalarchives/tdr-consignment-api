@@ -1,0 +1,17 @@
+{
+  "data": {
+    "getConsignment": {
+      "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
+      "totalFiles": 3,
+      "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
+      "paginatedFiles": {
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false
+        },
+        "edges": [
+        ]
+      }
+    }
+  }
+}

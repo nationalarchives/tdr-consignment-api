@@ -15,7 +15,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMe
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, ZeroByteFile}
+import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.FFID
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -495,7 +496,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
-    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId1 = "bc609dc4-e153-4620-a7ab-20e7fd5a4005"
     val fileId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val fileId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
 
@@ -506,7 +507,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
     val limit = 2
-    val input = Some(PaginationInput(limit, Some(fileId1.toString)))
+    val page = 0
+    val input = Some(PaginationInput(Some(limit), Some(page), Some(fileId1), None))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
     val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
@@ -515,10 +517,11 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
-    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+    when(fileRepositoryMock.countFilesInConsignment(consignmentId, None, None)).thenReturn(Future.successful(2))
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, page, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: TDRConnection[File] = fileService.getPaginatedFiles(consignmentId, input).futureValue
 
     val pageInfo = response.pageInfo
     val edges = response.edges
@@ -547,7 +550,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
-    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId1 = "bc609dc4-e153-4620-a7ab-20e7fd5a4005"
     val fileId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val fileId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
 
@@ -560,7 +563,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val limitExceedingMax = 3
     val expectedMaxLimit = 2
-    val input = Some(PaginationInput(limitExceedingMax, Some(fileId1.toString)))
+    val currentPage = 0
+    val offset = 0
+    val input = Some(PaginationInput(Some(limitExceedingMax), Some(currentPage), Some(fileId1), None))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
     val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
@@ -569,11 +574,13 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileRepositoryMock.countFilesInConsignment(consignmentId, None, None)).thenReturn(Future.successful(2))
 
-    when(fileRepositoryMock.getPaginatedFiles(consignmentId, expectedMaxLimit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, expectedMaxLimit, offset, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: TDRConnection[File] = fileService.getPaginatedFiles(consignmentId, input).futureValue
 
     val pageInfo = response.pageInfo
     val edges = response.edges
@@ -608,7 +615,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
-    val input = Some(PaginationInput(limit, None))
+    val page = 0
+    val offset = 0
+    val input = Some(PaginationInput(Some(limit), Some(page), None, None))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
     val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
@@ -617,11 +626,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileRepositoryMock.countFilesInConsignment(consignmentId, None, None)).thenReturn(Future.successful(2))
 
-    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, None, FileFilters())).thenReturn(mockResponse)
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, offset, None, FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: TDRConnection[File] = fileService.getPaginatedFiles(consignmentId, input).futureValue
 
     val pageInfo = response.pageInfo
     val edges = response.edges
@@ -645,7 +655,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
-    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId1 = "bc609dc4-e153-4620-a7ab-20e7fd5a4005"
     val fileId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val fileId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
 
@@ -657,7 +667,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
-    val input = Some(PaginationInput(limit, Some(fileId1.toString)))
+    val page = 0
+    val offset = 0
+    val fileFilters = FileFilters(Some(NodeType.fileTypeIdentifier))
+    val input = Some(PaginationInput(Some(limit), Some(page), Some(fileId1), Some(fileFilters)))
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
     val selectedFileIds: Option[Set[UUID]] = Some(Set(fileId2, fileId3))
@@ -666,13 +679,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileRepositoryMock.countFilesInConsignment(consignmentId, None, fileFilters.fileTypeIdentifier))
+      .thenReturn(Future.successful(2))
 
-    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters(Some(NodeType.fileTypeIdentifier)))).thenReturn(mockResponse)
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, offset, Some(fileId1), fileFilters))
+      .thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val response: DefaultConnection[File] = fileService.getPaginatedFiles(
-      consignmentId, input, Some(FileFilters(Some(NodeType.fileTypeIdentifier)))).futureValue
-
+    val response: TDRConnection[File] = fileService.getPaginatedFiles(consignmentId, input).futureValue
     val pageInfo = response.pageInfo
     val edges = response.edges
 
@@ -693,9 +707,11 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
   "getPaginatedFiles" should "return no files edges if no files exist" in {
     val consignmentId = UUID.randomUUID()
-    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId1 = "bc609dc4-e153-4620-a7ab-20e7fd5a4005"
     val fileRepositoryMock = mock[FileRepository]
     val limit = 2
+    val page = 0
+    val offset = 0
     val mockResponse: Future[Seq[FileRow]] = Future.successful(Seq())
     val selectedFileIds: Option[Set[UUID]] = Some(Set())
 
@@ -703,12 +719,13 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, FFID, selectedFileIds)).thenReturn(Future.successful(Seq()))
-    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+    when(fileRepositoryMock.countFilesInConsignment(consignmentId, None, None)).thenReturn(Future.successful(0))
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, offset, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val input = Some(PaginationInput(limit, Some(fileId1.toString)))
+    val input = Some(PaginationInput(Some(limit), Some(page), Some(fileId1), None))
 
-    val response: DefaultConnection[File] = fileService.getPaginatedFiles(consignmentId, input, None).futureValue
+    val response: TDRConnection[File] = fileService.getPaginatedFiles(consignmentId, input).futureValue
 
     val pageInfo = response.pageInfo
     val edges = response.edges
@@ -723,14 +740,15 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
   "getPaginatedFiles" should "return an error if no pagination input argument provided" in {
     val consignmentId = UUID.randomUUID()
-    val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
+    val fileId1 = "bc609dc4-e153-4620-a7ab-20e7fd5a4005"
     val fileRepositoryMock = mock[FileRepository]
     val limit = 2
+    val offset = 0
     val mockResponse: Future[Seq[FileRow]] = Future.successful(Seq())
-    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, Some(fileId1), FileFilters())).thenReturn(mockResponse)
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, limit, offset, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
     val fileService = setupFileService(fileRepositoryMock)
-    val thrownException = intercept[Exception] { fileService.getPaginatedFiles(consignmentId, None, None).futureValue }
+    val thrownException = intercept[Exception] { fileService.getPaginatedFiles(consignmentId, None).futureValue }
 
     thrownException.getMessage should equal("No pagination input argument provided for 'paginatedFiles' field query")
   }

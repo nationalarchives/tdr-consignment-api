@@ -15,6 +15,7 @@ import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
+import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -56,7 +57,7 @@ object ConsignmentFields {
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
-  case class PaginationInput(limit: Int, currentCursor: Option[String])
+  case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -82,9 +83,16 @@ object ConsignmentFields {
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
 
   implicit val ConnectionDefinition(_, fileConnections) =
-    Connection.definition[RequestContext, Connection, File](
+    Connection.definition[ConsignmentApiContext, TDRConnection, File](
       name = "File",
-      nodeType = FileType
+      nodeType = FileType,
+      connectionFields = fields[ConsignmentApiContext, TDRConnection[File]](
+        Field(
+          "totalPages",
+          OptionType(IntType),
+          resolve = ctx => ctx.value.totalPages
+        )
+      )
     )
 
   implicit val ConsignmentType: ObjectType[Unit, Consignment] = ObjectType(

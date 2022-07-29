@@ -51,9 +51,12 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   def addFiles(fileRows: Seq[FileRow], fileMetadataRows: Seq[FilemetadataRow]): Future[Unit] =
     db.run(DBIO.seq(File ++= fileRows, Filemetadata ++= fileMetadataRows).transactionally)
 
-  def countFilesInConsignment(consignmentId: UUID): Future[Int] = {
+  def countFilesInConsignment(consignmentId: UUID,
+                              parentId: Option[UUID] = None,
+                              fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
     val query = File.filter(_.consignmentid === consignmentId)
-      .filter(_.filetype === NodeType.fileTypeIdentifier)
+      .filterOpt(fileTypeIdentifier)(_.filetype === _)
+      .filterOpt(parentId)(_.parentid === _)
       .length
     db.run(query.result)
   }
@@ -81,13 +84,16 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
 
   def getPaginatedFiles(consignmentId: UUID,
                         limit: Int,
-                        after: Option[UUID],
+                        offset: Int,
+                        after: Option[String],
                         fileFilters: FileFilters): Future[Seq[FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)
-      .filterOpt(after)(_.fileid > _)
+      .filterOpt(fileFilters.parentId)(_.parentid === _)
+      .filterOpt(after)(_.filename > _)
       .filterOpt(fileFilters.fileTypeIdentifier)(_.filetype === _)
-      .sortBy(_.fileid)
+      .sortBy(_.filename)
+      .drop(offset)
       .take(limit)
     db.run(query.result)
   }
@@ -129,7 +135,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 }
 
-case class FileFilters(fileTypeIdentifier: Option[String] = None, selectedFileIds: Option[List[UUID]] = None)
+case class FileFilters(fileTypeIdentifier: Option[String] = None, selectedFileIds: Option[List[UUID]] = None, parentId: Option[UUID] = None)
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
