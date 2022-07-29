@@ -484,9 +484,11 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
     rows.size should equal(1)
     val row = rows.head
+    row.filestatusid != null shouldBe true
     row.fileid should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
     row.statustype should equal(FFID)
     row.value should equal(ZeroByteFile)
+    row.createddatetime != null shouldBe true
   }
 
   "getPaginatedFiles" should "return all the file edges after the cursor to the limit" in {
