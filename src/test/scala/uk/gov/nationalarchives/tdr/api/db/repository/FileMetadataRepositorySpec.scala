@@ -249,8 +249,39 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
       response.length should equal(1)
       val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
-      val fileTwoMetadata = filesMap.get(fileIdTwo)
-      fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
-      fileTwoMetadata.get.head.value should equal("Result of FileMetadata processing")
+      val fileTwoMetadata = filesMap(fileIdTwo)
+
+      fileTwoMetadata.head.propertyname should equal("FilePropertyOne")
+      fileTwoMetadata.head.value should equal("Result of FileMetadata processing")
+  }
+
+  "getFileMetadata" should "return only the metadata rows of the files that have the specified property/properties" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val filePropertyOne = "FilePropertyOne"
+      val filePropertyTwo = "FilePropertyTwo"
+      utils.createConsignment(consignmentId, userId)
+      utils.createFile(fileIdOne, consignmentId)
+      utils.createFile(fileIdTwo, consignmentId)
+      utils.addFileProperty(filePropertyOne)
+      utils.addFileProperty("FilePropertyTwo")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyOne)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyTwo)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, filePropertyOne)
+
+      val selectedFileIds: Set[UUID] = Set(fileIdOne, fileIdTwo)
+      val response = fileMetadataRepository.getFileMetadata(
+        consignmentId, Some(selectedFileIds), Some(Set(filePropertyOne))
+      ).futureValue
+
+      response.length should equal(2)
+      response.foreach(
+        fileMetadataRow => List(fileIdOne, fileIdTwo).contains(fileMetadataRow.fileid)
+      )
   }
 }

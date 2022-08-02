@@ -228,7 +228,9 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentId = UUID.randomUUID()
     val mockResponse = Future(Seq())
 
-    when(fileMetadataRepositoryMock.getFileMetadata(consignmentIdCaptor.capture(), selectedFileIdsCaptor.capture())).thenReturn(mockResponse)
+    when(fileMetadataRepositoryMock.getFileMetadata(
+      consignmentIdCaptor.capture(), selectedFileIdsCaptor.capture(), any[Option[Set[String]]]
+    )).thenReturn(mockResponse)
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     service.getFileMetadata(consignmentId).futureValue
@@ -247,7 +249,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, "valueTwo", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), "FoiExemptionCode")
     ))
 
-    when(fileMetadataRepositoryMock.getFileMetadata(any[UUID], any[Option[Set[UUID]]])).thenReturn(mockResponse)
+    when(fileMetadataRepositoryMock.getFileMetadata(any[UUID], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(mockResponse)
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     val response = service.getFileMetadata(consignmentId).futureValue
