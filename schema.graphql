@@ -7,7 +7,7 @@ input AddAntivirusMetadataInput {
   datetime: Long!
 }
 
-input AddBulkFileMetadataInput {
+input AddElseUpdateBulkFileMetadataInput {
   consignmentId: UUID!
   fileIds: [UUID!]!
   metadataProperties: [AddFileMetadataInput!]!
@@ -324,7 +324,7 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
-  addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput!): BulkFileMetadata!
+  addElseUpdateBulkFileMetadata(addElseUpdateBulkFileMetadataInput: AddElseUpdateBulkFileMetadataInput!): BulkFileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!

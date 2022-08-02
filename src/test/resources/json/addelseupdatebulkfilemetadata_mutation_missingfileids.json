@@ -1,0 +1,18 @@
+{
+  "query": "mutation addElseUpdateBulkFileMetadata($addElseUpdateBulkFileMetadataInput: AddElseUpdateBulkFileMetadataInput!) {addElseUpdateBulkFileMetadata(addElseUpdateBulkFileMetadataInput:$addElseUpdateBulkFileMetadataInput) {fileIds,metadataProperties {filePropertyName,value}}}",
+  "variables": {
+    "addElseUpdateBulkFileMetadataInput" : {
+      "consignmentId": "eb197bfb-43f7-40ca-9104-8f6cbda88506",
+      "metadataProperties": [
+        {
+          "filePropertyName": "property1",
+          "value": "value1"
+        },
+        {
+          "filePropertyName": "property2",
+          "value": "value2"
+        }
+      ]
+    }
+  }
+}

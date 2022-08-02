@@ -59,19 +59,19 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     }
   }
 
-  def addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val fileMetadataProperties: Seq[AddFileMetadataInput] = addBulkFileMetadataInput.metadataProperties.distinct
+  def addElseUpdateBulkFileMetadata(addElseUpdateBulkFileMetadataInput: AddElseUpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
+    val fileMetadataProperties: Seq[AddFileMetadataInput] = addElseUpdateBulkFileMetadataInput.metadataProperties.distinct
     val filePropertyNameAndItsValue: Map[String, String] = fileMetadataProperties.map {
       fileMetadataProperty => (fileMetadataProperty.filePropertyName, fileMetadataProperty.value)
     }.toMap
 
-    val uniqueFileIds: Seq[UUID] = addBulkFileMetadataInput.fileIds.distinct
+    val uniqueFileIds: Seq[UUID] = addElseUpdateBulkFileMetadataInput.fileIds.distinct
 
     for {
       fileRows <- fileRepository.getAllDescendants(uniqueFileIds)
       fileIds: Set[UUID] = fileRows.collect { case fileRow if fileRow.filetype.get == "File" => fileRow.fileid }.toSet
       fileMetadataRowsWithPertinentPropertyNames: Seq[FilemetadataRow] <-
-        fileMetadataRepository.getFileMetadata(addBulkFileMetadataInput.consignmentId, Some(fileIds), Some(filePropertyNameAndItsValue.keys.toSet))
+        fileMetadataRepository.getFileMetadata(addElseUpdateBulkFileMetadataInput.consignmentId, Some(fileIds), Some(filePropertyNameAndItsValue.keys.toSet))
 
       idsOfFilesWithAtLeastOnePertinentProperty: Map[UUID, Seq[FilemetadataRow]] = fileMetadataRowsWithPertinentPropertyNames.groupBy(_.fileid)
       idsOfFilesWithNoRelevantMetadataProperties: Set[UUID] = fileIds.filterNot(fileId => idsOfFilesWithAtLeastOnePertinentProperty.contains(fileId))
