@@ -1,10 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.util.UUID
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -15,14 +13,18 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMeta
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, ZeroByteFile}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
+import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
 
 class FileService(fileRepository: FileRepository,
+                  fileStatusRepository: FileStatusRepository,
                   consignmentRepository: ConsignmentRepository,
                   ffidMetadataService: FFIDMetadataService,
                   avMetadataService: AntivirusMetadataService,
@@ -59,6 +61,15 @@ class FileService(fileRepository: FileRepository,
             val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
             pathWithoutSlash == path
           }).head
+
+          //Add the 0 byte status here as know the file size at this point
+          //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
+          if (input.fileSize == 0) {
+            val statusRow = FilestatusRow(
+              uuidSource.uuid, fileId, FFID, ZeroByteFile, Timestamp.from(timeSource.now))
+            fileStatusRepository.addFileStatuses(List(statusRow))
+          }
+
           val fileMetadataRows = List(
             row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
             row(fileId, input.fileSize.toString, ClientSideFileSize),
