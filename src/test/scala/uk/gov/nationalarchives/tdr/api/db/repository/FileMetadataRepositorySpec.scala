@@ -284,4 +284,77 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
         fileMetadataRow => List(fileIdOne, fileIdTwo).contains(fileMetadataRow.fileid)
       )
   }
+
+  "updateFileMetadata" should "update the value and userId for the correct metadata rows and return the number of rows it updated" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val userId2 = UUID.randomUUID()
+      utils.createConsignment(consignmentId, userId)
+      utils.createFile(fileIdOne, consignmentId)
+      utils.createFile(fileIdTwo, consignmentId)
+      utils.addFileProperty("FilePropertyOne")
+      utils.addFileProperty("FilePropertyTwo")
+      val metadataId1 = UUID.randomUUID()
+      val metadataId2 = UUID.randomUUID()
+      val metadataId3 = UUID.randomUUID()
+      utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
+      utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
+      val newValue = "newValue"
+
+      val updateResponse = fileMetadataRepository.updateFileMetadata(
+        Seq(metadataId1, metadataId3), "FilePropertyOne", newValue, Timestamp.from(Instant.now()), userId2
+      ).futureValue
+
+      val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
+
+      updateResponse should be(2)
+      val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
+      val fileOneMetadata = filesMap.get(fileIdOne)
+      val fileTwoMetadata = filesMap.get(fileIdTwo)
+      val fileOneProperties = fileOneMetadata.get.groupBy(_.propertyname)
+      fileOneProperties("FilePropertyOne").head.value should equal(newValue)
+      fileOneProperties("FilePropertyOne").head.userid should equal(userId2)
+      fileOneProperties("FilePropertyTwo").head.value should equal("Result of FileMetadata processing")
+      fileOneProperties("FilePropertyTwo").head.userid should equal(userId)
+      fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
+      fileTwoMetadata.get.head.value should equal(newValue)
+      fileTwoMetadata.get.head.userid should equal(userId2)
+  }
+
+  "updateFileMetadata" should "return 0 if a file property that does not exist on the rows passed to it" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val userId2 = UUID.randomUUID()
+      utils.createConsignment(consignmentId, userId)
+      utils.createFile(fileIdOne, consignmentId)
+      utils.createFile(fileIdTwo, consignmentId)
+      utils.addFileProperty("FilePropertyOne")
+      utils.addFileProperty("FilePropertyTwo")
+      val metadataId1 = UUID.randomUUID()
+      val metadataId2 = UUID.randomUUID()
+      val metadataId3 = UUID.randomUUID()
+      utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
+      utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
+      val newValue = "newValue"
+
+      val updateResponse = fileMetadataRepository.updateFileMetadata(
+        Seq(metadataId1, metadataId3), "NonExistentFileProperty", newValue, Timestamp.from(Instant.now()), userId2
+      ).futureValue
+
+      val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
+
+      updateResponse should be(0)
+  }
 }

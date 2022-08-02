@@ -5,6 +5,7 @@ import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
+import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,6 +41,14 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
       .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)
       .map(_._1)
     db.run(query.result)
+  }
+
+  def updateFileMetadata(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID): Future[Int] = {
+    val dbUpdate = Filemetadata.filter(fm => fm.propertyname === filePropertyName)
+      .filter(fm => fm.metadataid inSet metadataIds)
+      .map(fm => (fm.value, fm.userid, fm.datetime))
+      .update((value, userId, dateTime))
+    db.run(dbUpdate)
   }
 
   def countProcessedChecksumInConsignment(consignmentId: UUID): Future[Int] = {
