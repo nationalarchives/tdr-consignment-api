@@ -44,4 +44,5 @@ object FileStatusService {
   val PasswordProtected = "PasswordProtected"
   val Zip = "Zip"
   val NonJudgmentFormat = "NonJudgmentFormat"
+  val ZeroByteFile = "ZeroByteFile"
 }
