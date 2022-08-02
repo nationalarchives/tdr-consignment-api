@@ -2,6 +2,7 @@
   "query": "mutation addBulkFileMetadata($addBulkFileMetadataInput: AddBulkFileMetadataInput!) {addBulkFileMetadata(addBulkFileMetadataInput:$addBulkFileMetadataInput) {fileIds,metadataProperties {filePropertyName,value}}}",
   "variables": {
     "addBulkFileMetadataInput" : {
+      "consignmentId": "eb197bfb-43f7-40ca-9104-8f6cbda88506",
       "metadataProperties": [
         {
           "filePropertyName": "property1",

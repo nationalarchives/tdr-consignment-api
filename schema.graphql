@@ -8,6 +8,7 @@ input AddAntivirusMetadataInput {
 }
 
 input AddBulkFileMetadataInput {
+  consignmentId: UUID!
   fileIds: [UUID!]!
   metadataProperties: [AddFileMetadataInput!]!
 }
@@ -180,11 +181,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  Integer
   Boolean
-  Text
+  Decimal
   DateTime
+  Text
+  Integer
 }
 
 type FFIDMetadata {

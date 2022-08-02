@@ -22,7 +22,7 @@ object FileMetadataFields {
   case class FileMetadataWithFileId(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
   case class BulkFileMetadata(fileIds: Seq[UUID], metadataProperties: Seq[FileMetadata])
   case class AddFileMetadataWithFileIdInput(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
-  case class AddBulkFileMetadataInput(fileIds: Seq[UUID], metadataProperties: Seq[AddFileMetadataInput])
+  case class AddBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[AddFileMetadataInput])
 
   implicit val FileMetadataType: ObjectType[Unit, FileMetadata] = deriveObjectType[Unit, FileMetadata]()
   implicit val InputFileMetadataType: InputObjectType[AddFileMetadataInput] = deriveInputObjectType[AddFileMetadataInput]()

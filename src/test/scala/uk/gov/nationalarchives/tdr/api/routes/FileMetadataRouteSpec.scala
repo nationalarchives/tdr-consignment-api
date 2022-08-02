@@ -161,7 +161,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkNoValidationResultExists(defaultFileId, utils)
   }
 
-  "addBulkFileMetadata" should "return fileIds for all files where metadata was added and the properties that were added" in withContainers {
+  "addBulkFileMetadata" should "return all fileIds and the properties that were passed in " +
+    "(as no metadata rows, belonging to the ids, had the same values the user is trying to add/update)" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
@@ -179,6 +180,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
       utils.createFile(fileThreeId, consignmentId)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property1", "oldvalue1")
 
       val expectedResponse: GraphqlAddBulkFileMetadataMutationData = expectedAddBulkFileMetadataMutationResponse("data_all")
       val expectedResponseFileIds = expectedResponse.data.get.addBulkFileMetadata.fileIds
@@ -197,7 +199,56 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       )
 
       correctPropertiesWerePassedIn should equal(true)
-      responseFileIds should equal(expectedResponseFileIds)
+      responseFileIds.sorted should equal(expectedResponseFileIds.sorted)
+      responseFileIds.foreach(fileId =>
+        responseFileMetadataProperties.foreach(fileMetadata =>
+          checkFileMetadataExists(fileId, utils, fileMetadata.filePropertyName)
+        )
+      )
+  }
+
+  "addBulkFileMetadata" should "return only fileIds and the properties that were added " +
+    "(excluding ones where metadata rows, belonging to the ids, had the same values the user is trying to add/update)" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      utils.addFileProperty("property1")
+      utils.addFileProperty("property2")
+
+      // folderOneId WILL be passed into addBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
+      utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      // fileOneId will NOT be passed into addBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property1", "value1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property2", "value2")
+
+      val expectedResponse: GraphqlAddBulkFileMetadataMutationData =
+        expectedAddBulkFileMetadataMutationResponse("data_values_already_exist_on_file")
+      val expectedResponseFileIds = expectedResponse.data.get.addBulkFileMetadata.fileIds
+      val expectedResponseFileMetadata = expectedResponse.data.get.addBulkFileMetadata.metadataProperties
+      val response: GraphqlAddBulkFileMetadataMutationData =
+        runAddBulkFileMetadataTestMutation("mutation_valuesalreadyexistonfile", validUserToken())
+      val responseFileIds: Seq[UUID] = response.data.get.addBulkFileMetadata.fileIds
+      val responseFileMetadataProperties = response.data.get.addBulkFileMetadata.metadataProperties
+      val parentIdOfFileOneId: UUID = UUID.fromString(getParentId(fileOneId, utils))
+
+      responseFileIds.contains(folderOneId) should equal(false)
+      responseFileIds.contains(fileOneId) should equal(true)
+      parentIdOfFileOneId should equal(folderOneId)
+
+      val correctPropertiesWerePassedIn: Boolean = responseFileMetadataProperties.forall(
+        fileMetadata => expectedResponseFileMetadata.contains(fileMetadata)
+      )
+
+      correctPropertiesWerePassedIn should equal(true)
+      responseFileIds.sorted should equal(expectedResponseFileIds.sorted)
       responseFileIds.foreach(fileId =>
         responseFileMetadataProperties.foreach(fileMetadata =>
           checkFileMetadataExists(fileId, utils, fileMetadata.filePropertyName)
@@ -232,8 +283,10 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   "addBulkFileMetadata" should "throw an error if the field metadataProperties is not provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val expectedResponse: GraphqlAddBulkFileMetadataMutationData = expectedAddBulkFileMetadataMutationResponse("data_metadataproperties_missing")
-      val response: GraphqlAddBulkFileMetadataMutationData = runAddBulkFileMetadataTestMutation("mutation_missingmetadataproperties", validUserToken())
+      val expectedResponse: GraphqlAddBulkFileMetadataMutationData =
+        expectedAddBulkFileMetadataMutationResponse("data_metadataproperties_missing")
+      val response: GraphqlAddBulkFileMetadataMutationData =
+        runAddBulkFileMetadataTestMutation("mutation_missingmetadataproperties", validUserToken())
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
       checkNoFileMetadataAdded(utils, "property1")
@@ -259,7 +312,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createFile(fileThreeId, consignmentId)
 
       val expectedResponse: GraphqlAddBulkFileMetadataMutationData = expectedAddBulkFileMetadataMutationResponse("data_fileid_not_exists")
-      val response: GraphqlAddBulkFileMetadataMutationData = runAddBulkFileMetadataTestMutation("mutation_fileidnotexists", validUserToken())
+      val response: GraphqlAddBulkFileMetadataMutationData =
+        runAddBulkFileMetadataTestMutation("mutation_fileidnotexists", validUserToken())
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
       checkNoFileMetadataAdded(utils, "property1")
@@ -295,7 +349,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createConsignment(consignmentId3, userId = userId3)
       utils.createFile(fileFiveId, consignmentId3, userId = userId3)
 
-      val expectedResponse: GraphqlAddBulkFileMetadataMutationData = expectedAddBulkFileMetadataMutationResponse("data_error_not_file_owner")
+      val expectedResponse: GraphqlAddBulkFileMetadataMutationData =
+        expectedAddBulkFileMetadataMutationResponse("data_error_not_file_owner")
       val response: GraphqlAddBulkFileMetadataMutationData = runAddBulkFileMetadataTestMutation("mutation_notfileowner", validUserToken())
 
       response.errors.head.message should equal(expectedResponse.errors.head.message)
