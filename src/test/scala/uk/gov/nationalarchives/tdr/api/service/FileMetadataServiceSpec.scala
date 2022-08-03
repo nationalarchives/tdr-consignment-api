@@ -165,7 +165,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     err.getMessage should equal("SomethingElse found. We are only expecting checksum updates for now")
   }
 
-  "addElseUpdateBulkFileMetadata" should "call the file repository with the correct arguments, get all of the file metadata for a consignment " +
+  "updateBulkFileMetadata" should "call the file repository with the correct arguments, get all of the file metadata for a consignment " +
     "and then add metadata rows that haven't already been added and update those that have" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
 
@@ -194,8 +194,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     )
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
-      AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, testSetUp.metadataPropertiesWithNewValues),
+    service.updateBulkFileMetadata(
+      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.fixedUserId
     ).futureValue
 
@@ -229,7 +229,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     updateFileMetadataIdsArgument.sorted should equal(mockGetFileMetadataResponse.map(_.metadataid).sorted)
   }
 
-  "addElseUpdateBulkFileMetadata" should "pass into 'updateFileMetadata', only the metadataIds where the " +
+  "updateBulkFileMetadata" should "pass into 'updateFileMetadata', only the metadataIds where the " +
     "'value' (of its FileMetadata row) differs from the value the user is trying to set" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
     val newMetadataPropertiesWithOneOldValue = Seq(
@@ -263,8 +263,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     )
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
-      AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, newMetadataPropertiesWithOneOldValue),
+    service.updateBulkFileMetadata(
+      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, newMetadataPropertiesWithOneOldValue),
       testSetUp.fixedUserId
     ).futureValue
 
@@ -278,7 +278,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     updateFileMetadataIdsArgument.sorted should equal(metadataIdsWithoutOldValue.sorted)
   }
 
-  "addElseUpdateBulkFileMetadata" should "only add metadata rows but not update any" in {
+  "updateBulkFileMetadata" should "only add metadata rows but not update any" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
 
     val (mockGetFileMetadataResponse, mockAddFileMetadataResponse): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
@@ -300,8 +300,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       .thenReturn(Future(mockAddFileMetadataResponse))
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
-      AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, testSetUp.metadataPropertiesWithNewValues),
+    service.updateBulkFileMetadata(
+      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.fixedUserId
     ).futureValue
 
@@ -313,7 +313,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     updateFileMetadataIdsArgument should equal(mockGetFileMetadataResponse.map(_.metadataid))
   }
 
-  "addElseUpdateBulkFileMetadata" should "only update metadata rows but not add any" in {
+  "updateBulkFileMetadata" should "only update metadata rows but not add any" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
 
     val (mockGetFileMetadataResponse, _): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
@@ -350,8 +350,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     )
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
-      AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, fileIdsThatHaveAllProperties, testSetUp.metadataPropertiesWithNewValues),
+    service.updateBulkFileMetadata(
+      UpdateBulkFileMetadataInput(testSetUp.consignmentId, fileIdsThatHaveAllProperties, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.fixedUserId
     ).futureValue
 

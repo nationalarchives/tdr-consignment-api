@@ -161,7 +161,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkNoValidationResultExists(defaultFileId, utils)
   }
 
-  "addElseUpdateBulkFileMetadata" should "return all fileIds and the properties that were passed in " +
+  "updateBulkFileMetadata" should "return all fileIds and the properties that were passed in " +
     "(as no metadata rows, belonging to the ids, had the same values the user is trying to add/update)" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
@@ -174,9 +174,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.addFileProperty("property1")
       utils.addFileProperty("property2")
 
-      // folderOneId WILL be passed into addElseUpdateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
+      // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
       utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-      // fileOneId will NOT be passed into addElseUpdateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
+      // fileOneId will NOT be passed into updateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
       utils.createFile(fileThreeId, consignmentId)
@@ -207,7 +207,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       )
   }
 
-  "addElseUpdateBulkFileMetadata" should "return only fileIds and the properties that were added " +
+  "updateBulkFileMetadata" should "return only fileIds and the properties that were added " +
     "(excluding ones where metadata rows, belonging to the ids, had the same values the user is trying to add/update)" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
@@ -220,9 +220,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.addFileProperty("property1")
       utils.addFileProperty("property2")
 
-      // folderOneId WILL be passed into addElseUpdateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
+      // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
       utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-      // fileOneId will NOT be passed into addElseUpdateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
+      // fileOneId will NOT be passed into updateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
       utils.createFile(fileThreeId, consignmentId)
@@ -256,7 +256,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       )
   }
 
-  "addElseUpdateBulkFileMetadata" should "not allow bulk updating of file metadata with incorrect authorisation" in withContainers {
+  "updateBulkFileMetadata" should "not allow bulk updating of file metadata with incorrect authorisation" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
@@ -269,7 +269,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "addElseUpdateBulkFileMetadata" should "throw an error if the field fileIds is not provided" in withContainers {
+  "updateBulkFileMetadata" should "throw an error if the field fileIds is not provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val expectedResponse: GraphqlAddElseUpdateBulkFileMetadataMutationData = expectedAddElseUpdateBulkFileMetadataMutationResponse("data_fileids_missing")
@@ -280,7 +280,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "addElseUpdateBulkFileMetadata" should "throw an error if the field metadataProperties is not provided" in withContainers {
+  "updateBulkFileMetadata" should "throw an error if the field metadataProperties is not provided" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val expectedResponse: GraphqlAddElseUpdateBulkFileMetadataMutationData =
@@ -293,7 +293,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "addElseUpdateBulkFileMetadata" should "throw an error if some file ids do not exist" in withContainers {
+  "updateBulkFileMetadata" should "throw an error if some file ids do not exist" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
@@ -304,9 +304,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
       utils.addFileProperty("property1")
       utils.addFileProperty("property2")
-      // folderOneId WILL be passed into addElseUpdateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
+      // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
       utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-      // fileOneId will NOT be passed into addElseUpdateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
+      // fileOneId will NOT be passed into updateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
       utils.createFile(fileThreeId, consignmentId)
@@ -320,7 +320,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "addElseUpdateBulkFileMetadata" should "throw an error if a file id exists but belongs to another user" in withContainers {
+  "updateBulkFileMetadata" should "throw an error if a file id exists but belongs to another user" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
@@ -334,9 +334,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
       utils.addFileProperty("property1")
       utils.addFileProperty("property2")
-      // folderOneId WILL be passed into addElseUpdateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
+      // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
       utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-      // fileOneId will NOT be passed into addElseUpdateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
+      // fileOneId will NOT be passed into updateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
       utils.createFile(fileThreeId, consignmentId)
