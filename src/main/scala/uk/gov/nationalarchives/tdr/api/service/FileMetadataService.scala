@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileMetadataUpdate, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -21,10 +21,14 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           fileRepository: FileRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
 
-  implicit class PropertyUpdateActionGroupHelper(group: PropertyUpdateActionGroup) {
-    def toMetadataRows(userId: UUID, metadataIdentifiers: Seq[MetadataIdentifiers]): Seq[FilemetadataRow] = {
-      val timestamp = Timestamp.from(timeSource.now)
-      metadataIdentifiers.map(i => FilemetadataRow(i.metadataId, i.fileId, group.propertyValue, timestamp, userId, group.propertyName))
+  implicit class PropertyUpdateActionGroupHelper(group: PropertyUpdateActionType) {
+
+    def toMetadataRow: FilemetadataRow = {
+      FilemetadataRow(uuidSource.uuid, group.fileId, group.propertyValue, Timestamp.from(timeSource.now), group.userId, group.propertyName)
+    }
+
+    def toFileMetadataUpdate: FileMetadataUpdate = {
+      FileMetadataUpdate(Seq(group.existingMetadataId.get), group.propertyName, group.propertyValue, Timestamp.from(timeSource.now), group.userId)
     }
   }
 
@@ -67,137 +71,59 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     }
   }
 
-  def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val fileMetadataProperties: Seq[AddFileMetadataInput] = input.metadataProperties.distinct
-    val propertyNames: Set[String] = fileMetadataProperties.map(_.filePropertyName).toSet
-    val consignmentId = input.consignmentId
+  implicit class UpdateBulkFileMetadataInputHelper(input: UpdateBulkFileMetadataInput) {
+    val distinctPropertyNames: Set[String] = input.metadataProperties.map(_.filePropertyName).toSet
 
+    val fileIdToPropertiesInput: Map[UUID, Seq[AddFileMetadataInput]] = {
+      input.fileIds.map(_ -> input.metadataProperties).toMap
+    }
+  }
+
+  implicit class FileMetadataRowsHelper(rows: Seq[FilemetadataRow]) {
+    val fileIdToMetadataRow: Map[UUID, Seq[FilemetadataRow]] = rows.groupBy(_.fileid)
+
+    def metadataExistsForFile(id: UUID): Boolean = {
+      fileIdToMetadataRow.contains(id)
+    }
+  }
+
+  // scalastyle:off
+  def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
+    val updatePropertyNames: Set[String] = input.distinctPropertyNames
+    val consignmentId = input.consignmentId
     val uniqueFileIds: Seq[UUID] = input.fileIds.distinct
 
     for {
       existingFiles <- fileRepository.getAllDescendants(uniqueFileIds)
       fileIds: Set[UUID] = existingFiles.filter(_.filetype.get == NodeType.fileTypeIdentifier).map(_.fileid).toSet
-      existingFileMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(propertyNames))
-
-      filesWithExistingProperty: Map[UUID, Seq[FilemetadataRow]] = existingFileMetadataProperties.groupBy(_.fileid)
-      filesWithNoExistingProperties: Set[UUID] = fileIds.filterNot(fileId => filesWithExistingProperty.contains(fileId))
-
-      metadataIdsSplitIntoAddUpdateOrNeither: Seq[FilePropertyUpdates] =
-        groupFilesByAction(filesWithExistingProperty, filesWithNoExistingProperties, fileMetadataProperties)
-
-      metadataIdsSplitIntoAddOrUpdateNonEmpty: Seq[FilePropertyUpdates] =
-        metadataIdsSplitIntoAddUpdateOrNeither.filterNot {
-          case update => update.propertyUpdateAction.updateAction == "doNothing" || update.metadataIdentifiers.isEmpty
-        }
-
-      timestamp = Timestamp.from(timeSource.now)
-      metadataRows <- {
-        val resultsPerPropertyName: Iterable[Future[Seq[FilemetadataRow]]] = addOrUpdateFileMetadata(metadataIdsSplitIntoAddOrUpdateNonEmpty, timestamp, userId)
-        val futureOfResultsPerPropertyName: Future[Iterable[Seq[FilemetadataRow]]] = Future.sequence(resultsPerPropertyName)
-        val allFileMetadataResultsInOne: Future[Iterable[FilemetadataRow]] =
-          for (resultsPerPropertyName <- futureOfResultsPerPropertyName) yield resultsPerPropertyName.flatten
-        allFileMetadataResultsInOne
-      }
-
-      fileIdsAndMetadata = metadataRows.foldLeft((Set[UUID](), Set[FileMetadata]())) {
-        (fileIdsAndMetadata, fileMetadataRow) =>
-          (
-            fileIdsAndMetadata._1 + fileMetadataRow.fileid,
-            fileIdsAndMetadata._2 + FileMetadata(fileMetadataRow.propertyname, fileMetadataRow.value)
-          )
-      }
-    } yield BulkFileMetadata(fileIdsAndMetadata._1.toSeq, fileIdsAndMetadata._2.toSeq)
-  }
-
-  private def groupFilesByAction(filesWithExistingMetadata: Map[UUID, Seq[FilemetadataRow]],
-                                 filesWithNoMetadata: Set[UUID],
-                                 metadataPropertiesInput: Seq[AddFileMetadataInput]): Seq[FilePropertyUpdates] = {
-    val initialActionGrouping: Seq[FilePropertyUpdates] = {
-      metadataPropertiesInput.map(
-        fmp => FilePropertyUpdates(PropertyUpdateActionGroup("add", fmp.filePropertyName, fmp.value),
-          filesWithNoMetadata.map(id => MetadataIdentifiers(uuidSource.uuid, id)))
-      ) ++
-        metadataPropertiesInput.map(
-          fmp => FilePropertyUpdates(PropertyUpdateActionGroup("update", fmp.filePropertyName, fmp.value), Set())
-        ) ++
-        metadataPropertiesInput.map(
-          fmp => FilePropertyUpdates(PropertyUpdateActionGroup("doNothing", fmp.filePropertyName, fmp.value), Set())
-        )
-    }
-
-    filesWithExistingMetadata.foldLeft(initialActionGrouping: Seq[FilePropertyUpdates]) {
-      case (metadataIdsSplitIntoAddUpdateOrNeither, (fileId, metadataRowsInDb)) =>
-
-
-        val propertyNamesAlreadyAddedToFile: Map[String, (String, UUID)] =
-          metadataRowsInDb.map(metadataRowInDb => (metadataRowInDb.propertyname, (metadataRowInDb.value, metadataRowInDb.metadataid))).toMap
-
-        val updatedMetadataIdsSplitIntoAddUpdateOrNeither: Seq[FilePropertyUpdates] =
-          metadataPropertiesInput.map {
-            case input =>
-              val propertyName = input.filePropertyName
-              val value = input.value
-              val (actionName, metadataId) =
-                if (propertyNamesAlreadyAddedToFile.contains(propertyName)) {
-                  val (valueCurrentlyOnProperty: String, metadataId: UUID) = propertyNamesAlreadyAddedToFile(propertyName)
-                  if (valueCurrentlyOnProperty == value) {
-                    (PropertyUpdateActionGroup("doNothing", propertyName, value), metadataId)
-                  } else {
-                    (PropertyUpdateActionGroup("update", propertyName, value), metadataId)
-                  }
-                } else {
-                  (PropertyUpdateActionGroup("add", propertyName, value), uuidSource.uuid)
-                }
-
-              //val a: String = actionName
-              val metadataIdsToAddOrUpdatePropertyName: Seq[FilePropertyUpdates] = metadataIdsSplitIntoAddUpdateOrNeither.filter(
-                _.propertyUpdateAction == actionName)
-              //actionName -> (metadataIdsToAddOrUpdatePropertyName, MetadataIdentifiers(metadataId, fileId))
-              metadataIdsToAddOrUpdatePropertyName
-          }
-        metadataIdsSplitIntoAddUpdateOrNeither ++ updatedMetadataIdsSplitIntoAddUpdateOrNeither
-    }
-  }
-
-  private def addOrUpdateFileMetadata(metadataIdsSplitIntoAddOrUpdate: Seq[FilePropertyUpdates],
-                                      timestamp: Timestamp, userId: UUID): Iterable[Future[Seq[FilemetadataRow]]] = {
-
-    def convertMetadataIdsToFileMetadataRows(filePropertyName: String, value: String, metadataIdsAndFileIds: Seq[MetadataIdentifiers]): Seq[FilemetadataRow] =
-      metadataIdsAndFileIds.map { case identifiers => FilemetadataRow(identifiers.metadataId, identifiers.fileId, value, timestamp, userId, filePropertyName) }
-
-    val metadataIdGroupsSplitIntoAddOrUpdate: Map[String, Seq[FilePropertyUpdates]] =
-      metadataIdsSplitIntoAddOrUpdate.groupBy { case update => update.propertyUpdateAction.updateAction }
-
-    val addedFileMetadataRows: Future[Seq[FilemetadataRow]] = metadataIdGroupsSplitIntoAddOrUpdate.get("add") match {
-      case Some(addMetadataIdGroups) =>
-        val addFileMetadataRows = addMetadataIdGroups.flatMap {
-          case update => convertMetadataIdsToFileMetadataRows(
-            update.propertyUpdateAction.propertyName, update.propertyUpdateAction.propertyValue, update.metadataIdentifiers.toSeq)
-        }
-        fileMetadataRepository.addFileMetadata(addFileMetadataRows)
-      case _ => Future(Nil)
-    }
-
-    val updatedFileMetadataRows: Iterable[Future[Seq[FilemetadataRow]]] = metadataIdGroupsSplitIntoAddOrUpdate.get("update") match {
-      case Some(updateMetadataIdGroups) =>
-        updateMetadataIdGroups.map {
-          case update =>
-            val fileMetadataRows: Seq[FilemetadataRow] = convertMetadataIdsToFileMetadataRows(
-              update.propertyUpdateAction.propertyName, update.propertyUpdateAction.propertyValue, update.metadataIdentifiers.toSeq)
-            val metadataIds: Seq[UUID] = update.metadataIdentifiers.map(_.metadataId).toSeq
-            val metadataIdsLength = metadataIds.length
-            for {
-              updateStatus <- fileMetadataRepository.updateFileMetadata(
-                metadataIds, update.propertyUpdateAction.propertyName, update.propertyUpdateAction.propertyValue, timestamp, userId)
-            } yield updateStatus match {
-              case `metadataIdsLength` => fileMetadataRows
-              case _ => throw new Exception(s"There was a problem when trying to update the value of the ${update.propertyUpdateAction.propertyName} property.")
+      existingFileMetadata: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(updatePropertyNames))
+      //Horrendous nested if/else which should be tidied up
+      updateActions: Seq[PropertyUpdateActionType] = input.fileIdToPropertiesInput.flatMap { case (id, properties) =>
+        if (!existingFileMetadata.metadataExistsForFile(id)) {
+          properties.map(p => PropertyUpdateActionType("add", p.filePropertyName, p.value, id, userId))
+        } else {
+          val existingPropertiesForFile = existingFileMetadata.fileIdToMetadataRow(id).groupBy(_.propertyname)
+          properties.map(p => {
+            if (!existingPropertiesForFile.contains(p.filePropertyName)) {
+              PropertyUpdateActionType("add", p.filePropertyName, p.value, id, userId)
+            } else {
+              val existingProperty = existingPropertiesForFile(p.filePropertyName).head
+              val existingMetadataId = existingProperty.metadataid
+              if (p.value != existingProperty.value) {
+                PropertyUpdateActionType("update", p.filePropertyName, p.value, id, userId, Some(existingMetadataId))
+              } else {
+                PropertyUpdateActionType("noUpdate", p.filePropertyName, p.value, id, userId, Some(existingMetadataId))
+              }
             }
+          })
         }
-      case _ => Seq(Future(Nil))
-    }
-
-    updatedFileMetadataRows ++: Seq(addedFileMetadataRows)
+      }.toSeq
+      groupedUpdateActions = updateActions.groupBy(_.updateActionType)
+      //Can then do as required with the groups:
+      propertiesToAdd: Seq[FilemetadataRow] = groupedUpdateActions("add").map(_.toMetadataRow)
+      propertiesToUpdate: Seq[FileMetadataUpdate] = groupedUpdateActions("update").map(_.toFileMetadataUpdate)
+      propertiesWithNoUpdate: Seq[PropertyUpdateActionType] = groupedUpdateActions("noUpdate")
+    } yield BulkFileMetadata(Seq(), Seq())
   }
 
   def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
@@ -210,9 +136,6 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
 }
 
 object FileMetadataService {
-
-
-
   val SHA256ClientSideChecksum = "SHA256ClientSideChecksum"
   val ClientSideOriginalFilepath = "ClientSideOriginalFilepath"
   val ClientSideFileLastModifiedDate = "ClientSideFileLastModifiedDate"
@@ -270,7 +193,10 @@ object FileMetadataService {
                                 foiExemptionCode: Option[String]
                                )
 
-  case class MetadataIdentifiers(metadataId: UUID, fileId: UUID)
-  case class PropertyUpdateActionGroup(updateAction: String, propertyName: String, propertyValue: String)
-  case class FilePropertyUpdates(propertyUpdateAction: PropertyUpdateActionGroup, metadataIdentifiers: Set[MetadataIdentifiers])
+  case class PropertyUpdateActionType(updateActionType: String,
+                                      propertyName: String,
+                                      propertyValue: String,
+                                      fileId: UUID,
+                                      userId: UUID,
+                                      existingMetadataId: Option[UUID] = None)
 }

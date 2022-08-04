@@ -43,7 +43,12 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def updateFileMetadata(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID): Future[Int] = {
+  def updateFileMetadata(update: FileMetadataUpdate): Future[Int] = {
+    val filePropertyName = update.filePropertyName
+    val metadataIds = update.metadataIds
+    val value = update.value
+    val userId = update.userId
+    val dateTime = update.dateTime
     val dbUpdate = Filemetadata.filter(fm => fm.propertyname === filePropertyName)
       .filter(fm => fm.metadataid inSet metadataIds)
       .map(fm => (fm.value, fm.userid, fm.datetime))
@@ -64,3 +69,5 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 }
+
+case class FileMetadataUpdate(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID)
