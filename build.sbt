@@ -45,7 +45,7 @@ lazy val circeVersion = "0.14.2"
 lazy val testContainersVersion = "0.40.10"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "3.0.1",
+  "org.sangria-graphql" %% "sangria" % "3.2.0",
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.4",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.2",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.15",
-  "org.postgresql" % "postgresql" % "42.4.0",
+  "org.postgresql" % "postgresql" % "42.4.1",
   "com.typesafe.slick" %% "slick" % "3.3.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "ch.megard" %% "akka-http-cors" % "1.1.3",
@@ -77,12 +77,12 @@ libraryDependencies ++= Seq(
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.13" % Test,
-  "org.mockito" %% "mockito-scala" % "1.17.7" % Test,
-  "org.mockito" %% "mockito-scala-scalatest" % "1.17.7" % Test,
+  "org.mockito" %% "mockito-scala" % "1.17.12" % Test,
+  "org.mockito" %% "mockito-scala-scalatest" % "1.17.12" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.12.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.69",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.70",
   "io.github.hakky54" % "logcaptor" % "2.7.10" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
