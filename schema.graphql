@@ -172,6 +172,7 @@ type CustomMetadataField {
   multiValue: Boolean!
   defaultValue: String
   values: [CustomMetadataValues!]!
+  ordinal: Int!
 }
 
 type CustomMetadataValues {
@@ -180,11 +181,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  Integer
-  Boolean
   Text
+  Boolean
   DateTime
+  Integer
+  Decimal
 }
 
 type FFIDMetadata {
