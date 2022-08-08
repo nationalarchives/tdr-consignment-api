@@ -180,11 +180,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
+  Boolean
+  DateTime
   Decimal
   Integer
-  Boolean
   Text
-  DateTime
 }
 
 type FFIDMetadata {
@@ -249,6 +249,7 @@ type FileConnection {
   "A list of edges."
   edges: [FileEdge]
   totalPages: Int
+  totalItems: Int
 }
 
 "An edge in a connection."

@@ -138,6 +138,7 @@ class FileService(fileRepository: FileRepository,
           hasPreviousPage = currentCursor.isDefined
         ),
         edges,
+        numberOfFilesInFolder,
         totalPages
       )
     }
@@ -209,5 +210,5 @@ object FileService {
 
   case class FileOwnership(fileId: UUID, userId: UUID)
 
-  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalPages: Int) extends Connection[T]
+  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
 }

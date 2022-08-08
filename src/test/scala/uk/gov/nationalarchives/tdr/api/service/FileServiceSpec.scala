@@ -642,6 +642,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     pageInfo.hasPreviousPage shouldBe false
 
     edges.size shouldBe 2
+    response.totalItems shouldBe 2
+
     val firstEdge = edges.head
     firstEdge.cursor shouldBe fileId2.toString
     firstEdge.node.fileId shouldBe fileId2
@@ -696,6 +698,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     pageInfo.hasPreviousPage shouldBe true
 
     edges.size shouldBe 2
+    response.totalItems shouldBe 2
+
     val firstEdge = edges.head
     firstEdge.cursor shouldBe fileId2.toString
     firstEdge.node.fileId shouldBe fileId2
@@ -736,6 +740,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     pageInfo.hasPreviousPage shouldBe true
 
     edges.size shouldBe 0
+    response.totalItems shouldBe 0
   }
 
   "getPaginatedFiles" should "return an error if no pagination input argument provided" in {
