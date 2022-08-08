@@ -182,9 +182,9 @@ type CustomMetadataValues {
 enum DataType {
   Decimal
   Integer
-  Boolean
   Text
   DateTime
+  Boolean
 }
 
 type FFIDMetadata {
@@ -305,6 +305,11 @@ type FinalTransferConfirmation {
   legalCustodyTransferConfirmed: Boolean!
 }
 
+input GetAllDescendantsInput {
+  consignmentId: UUID!
+  parentIds: [UUID!]!
+}
+
 scalar LocalDateTime
 
 "The `Long` scalar type represents non-fractional signed whole numeric values. Long can represent values between -(2^63) and 2^63 - 1."
@@ -363,6 +368,7 @@ type Query {
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+  getAllDescendants(getAllDescendantsInput: GetAllDescendantsInput!): [File!]!
 }
 
 type Series {
