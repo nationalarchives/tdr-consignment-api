@@ -60,8 +60,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     }
   }
 
-  def updateBulkFileMetadata(input: AddElseUpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val distinctMetadataProperties: Set[AddFileMetadataInput] = input.metadataProperties.toSet
+  def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
+    val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
     val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
     val uniqueFileIds: Seq[UUID] = input.fileIds.distinct
 
@@ -88,7 +88,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     } yield BulkFileMetadata(filesThatHasMetadataUpdated, metadataProperties)
   }
 
-  private def generatePropertyActionsForFileIds(fileId: UUID, metadataProperties: Set[AddFileMetadataInput],
+  private def generatePropertyActionsForFileIds(fileId: UUID, metadataProperties: Set[UpdateFileMetadataInput],
                                                 existingFileMetadataRows: Seq[FilemetadataRow]): Set[PropertyAction] = {
 
     val existingFileIdToMetadataRow: Map[UUID, Seq[FilemetadataRow]] = existingFileMetadataRows.groupBy(_.fileid)

@@ -7,12 +7,6 @@ input AddAntivirusMetadataInput {
   datetime: Long!
 }
 
-input AddElseUpdateBulkFileMetadataInput {
-  consignmentId: UUID!
-  fileIds: [UUID!]!
-  metadataProperties: [AddFileMetadataInput!]!
-}
-
 input AddConsignmentInput {
   seriesid: UUID
   consignmentType: String!
@@ -22,11 +16,6 @@ input AddFileAndMetadataInput {
   consignmentId: UUID!
   metadataInput: [ClientSideMetadataInput!]!
   emptyDirectories: [String!] = []
-}
-
-input AddFileMetadataInput {
-  filePropertyName: String!
-  value: String!
 }
 
 input AddFileMetadataWithFileIdInput {
@@ -181,11 +170,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Boolean
-  Decimal
-  DateTime
-  Text
   Integer
+  Decimal
+  Boolean
+  Text
+  DateTime
 }
 
 type FFIDMetadata {
@@ -324,7 +313,7 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
-  addElseUpdateBulkFileMetadata(addElseUpdateBulkFileMetadataInput: AddElseUpdateBulkFileMetadataInput!): BulkFileMetadata!
+  updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
@@ -400,6 +389,12 @@ type TransferringBody {
 
 scalar UUID
 
+input UpdateBulkFileMetadataInput {
+  consignmentId: UUID!
+  fileIds: [UUID!]!
+  metadataProperties: [UpdateFileMetadataInput!]!
+}
+
 input UpdateConsignmentSeriesIdInput {
   consignmentId: UUID!
   seriesId: UUID!
@@ -410,6 +405,11 @@ input UpdateExportDataInput {
   exportLocation: String!
   exportDatetime: ZonedDateTime
   exportVersion: String!
+}
+
+input UpdateFileMetadataInput {
+  filePropertyName: String!
+  value: String!
 }
 
 scalar ZonedDateTime
