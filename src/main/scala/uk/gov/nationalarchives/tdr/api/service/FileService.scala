@@ -9,7 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches, AllDescendantsInput}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
@@ -89,6 +89,11 @@ class FileService(fileRepository: FileRepository,
     }
   }
 
+  def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
+    //For now only interested in basic file metadata
+    fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
+  }
+
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
     consignmentRepository.getConsignmentsOfFiles(fileIds)
       .map(_.map(consignmentByFile => FileOwnership(consignmentByFile._1, consignmentByFile._2.userid)))
@@ -119,7 +124,7 @@ class FileService(fileRepository: FileRepository,
 
     for {
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
-      numberOfFilesInFolder: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
+      totalItems: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
@@ -129,7 +134,7 @@ class FileService(fileRepository: FileRepository,
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
-      val totalPages = Math.ceil(numberOfFilesInFolder.toDouble/limit.toDouble).toInt
+      val totalPages = Math.ceil(totalItems.toDouble/limit.toDouble).toInt
       TDRConnection(
         PageInfo(
           startCursor = edges.headOption.map(_.cursor),
@@ -138,6 +143,7 @@ class FileService(fileRepository: FileRepository,
           hasPreviousPage = currentCursor.isDefined
         ),
         edges,
+        totalItems,
         totalPages
       )
     }
@@ -209,5 +215,5 @@ object FileService {
 
   case class FileOwnership(fileId: UUID, userId: UUID)
 
-  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalPages: Int) extends Connection[T]
+  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
 }
