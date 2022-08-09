@@ -140,7 +140,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
 
     val getNumberOfUpdatedMetadataRows: Future[Seq[Int]] =
       if (propertiesRowsToUpdate.nonEmpty) {
-        fileMetadataRepository.updateFileMetadata(propertiesRowsToUpdate)
+        fileMetadataRepository.updateFileMetadataProperties(propertiesRowsToUpdate)
       } else {
         Future(Seq())
       }

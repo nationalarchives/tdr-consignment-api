@@ -285,7 +285,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       )
   }
 
-  "updateFileMetadata" should "update the value and userId for the correct metadata rows and return the number of rows it updated" in withContainers {
+  "updateFileMetadataProperties" should "update the value and userId for the correct metadata rows and return the number of rows it updated" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -312,7 +312,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       utils.addFileMetadata(metadataId4.toString, fileIdThree.toString, "FilePropertyThree")
       val newValue = "newValue"
 
-      val updateResponse: Seq[Int] = fileMetadataRepository.updateFileMetadata(
+      val updateResponse: Seq[Int] = fileMetadataRepository.updateFileMetadataProperties(
         Map(
           "FilePropertyOne" -> FileMetadataUpdate(Seq(metadataId1, metadataId3), "FilePropertyOne", newValue, Timestamp.from(Instant.now()), userId2),
           "FilePropertyThree" -> FileMetadataUpdate(Seq(metadataId4), "FilePropertyThree", newValue, Timestamp.from(Instant.now()), userId2))
@@ -340,7 +340,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       fileThreeMetadata.get.head.userid should equal(userId2)
   }
 
-  "updateFileMetadata" should "return 0 if a file property that does not exist on the rows passed to it" in withContainers {
+  "updateFileMetadataProperties" should "return 0 if a file property that does not exist on the rows passed to it" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -367,7 +367,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
       val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
 
-      val updateResponse = fileMetadataRepository.updateFileMetadata(
+      val updateResponse = fileMetadataRepository.updateFileMetadataProperties(
         Map("NonExistentFileProperty" -> FileMetadataUpdate(
           Seq(metadataId1, metadataId3), "NonExistentFileProperty", newValue, Timestamp.from(Instant.now()), userId2)
         )

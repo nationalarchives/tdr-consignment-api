@@ -45,7 +45,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def updateFileMetadata(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
+  def updateFileMetadataProperties(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
     val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
       case (propertyName, update) => Filemetadata
         .filter(fm => fm.propertyname === propertyName)
