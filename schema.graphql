@@ -59,6 +59,11 @@ input AddTransferAgreementPrivateBetaInput {
   allEnglish: Boolean!
 }
 
+input AllDescendantsInput {
+  consignmentId: UUID!
+  parentIds: [UUID!]!
+}
+
 type AntivirusMetadata {
   fileId: UUID!
   software: String!
@@ -181,11 +186,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Text
-  Boolean
   DateTime
-  Integer
+  Text
   Decimal
+  Integer
+  Boolean
 }
 
 type FFIDMetadata {
@@ -250,6 +255,7 @@ type FileConnection {
   "A list of edges."
   edges: [FileEdge]
   totalPages: Int
+  totalItems: Int
 }
 
 "An edge in a connection."
@@ -364,6 +370,7 @@ type Query {
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+  allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
 }
 
 type Series {
