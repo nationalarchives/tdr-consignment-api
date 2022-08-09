@@ -1,0 +1,3 @@
+{
+  "query": "{allDescendants(allDescendantsInput: {consignmentId: \"1cd5e07a-34c8-4751-8e81-98edd17d1729\", parentIds: []}){fileId fileType fileName parentId}}"
+}

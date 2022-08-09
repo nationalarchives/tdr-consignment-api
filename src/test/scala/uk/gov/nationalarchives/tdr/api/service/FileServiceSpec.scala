@@ -11,7 +11,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, GetAllDescendantsInput, GetAllDescendantsInputType}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, AllDescendantsInput, AllDescendantsInputType}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
@@ -776,7 +776,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     parentFolderIdResult shouldBe None
   }
 
-  "getAllDescendants" should "return all the descendants for the given parent ids" in {
+  "allDescendants" should "return all the descendants for the given parent ids" in {
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
 
@@ -793,7 +793,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileRepositoryMock.getAllDescendants(List(parentId))).thenReturn(Future.successful(fileRows))
     val fileService = setupFileService(fileRepositoryMock)
 
-    val response = fileService.getAllDescendants(GetAllDescendantsInput(consignmentId, List(parentId))).futureValue
+    val response = fileService.getAllDescendants(AllDescendantsInput(consignmentId, List(parentId))).futureValue
     response.size shouldBe 2
     val firstFile = response.head
     firstFile.fileId shouldBe fileId1
@@ -814,14 +814,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     secondFile.ffidMetadata shouldBe None
   }
 
-  "getAllDescendants" should "return an empty list if no descendants found" in {
+  "allDescendants" should "return an empty list if no descendants found" in {
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
 
     when(fileRepositoryMock.getAllDescendants(List(parentId))).thenReturn(Future.successful(List()))
     val fileService = setupFileService(fileRepositoryMock)
 
-    val response = fileService.getAllDescendants(GetAllDescendantsInput(consignmentId, List(parentId))).futureValue
+    val response = fileService.getAllDescendants(AllDescendantsInput(consignmentId, List(parentId))).futureValue
     response.size shouldBe 0
   }
 

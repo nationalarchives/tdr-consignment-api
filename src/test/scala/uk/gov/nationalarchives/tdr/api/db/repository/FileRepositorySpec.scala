@@ -334,7 +334,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       files.forall(_._1.fileid == fileOneId) shouldBe true
   }
 
-  "getAllDescendants" should "return all descendants" in withContainers {
+  "allDescendants" should "return all descendants" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)

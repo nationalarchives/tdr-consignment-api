@@ -1,3 +1,0 @@
-{
-  "query": "{getAllDescendants(getAllDescendantsInput: {consignmentId: \"1cd5e07a-34c8-4751-8e81-98edd17d1729\", parentIds: [\"7b19b272-d4d1-4d77-bf25-511dc6489d12\"]}){fileType}}"
-}
