@@ -153,6 +153,17 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       response should equal(expectedResponse)
   }
 
+  "allDescendants" should "return an error where no parent id input argument provided" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      createConsignmentStructure(utils)
+
+      val expectedResponse = expectedAllDescendantsQueryResponse("data_no_parentids_input")
+      val response = runTestQueryAllDescendants("query_no_parentids_input", validUserToken())
+
+      response should equal(expectedResponse)
+  }
+
   def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): Option[FileNameAndPath] = {
     val sql =
       """SELECT "FileName", "Value" FROM "FileMetadata" fm

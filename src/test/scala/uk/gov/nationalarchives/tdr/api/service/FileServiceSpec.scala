@@ -776,7 +776,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     parentFolderIdResult shouldBe None
   }
 
-  "allDescendants" should "return all the descendants for the given parent ids" in {
+  "getAllDescendants" should "return all the descendants for the given parent ids" in {
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
 
@@ -814,7 +814,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     secondFile.ffidMetadata shouldBe None
   }
 
-  "allDescendants" should "return an empty list if no descendants found" in {
+  "getAllDescendants" should "return an empty list if no descendants found" in {
     val consignmentId = UUID.randomUUID()
     val parentId = UUID.randomUUID()
 
