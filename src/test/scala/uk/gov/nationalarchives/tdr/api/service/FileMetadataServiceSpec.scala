@@ -167,7 +167,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
   "updateBulkFileMetadata" should "call the file repository with the correct arguments, get all of the file metadata for a consignment " +
     "and then add metadata rows that haven't already been added and update those that have" in {
-    val testSetUp = new AddBulkMetadataTestSetUp()
+    val testSetUp = new UpdateBulkMetadataTestSetUp()
 
     val (mockGetFileMetadataResponse, mockAddFileMetadataResponse): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
       generateFileMetadataRows(
@@ -234,7 +234,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
   "updateBulkFileMetadata" should "pass into 'updateFileMetadata', only the metadataIds where the " +
     "'value' (of its FileMetadata row) differs from the value the user is trying to set" in {
-    val testSetUp = new AddBulkMetadataTestSetUp()
+    val testSetUp = new UpdateBulkMetadataTestSetUp()
     val newMetadataPropertiesWithOneOldValue = Seq(
       UpdateFileMetadataInput("propertyName1", "value1"), // this value already exists on propertyName1, therefore, there is no need to update it
       UpdateFileMetadataInput("propertyName2", "newValue2"),
@@ -283,7 +283,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   }
 
   "updateBulkFileMetadata" should "only add metadata rows but not update any" in {
-    val testSetUp = new AddBulkMetadataTestSetUp()
+    val testSetUp = new UpdateBulkMetadataTestSetUp()
 
     val (mockGetFileMetadataResponse, mockAddFileMetadataResponse): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
       generateFileMetadataRows(
@@ -318,7 +318,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   }
 
   "updateBulkFileMetadata" should "only update metadata rows but not add any" in {
-    val testSetUp = new AddBulkMetadataTestSetUp()
+    val testSetUp = new UpdateBulkMetadataTestSetUp()
 
     val (mockGetFileMetadataResponse, _): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
       generateFileMetadataRows(
@@ -488,7 +488,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     (metadataRowsForGetFileMetadataStub,metadataRowsForAddFileMetadataStub)
   }
 
-  private class AddBulkMetadataTestSetUp {
+  private class UpdateBulkMetadataTestSetUp {
     val consignmentId: UUID = UUID.randomUUID()
     val fixedUserId: UUID = UUID.fromString("61b49923-daf7-4140-98f1-58ba6cbed61f")
     val fixedFolderFileUuid: UUID = UUID.fromString("f89da9b9-4c3b-4a17-a903-61c36b822c17")
