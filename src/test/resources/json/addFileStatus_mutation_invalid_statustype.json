@@ -1,0 +1,10 @@
+{
+  "query": "mutation addFileStatus($addFileStatusInput: AddFileStatusInput!){addFileStatus(addFileStatusInput: $addFileStatusInput){fileId,statusType,statusValue}}",
+  "variables": {
+    "addFileStatusInput": {
+      "fileId": "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
+      "statusType": "Download",
+      "statusValue": "Success"
+    }
+  }
+}

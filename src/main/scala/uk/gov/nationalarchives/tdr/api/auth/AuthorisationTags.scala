@@ -1,15 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.auth
 
-import java.util.UUID
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{AddConsignmentInput, UpdateConsignmentSeriesIdInput}
+import uk.gov.nationalarchives.tdr.api.auth.ValidateUserOwnsFiles.continue
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.UpdateConsignmentSeriesIdInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.BulkFileMetadataInputArg
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatusInputArg
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
-import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
+import java.util.UUID
 import scala.concurrent._
 import scala.language.postfixOps
 
@@ -24,7 +25,7 @@ trait AuthorisationTag extends ValidationTag {
 
 trait SyncAuthorisationTag extends AuthorisationTag {
   final def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                    (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+                         (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     Future.successful(validateSync(ctx))
   }
 
@@ -38,7 +39,7 @@ object ValidateBody extends SyncAuthorisationTag {
     val bodyArg: String = ctx.arg("body")
     val bodyFromToken: String = token.transferringBody.getOrElse("")
 
-    if(bodyFromToken != bodyArg) {
+    if (bodyFromToken != bodyArg) {
       val msg = s"Body for user ${token.userId} was $bodyArg in the query and $bodyFromToken in the token"
       throw AuthorisationException(msg)
     }
@@ -49,7 +50,7 @@ object ValidateBody extends SyncAuthorisationTag {
 object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                       (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
     val userBody = token.transferringBody.getOrElse(
@@ -77,7 +78,7 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 
 case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                       (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
     val exportAccess = token.backendChecksRoles.contains(exportRole)
@@ -172,15 +173,34 @@ object ValidateHasExportAccess extends SyncAuthorisationTag {
 object ValidateUserOwnsFiles extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
                             (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
-    val userId = ctx.ctx.accessToken.userId
     val addBulkMetadataInput = ctx.arg(BulkFileMetadataInputArg)
     val fileIds = addBulkMetadataInput.fileIds.toSeq
+
+    ValidateFiles.validate(ctx, fileIds)
+  }
+}
+
+object ValidateUserOwnsFilesForFileStatusInput extends AuthorisationTag {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
+                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+    val addFileStatusInput = ctx.arg(FileStatusInputArg)
+    val fileIds = Seq(addFileStatusInput.fileId)
+
+    ValidateFiles.validate(ctx, fileIds)
+  }
+}
+
+object ValidateFiles {
+
+  def validate(ctx: Context[ConsignmentApiContext, _], fileIds: Seq[UUID])
+              (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+    val userId = ctx.ctx.accessToken.userId
 
     for {
       fileIdsAndOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
       fileIdsBelongingToAConsignment: Seq[UUID] = fileIdsAndOwner.map(_.fileId)
       filesThatDoNotBelongToAConsignment: Seq[UUID] = fileIds.filterNot(fileId => fileIdsBelongingToAConsignment.contains(fileId))
-      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileIdsAndOwner.collect{
+      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileIdsAndOwner.collect {
         case fileIdAndOwner if fileIdAndOwner.userId != userId => fileIdAndOwner.fileId
       }
       allFilesBelongToAConsignment = filesThatDoNotBelongToAConsignment.isEmpty

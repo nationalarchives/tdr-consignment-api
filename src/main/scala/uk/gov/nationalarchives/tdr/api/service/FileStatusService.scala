@@ -1,14 +1,40 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Success}
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Failed, Success, Upload}
 
+import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileStatusService(
                          fileStatusRepository: FileStatusRepository,
-                         disallowedPuidsRepository: DisallowedPuidsRepository)(implicit val executionContext: ExecutionContext) {
+                         disallowedPuidsRepository: DisallowedPuidsRepository,
+                         uuidSource: UUIDSource)(implicit val executionContext: ExecutionContext) {
+
+  def addFileStatus(addFileStatusInput: AddFileStatusInput): Future[FileStatus] = {
+
+    validateStatusTypeAndValue(addFileStatusInput)
+    for {
+      _ <- fileStatusRepository.addFileStatuses(List(FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType,
+        addFileStatusInput.statusValue, Timestamp.from(Instant.now()))))
+    } yield FileStatus(addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue)
+  }
+
+  private def validateStatusTypeAndValue(addFileStatusInput: AddFileStatusInput) = {
+    val statusType: String = addFileStatusInput.statusType
+    val statusValue: String = addFileStatusInput.statusValue
+
+    if (Upload == statusType && List(Success, Failed).contains(statusValue)) {
+      true
+    } else {
+      throw InputDataException(s"Invalid FileStatus input: either '$statusType' or '$statusValue'")
+    }
+  }
 
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
     for {
@@ -36,9 +62,11 @@ object FileStatusService {
   val ChecksumMatch = "ChecksumMatch"
   val Antivirus = "Antivirus"
   val FFID = "FFID"
+  val Upload = "Upload"
 
   //Values
   val Success = "Success"
+  val Failed = "Failed"
   val Mismatch = "Mismatch"
   val VirusDetected = "VirusDetected"
   val PasswordProtected = "PasswordProtected"
