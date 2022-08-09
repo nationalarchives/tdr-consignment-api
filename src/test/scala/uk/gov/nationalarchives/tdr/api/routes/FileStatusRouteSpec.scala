@@ -129,7 +129,7 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
       response.errors.head.message should equal(expectedResponse.errors.head.message)
       response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
-  
+
   private def checkFileStatusExists(fileId: UUID, utils: TestUtils, fileStatus: FileStatus): Unit = {
     val sql = """SELECT * FROM "FileStatus" WHERE "FileId" = ?;"""
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
