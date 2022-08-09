@@ -91,6 +91,11 @@ object ConsignmentFields {
           "totalPages",
           OptionType(IntType),
           resolve = ctx => ctx.value.totalPages
+        ),
+        Field(
+          "totalItems",
+          OptionType(IntType),
+          resolve = ctx => ctx.value.totalItems
         )
       )
     )
