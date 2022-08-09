@@ -367,6 +367,45 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     updateFileMetadataIdsArgument.sorted should equal(mockGetFileMetadataResponse.map(_.metadataid).sorted)
   }
 
+  "updateBulkFileMetadata" should "not add or update any metadata rows if they already exist" in {
+    val testSetUp = new UpdateBulkMetadataTestSetUp()
+
+    val (mockGetFileMetadataResponse, _): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
+      generateFileMetadataRows(
+        testSetUp.fixedUserId,
+        testSetUp.fileUuids,
+        testSetUp.filesInFolderFixedFileUuids,
+        testSetUp.metadataPropertiesWithOldValues,
+        testSetUp.metadataPropertiesWithNewValues,
+        Seq()
+      )
+
+    val fileIdsThatHaveAllProperties =
+      mockGetFileMetadataResponse
+        .groupBy(_.fileid)
+        .filter { case (_, metadataRows) => metadataRows.length == testSetUp.metadataPropertiesWithOldValues.length }
+        .keys
+        .toSeq
+
+    val fileRowOfFilesThatHaveAllProperties: Seq[FileRow] =
+      testSetUp.mockFileResponse.filter(fileRow => fileIdsThatHaveAllProperties.contains(fileRow.fileid))
+
+    when(testSetUp.fileRepositoryMock.getAllDescendants(testSetUp.getDescendentsFileIdsCaptor.capture()))
+      .thenReturn(Future(fileRowOfFilesThatHaveAllProperties))
+    when(testSetUp.metadataRepositoryMock.getFileMetadata(
+      testSetUp.consignmentIdCaptor.capture(), testSetUp.getFileMetadataIds.capture(), testSetUp.getFileMetadataPropertyNames.capture()
+    )).thenReturn(Future(mockGetFileMetadataResponse))
+
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    service.updateBulkFileMetadata(
+      UpdateBulkFileMetadataInput(testSetUp.consignmentId, fileIdsThatHaveAllProperties, testSetUp.metadataPropertiesWithOldValues),
+      testSetUp.fixedUserId
+    ).futureValue
+
+    verify(testSetUp.metadataRepositoryMock, times(0)).addFileMetadata(any[Seq[FilemetadataRow]])
+    verify(testSetUp.metadataRepositoryMock, times(0)).updateFileMetadataProperties(any[Map[String, FileMetadataUpdate]])
+  }
+
   "getFileMetadata" should "call the repository with the correct arguments" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
@@ -452,7 +491,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     def determineHowToDivideMetadataRows(action: Seq[String], index: Int, metadataPropertiesLength: Int): Int =
       // if "add and update" then distribute according to modulo length; else, assign ALL properties to be added or updated to files
-      if (action.length == 2) {index % metadataPropertiesLength} else if (action.head == "add") {metadataPropertiesLength} else {0}
+      if (action.length == 2) {index % metadataPropertiesLength} else if (action.headOption.contains("add")) {metadataPropertiesLength} else {0}
 
     // 1st id in "fileUuids" is a folder, so instead, generate the metadata based on its file ids
     val fileMetadataRowsForFirstFileId: Seq[FilemetadataRow] =
@@ -485,7 +524,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     }
     val metadataRowsForAddFileMetadataStub = fileMetadataRowsForFirstFileId ++ fileMetadataRowsToAdd ++ remainingMetadataRowsToAdd
 
-    (metadataRowsForGetFileMetadataStub,metadataRowsForAddFileMetadataStub)
+    (metadataRowsForGetFileMetadataStub, metadataRowsForAddFileMetadataStub)
   }
 
   private class UpdateBulkMetadataTestSetUp {
