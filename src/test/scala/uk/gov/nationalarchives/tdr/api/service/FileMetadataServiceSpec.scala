@@ -493,8 +493,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       // if "add and update" then distribute according to modulo length; else, assign ALL properties to be added or updated to files
       if (action.length == 2) {index % metadataPropertiesLength} else if (action.headOption.contains("add")) {metadataPropertiesLength} else {0}
 
-    // 1st id in "fileUuids" is a folder, so instead, generate the metadata based on its file ids
-    val fileMetadataRowsForFirstFileId: Seq[FilemetadataRow] =
+    val fileMetadataRowsForFirstFileId: Seq[FilemetadataRow] = // 1st id in "fileUuids" is a folder, so instead, generate the metadata based on its file ids
       if (actionToPerform.contains("add")) {generateFileMetadataRowsForAllProperties(filesInFolderFixedFileUuids)} else Nil
 
     val fileIdsMinusTheFolderId = fileUuids.drop(1)
@@ -503,13 +502,12 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileMetadataRowsToAdd: Seq[FilemetadataRow] =
       if (actionToPerform.contains("add")) {generateFileMetadataRowsForAllProperties(idsForAddMetadataStub)} else Nil
 
-    val idsForGetMetadataStubZipped = idsForGetMetadataStub.zipWithIndex
+    val idsForGetMetadataStubZipped: Seq[(UUID, Int)] = idsForGetMetadataStub.zipWithIndex
     val metadataPropertiesLength = (metadataPropertiesWithOldValues.length + metadataPropertiesWithNewValues.length) / 2
     val (remainingMetadataRowsToAdd, metadataRowsForGetFileMetadataStub) = {
       val fileMetadataRowsSplitIntoTwoGroupsPerId: Seq[(Seq[FilemetadataRow], Seq[FilemetadataRow])] =
         idsForGetMetadataStubZipped.map {
-          case (fileUuid, index) =>
-            // In order to properly test adding/updating, not all files should have every property by default
+          case (fileUuid, index) => // In order to properly test adding/updating, not all files should have every property by default
             val numberOfPropertiesToAddToFile = determineHowToDivideMetadataRows(actionToPerform, index, metadataPropertiesLength)
             val metadataRowsToAdd =
               metadataPropertiesWithNewValues.take(numberOfPropertiesToAddToFile).map(convertMetadataPropertyIntoFileMetadataRow(fileUuid))
