@@ -94,7 +94,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     val existingFileIdToMetadataRow: Map[UUID, Seq[FilemetadataRow]] = existingFileMetadataRows.groupBy(_.fileid)
     val existingPropertiesForFile: Map[String, Seq[FilemetadataRow]] = existingFileIdToMetadataRow.getOrElse(fileId, Seq()).groupBy(_.propertyname)
 
-    metadataProperties.map{
+    metadataProperties.map {
       metadataProperty =>
         if (!existingPropertiesForFile.contains(metadataProperty.filePropertyName)) {
           PropertyAction("add", metadataProperty.filePropertyName, metadataProperty.value, fileId, uuidSource.uuid)
@@ -119,7 +119,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       propertyUpdateRow => (propertyUpdateRow.propertyName, propertyUpdateRow.propertyValue)
     )
 
-    val propertiesRowsToUpdate: Map[String, FileMetadataUpdate] = propertyUpdateRowsGroupedByNameAndValue.map{
+    val propertiesRowsToUpdate: Map[String, FileMetadataUpdate] = propertyUpdateRowsGroupedByNameAndValue.map {
       case ((propertyName, propertyValue), propertyUpdateActionType) =>
         val metadataIdsToUpdate: Seq[UUID] = propertyUpdateActionType.map(_.metadataId)
         propertyName -> FileMetadataUpdate(metadataIdsToUpdate, propertyName, propertyValue, Timestamp.from(timeSource.now), userId)
@@ -132,17 +132,25 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                                       updatePropertyActions: Seq[PropertyAction]): Future[(Seq[UUID], Seq[UUID])] = {
 
     val addMetadataRows: Future[Seq[FilemetadataRow]] =
-      if(propertiesRowsToAdd.nonEmpty) {fileMetadataRepository.addFileMetadata(propertiesRowsToAdd)} else {Future(Seq())}
+      if (propertiesRowsToAdd.nonEmpty) {
+        fileMetadataRepository.addFileMetadata(propertiesRowsToAdd)
+      } else {
+        Future(Seq())
+      }
 
     val getNumberOfUpdatedMetadataRows: Future[Seq[Int]] =
-      if(propertiesRowsToUpdate.nonEmpty) {fileMetadataRepository.updateFileMetadata(propertiesRowsToUpdate)} else {Future(Seq())}
+      if (propertiesRowsToUpdate.nonEmpty) {
+        fileMetadataRepository.updateFileMetadata(propertiesRowsToUpdate)
+      } else {
+        Future(Seq())
+      }
 
     for {
       addedMetadataRows <- addMetadataRows
       numberOfUpdatedMetadataRows <- getNumberOfUpdatedMetadataRows
       filesThatHadMetadataAdded: Seq[UUID] = addedMetadataRows.map(_.fileid).distinct
       filesThatHadMetadataUpdated: Seq[UUID] =
-        if(numberOfUpdatedMetadataRows.nonEmpty) {
+        if (numberOfUpdatedMetadataRows.nonEmpty) {
           val numberOfMetadataIdsToUpdate: Int = updatePropertyActions.map(_.metadataId).length
           val filesThatWereUpdated: Seq[UUID] = updatePropertyActions.map(_.fileId).distinct
 
@@ -153,7 +161,9 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
               s"There was a problem: only $numberOfRowsUpdated out of $numberOfMetadataIdsToUpdate rows were updated!"
             )
           }
-        } else {Seq()}
+        } else {
+          Seq()
+        }
     } yield (filesThatHadMetadataAdded, filesThatHadMetadataUpdated)
   }
 

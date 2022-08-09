@@ -34,7 +34,8 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None, propertyNames: Option[Set[String]]=None): Future[Seq[FilemetadataRow]] = {
+  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None,
+                      propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
@@ -45,7 +46,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
   }
 
   def updateFileMetadata(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
-    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map{
+    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
       case (propertyName, update) => Filemetadata
         .filter(fm => fm.propertyname === propertyName)
         .filter(fm => fm.metadataid inSet update.metadataIds)
