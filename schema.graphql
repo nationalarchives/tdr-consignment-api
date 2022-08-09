@@ -59,6 +59,11 @@ input AddTransferAgreementPrivateBetaInput {
   allEnglish: Boolean!
 }
 
+input AllDescendantsInput {
+  consignmentId: UUID!
+  parentIds: [UUID!]!
+}
+
 type AntivirusMetadata {
   fileId: UUID!
   software: String!
@@ -180,10 +185,10 @@ type CustomMetadataValues {
 }
 
 enum DataType {
+  DateTime
+  Text
   Decimal
   Integer
-  Text
-  DateTime
   Boolean
 }
 
@@ -305,11 +310,6 @@ type FinalTransferConfirmation {
   legalCustodyTransferConfirmed: Boolean!
 }
 
-input GetAllDescendantsInput {
-  consignmentId: UUID!
-  parentIds: [UUID!]!
-}
-
 scalar LocalDateTime
 
 "The `Long` scalar type represents non-fractional signed whole numeric values. Long can represent values between -(2^63) and 2^63 - 1."
@@ -368,7 +368,7 @@ type Query {
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
-  getAllDescendants(getAllDescendantsInput: GetAllDescendantsInput!): [File!]!
+  allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
 }
 
 type Series {
