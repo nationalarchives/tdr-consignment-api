@@ -107,7 +107,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
   }
 
-  "allDescendants" should "return only return parent where no descendants" in withContainers {
+  "allDescendants" should "only return parent where no descendants" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       createConsignmentStructure(utils)
