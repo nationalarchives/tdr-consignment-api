@@ -254,6 +254,7 @@ type FileConnection {
   "A list of edges."
   edges: [FileEdge]
   totalPages: Int
+  totalItems: Int
 }
 
 "An edge in a connection."

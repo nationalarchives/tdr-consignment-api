@@ -124,7 +124,7 @@ class FileService(fileRepository: FileRepository,
 
     for {
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
-      numberOfFilesInFolder: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
+      totalItems: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
@@ -134,7 +134,7 @@ class FileService(fileRepository: FileRepository,
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
-      val totalPages = Math.ceil(numberOfFilesInFolder.toDouble/limit.toDouble).toInt
+      val totalPages = Math.ceil(totalItems.toDouble/limit.toDouble).toInt
       TDRConnection(
         PageInfo(
           startCursor = edges.headOption.map(_.cursor),
@@ -143,6 +143,7 @@ class FileService(fileRepository: FileRepository,
           hasPreviousPage = currentCursor.isDefined
         ),
         edges,
+        totalItems,
         totalPages
       )
     }
@@ -214,5 +215,5 @@ object FileService {
 
   case class FileOwnership(fileId: UUID, userId: UUID)
 
-  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalPages: Int) extends Connection[T]
+  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
 }
