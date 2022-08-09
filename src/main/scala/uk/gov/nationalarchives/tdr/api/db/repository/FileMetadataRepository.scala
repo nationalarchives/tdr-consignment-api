@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
@@ -43,12 +44,16 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def updateFileMetadata(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID): Future[Int] = {
-    val dbUpdate = Filemetadata.filter(fm => fm.propertyname === filePropertyName)
-      .filter(fm => fm.metadataid inSet metadataIds)
-      .map(fm => (fm.value, fm.userid, fm.datetime))
-      .update((value, userId, dateTime))
-    db.run(dbUpdate)
+  def updateFileMetadata(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
+    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map{
+      case (propertyName, update) => Filemetadata
+        .filter(fm => fm.propertyname === propertyName)
+        .filter(fm => fm.metadataid inSet update.metadataIds)
+        .map(fm => (fm.value, fm.userid, fm.datetime))
+        .update((update.value, update.userId, update.dateTime))
+    }.toSeq
+
+    db.run(DBIO.sequence(dbUpdate).transactionally)
   }
 
   def countProcessedChecksumInConsignment(consignmentId: UUID): Future[Int] = {
@@ -64,3 +69,5 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 }
+
+case class FileMetadataUpdate(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID)

@@ -293,38 +293,51 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
       val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
       val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val fileIdThree = UUID.fromString("f2e8a105-a251-41ce-89a0-a03c2b321277")
       val userId2 = UUID.randomUUID()
       utils.createConsignment(consignmentId, userId)
-      utils.createFile(fileIdOne, consignmentId)
-      utils.createFile(fileIdTwo, consignmentId)
+      List(fileIdOne, fileIdTwo, fileIdThree).foreach(
+        fileId => utils.createFile(fileId, consignmentId)
+      )
       utils.addFileProperty("FilePropertyOne")
       utils.addFileProperty("FilePropertyTwo")
+      utils.addFileProperty("FilePropertyThree")
       val metadataId1 = UUID.randomUUID()
       val metadataId2 = UUID.randomUUID()
       val metadataId3 = UUID.randomUUID()
+      val metadataId4 = UUID.randomUUID()
       utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
       utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
       utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId4.toString, fileIdThree.toString, "FilePropertyThree")
       val newValue = "newValue"
 
-      val updateResponse = fileMetadataRepository.updateFileMetadata(
-        Seq(metadataId1, metadataId3), "FilePropertyOne", newValue, Timestamp.from(Instant.now()), userId2
+      val updateResponse: Seq[Int] = fileMetadataRepository.updateFileMetadata(
+        Map(
+          "FilePropertyOne" -> FileMetadataUpdate(Seq(metadataId1, metadataId3), "FilePropertyOne", newValue, Timestamp.from(Instant.now()), userId2),
+          "FilePropertyThree" -> FileMetadataUpdate(Seq(metadataId4), "FilePropertyThree", newValue, Timestamp.from(Instant.now()), userId2))
       ).futureValue
 
       val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
 
-      updateResponse should be(2)
+      updateResponse should be(Seq(2, 1))
       val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
       val fileOneMetadata = filesMap.get(fileIdOne)
       val fileTwoMetadata = filesMap.get(fileIdTwo)
+      val fileThreeMetadata = filesMap.get(fileIdThree)
       val fileOneProperties = fileOneMetadata.get.groupBy(_.propertyname)
       fileOneProperties("FilePropertyOne").head.value should equal(newValue)
       fileOneProperties("FilePropertyOne").head.userid should equal(userId2)
       fileOneProperties("FilePropertyTwo").head.value should equal("Result of FileMetadata processing")
       fileOneProperties("FilePropertyTwo").head.userid should equal(userId)
+
       fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
       fileTwoMetadata.get.head.value should equal(newValue)
       fileTwoMetadata.get.head.userid should equal(userId2)
+
+      fileThreeMetadata.get.head.propertyname should equal("FilePropertyThree")
+      fileThreeMetadata.get.head.value should equal(newValue)
+      fileThreeMetadata.get.head.userid should equal(userId2)
   }
 
   "updateFileMetadata" should "return 0 if a file property that does not exist on the rows passed to it" in withContainers {
@@ -337,24 +350,32 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
       val userId2 = UUID.randomUUID()
       utils.createConsignment(consignmentId, userId)
-      utils.createFile(fileIdOne, consignmentId)
-      utils.createFile(fileIdTwo, consignmentId)
+      List(fileIdOne, fileIdTwo).foreach(
+        fileId => utils.createFile(fileId, consignmentId)
+      )
       utils.addFileProperty("FilePropertyOne")
       utils.addFileProperty("FilePropertyTwo")
+      utils.addFileProperty("FilePropertyThree")
       val metadataId1 = UUID.randomUUID()
       val metadataId2 = UUID.randomUUID()
       val metadataId3 = UUID.randomUUID()
+      val metadataId4 = UUID.randomUUID()
       utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
       utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
       utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
       val newValue = "newValue"
 
-      val updateResponse = fileMetadataRepository.updateFileMetadata(
-        Seq(metadataId1, metadataId3), "NonExistentFileProperty", newValue, Timestamp.from(Instant.now()), userId2
-      ).futureValue
-
       val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
 
-      updateResponse should be(0)
+      val updateResponse = fileMetadataRepository.updateFileMetadata(
+        Map("NonExistentFileProperty" -> FileMetadataUpdate(
+          Seq(metadataId1, metadataId3), "NonExistentFileProperty", newValue, Timestamp.from(Instant.now()), userId2)
+        )
+      ).futureValue
+
+      updateResponse should be(List(0))
+      response.foreach(
+        metadataRow => List("FilePropertyOne", "FilePropertyTwo").contains(metadataRow.propertyname)
+      )
   }
 }
