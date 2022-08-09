@@ -6,7 +6,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileMetadataUpdate, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -165,7 +165,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     err.getMessage should equal("SomethingElse found. We are only expecting checksum updates for now")
   }
 
-  "addElseUpdateBulkFileMetadata" should "call the file repository with the correct arguments, get all of the file metadata for a consignment " +
+  "updateBulkFileMetadata" should "call the file repository with the correct arguments, get all of the file metadata for a consignment " +
     "and then add metadata rows that haven't already been added and update those that have" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
 
@@ -185,16 +185,15 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       .thenReturn(Future(mockGetFileMetadataResponse))
     when(testSetUp.metadataRepositoryMock.addFileMetadata(testSetUp.addFileMetadataCaptor.capture()))
       .thenReturn(Future(mockAddFileMetadataResponse))
-    when(testSetUp.metadataRepositoryMock.updateFileMetadata(
-      testSetUp.updateFileMetadataIdsCaptor.capture(), any[String], any[String], any[Timestamp], any[UUID])
-    ).thenReturn(
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName3")),
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName2")),
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName1"))
-    )
+    when(testSetUp.metadataRepositoryMock.updateFileMetadata(testSetUp.updateFileMetadataArgCaptor.capture()))
+      .thenReturn(
+        Future(
+          Seq("propertyName1", "propertyName2", "propertyName3").map(propertyName => mockGetFileMetadataResponse.count(_.propertyname == propertyName))
+       )
+      )
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
+    service.updateBulkFileMetadata(
       AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.fixedUserId
     ).futureValue
@@ -212,12 +211,16 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val addFileMetadataArgument = testSetUp.addFileMetadataCaptor.getValue
     val fileIdsPassedInToAddFileMetadata = addFileMetadataArgument.map(_.fileid)
     val valuesPassedInToAddFileMetadata = addFileMetadataArgument.map(_.value)
-    val updateFileMetadataIdsArgument = testSetUp.updateFileMetadataIdsCaptor.getAllValues.toArray.toSeq.asInstanceOf[Seq[Seq[UUID]]].flatten
+    val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataArgCaptor.getValue
+
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap{
+      case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
+    }
 
     consignmentIdArgument should equal(testSetUp.consignmentId)
     getFileMetadataIdsArgument.get should equal((testSetUp.filesInFolderFixedFileUuids ++ testSetUp.fileUuids.drop(1)).toSet)
     addFileMetadataArgument.nonEmpty should equal(true)
-    addFileMetadataArgument.map(_.fileid).sorted should equal(mockAddFileMetadataResponse.map(_.fileid).sorted)
+    addFileMetadataArgument.map(_.fileid).sorted should equal(mockAddFileMetadataResponse.map(_.fileid).toVector.sorted)
     fileIdsPassedInToAddFileMetadata.contains(testSetUp.filesInFolderFixedFileUuids.head) should equal(true)
     // the folder's (fixedFolderFileUuid) id should not be added only the file(s) within it
     fileIdsPassedInToAddFileMetadata.contains(testSetUp.fixedFolderFileUuid) should equal(false)
@@ -229,7 +232,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     updateFileMetadataIdsArgument.sorted should equal(mockGetFileMetadataResponse.map(_.metadataid).sorted)
   }
 
-  "addElseUpdateBulkFileMetadata" should "pass into 'updateFileMetadata', only the metadataIds where the " +
+  "updateBulkFileMetadata" should "pass into 'updateFileMetadata', only the metadataIds where the " +
     "'value' (of its FileMetadata row) differs from the value the user is trying to set" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
     val newMetadataPropertiesWithOneOldValue = Seq(
@@ -254,21 +257,22 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     )).thenReturn(Future(mockGetFileMetadataResponse))
     when(testSetUp.metadataRepositoryMock.addFileMetadata(testSetUp.addFileMetadataCaptor.capture()))
       .thenReturn(Future(mockAddFileMetadataResponse))
-    when(testSetUp.metadataRepositoryMock.updateFileMetadata(
-      testSetUp.updateFileMetadataIdsCaptor.capture(), any[String], any[String], any[Timestamp], any[UUID])
-    ).thenReturn(
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName3")),
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName2")),
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName1"))
+    when(testSetUp.metadataRepositoryMock.updateFileMetadata(testSetUp.updateFileMetadataArgCaptor.capture()))
+      .thenReturn( // leave out propertyName1 because it would not have been updated
+        Future(Seq("propertyName2", "propertyName3").map(propertyName => mockGetFileMetadataResponse.count(_.propertyname == propertyName)))
     )
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
+    service.updateBulkFileMetadata(
       AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, newMetadataPropertiesWithOneOldValue),
       testSetUp.fixedUserId
     ).futureValue
 
-    val updateFileMetadataIdsArgument: Seq[UUID] = testSetUp.updateFileMetadataIdsCaptor.getAllValues.toArray.toSeq.asInstanceOf[Seq[Seq[UUID]]].flatten
+    val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataArgCaptor.getValue
+
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap{
+      case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
+    }
 
     val metadataIdsWithoutOldValue: Seq[UUID] = mockGetFileMetadataResponse.collect {
       case fileMetadataRow if fileMetadataRow.value != "value1" => fileMetadataRow.metadataid
@@ -278,7 +282,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     updateFileMetadataIdsArgument.sorted should equal(metadataIdsWithoutOldValue.sorted)
   }
 
-  "addElseUpdateBulkFileMetadata" should "only add metadata rows but not update any" in {
+  "updateBulkFileMetadata" should "only add metadata rows but not update any" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
 
     val (mockGetFileMetadataResponse, mockAddFileMetadataResponse): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
@@ -300,20 +304,20 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       .thenReturn(Future(mockAddFileMetadataResponse))
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
+    service.updateBulkFileMetadata(
       AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.fileUuids, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.fixedUserId
     ).futureValue
 
     val addFileMetadataArgument = testSetUp.addFileMetadataCaptor.getValue
-    val updateFileMetadataIdsArgument: Seq[UUID] = testSetUp.updateFileMetadataIdsCaptor.getAllValues.toArray.toSeq.asInstanceOf[Seq[Seq[UUID]]].flatten
+    val updateFileMetadataIdsArgument: Seq[UUID] = testSetUp.updateFileMetadataArgCaptor.getAllValues.toArray.toSeq.asInstanceOf[Seq[Seq[UUID]]].flatten
 
     addFileMetadataArgument.length should equal(mockAddFileMetadataResponse.length)
     updateFileMetadataIdsArgument.isEmpty should equal(true)
     updateFileMetadataIdsArgument should equal(mockGetFileMetadataResponse.map(_.metadataid))
   }
 
-  "addElseUpdateBulkFileMetadata" should "only update metadata rows but not add any" in {
+  "updateBulkFileMetadata" should "only update metadata rows but not add any" in {
     val testSetUp = new AddBulkMetadataTestSetUp()
 
     val (mockGetFileMetadataResponse, _): (Seq[FilemetadataRow], Seq[FilemetadataRow]) =
@@ -341,21 +345,22 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(testSetUp.metadataRepositoryMock.getFileMetadata(
       testSetUp.consignmentIdCaptor.capture(), testSetUp.getFileMetadataIds.capture(), testSetUp.getFileMetadataPropertyNames.capture()
     )).thenReturn(Future(mockGetFileMetadataResponse))
-    when(testSetUp.metadataRepositoryMock.updateFileMetadata(
-      testSetUp.updateFileMetadataIdsCaptor.capture(), any[String], any[String], any[Timestamp], any[UUID])
-    ).thenReturn(
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName3")),
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName2")),
-      Future(mockGetFileMetadataResponse.count(_.propertyname == "propertyName1"))
+    when(testSetUp.metadataRepositoryMock.updateFileMetadata(testSetUp.updateFileMetadataArgCaptor.capture()))
+      .thenReturn(
+        Future(Seq("propertyName1", "propertyName2", "propertyName3").map(propertyName => mockGetFileMetadataResponse.count(_.propertyname == propertyName)))
     )
 
     val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.addElseUpdateBulkFileMetadata(
+    service.updateBulkFileMetadata(
       AddElseUpdateBulkFileMetadataInput(testSetUp.consignmentId, fileIdsThatHaveAllProperties, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.fixedUserId
     ).futureValue
 
-    val updateFileMetadataIdsArgument: Seq[UUID] = testSetUp.updateFileMetadataIdsCaptor.getAllValues.toArray.toSeq.asInstanceOf[Seq[Seq[UUID]]].flatten
+    val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataArgCaptor.getValue
+
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap{
+      case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
+    }
 
     verify(testSetUp.metadataRepositoryMock, times(0)).addFileMetadata(any[Seq[FilemetadataRow]])
     updateFileMetadataIdsArgument.nonEmpty should equal(true)
@@ -431,7 +436,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   }
 
   private def generateFileMetadataRows(fixedUserId: UUID, fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID],
-                                       metadataPropertiesWithOldValues: Seq[AddFileMetadataInput], metadataPropertiesWithNewValues: Seq[AddFileMetadataInput],
+                                       metadataPropertiesWithOldValues: Seq[AddFileMetadataInput],
+                                       metadataPropertiesWithNewValues: Seq[AddFileMetadataInput],
                                        actionToPerform: Seq[String] = Seq("add", "update")): (Seq[FilemetadataRow], Seq[FilemetadataRow]) = {
     /**
      * Need to create metadata rows to be returned for the getFileMetadata stub. In order to check if the addFileMetadata/updateFileMetadata logic is sound),
@@ -516,7 +522,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val getFileMetadataIds: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val getFileMetadataPropertyNames: ArgumentCaptor[Option[Set[String]]] = ArgumentCaptor.forClass(classOf[Option[Set[String]]])
     val addFileMetadataCaptor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
-    val updateFileMetadataIdsCaptor: ArgumentCaptor[Seq[UUID]] = ArgumentCaptor.forClass(classOf[Seq[UUID]])
+    val updateFileMetadataArgCaptor: ArgumentCaptor[Map[String, FileMetadataUpdate]] = ArgumentCaptor.forClass(classOf[Map[String, FileMetadataUpdate]])
 
     val mockFileResponse: Seq[FileRow] = generateFileRows(fileUuids, filesInFolderFixedFileUuids, fixedUserId, timestamp)
   }

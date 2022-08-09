@@ -45,7 +45,7 @@ object FileMetadataFields {
     ),
     Field("addElseUpdateBulkFileMetadata", BulkFileMetadataType,
       arguments=BulkFileMetadataInputArg :: Nil,
-      resolve = ctx => ctx.ctx.fileMetadataService.addElseUpdateBulkFileMetadata(ctx.arg(BulkFileMetadataInputArg), ctx.ctx.accessToken.userId),
+      resolve = ctx => ctx.ctx.fileMetadataService.updateBulkFileMetadata(ctx.arg(BulkFileMetadataInputArg), ctx.ctx.accessToken.userId),
       tags=List(ValidateUserOwnsFiles)
     )
   )
