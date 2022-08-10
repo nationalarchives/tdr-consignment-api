@@ -1,0 +1,11 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Invalid FileStatus input: either 'Download' or 'Passed'",
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    }
+  ]
+}
