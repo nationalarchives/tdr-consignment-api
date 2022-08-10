@@ -183,6 +183,7 @@ type CustomMetadataField {
   multiValue: Boolean!
   defaultValue: String
   values: [CustomMetadataValues!]!
+  ordinal: Int!
 }
 
 type CustomMetadataValues {

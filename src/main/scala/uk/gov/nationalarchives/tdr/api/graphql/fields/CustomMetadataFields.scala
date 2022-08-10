@@ -27,7 +27,7 @@ object CustomMetadataFields {
   case class CustomMetadataField(
                             name: String, fullName: Option[String], description: Option[String], propertyType: PropertyType,
                             propertyGroup: Option[String], dataType: DataType, editable: Boolean,
-                            multiValue: Boolean, defaultValue: Option[String], values: List[CustomMetadataValues]
+                            multiValue: Boolean, defaultValue: Option[String], values: List[CustomMetadataValues], ordinal: Int
                           )
 
   implicit val DataTypeType: EnumType[DataType] = deriveEnumType[DataType]()
