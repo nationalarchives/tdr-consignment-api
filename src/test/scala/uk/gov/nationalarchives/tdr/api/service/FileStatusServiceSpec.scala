@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, contains}
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.BeforeAndAfterEach
@@ -72,7 +72,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     }
 
     verify(fileStatusRepositoryMock, times(0)).addFileStatuses(any())
-    thrownException.getMessage should equal("Invalid FileStatus input: either 'Download' or 'Success'")
+    thrownException.getMessage should include("Invalid FileStatus input: either 'Download' or 'Success'")
   }
 
   "addFileStatus" should "not add a file status row if status value is invalid" in {
@@ -84,7 +84,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     }
 
     verify(fileStatusRepositoryMock, times(0)).addFileStatuses(any())
-    thrownException.getMessage should equal("Invalid FileStatus input: either 'Upload' or 'Passed'")
+    thrownException.getMessage should include("Invalid FileStatus input: either 'Upload' or 'Passed'")
   }
 
   "addFileStatus" should "not add a file status row if status type and status value are invalid" in {
@@ -96,7 +96,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     }
 
     verify(fileStatusRepositoryMock, times(0)).addFileStatuses(any())
-    thrownException.getMessage should equal("Invalid FileStatus input: either 'Download' or 'Passed'")
+    thrownException.getMessage should include("Invalid FileStatus input: either 'Download' or 'Passed'")
   }
 
   "allChecksSucceeded" should "return true if the checksum match, antivirus and ffid statuses are 'Success'" in {

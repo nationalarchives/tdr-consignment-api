@@ -18,21 +18,21 @@ class FileStatusService(
 
   def addFileStatus(addFileStatusInput: AddFileStatusInput): Future[FileStatus] = {
 
-    validateStatusTypeAndValue(addFileStatusInput)
     for {
+      _ <- validateStatusTypeAndValue(addFileStatusInput)
       _ <- fileStatusRepository.addFileStatuses(List(FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType,
         addFileStatusInput.statusValue, Timestamp.from(Instant.now()))))
     } yield FileStatus(addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue)
   }
 
-  private def validateStatusTypeAndValue(addFileStatusInput: AddFileStatusInput) = {
+  private def validateStatusTypeAndValue(addFileStatusInput: AddFileStatusInput): Future[Boolean] = {
     val statusType: String = addFileStatusInput.statusType
     val statusValue: String = addFileStatusInput.statusValue
 
     if (Upload == statusType && List(Success, Failed).contains(statusValue)) {
-      true
+      Future(true)
     } else {
-      throw InputDataException(s"Invalid FileStatus input: either '$statusType' or '$statusValue'")
+      Future.failed(InputDataException(s"Invalid FileStatus input: either '$statusType' or '$statusValue'"))
     }
   }
 
