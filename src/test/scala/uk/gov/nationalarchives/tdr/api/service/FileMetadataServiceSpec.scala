@@ -465,21 +465,21 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       )
     )
 
-    val fileRowsForFileInFolder: Seq[FileRow] = filesInFolderFixedFileUuids.map(fileUuid =>
+    val fileRowsForFilesInFolder: Seq[FileRow] = filesInFolderFixedFileUuids.map(fileUuid =>
       FileRow(
-        fileUuid, consignmentId, fixedUserId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileName"), Some(parentId)
+        fileUuid, consignmentId, fixedUserId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileName"), Some(fileUuids.head)
       )
     )
 
-    val folderAndFileRows = folderFileRow ++ fileRowsForFileInFolder
+    val folderAndFileRows = folderFileRow ++ fileRowsForFilesInFolder
 
-    val fileMetadataRowsExceptFirst: Seq[FileRow] = fileUuids.drop(1).map(fileUuid =>
+    val fileRowsExceptFirst: Seq[FileRow] = fileUuids.drop(1).map(fileUuid =>
       FileRow(
         fileUuid, consignmentId, fixedUserId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileName")
       )
     )
 
-    folderAndFileRows ++ fileMetadataRowsExceptFirst
+    folderAndFileRows ++ fileRowsExceptFirst
   }
 
   private def generateFileMetadataRows(fixedUserId: UUID, fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID],
