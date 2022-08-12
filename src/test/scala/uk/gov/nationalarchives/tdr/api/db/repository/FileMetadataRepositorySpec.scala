@@ -5,7 +5,6 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -217,7 +216,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
 
       response.length should equal(3)
-      val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
+      val filesMap: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
       val fileOneMetadata = filesMap.get(fileIdOne)
       val fileTwoMetadata = filesMap.get(fileIdTwo)
       val fileOneProperties = fileOneMetadata.get.groupBy(_.propertyname)
@@ -248,7 +247,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val response = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds)).futureValue
 
       response.length should equal(1)
-      val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
+      val filesMap: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
       val fileTwoMetadata = filesMap(fileIdTwo)
 
       fileTwoMetadata.head.propertyname should equal("FilePropertyOne")
@@ -318,26 +317,17 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
           "FilePropertyThree" -> FileMetadataUpdate(Seq(metadataId4), "FilePropertyThree", newValue, Timestamp.from(Instant.now()), userId2))
       ).futureValue
 
-      val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
-
       updateResponse should be(Seq(2, 1))
-      val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
-      val fileOneMetadata = filesMap.get(fileIdOne)
-      val fileTwoMetadata = filesMap.get(fileIdTwo)
-      val fileThreeMetadata = filesMap.get(fileIdThree)
-      val fileOneProperties = fileOneMetadata.get.groupBy(_.propertyname)
-      fileOneProperties("FilePropertyOne").head.value should equal(newValue)
-      fileOneProperties("FilePropertyOne").head.userid should equal(userId2)
-      fileOneProperties("FilePropertyTwo").head.value should equal("Result of FileMetadata processing")
-      fileOneProperties("FilePropertyTwo").head.userid should equal(userId)
 
-      fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
-      fileTwoMetadata.get.head.value should equal(newValue)
-      fileTwoMetadata.get.head.userid should equal(userId2)
+      val filePropertyUpdates = ExpectedFilePropertyUpdates(
+        consignmentId = consignmentId,
+        changedProperties = Map(fileIdOne -> Seq("FilePropertyOne"), fileIdTwo -> Seq("FilePropertyOne"), fileIdThree -> Seq("FilePropertyThree")),
+        unchangedProperties = Map(fileIdOne -> Seq("FilePropertyTwo")),
+        newValue = newValue,
+        newUserId = userId2
+      )
 
-      fileThreeMetadata.get.head.propertyname should equal("FilePropertyThree")
-      fileThreeMetadata.get.head.value should equal(newValue)
-      fileThreeMetadata.get.head.userid should equal(userId2)
+      checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates)
   }
 
   "updateFileMetadataProperties" should "return 0 if a file property that does not exist on the rows passed to it" in withContainers {
@@ -359,7 +349,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val metadataId1 = UUID.randomUUID()
       val metadataId2 = UUID.randomUUID()
       val metadataId3 = UUID.randomUUID()
-      val metadataId4 = UUID.randomUUID()
       utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
       utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
       utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
@@ -378,4 +367,41 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
         metadataRow => List("FilePropertyOne", "FilePropertyTwo").contains(metadataRow.propertyname)
       )
   }
+
+  private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {
+    val response = fileMetadataRepository.getFileMetadata(filePropertyUpdates.consignmentId).futureValue
+    val metadataRowById: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
+
+    filePropertyUpdates.changedProperties.foreach{
+      case(fileId, propertiesChanged) =>
+        val fileMetadataForFile: Seq[FilemetadataRow] = metadataRowById.getOrElse(fileId, Seq())
+        val fileMetadataForFileByProperty: Map[String, Seq[FilemetadataRow]] = fileMetadataForFile.groupBy(_.propertyname)
+        propertiesChanged.foreach {
+          property => {
+            val metadataRow: FilemetadataRow = fileMetadataForFileByProperty.getOrElse(property, Seq()).head
+            metadataRow.value should equal(filePropertyUpdates.newValue)
+            metadataRow.userid should equal(filePropertyUpdates.newUserId)
+          }
+        }
+    }
+
+    filePropertyUpdates.unchangedProperties.foreach{
+      case(fileId, unchangedProperties) =>
+        val fileMetadataForFile: Seq[FilemetadataRow] = metadataRowById.getOrElse(fileId, Seq())
+        val fileMetadataForFileByProperty: Map[String, Seq[FilemetadataRow]] = fileMetadataForFile.groupBy(_.propertyname)
+        unchangedProperties.foreach {
+          property => {
+            val metadataRow: FilemetadataRow = fileMetadataForFileByProperty.getOrElse(property, Seq()).head
+            metadataRow.value should equal("Result of FileMetadata processing")
+            metadataRow.userid should equal(userId)
+          }
+        }
+    }
+  }
+
+  case class ExpectedFilePropertyUpdates(consignmentId: UUID,
+                                         changedProperties: Map[UUID, Seq[String]],
+                                         unchangedProperties: Map[UUID, Seq[String]],
+                                         newValue: String,
+                                         newUserId: UUID)
 }
