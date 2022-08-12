@@ -132,7 +132,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     val updateFileMetadataProperties: Future[Seq[Int]] = fileMetadataRepository.updateFileMetadataProperties(propertiesRowsToUpdate)
 
     for {
-      _ <- addFileMetadata// this is sequential but what about parallelism?
+      _ <- addFileMetadata
       updatedRows <- updateFileMetadataProperties
     } yield {
       val totalRowsUpdated: Int = updatedRows.sum
