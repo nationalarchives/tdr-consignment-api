@@ -139,7 +139,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       val rowsToBeUpdated: Int = propertiesRowsToUpdate.values.map(_.metadataIds.size).sum
 
       if (totalRowsUpdated != rowsToBeUpdated) {
-        throw new Exception(s"There was a problem: only $totalRowsUpdated out of $rowsToBeUpdated rows were updated!")
+        throw new Exception(s"There was a problem: only $totalRowsUpdated out of $rowsToBeUpdated rows were updated")
       }
     }
   }
