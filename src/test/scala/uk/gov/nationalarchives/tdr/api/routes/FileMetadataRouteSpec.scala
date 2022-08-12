@@ -162,7 +162,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   }
 
   "updateBulkFileMetadata" should "return all fileIds and the properties that were passed in " +
-    "(as no metadata rows, belonging to the ids, had the same values the user is trying to add/update)" in withContainers {
+    "where corresponding existing metadata rows have different values" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
@@ -208,7 +208,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   }
 
   "updateBulkFileMetadata" should "return only fileIds and the properties that were added " +
-    "(excluding ones where metadata rows, belonging to the ids, had the same values the user is trying to add/update)" in withContainers {
+    "where existing corresponding metadata rows have different values" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
