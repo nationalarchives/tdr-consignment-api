@@ -88,7 +88,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
   }
 
   private def generatePropertyActions(fileId: UUID, metadataProperties: Set[UpdateFileMetadataInput],
-                                                existingFileMetadataRows: Map[UUID, Seq[FilemetadataRow]]): Set[PropertyAction] = {
+                                      existingFileMetadataRows: Map[UUID, Seq[FilemetadataRow]]): Set[PropertyAction] = {
 
     val existingPropertiesForFile: Map[String, Seq[FilemetadataRow]] = existingFileMetadataRows.getOrElse(fileId, Seq()).groupBy(_.propertyname)
 
