@@ -228,17 +228,17 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
     )
 
     val mockAddFileMetadataResponse = Seq(
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
-      )
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
+    )
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, mockAddFileMetadataResponse, Seq(existingFileMetadataRows.length))
 
@@ -250,7 +250,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val addFileMetadataArgument = testSetUp.addFileMetadataCaptor.getValue
     val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
-    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap{
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap {
       case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
     }
 
@@ -278,11 +278,11 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
         FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
         FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
       )
 
     // leave out propertyName1 because it would not have been updated
-    val numberOfRowsWithPropertyName =  Seq("propertyName2").map(propertyName => existingFileMetadataRows.count(_.propertyname == propertyName))
+    val numberOfRowsWithPropertyName = Seq("propertyName2").map(propertyName => existingFileMetadataRows.count(_.propertyname == propertyName))
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, Seq(), numberOfRowsWithPropertyName)
 
@@ -298,7 +298,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
 
-    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap{
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap {
       case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
     }
 
@@ -316,16 +316,16 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
 
     val mockAddFileMetadataResponse = Seq(
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
     )
 
     testSetUp.stubRepoResponses(existingFileRows, Seq(), mockAddFileMetadataResponse)
@@ -353,16 +353,16 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
     val existingFileMetadataRows = Seq(
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
     )
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, Seq(), Seq(existingFileMetadataRows.length))
@@ -375,7 +375,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
 
-    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap{
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap {
       case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
     }
 
@@ -395,17 +395,17 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
 
     val existingFileMetadataRows = Seq(
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-      )
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
+    )
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, Seq(), Seq())
 
@@ -525,8 +525,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     def stubRepoResponses(getAllDescendantsResponse: Seq[FileRow] = Seq(), getFileMetadataResponse: Seq[FilemetadataRow] = Seq(),
                           addFileMetadataResponse: Seq[FilemetadataRow] = Seq(), updateFileMetadataPropertiesResponse: Seq[Int] = Seq()): Unit = {
 
-      when(fileRepositoryMock.getAllDescendants(getDescendentsFileIdsCaptor.capture()))
-        .thenReturn(Future(getAllDescendantsResponse))
+      when(fileRepositoryMock.getAllDescendants(getDescendentsFileIdsCaptor.capture())).thenReturn(Future(getAllDescendantsResponse))
       when(metadataRepositoryMock.getFileMetadata(
         consignmentIdCaptor.capture(), getFileMetadataIds.capture(), getFileMetadataPropertyNames.capture())
       ).thenReturn(Future(getFileMetadataResponse))
