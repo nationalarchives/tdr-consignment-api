@@ -24,6 +24,12 @@ input AddFileMetadataWithFileIdInput {
   value: String!
 }
 
+input AddFileStatusInput {
+  fileId: UUID!
+  statusType: String!
+  statusValue: String!
+}
+
 input AddFinalJudgmentTransferConfirmationInput {
   consignmentId: UUID!
   legalCustodyTransferConfirmed: Boolean!
@@ -167,6 +173,7 @@ type CustomMetadataField {
   multiValue: Boolean!
   defaultValue: String
   values: [CustomMetadataValues!]!
+  ordinal: Int!
 }
 
 type CustomMetadataValues {
@@ -290,6 +297,12 @@ type FileMetadataWithFileId {
   value: String!
 }
 
+type FileStatus {
+  fileId: UUID!
+  statusType: String!
+  statusValue: String!
+}
+
 type FinalJudgmentTransferConfirmation {
   consignmentId: UUID!
   legalCustodyTransferConfirmed: Boolean!
@@ -323,6 +336,7 @@ type Mutation {
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
+  addFileStatus(addFileStatusInput: AddFileStatusInput!): FileStatus!
 }
 
 "Information about pagination in a connection."

@@ -67,7 +67,8 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
       fp.editable.getOrElse(false),
       fp.multivalue.getOrElse(false),
       defaultValueOption,
-      metadataValues.toList
+      metadataValues.toList,
+      fp.ordinal.getOrElse(Int.MaxValue)
     )
   }
 
