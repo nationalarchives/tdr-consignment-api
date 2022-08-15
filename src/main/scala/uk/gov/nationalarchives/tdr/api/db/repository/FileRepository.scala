@@ -1,14 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.GetResult
-
-import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.FileCustom
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
@@ -124,6 +124,39 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
              f."ParentId"::text
             FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
         ) SELECT * FROM children;""".stripMargin.as[FileRow]
+    db.run(sql)
+  }
+
+  implicit val getFileResults:GetResult[FileCustom] = GetResult(r => FileCustom(
+    UUID.fromString(r.nextString()),
+    UUID.fromString(r.nextString()),
+    r.nextStringOption().map(UUID.fromString),
+    r.nextString(),
+    r.nextString))
+
+  def getFileHierarchy(fileId: UUID): Future[Seq[FileCustom]] = {
+    val sql =
+      sql"""WITH RECURSIVE subfiles AS (
+          SELECT
+             f."ConsignmentId"::text,
+             f."FileId"::text,
+             f."ParentId"::text,
+             f."FileType",
+             f."FileName"
+          FROM
+             "File" f
+          WHERE
+             f."FileId"::text = ${fileId.toString}
+          UNION SELECT
+              f1."ConsignmentId"::text,
+              f1."FileId"::text,
+              f1."ParentId"::text,
+             f1."FileType",
+              concat_ws('/',f1."FileName",s."FileName")::text
+          FROM
+              "File" f1
+          INNER JOIN subfiles s ON s."ParentId"::text = f1."FileId"::text
+          )	SELECT * FROM subfiles s1;""".stripMargin.as[FileCustom]
     db.run(sql)
   }
 

@@ -9,7 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches, AllDescendantsInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, FileCustom, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
@@ -92,6 +92,10 @@ class FileService(fileRepository: FileRepository,
   def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
     //For now only interested in basic file metadata
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
+  }
+
+  def getFileHierarchy(fileId: UUID): Future[Seq[FileCustom]] = {
+    fileRepository.getFileHierarchy(fileId)
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {

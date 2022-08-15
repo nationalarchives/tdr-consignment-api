@@ -6,6 +6,7 @@ import sangria.marshalling.circe._
 import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.ValidateUserHasAccessToConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ClientFileMetadataFields.FileIdArg
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.UuidType
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.FileType
@@ -25,6 +26,8 @@ object FileFields {
                                      metadataInput: List[ClientSideMetadataInput],
                                      emptyDirectories: List[String] = Nil) extends UserOwnsConsignment
 
+  case class FileCustom(consignmentId: UUID, fileId: UUID, parentId: Option[UUID] = None, fileType: String, fileName: String)
+
   case class AllDescendantsInput(consignmentId: UUID, parentIds: List[UUID]) extends UserOwnsConsignment
 
   implicit val MetadataInputType: InputObjectType[ClientSideMetadataInput] = deriveInputObjectType[ClientSideMetadataInput]()
@@ -33,6 +36,9 @@ object FileFields {
   implicit val FileSequenceType: ObjectType[Unit, FileMatches]  = deriveObjectType[Unit, FileMatches]()
   private val FileAndMetadataInputArg = Argument("addFilesAndMetadataInput", AddFileAndMetadataInputType)
   private val AllDescendantsInputArg = Argument("allDescendantsInput", AllDescendantsInputType)
+
+  implicit val FileCustomType: ObjectType[Unit, FileCustom] =
+    deriveObjectType[Unit, FileCustom]()
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
@@ -50,5 +56,12 @@ object FileFields {
       arguments = AllDescendantsInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileService.getAllDescendants(ctx.arg(AllDescendantsInputArg)),
       tags = List(ValidateUserHasAccessToConsignment(AllDescendantsInputArg))
-    ))
+    ),
+    Field("fileHierarchy",
+      ListType(FileCustomType),
+      arguments = FileIdArg :: Nil,
+      resolve = ctx => ctx.ctx.fileService.getFileHierarchy(ctx.arg(FileIdArg)),
+      tags = Nil
+    )
+  )
 }
