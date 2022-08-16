@@ -193,10 +193,10 @@ type CustomMetadataValues {
 
 enum DataType {
   DateTime
-  Text
   Decimal
-  Integer
   Boolean
+  Text
+  Integer
 }
 
 type FFIDMetadata {
@@ -262,6 +262,14 @@ type FileConnection {
   edges: [FileEdge]
   totalPages: Int
   totalItems: Int
+}
+
+type FileCustom {
+  consignmentId: UUID!
+  fileId: UUID!
+  parentId: UUID
+  fileType: String!
+  fileName: String!
 }
 
 "An edge in a connection."
@@ -384,6 +392,7 @@ type Query {
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
+  fileHierarchy(fileId: UUID!): [FileCustom!]!
 }
 
 type Series {
