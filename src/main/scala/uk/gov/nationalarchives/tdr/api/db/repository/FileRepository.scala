@@ -152,7 +152,8 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
               f1."FileId"::text,
               f1."ParentId"::text,
              f1."FileType",
-              concat_ws('/',f1."FileName",s."FileName")::text
+             f1."FileName"
+--               concat_ws('/',f1."FileName",s."FileName")::text
           FROM
               "File" f1
           INNER JOIN subfiles s ON s."ParentId"::text = f1."FileId"::text
