@@ -7,11 +7,6 @@ input AddAntivirusMetadataInput {
   datetime: Long!
 }
 
-input AddBulkFileMetadataInput {
-  fileIds: [UUID!]!
-  metadataProperties: [AddFileMetadataInput!]!
-}
-
 input AddConsignmentInput {
   seriesid: UUID
   consignmentType: String!
@@ -21,11 +16,6 @@ input AddFileAndMetadataInput {
   consignmentId: UUID!
   metadataInput: [ClientSideMetadataInput!]!
   emptyDirectories: [String!] = []
-}
-
-input AddFileMetadataInput {
-  filePropertyName: String!
-  value: String!
 }
 
 input AddFileMetadataWithFileIdInput {
@@ -342,7 +332,7 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
-  addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput!): BulkFileMetadata!
+  updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
@@ -420,6 +410,12 @@ type TransferringBody {
 
 scalar UUID
 
+input UpdateBulkFileMetadataInput {
+  consignmentId: UUID!
+  fileIds: [UUID!]!
+  metadataProperties: [UpdateFileMetadataInput!]!
+}
+
 input UpdateConsignmentSeriesIdInput {
   consignmentId: UUID!
   seriesId: UUID!
@@ -430,6 +426,11 @@ input UpdateExportDataInput {
   exportLocation: String!
   exportDatetime: ZonedDateTime
   exportVersion: String!
+}
+
+input UpdateFileMetadataInput {
+  filePropertyName: String!
+  value: String!
 }
 
 scalar ZonedDateTime
