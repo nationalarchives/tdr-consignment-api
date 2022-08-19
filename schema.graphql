@@ -289,6 +289,10 @@ type FileMetadataValues {
   heldBy: String
   language: String
   foiExemptionCode: String
+  closurePeriod: Int
+  closureStartDate: LocalDateTime
+  foiExemptionAsserted: LocalDateTime
+  titlePublic: Boolean
 }
 
 type FileMetadataWithFileId {

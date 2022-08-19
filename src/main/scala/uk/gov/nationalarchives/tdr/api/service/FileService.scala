@@ -192,7 +192,7 @@ object FileService {
                 ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
       fileRows.map(fr => {
         val id = fr.fileid
-        val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None))
+        val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None))
         File(
           id, fr.filetype, fr.filename, fr.parentid,
           metadata,
