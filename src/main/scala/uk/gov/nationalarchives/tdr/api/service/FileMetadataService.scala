@@ -194,7 +194,7 @@ object FileMetadataService {
       propertyNameMap.get(ClosurePeriod).map(_.toInt),
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
-      propertyNameMap.get(TitlePublic).map(_.toBoolean),
+      propertyNameMap.get(TitlePublic).map(_.toBoolean)
     )
   }
 
