@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.2",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.16",
-  "org.postgresql" % "postgresql" % "42.4.1",
+  "org.postgresql" % "postgresql" % "42.4.2",
   "com.typesafe.slick" %% "slick" % "3.3.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "ch.megard" %% "akka-http-cors" % "1.1.3",
