@@ -159,6 +159,10 @@ object FileMetadataService {
   val ClientSideOriginalFilepath = "ClientSideOriginalFilepath"
   val ClientSideFileLastModifiedDate = "ClientSideFileLastModifiedDate"
   val ClientSideFileSize = "ClientSideFileSize"
+  val ClosurePeriod = "ClosurePeriod"
+  val ClosureStartDate = "ClosureStartDate"
+  val FoiExemptionAsserted = "FoiExemptionAsserted"
+  val TitlePublic = "TitlePublic"
   /**
    * Save default values for these properties because TDR currently only supports records which are Open, in English, etc.
    * Users agree to these conditions at a consignment level, so it's OK to save these as defaults for every file.
@@ -186,7 +190,11 @@ object FileMetadataService {
       propertyNameMap.get(LegalStatus.name),
       propertyNameMap.get(HeldBy.name),
       propertyNameMap.get(Language.name),
-      propertyNameMap.get(FoiExemptionCode.name)
+      propertyNameMap.get(FoiExemptionCode.name),
+      propertyNameMap.get(ClosurePeriod).map(_.toInt),
+      propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+      propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
+      propertyNameMap.get(TitlePublic).map(_.toBoolean)
     )
   }
 
@@ -209,7 +217,11 @@ object FileMetadataService {
                                 legalStatus: Option[String],
                                 heldBy: Option[String],
                                 language: Option[String],
-                                foiExemptionCode: Option[String])
+                                foiExemptionCode: Option[String],
+                                closurePeriod: Option[Int],
+                                closureStartDate: Option[LocalDateTime],
+                                foiExemptionAsserted: Option[LocalDateTime],
+                                titlePublic: Option[Boolean])
 
   case class PropertyAction(updateActionType: String,
                             propertyName: String,

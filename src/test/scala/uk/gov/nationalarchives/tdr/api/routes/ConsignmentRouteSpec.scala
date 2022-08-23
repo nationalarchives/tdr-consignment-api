@@ -195,7 +195,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val identificationBasisMatch = "TEST DATA identification"
       val puidMatch = "TEST DATA puid"
 
-      utils.addFileProperty(SHA256ServerSideChecksum)
+      List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitlePublic, ClosureStartDate).foreach(utils.addFileProperty)
+
       utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
       utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
       utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
@@ -219,6 +220,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId, propertyName, value)
         utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, propertyName, value)
       })
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureStartDate, "2021-04-11 12:30:30.592853")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionAsserted, "2021-03-12 12:30:30.592853")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, TitlePublic, "true")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosurePeriod, "1")
 
       val fileOneFfidMetadataId = utils.addFFIDMetadata(fileOneId)
       utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
