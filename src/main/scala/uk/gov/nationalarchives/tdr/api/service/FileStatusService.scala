@@ -63,6 +63,7 @@ object FileStatusService {
   val Antivirus = "Antivirus"
   val FFID = "FFID"
   val Upload = "Upload"
+  val ClientChecksum = "ClientChecksum"
 
   //Values
   val Success = "Success"
