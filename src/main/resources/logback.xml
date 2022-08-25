@@ -8,6 +8,9 @@
         </encoder>
     </appender>
 
+    <!-- Required to show sql statements. Remove once Index is decided   -->
+    <logger name="slick.jdbc.JdbcBackend.statement"  level="DEBUG" />
+
     <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
