@@ -22,8 +22,8 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(insertFileMetadataQuery ++= rows)
   }
 
-  def addChecksumMetadata(fileMetadataRow: FilemetadataRow, fileStatusRow: FilestatusRow): Future[FilemetadataRow] = {
-    val allUpdates = DBIO.seq(insertFileMetadataQuery += fileMetadataRow, insertFileStatusQuery += fileStatusRow).transactionally
+  def addChecksumMetadata(fileMetadataRow: FilemetadataRow, fileStatusRow: Seq[FilestatusRow]): Future[FilemetadataRow] = {
+    val allUpdates = DBIO.seq(insertFileMetadataQuery += fileMetadataRow, insertFileStatusQuery ++= fileStatusRow).transactionally
     db.run(allUpdates).map(_ => fileMetadataRow)
   }
 

@@ -43,14 +43,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       case SHA256ServerSideChecksum => {
         for {
           cfm <- fileMetadataRepository.getFileMetadataByProperty(fileMetadataRow.fileid, SHA256ClientSideChecksum)
-          fileStatus: String = cfm.headOption match {
-            case Some(cfm) if cfm.value == fileMetadataRow.value => Success
-            case Some(_) => Mismatch
-            case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${fileMetadataRow.fileid}")
-          }
-          fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, fileMetadataRow.fileid, ChecksumMatch, fileStatus, fileMetadataRow.datetime)
-          _ <- Future(loggingUtils.logFileFormatStatus("checksumMatch", fileMetadataRow.fileid, fileStatus))
-          row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
+          fileStatusRows = Seq(getFileStatusRowForChecksumMatch(cfm.headOption, fileMetadataRow), getFileStatusRowForServerChecksum(fileMetadataRow))
+          row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRows)
         } yield FileMetadataWithFileId(fileMetadataRow.propertyname, row.fileid, row.value)
       } recover {
         case e: Throwable =>
@@ -151,6 +145,25 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
           case (fileId, fileMetadata) => fileId -> getFileMetadataValues(fileMetadata)
         }
     }
+
+  private def getFileStatusRowForChecksumMatch(checksumFileMetadata: Option[FilemetadataRow], fileMetadataInput: FilemetadataRow): FilestatusRow = {
+    val fileStatus = checksumFileMetadata match {
+      case Some(cfm) if cfm.value == fileMetadataInput.value => Success
+      case Some(_) => Mismatch
+      case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${fileMetadataInput.fileid}")
+    }
+    loggingUtils.logFileFormatStatus("checksumMatch", fileMetadataInput.fileid, fileStatus)
+    FilestatusRow(uuidSource.uuid, fileMetadataInput.fileid, ChecksumMatch, fileStatus, fileMetadataInput.datetime)
+  }
+
+  private def getFileStatusRowForServerChecksum(fileMetadataInput: FilemetadataRow): FilestatusRow = {
+    val fileStatus = fileMetadataInput.value match {
+      case "" => Failed
+      case _ => Success
+    }
+    loggingUtils.logFileFormatStatus("serverChecksum", fileMetadataInput.fileid, fileStatus)
+    FilestatusRow(uuidSource.uuid, fileMetadataInput.fileid, ServerChecksum, fileStatus, fileMetadataInput.datetime)
+  }
 }
 
 object FileMetadataService {
