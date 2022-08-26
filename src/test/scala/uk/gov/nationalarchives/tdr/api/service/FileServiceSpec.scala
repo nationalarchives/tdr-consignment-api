@@ -406,7 +406,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         case _ => count should equal(2)
       }
     })
-    verify(fileStatusRepositoryMock, times(2)).addFileStatuses(any[List[FilestatusRow]]())
     val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
     rows.size should equal(2)
     rows.zip(response).foreach(row => {
@@ -479,7 +478,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         case _ => count should equal(2)
       }
     })
-    verify(fileStatusRepositoryMock, times(2)).addFileStatuses(any[List[FilestatusRow]]())
     val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
     rows.size should equal(2)
     rows.head.filestatusid != null shouldBe true
