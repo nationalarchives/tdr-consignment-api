@@ -175,7 +175,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
       val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty")
       val statusInput = FilestatusRow(UUID.randomUUID(), fileId, "Status Type", "Value", Timestamp.from(Instant.now()))
-      fileMetadataRepository.addChecksumMetadata(input, statusInput).futureValue
+      fileMetadataRepository.addChecksumMetadata(input, Seq(statusInput)).futureValue
       getFileStatusValue(fileId, utils) should equal("Value")
   }
 
