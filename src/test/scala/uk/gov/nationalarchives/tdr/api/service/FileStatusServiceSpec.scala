@@ -243,6 +243,14 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     response should equal(false)
   }
 
+  "allChecksSucceeded" should "return false if the FFID status is NonJudgmentFormat" in {
+    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
+    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
+    mockResponse(FFID, Seq(fileStatusRow(FFID, NonJudgmentFormat)))
+    val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock, fixedUuidSource).allChecksSucceeded(consignmentId).futureValue
+    response should equal(false)
+  }
+
   "getFileStatus" should "return a Map Consisting of a FileId key and status value" in {
     mockResponse(FFID, Seq(FilestatusRow(UUID.randomUUID(), consignmentId, FFID, Success, Timestamp.from(Instant.now))))
     val response = new FileStatusService(fileStatusRepositoryMock, disallowedPuidsRepositoryMock, fixedUuidSource).getFileStatus(consignmentId).futureValue

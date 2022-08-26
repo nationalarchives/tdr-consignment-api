@@ -4,7 +4,7 @@ import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, FileStatus}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Failed, Success, Upload}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Failed, NonJudgmentFormat, Success, Upload}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -52,7 +52,7 @@ class FileStatusService(
       failedFFIDStatuses <- disallowedPuidsRepository.activeReasons()
     } yield {
       checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
-        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter(failedFFIDStatuses.contains(_))).isEmpty
+        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter((failedFFIDStatuses :+ NonJudgmentFormat).contains(_))).isEmpty
     }
   }
 }
