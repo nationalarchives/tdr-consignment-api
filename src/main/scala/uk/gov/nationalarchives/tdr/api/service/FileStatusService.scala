@@ -51,8 +51,9 @@ class FileStatusService(
       ffidStatuses = ffidStatusRows.map(_.value)
       failedFFIDStatuses <- disallowedPuidsRepository.activeReasons()
     } yield {
+      val failedFileStatuses = ffidStatuses.filter((failedFFIDStatuses :+ NonJudgmentFormat).contains(_))
       checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
-        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter((failedFFIDStatuses :+ NonJudgmentFormat).contains(_))).isEmpty
+        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ failedFileStatuses).isEmpty
     }
   }
 }
