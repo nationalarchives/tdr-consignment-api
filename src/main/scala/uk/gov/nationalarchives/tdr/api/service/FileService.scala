@@ -9,11 +9,11 @@ import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches, AllDescendantsInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, ZeroByteFile}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecksum, FFID, Failed, Success, ZeroByteFile}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
@@ -64,12 +64,8 @@ class FileService(fileRepository: FileRepository,
 
           //Add the 0 byte status here as know the file size at this point
           //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
-          if (input.fileSize == 0) {
-            val statusRow = FilestatusRow(
-              uuidSource.uuid, fileId, FFID, ZeroByteFile, Timestamp.from(timeSource.now))
-            fileStatusRepository.addFileStatuses(List(statusRow))
-          }
-
+          addFileStatusIfFileSizeIsZero(input, fileId)
+          addFileStatusForClientChecksum(input, fileId)
           val fileMetadataRows = List(
             row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
             row(fileId, input.fileSize.toString, ClientSideFileSize),
@@ -87,6 +83,21 @@ class FileService(fileRepository: FileRepository,
       case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
       case _ => Nil
     }
+  }
+
+  def addFileStatusIfFileSizeIsZero(input: ClientSideMetadataInput, fileId: UUID): Unit =
+    if (input.fileSize == 0) {
+      val statusRow = FilestatusRow(uuidSource.uuid, fileId, FFID, ZeroByteFile, Timestamp.from(timeSource.now))
+      fileStatusRepository.addFileStatuses(List(statusRow))
+    }
+
+  def addFileStatusForClientChecksum(input: ClientSideMetadataInput, fileId: UUID): Unit = {
+    val clientChecksum = input.checksum match {
+      case "" => Failed
+      case _ => Success
+    }
+    val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientChecksum, clientChecksum, Timestamp.from(timeSource.now))
+    fileStatusRepository.addFileStatuses(List(statusRow))
   }
 
   def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
@@ -134,7 +145,7 @@ class FileService(fileRepository: FileRepository,
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
-      val totalPages = Math.ceil(totalItems.toDouble/limit.toDouble).toInt
+      val totalPages = Math.ceil(totalItems.toDouble / limit.toDouble).toInt
       TDRConnection(
         PageInfo(
           startCursor = edges.headOption.map(_.cursor),
