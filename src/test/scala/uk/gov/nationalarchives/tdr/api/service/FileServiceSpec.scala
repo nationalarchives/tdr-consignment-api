@@ -11,11 +11,11 @@ import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecksum, FFID, Failed, Success, ZeroByteFile}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecksum, ClientFilePath, FFID, Failed, Success, ZeroByteFile}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -376,7 +376,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
-    verify(fileStatusRepositoryMock, times(2)).addFileStatuses(any[List[FilestatusRow]]())
+    verify(fileStatusRepositoryMock, times(4)).addFileStatuses(any[List[FilestatusRow]]())
 
     val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
@@ -407,16 +407,26 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       }
     })
     val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
-    rows.size should equal(2)
-    rows.zip(response).foreach(row => {
-      row._1.filestatusid != null shouldBe true
-      row._1.fileid should equal(row._2.fileId)
-      row._1.statustype should equal(ClientChecksum)
-      row._1.value should equal(Success)
-      row._1.createddatetime != null shouldBe true
-    })
+    rows.size should equal(4)
+    checkFileStatusRows(rows.filter(_.statustype == ClientChecksum), response, ClientChecksum, Success, Success)
+    checkFileStatusRows(rows.filter(_.statustype == ClientFilePath), response, ClientFilePath, Success, Success)
 
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
+  }
+
+  def checkFileStatusRows(rows: List[FilestatusRow], response: List[FileMatches], statusType: String, firstStatus: String, secondStatus: String): Unit = {
+
+    rows.head.filestatusid != null shouldBe true
+    rows.head.fileid should equal(response.head.fileId)
+    rows.head.statustype should equal(statusType)
+    rows.head.value should equal(firstStatus)
+    rows.head.createddatetime != null shouldBe true
+
+    rows.last.filestatusid != null shouldBe true
+    rows.last.fileid should equal(response.last.fileId)
+    rows.last.statustype should equal(statusType)
+    rows.last.value should equal(secondStatus)
+    rows.last.createddatetime != null shouldBe true
   }
 
   "addFile" should "add all files, directories, client and static metadata when total number of files and folders are less than batch size" +
@@ -436,7 +446,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileStatusRowCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
 
     val metadataInputOne = ClientSideMetadataInput("/a/OriginalPath1", "Checksum1", 1L, 1L, 1)
-    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "", 1L, 1L, 2)
+    val metadataInputTwo = ClientSideMetadataInput("", "", 1L, 1L, 2)
 
     when(fileStatusRepositoryMock.addFileStatuses(fileStatusRowCaptor.capture())).thenReturn(Future(List()))
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
@@ -448,7 +458,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
 
     verify(fileRepositoryMock, times(1)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
-    verify(fileStatusRepositoryMock, times(2)).addFileStatuses(any[List[FilestatusRow]]())
+    verify(fileStatusRepositoryMock, times(4)).addFileStatuses(any[List[FilestatusRow]]())
 
     val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
@@ -479,18 +489,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       }
     })
     val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
-    rows.size should equal(2)
-    rows.head.filestatusid != null shouldBe true
-    rows.head.fileid should equal(response.head.fileId)
-    rows.head.statustype should equal(ClientChecksum)
-    rows.head.value should equal(Success)
-    rows.head.createddatetime != null shouldBe true
-
-    rows.last.filestatusid != null shouldBe true
-    rows.last.fileid should equal(response.last.fileId)
-    rows.last.statustype should equal(ClientChecksum)
-    rows.last.value should equal(Failed)
-    rows.last.createddatetime != null shouldBe true
+    rows.size should equal(4)
+    checkFileStatusRows(rows.filter(_.statustype == ClientChecksum), response, ClientChecksum, Success, Failed)
+    checkFileStatusRows(rows.filter(_.statustype == ClientFilePath), response, ClientFilePath, Success, Failed)
 
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
@@ -522,9 +523,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
-    verify(fileStatusRepositoryMock, times(3)).addFileStatuses(any[List[FilestatusRow]]())
+    verify(fileStatusRepositoryMock, times(5)).addFileStatuses(any[List[FilestatusRow]]())
     val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
-    rows.size should equal(3)
+    rows.size should equal(5)
     val row = rows.find(_.statustype == FFID).get
     row.filestatusid != null shouldBe true
     row.fileid should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
@@ -532,13 +533,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     row.value should equal(ZeroByteFile)
     row.createddatetime != null shouldBe true
 
-    rows.filter(_.statustype != FFID).zip(response).foreach(row => {
-      row._1.filestatusid != null shouldBe true
-      row._1.fileid should equal(row._2.fileId)
-      row._1.statustype should equal(ClientChecksum)
-      row._1.value should equal(Success)
-      row._1.createddatetime != null shouldBe true
-    })
+    checkFileStatusRows(rows.filter(_.statustype == ClientChecksum), response, ClientChecksum, Success, Success)
+    checkFileStatusRows(rows.filter(_.statustype == ClientFilePath), response, ClientFilePath, Success, Success)
   }
 
   "getPaginatedFiles" should "return all the file edges after the cursor to the limit" in {
