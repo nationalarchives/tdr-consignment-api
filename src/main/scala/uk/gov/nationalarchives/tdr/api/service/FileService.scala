@@ -13,7 +13,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMeta
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecksum, FFID, Failed, Success, ZeroByteFile}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecksum, ClientFilePath, FFID, Failed, Success, ZeroByteFile}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
@@ -66,6 +66,7 @@ class FileService(fileRepository: FileRepository,
           //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
           addFileStatusIfFileSizeIsZero(input, fileId)
           addFileStatusForClientChecksum(input, fileId)
+          addFileStatusForClientFilePath(path, fileId)
           val fileMetadataRows = List(
             row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
             row(fileId, input.fileSize.toString, ClientSideFileSize),
@@ -97,6 +98,15 @@ class FileService(fileRepository: FileRepository,
       case _ => Success
     }
     val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientChecksum, clientChecksum, Timestamp.from(timeSource.now))
+    fileStatusRepository.addFileStatuses(List(statusRow))
+  }
+
+  def addFileStatusForClientFilePath(path: String, fileId: UUID): Unit = {
+    val clientFilePathStatus = path match {
+      case "" => Failed
+      case _ => Success
+    }
+    val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientFilePath, clientFilePathStatus, Timestamp.from(timeSource.now))
     fileStatusRepository.addFileStatuses(List(statusRow))
   }
 
