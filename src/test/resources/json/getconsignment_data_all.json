@@ -22,6 +22,7 @@
           "fileType": "File",
           "fileName": "fileTwoName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "originalFileId": null,
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",

@@ -3,25 +3,27 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
+
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
-class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
+class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  val folderOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
-  val fileOneId = UUID.fromString("20e0676a-f0a1-4051-9540-e7df1344ac11")
-  val fileTwoId = UUID.fromString("b5111f11-4dca-4f92-8239-505da567b9d0")
+  val folderOneId: UUID = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+  val fileOneId: UUID = UUID.fromString("20e0676a-f0a1-4051-9540-e7df1344ac11")
+  val fileTwoId: UUID = UUID.fromString("b5111f11-4dca-4f92-8239-505da567b9d0")
 
   "addFiles" should "create files and update ConsignmentStatus table for a consignment" in withContainers {
     case container: PostgreSQLContainer =>
@@ -418,7 +420,6 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     case container: PostgreSQLContainer =>
       val nonExistentFileId = "820e2eed-a979-4982-8627-26c8a0dcdb2d"
       val db = container.database
-      val utils = TestUtils(db)
       val fileRepository = new FileRepository(db)
       val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
 
@@ -459,6 +460,179 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
       val parentFolder = fileRepository.getConsignmentParentFolder(consignmentId).futureValue
       parentFolder.size shouldBe 0
+  }
+
+  val redactedFilesTable: TableFor2[String, String] = Table(
+    ("redactedFileName", "originalFileName"),
+    ("Redacted_R.txt", "Redacted.txt"),
+    ("Redacted_R200.txt", "Redacted.txt"),
+    ("Anothe_RRedacted_R1.txt", "Anothe_RRedacted.txt"),
+    ("Anothe_R13_R14edacted_R15.txt", "Anothe_R13_R14edacted.txt"),
+    ("Anothe_Redacted_R.txt", "Anothe_Redacted.txt")
+  )
+
+  forAll(redactedFilesTable) { (redactedFileName, originalFileName) =>
+    "getRedactedFilePairs" should s"return a file with $originalFileName for redacted file $redactedFileName" in withContainers {
+      case container: PostgreSQLContainer =>
+        val db = container.database
+        val utils = TestUtils(db)
+        val consignmentId = UUID.randomUUID()
+        val parentId = UUID.randomUUID()
+        val originalFileId = UUID.randomUUID()
+        val redactedFileId = UUID.randomUUID()
+        utils.createConsignment(consignmentId)
+        utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+        utils.createFile(originalFileId, consignmentId, fileName = originalFileName, parentId = Option(parentId))
+        utils.createFile(redactedFileId, consignmentId, fileName = redactedFileName, parentId = Option(parentId))
+        val fileRepository = new FileRepository(db)
+
+        val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+        response.size should equal(1)
+        val redactedFile = response.head
+        redactedFile.redactedFileId should equal(redactedFileId)
+        redactedFile.redactedFileName should equal(redactedFileName)
+        redactedFile.fileId.get should equal(originalFileId)
+        redactedFile.fileName.get should equal(originalFileName)
+    }
+
+    "getRedactedFilePairs" should s"return empty for a file with $originalFileName for redacted $redactedFileName in a different folder" in withContainers {
+      case container: PostgreSQLContainer =>
+        val db = container.database
+        val utils = TestUtils(db)
+        val consignmentId = UUID.randomUUID()
+        val parentIdOne = UUID.randomUUID()
+        val parentIdTwo = UUID.randomUUID()
+        val redactedFileId = UUID.randomUUID()
+
+        utils.createConsignment(consignmentId)
+        utils.createFile(parentIdOne, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+        utils.createFile(parentIdTwo, consignmentId, NodeType.directoryTypeIdentifier, "folderName2")
+        utils.createFile(UUID.randomUUID(), consignmentId, fileName = originalFileName, parentId = Option(parentIdOne))
+        utils.createFile(redactedFileId, consignmentId, fileName = redactedFileName, parentId = Option(parentIdTwo))
+
+        val fileRepository = new FileRepository(db)
+        val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+
+        response.size should equal(1)
+        val redactedFileResponse = response.head
+        redactedFileResponse.redactedFileId should equal(redactedFileId)
+        redactedFileResponse.redactedFileName should equal(redactedFileName)
+        redactedFileResponse.fileId.isDefined should be(false)
+        redactedFileResponse.fileName.isDefined should be(false)
+    }
+  }
+
+  "getRedactedFilePairs" should "return an empty list if the file ending is incorrect" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val consignmentId = UUID.randomUUID()
+      val parentId = UUID.randomUUID()
+      utils.createConsignment(consignmentId)
+      utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ANonRedactedFile.txt", parentId = Option(parentId))
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ANoneRedactedFile.txt_Ra", parentId = Option(parentId))
+      val fileRepository = new FileRepository(db)
+
+      val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+      response.size should equal(0)
+  }
+
+  "getRedactedFilePairs" should "return an empty list if there is no file extension" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val consignmentId = UUID.randomUUID()
+      val parentId = UUID.randomUUID()
+      utils.createConsignment(consignmentId)
+      utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ANonRedactedFile", parentId = Option(parentId))
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ANoneRedactedFile_R", parentId = Option(parentId))
+      val fileRepository = new FileRepository(db)
+
+      val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+      response.size should equal(0)
+  }
+
+  val invalidRedactedFilesTable: TableFor2[String, String] = Table(
+    ("redactedFileName", "originalFileName"),
+    ("Redacted_R.txt", "Redacted"),
+    ("redacted_R200.txt", "Redacted.txt"),
+    ("Anoth_RerRedacted_R1.txt", "Anoth_erRedacted.txt")
+  )
+
+  forAll(invalidRedactedFilesTable) { (redactedFileName, originalFileName) =>
+    "getRedactedFilePairs" should s"return empty values for redacted file $redactedFileName and original file $originalFileName" in withContainers {
+      case container: PostgreSQLContainer =>
+        val db = container.database
+        val utils = TestUtils(db)
+        val consignmentId = UUID.randomUUID()
+        val parentId = UUID.randomUUID()
+        val redactedFileId = UUID.randomUUID()
+        utils.createConsignment(consignmentId)
+        utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+        utils.createFile(UUID.randomUUID(), consignmentId, fileName = originalFileName, parentId = Option(parentId))
+        utils.createFile(redactedFileId, consignmentId, fileName = redactedFileName, parentId = Option(parentId))
+        val fileRepository = new FileRepository(db)
+
+        val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+        response.size should equal(1)
+        val redactedFile = response.head
+        redactedFile.redactedFileId should equal(redactedFileId)
+        redactedFile.redactedFileName should equal(redactedFileName)
+        redactedFile.fileId.isDefined should be(false)
+        redactedFile.fileName.isDefined should be(false)
+    }
+  }
+
+  "getRedactedFilePairs" should "return the same original file ID for two valid redacted files" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val consignmentId = UUID.randomUUID()
+      val parentId = UUID.randomUUID()
+      val redactedFileIdOne = UUID.randomUUID()
+      val redactedFileIdTwo = UUID.randomUUID()
+      val fileId = UUID.randomUUID()
+      utils.createConsignment(consignmentId)
+      utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(fileId, consignmentId, fileName = "OriginalFile.txt", parentId = Option(parentId))
+      utils.createFile(redactedFileIdOne, consignmentId, fileName = "OriginalFile_R1.txt", parentId = Option(parentId))
+      utils.createFile(redactedFileIdTwo, consignmentId, fileName = "OriginalFile_R2.txt", parentId = Option(parentId))
+      val fileRepository = new FileRepository(db)
+
+      val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+
+      response.size should equal(2)
+      response.count(_.redactedFileId == redactedFileIdOne) should equal(1)
+      response.count(_.redactedFileId == redactedFileIdTwo) should equal(1)
+      response.head.fileId.get should equal(fileId)
+      response.last.fileId.get should equal(fileId)
+
+  }
+
+  "getRedactedFilePairs" should "return only the failed row if onlyNullValues is true" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val consignmentId = UUID.randomUUID()
+      val parentId = UUID.randomUUID()
+      val redactedFileIdTwo = UUID.randomUUID()
+      val fileId = UUID.randomUUID()
+      val redactedFileIdOne = UUID.randomUUID()
+      utils.createConsignment(consignmentId)
+      utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(fileId, consignmentId, fileName = "OriginalFile.txt", parentId = Option(parentId))
+      utils.createFile(redactedFileIdOne, consignmentId, fileName = "OriginalFile2_R1.txt", parentId = Option(parentId))
+      utils.createFile(redactedFileIdTwo, consignmentId, fileName = "OriginalFile_R1.txt", parentId = Option(parentId))
+      val fileRepository = new FileRepository(db)
+
+      val response = fileRepository.getRedactedFilePairs(consignmentId, onlyNullValues = true).futureValue
+
+      response.size should equal(1)
+      response.head.redactedFileId should equal(redactedFileIdOne)
+      response.head.fileId.isDefined should equal(false)
+
   }
 
   private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): UUID = {

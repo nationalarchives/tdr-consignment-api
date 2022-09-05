@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata, RedactedFiles}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -131,7 +131,8 @@ class FileService(fileRepository: FileRepository,
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
       ffidStatus <- fileStatusService.getFileStatus(consignmentId)
-    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
+      redactedFilePairs <- fileRepository.getRedactedFilePairs(consignmentId)
+    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs).toList
   }
 
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]): Future[TDRConnection[File]] = {
@@ -191,13 +192,21 @@ object FileService {
       getFileMetadataValues(rows)
     }
 
-    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
+    def toFiles(avMetadata: List[AntivirusMetadata],
+                ffidMetadata: List[FFIDMetadata],
+                ffidStatus: Map[UUID, String],
+                redactedFiles: Seq[RedactedFiles]): Seq[File] = {
       response.groupBy(_._1).map {
         case (fr, fmr) =>
           val fileId = fr.fileid
           File(
             fileId, fr.filetype, fr.filename, fr.parentid,
-            convertMetadataRows(fmr.flatMap(_._2)), ffidStatus.get(fileId), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
+            convertMetadataRows(fmr.flatMap(_._2)),
+            ffidStatus.get(fileId),
+            ffidMetadata.find(_.fileId == fileId),
+            avMetadata.find(_.fileId == fileId),
+            redactedFiles.find(_.redactedFileId == fileId).flatMap(_.fileId)
+          )
       }.toSeq
     }
   }
