@@ -108,7 +108,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                   metadata: FileMetadataValues = FileMetadataValues(None, None, None, None, None, None, None, None, None),
                   fileStatus: Option[String],
                   ffidMetadata: Option[FFIDMetadataValues],
-                  originalFile: Option[UUID])
+                  originalFilePath: Option[String])
 
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
 
@@ -547,22 +547,24 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       utils.addFileProperty(SHA256ServerSideChecksum)
       staticMetadataProperties.map(_.name).foreach(utils.addFileProperty)
       clientSideProperties.foreach(utils.addFileProperty)
+      val originalFilePath = "/an/original/file/path"
       val topDirectory = UUID.fromString("ce0a51a5-a224-474f-b3a4-df75effd5b34")
       val originalFileId = UUID.fromString("6420152a-aaf2-4401-a309-f67ae35f5702")
       val redactedFileId = UUID.randomUUID()
       createDirectoryAndMetadata(consignmentId, topDirectory, utils, "directory")
       utils.createFile(originalFileId, consignmentId, fileName = "original.txt", parentId = topDirectory.some)
       utils.createFile(redactedFileId, consignmentId, fileName = "original_R.txt", parentId = topDirectory.some)
+      utils.addFileMetadata(UUID.randomUUID.toString, originalFileId.toString, ClientSideOriginalFilepath, originalFilePath)
 
       val response: GraphqlQueryData = runTestQuery("query_redacted_original", validUserToken())
       val originalFile = for {
         data <- response.data
         consignment <- data.getConsignment
         files <- consignment.files
-        file <- files.find(_.originalFile.exists(_ == originalFileId))
-        originalFile <- file.originalFile
+        file <- files.find(_.fileId == redactedFileId)
+        originalFile <- file.originalFilePath
       } yield originalFile
-      originalFile.contains(originalFileId) should be(true)
+      originalFile.contains(originalFilePath) should be(true)
   }
 
   "updateExportData" should "update the export data correctly" in withContainers {
