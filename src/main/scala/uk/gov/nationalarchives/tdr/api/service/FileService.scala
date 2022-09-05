@@ -199,13 +199,17 @@ object FileService {
       response.groupBy(_._1).map {
         case (fr, fmr) =>
           val fileId = fr.fileid
+          val metadataValues = convertMetadataRows(fmr.flatMap(_._2))
+          val redactedFileEntry: Option[RedactedFiles] = redactedFiles.find(_.redactedFileId == fileId)
+          val originalFileResponseRow = redactedFileEntry.flatMap(rf => response.find(responseRow => Option(responseRow._1.fileid) == rf.fileId && responseRow._2.exists(_.propertyname == ClientSideOriginalFilepath)))
+          val redactedOriginalFilePath = originalFileResponseRow.flatMap(_._2.map(_.value))
           File(
             fileId, fr.filetype, fr.filename, fr.parentid,
-            convertMetadataRows(fmr.flatMap(_._2)),
+            metadataValues,
             ffidStatus.get(fileId),
             ffidMetadata.find(_.fileId == fileId),
             avMetadata.find(_.fileId == fileId),
-            redactedFiles.find(_.redactedFileId == fileId).flatMap(_.fileId)
+            redactedOriginalFilePath
           )
       }.toSeq
     }

@@ -538,6 +538,22 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       response.size should equal(0)
   }
 
+  "getRedactedFilePairs" should "return an empty list if the _r is lower case" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val consignmentId = UUID.randomUUID()
+      val parentId = UUID.randomUUID()
+      utils.createConsignment(consignmentId)
+      utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ARedactedFile.txt", parentId = Option(parentId))
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ARedactedFile_r.txt", parentId = Option(parentId))
+      val fileRepository = new FileRepository(db)
+
+      val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+      response.size should equal(0)
+  }
+
   "getRedactedFilePairs" should "return an empty list if there is no file extension" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database

@@ -221,7 +221,7 @@ object FileMetadataService {
                   fileStatus: Option[String] = None,
                   ffidMetadata: Option[FFIDMetadata],
                   antivirusMetadata: Option[AntivirusMetadata],
-                  originalFile: Option[UUID] = None)
+                  originalFilePath: Option[String] = None)
 
   case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
                                 clientSideOriginalFilePath: Option[String],
