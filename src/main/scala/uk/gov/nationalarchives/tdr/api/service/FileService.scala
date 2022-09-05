@@ -201,7 +201,9 @@ object FileService {
           val fileId = fr.fileid
           val metadataValues = convertMetadataRows(fmr.flatMap(_._2))
           val redactedFileEntry: Option[RedactedFiles] = redactedFiles.find(_.redactedFileId == fileId)
-          val originalFileResponseRow = redactedFileEntry.flatMap(rf => response.find(responseRow => Option(responseRow._1.fileid) == rf.fileId && responseRow._2.exists(_.propertyname == ClientSideOriginalFilepath)))
+          val originalFileResponseRow = redactedFileEntry
+            .flatMap(rf => response
+              .find(responseRow => Option(responseRow._1.fileid) == rf.fileId && responseRow._2.exists(_.propertyname == ClientSideOriginalFilepath)))
           val redactedOriginalFilePath = originalFileResponseRow.flatMap(_._2.map(_.value))
           File(
             fileId, fr.filetype, fr.filename, fr.parentid,

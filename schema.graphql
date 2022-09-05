@@ -235,7 +235,7 @@ type File {
   fileStatus: String
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
-  originalFile: UUID
+  originalFilePath: String
 }
 
 type FileChecks {
