@@ -25,7 +25,6 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-//noinspection ScalaStyle
 //scalastyle:off file.size.limit
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -829,7 +828,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
 
-    when(fileMetadataRepositoryMock.getFileMetadata(ArgumentMatchers.eq(consignmentId), any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future.successful(Seq()))
+    when(fileMetadataRepositoryMock.getFileMetadata(ArgumentMatchers.eq(consignmentId), any[Option[Set[UUID]]], any[Option[Set[String]]]))
+      .thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(ArgumentMatchers.eq(consignmentId), any[Option[Set[UUID]]]())).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(ArgumentMatchers.eq(consignmentId), any())).thenReturn(Future.successful(Seq()))
     when(fileStatusRepositoryMock.getFileStatus(ArgumentMatchers.eq(consignmentId), ArgumentMatchers.eq(FFID), any())).thenReturn(Future.successful(Seq()))
@@ -842,7 +842,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val edges = response.edges
 
     edges.size shouldBe 8
-    edges.map(_.node.fileName.getOrElse("")) should equal(List("fileName1", "fileName2", "fileName3", "fileName5", "fileName21", "fileName22", "fileName31", "fileName32"))
+    edges.map(_.node.fileName.getOrElse("")) should equal(List("fileName1", "fileName2", "fileName3", "fileName5",
+      "fileName21", "fileName22", "fileName31", "fileName32"))
   }
 
   "getConsignmentParentFolderId" should "return the parent folder id for a given consignment" in {
