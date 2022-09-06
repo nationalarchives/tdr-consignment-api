@@ -13,7 +13,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMeta
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecksum, ClientFilePath, FFID, Failed, Success, ZeroByteFile}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
@@ -169,7 +170,8 @@ class FileService(fileRepository: FileRepository,
       ffidStatus <- fileStatusService.getFileStatus(consignmentId, fileIds)
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
-      val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
+      val sortedFileRows = response.sortBy(row => natural(row.filename.getOrElse("")))
+      val files: Seq[File] = sortedFileRows.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
       val totalPages = Math.ceil(totalItems.toDouble / limit.toDouble).toInt
       TDRConnection(
