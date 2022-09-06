@@ -570,11 +570,27 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       response.size should equal(0)
   }
 
+  "getRedactedFilePairs" should "return an empty list if the filename ends in a dot" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val consignmentId = UUID.randomUUID()
+      val parentId = UUID.randomUUID()
+      utils.createConsignment(consignmentId)
+      utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ANonRedactedFile.", parentId = Option(parentId))
+      utils.createFile(UUID.randomUUID(), consignmentId, fileName = "ANoneRedactedFile_R.", parentId = Option(parentId))
+      val fileRepository = new FileRepository(db)
+
+      val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+      response.size should equal(0)
+  }
+
   val invalidRedactedFilesTable: TableFor2[String, String] = Table(
     ("redactedFileName", "originalFileName"),
     ("Redacted_R.txt", "Redacted"),
     ("redacted_R200.txt", "Redacted.txt"),
-    ("Anoth_RerRedacted_R1.txt", "Anoth_erRedacted.txt")
+    ("Anoth_RerRedacted`_R1.txt", "Anoth_erRedacted.txt")
   )
 
   forAll(invalidRedactedFilesTable) { (redactedFileName, originalFileName) =>
