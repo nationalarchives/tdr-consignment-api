@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.ConfigFactory
-import org.mockito.ArgumentMatchers.any
-import org.mockito.{ArgumentCaptor, MockitoSugar}
+import org.mockito.ArgumentMatchers._
+import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -803,6 +803,48 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     }
 
     thrownException.getMessage should equal("No pagination input argument provided for 'paginatedFiles' field query")
+  }
+
+  "getPaginatedFiles" should "return all the files by natural sorting order" in {
+    val fileRepositoryMock = mock[FileRepository]
+    val consignmentId = UUID.randomUUID()
+    val parentId = UUID.randomUUID()
+
+    val fileRowParams = List(
+      (UUID.randomUUID(), consignmentId, "fileName2", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName22", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName21", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName31", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName32", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName1", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName5", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName3", parentId)
+    )
+
+    val fileRows: List[FileRow] = fileRowParams.map(p => createFileRow(p._1, p._2, p._3, p._4))
+    val limit = 100
+    val page = 0
+    val input = Some(PaginationInput(Some(limit), Some(page), Some(parentId.toString), None))
+
+    val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
+
+    when(fileMetadataRepositoryMock.getFileMetadata(ArgumentMatchers.eq(consignmentId), any[Option[Set[UUID]]], any[Option[Set[String]]]))
+      .thenReturn(Future.successful(Seq()))
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(ArgumentMatchers.eq(consignmentId), any[Option[Set[UUID]]]())).thenReturn(Future.successful(Seq()))
+    when(antivirusMetadataRepositoryMock.getAntivirusMetadata(ArgumentMatchers.eq(consignmentId), any())).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(ArgumentMatchers.eq(consignmentId), ArgumentMatchers.eq(FFID), any())).thenReturn(Future.successful(Seq()))
+    when(fileRepositoryMock.countFilesInConsignment(ArgumentMatchers.eq(consignmentId), any(), any())).thenReturn(Future.successful(8))
+    when(fileRepositoryMock.getPaginatedFiles(consignmentId, 2, page, Some(parentId.toString), FileFilters())).thenReturn(mockResponse)
+
+    val fileService = setupFileService(fileRepositoryMock)
+    val response: TDRConnection[File] = fileService.getPaginatedFiles(consignmentId, input).futureValue
+
+    val edges = response.edges
+
+    edges.size shouldBe fileRowParams.size
+    edges.map(_.node.fileName.getOrElse("")) should equal(List("fileName", "fileName1", "fileName2", "fileName3", "fileName5",
+      "fileName21", "fileName22", "fileName31", "fileName32"))
   }
 
   "getConsignmentParentFolderId" should "return the parent folder id for a given consignment" in {
