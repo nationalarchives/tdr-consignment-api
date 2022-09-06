@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata, RedactedFiles}
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -131,8 +131,23 @@ class FileService(fileRepository: FileRepository,
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId)
       ffidStatus <- fileStatusService.getFileStatus(consignmentId)
-      redactedFilePairs <- fileRepository.getRedactedFilePairs(consignmentId)
-    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs).toList
+    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
+  }
+
+  def updateOriginalFilePath(consignmentId: UUID, files: List[File]): Future[Seq[File]] = {
+    val groupedFiles = files.groupBy(_.fileId)
+    fileRepository.getRedactedFilePairs(consignmentId, files.map(_.fileId)).map(redactedFiles => {
+      files.map(file => {
+        val originalPath = for {
+          fileToCopy <- redactedFiles.find(_.redactedFileId == file.fileId)
+          originalFileId <- fileToCopy.fileId
+          originalFiles <- groupedFiles.get(originalFileId)
+          originalFile <- originalFiles.headOption
+          path <- originalFile.metadata.clientSideOriginalFilePath
+        } yield path
+        file.copy(originalFilePath = originalPath)
+      })
+    })
   }
 
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]): Future[TDRConnection[File]] = {
@@ -194,24 +209,18 @@ object FileService {
 
     def toFiles(avMetadata: List[AntivirusMetadata],
                 ffidMetadata: List[FFIDMetadata],
-                ffidStatus: Map[UUID, String],
-                redactedFiles: Seq[RedactedFiles]): Seq[File] = {
+                ffidStatus: Map[UUID, String]): Seq[File] = {
       response.groupBy(_._1).map {
         case (fr, fmr) =>
           val fileId = fr.fileid
           val metadataValues = convertMetadataRows(fmr.flatMap(_._2))
-          val redactedFileEntry: Option[RedactedFiles] = redactedFiles.find(_.redactedFileId == fileId)
-          val originalFileResponseRow = redactedFileEntry
-            .flatMap(rf => response
-              .find(responseRow => Option(responseRow._1.fileid) == rf.fileId && responseRow._2.exists(_.propertyname == ClientSideOriginalFilepath)))
-          val redactedOriginalFilePath = originalFileResponseRow.flatMap(_._2.map(_.value))
           File(
             fileId, fr.filetype, fr.filename, fr.parentid,
             metadataValues,
             ffidStatus.get(fileId),
             ffidMetadata.find(_.fileId == fileId),
             avMetadata.find(_.fileId == fileId),
-            redactedOriginalFilePath
+            None
           )
       }.toSeq
     }

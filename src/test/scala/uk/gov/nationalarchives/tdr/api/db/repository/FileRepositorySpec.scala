@@ -624,7 +624,30 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       response.count(_.redactedFileId == redactedFileIdTwo) should equal(1)
       response.head.fileId.get should equal(fileId)
       response.last.fileId.get should equal(fileId)
+  }
 
+  "getRedactedFilePairs" should "return a single entry when two are available if filters are set" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val consignmentId = UUID.randomUUID()
+      val parentId = UUID.randomUUID()
+      val redactedFileIdOne = UUID.randomUUID()
+      val redactedFileIdTwo = UUID.randomUUID()
+      val fileId = UUID.randomUUID()
+      utils.createConsignment(consignmentId)
+      utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(fileId, consignmentId, fileName = "OriginalFile.txt", parentId = Option(parentId))
+      utils.createFile(redactedFileIdOne, consignmentId, fileName = "OriginalFile_R1.txt", parentId = Option(parentId))
+      utils.createFile(redactedFileIdTwo, consignmentId, fileName = "OriginalFile_R2.txt", parentId = Option(parentId))
+      val fileRepository = new FileRepository(db)
+
+      val response = fileRepository.getRedactedFilePairs(consignmentId, Seq(redactedFileIdOne)).futureValue
+
+      response.size should equal(1)
+      response.count(_.redactedFileId == redactedFileIdOne) should equal(1)
+      response.count(_.redactedFileId == redactedFileIdTwo) should equal(0)
+      response.head.fileId.get should equal(fileId)
   }
 
   "getRedactedFilePairs" should "return only the failed row if onlyNullValues is true" in withContainers {

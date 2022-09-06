@@ -355,7 +355,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     actualFileMetadata should equal(expectedFileMetadata)
   }
 
-  "getFileMetadata" should "return the original file if the file is a redacted file" in {
+  "updateOriginalFilePath" should "update the original file path" in {
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val antivirusRepositoryMock = mock[AntivirusMetadataRepository]
@@ -368,24 +368,17 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val redactedFileId = UUID.randomUUID()
     val originalId = UUID.randomUUID()
 
-
-    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(Seq()))
-    when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
-
-    val redactedFileRow = FileRow(redactedFileId, consignmentId, userId, Timestamp.from(Instant.now))
-    val originalFileRow = FileRow(originalId, consignmentId, userId, Timestamp.from(Instant.now))
     val originalPath = "/an/original/path"
-    val redactedPath = "/a/redacted/path"
-    val originalFileMetadataRow: FilemetadataRow =
-      FilemetadataRow(UUID.randomUUID(), originalId, originalPath, Timestamp.from(FixedTimeSource.now), userId, ClientSideOriginalFilepath)
-    val redactedFileMetadataRow: FilemetadataRow =
-      FilemetadataRow(UUID.randomUUID(), redactedFileId, redactedPath, Timestamp.from(FixedTimeSource.now), userId, ClientSideOriginalFilepath)
-    val fileAndMetadataRows = Seq((redactedFileRow, None), (originalFileRow, Option(originalFileMetadataRow)))
+    val redactedMetadata = FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None)
+    val originalMetadata = FileMetadataValues(None, Option(originalPath), None, None, None, None, None, None, None, None, None, None, None)
+    val redactedFileRow = File(redactedFileId, metadata = redactedMetadata, ffidMetadata = None, antivirusMetadata = None)
+    val originalFileRow = File(originalId, metadata = originalMetadata, ffidMetadata = None, antivirusMetadata = None)
+
     val redactedFiles = RedactedFiles(redactedFileId, "redactedName", Option(originalId), Option("originalName"))
 
-    when(fileRepositoryMock.getFiles(consignmentId, FileFilters(None))).thenReturn(Future(fileAndMetadataRows))
-    when(fileRepositoryMock.getRedactedFilePairs(consignmentId)).thenReturn(Future(Seq(redactedFiles)))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId, "FFID")).thenReturn(Future(Seq()))
+    val fileRows = List(redactedFileRow, originalFileRow)
+
+    when(fileRepositoryMock.getRedactedFilePairs(consignmentId, fileRows.map(_.fileId))).thenReturn(Future(Seq(redactedFiles)))
 
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, FixedTimeSource, fixedUuidSource)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
@@ -397,11 +390,11 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, fileStatusRepositoryMock, consignmentRepositoryMock,
       ffidMetadataService, antivirusMetadataService, fileStatusService, fileMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
-    val fileMetadataList = service.getFileMetadata(consignmentId).futureValue
+    val fileList = service.updateOriginalFilePath(consignmentId, fileRows).futureValue
 
-    fileMetadataList.length should equal(2)
+    fileList.length should equal(2)
 
-    val actualFileMetadata = fileMetadataList.filter(_.fileId == redactedFileId).head
+    val actualFileMetadata = fileList.filter(_.fileId == redactedFileId).head
 
     actualFileMetadata.originalFilePath.get should equal(originalPath)
   }

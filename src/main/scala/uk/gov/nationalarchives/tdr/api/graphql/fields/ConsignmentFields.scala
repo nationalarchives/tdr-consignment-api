@@ -1,13 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
-import java.time.ZonedDateTime
-import java.util.UUID
 import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, StringType, fields}
+import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, ProjectedName, Projector, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
@@ -17,6 +15,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
 
+import java.time.ZonedDateTime
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object ConsignmentFields {
@@ -100,9 +100,9 @@ object ConsignmentFields {
       )
     )
 
-  implicit val ConsignmentType: ObjectType[Unit, Consignment] = ObjectType(
+  implicit val ConsignmentType: ObjectType[ConsignmentApiContext, Consignment] = ObjectType(
     "Consignment",
-    fields[Unit, Consignment](
+    fields[ConsignmentApiContext, Consignment](
       Field("consignmentid", OptionType(UuidType), resolve = _.value.consignmentid),
       Field("userid", UuidType, resolve = _.value.userid),
       Field("seriesid", OptionType(UuidType), resolve = _.value.seriesid),
@@ -150,10 +150,17 @@ object ConsignmentFields {
         "files",
         ListType(FileType),
         arguments = FileFiltersInputArg :: Nil,
-        resolve = ctx => {
+        resolve = Projector((ctx, projected) => {
           val fileFilters = ctx.args.argOpt("fileFiltersInput")
-          DeferFiles(ctx.value.consignmentid, fileFilters)
-        }
+          projected match {
+            case v: Vector[ProjectedName] if v.exists(_.name == "originalFilePath") =>
+              for {
+                files <- ctx.ctx.fileService.getFileMetadata(ctx.value.consignmentid, fileFilters)
+                filesWithRedacted <- ctx.ctx.fileService.updateOriginalFilePath(ctx.value.consignmentid, files)
+              } yield filesWithRedacted
+            case _ => DeferFiles(ctx.value.consignmentid, fileFilters)
+          }
+        })
       ),
       Field(
         "paginatedFiles",

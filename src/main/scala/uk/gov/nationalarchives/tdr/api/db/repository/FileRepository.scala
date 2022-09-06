@@ -30,7 +30,13 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   ))
 
 
-  def getRedactedFilePairs(consignmentId: UUID, onlyNullValues: Boolean = false): Future[Seq[RedactedFiles]] = {
+  def getRedactedFilePairs(consignmentId: UUID, fileIds: Seq[UUID] = Nil, onlyNullValues: Boolean = false): Future[Seq[RedactedFiles]] = {
+    val filterSuffix = if(fileIds.isEmpty) {
+      ""
+    } else {
+      val fileString = fileIds.mkString("('", "','", "')")
+      s"""AND "RedactedFileId" IN $fileString """
+    }
     val whereSuffix = if(onlyNullValues) {
       """AND "FileId" IS NULL"""
     } else {
@@ -49,7 +55,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
          from "File"
          WHERE "FileName" SIMILAR TO $similarTo) AS RedactedFiles
             ON "ParentId"::text = "RedactedParentId"::text AND "RedactedReplacedFileName" = "FileName"
-            WHERE "RedactedConsignmentId"::text = $idString #$whereSuffix;
+            WHERE "RedactedConsignmentId"::text = $idString #$whereSuffix #$filterSuffix;
         """.stripMargin.as[RedactedFiles]
     db.run(sql)
   }
