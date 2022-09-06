@@ -818,6 +818,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (UUID.randomUUID(), consignmentId, "fileName32", parentId),
       (UUID.randomUUID(), consignmentId, "fileName1", parentId),
       (UUID.randomUUID(), consignmentId, "fileName5", parentId),
+      (UUID.randomUUID(), consignmentId, "fileName", parentId),
       (UUID.randomUUID(), consignmentId, "fileName3", parentId)
     )
 
@@ -841,8 +842,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val edges = response.edges
 
-    edges.size shouldBe 8
-    edges.map(_.node.fileName.getOrElse("")) should equal(List("fileName1", "fileName2", "fileName3", "fileName5",
+    edges.size shouldBe fileRowParams.size
+    edges.map(_.node.fileName.getOrElse("")) should equal(List("fileName", "fileName1", "fileName2", "fileName3", "fileName5",
       "fileName21", "fileName22", "fileName31", "fileName32"))
   }
 
