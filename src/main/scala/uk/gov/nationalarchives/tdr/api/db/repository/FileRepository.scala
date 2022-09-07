@@ -51,10 +51,14 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
         "FileId"::text AS "RedactedFileId",
         "ParentId"::text "RedactedParentId",
         "FileName" AS "RedactedFileName",
-        concat(regexp_replace(split_part("FileName", '.', 1) , $regexp, ''), '.', split_part("FileName", '.', 2) ) AS "RedactedReplacedFileName"
+        array_upper(string_to_array("FileName", '.'), 1) AS "ArrayLength",
+        string_to_array("FileName", '.') AS "FileNameArray"
          from "File"
          WHERE "FileName" SIMILAR TO $similarTo) AS RedactedFiles
-            ON "ParentId"::text = "RedactedParentId"::text AND "RedactedReplacedFileName" = "FileName"
+            ON "ParentId"::text = "RedactedParentId"::text AND concat(
+             array_to_string(
+                 array_append("FileNameArray"[0:"ArrayLength"-2], regexp_replace("FileNameArray"["ArrayLength"-1]::text, $regexp, '.')), '.'
+                 ), "FileNameArray"["ArrayLength"]) = "FileName"
             WHERE "RedactedConsignmentId"::text = $idString #$whereSuffix #$filterSuffix;
         """.stripMargin.as[RedactedFiles]
     db.run(sql)

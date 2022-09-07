@@ -152,14 +152,8 @@ object ConsignmentFields {
         arguments = FileFiltersInputArg :: Nil,
         resolve = Projector((ctx, projected) => {
           val fileFilters = ctx.args.argOpt("fileFiltersInput")
-          projected match {
-            case v: Vector[ProjectedName] if v.exists(_.name == "originalFilePath") =>
-              for {
-                files <- ctx.ctx.fileService.getFileMetadata(ctx.value.consignmentid, fileFilters)
-                filesWithRedacted <- ctx.ctx.fileService.updateOriginalFilePath(ctx.value.consignmentid, files)
-              } yield filesWithRedacted
-            case _ => DeferFiles(ctx.value.consignmentid, fileFilters)
-          }
+          val queriedFileFields = QueriedFileFields(projected.exists(_.name == "originalFilePath"))
+          DeferFiles(ctx.value.consignmentid, fileFilters, queriedFileFields)
         })
       ),
       Field(
