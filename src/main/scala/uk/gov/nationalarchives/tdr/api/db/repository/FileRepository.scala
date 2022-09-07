@@ -44,7 +44,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     }
     val idString = consignmentId.toString
     val regexp = "(_R\\d*$)"
-    val similarTo = "%_R\\d*\\._%"
+    val similarTo = "%_R\\d*"
     val sql = sql"""SELECT "RedactedFileId", "RedactedFileName", "FileId", "FileName" FROM "File" RIGHT JOIN
         (
         select "ConsignmentId"::text AS "RedactedConsignmentId",
@@ -54,12 +54,12 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
         array_upper(string_to_array("FileName", '.'), 1) AS "ArrayLength",
         string_to_array("FileName", '.') AS "FileNameArray"
          from "File"
-         WHERE "FileName" SIMILAR TO $similarTo) AS RedactedFiles
+         WHERE "ConsignmentId"::text = $idString) AS RedactedFiles
             ON "ParentId"::text = "RedactedParentId"::text AND concat(
              array_to_string(
                  array_append("FileNameArray"[0:"ArrayLength"-2], regexp_replace("FileNameArray"["ArrayLength"-1]::text, $regexp, '.')), '.'
                  ), "FileNameArray"["ArrayLength"]) = "FileName"
-            WHERE "RedactedConsignmentId"::text = $idString #$whereSuffix #$filterSuffix;
+            WHERE "FileNameArray"["ArrayLength" - 1] SIMILAR TO $similarTo  AND "ArrayLength" > 1 AND "FileNameArray"["ArrayLength"] != '' #$whereSuffix #$filterSuffix;
         """.stripMargin.as[RedactedFiles]
     db.run(sql)
   }
