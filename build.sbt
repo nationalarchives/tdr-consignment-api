@@ -71,7 +71,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
   "org.jboss.logging" % "jboss-logging" % "3.5.0.Final",
-  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "3.0.4",
+  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
   "software.amazon.awssdk" % "rds" % "2.17.162",
   "software.amazon.awssdk" % "sts" % "2.17.162",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
