@@ -68,9 +68,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "ch.megard" %% "akka-http-cors" % "1.1.3",
   "ch.qos.logback" % "logback-classic" % "1.4.0",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
-  "org.jboss.logging" % "jboss-logging" % "3.5.0.Final",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
   "software.amazon.awssdk" % "rds" % "2.17.162",
   "software.amazon.awssdk" % "sts" % "2.17.162",
@@ -93,6 +91,7 @@ libraryDependencies ++= Seq(
 (assembly / assemblyJarName) := "consignmentapi.jar"
 
 (assembly / assemblyMergeStrategy) := {
+  case PathList("META-INF", x, xs @ _*) if x.toLowerCase == "services" => MergeStrategy.filterDistinctLines
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case PathList("reference.conf") => MergeStrategy.concat
   case _ => MergeStrategy.first
