@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.FilestatusRow
-import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileStatusRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Failed, Success, Upload}
@@ -12,6 +12,7 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileStatusService(
+                         fileRepository: FileRepository,
                          fileStatusRepository: FileStatusRepository,
                          disallowedPuidsRepository: DisallowedPuidsRepository,
                          uuidSource: UUIDSource)(implicit val executionContext: ExecutionContext) {
@@ -50,8 +51,9 @@ class FileStatusService(
       ffidStatusRows <- fileStatusRepository.getFileStatus(consignmentId, FFID)
       ffidStatuses = ffidStatusRows.map(_.value)
       failedFFIDStatuses <- disallowedPuidsRepository.activeReasons()
+      failedRedactedFiles <- fileRepository.getRedactedFilePairs(consignmentId, onlyNullValues = true)
     } yield {
-      checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
+      failedRedactedFiles.isEmpty && checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
         (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter(failedFFIDStatuses.contains(_))).isEmpty
     }
   }

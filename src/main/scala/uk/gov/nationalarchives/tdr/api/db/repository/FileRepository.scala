@@ -1,14 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.GetResult
-
-import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata, RedactedFiles}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
@@ -23,7 +22,49 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     r.nextStringOption().map(UUID.fromString)
   ))
 
-  private val insertFileQuery = File returning File.map(_.fileid)into ((file, fileid) => file.copy(fileid = fileid))
+  implicit val getRedactedFileResult: GetResult[RedactedFiles] = GetResult(r => RedactedFiles(
+    UUID.fromString(r.nextString()),
+    r.nextString(),
+    r.nextStringOption().map(UUID.fromString),
+    r.nextStringOption()
+  ))
+
+
+  def getRedactedFilePairs(consignmentId: UUID, fileIds: Seq[UUID] = Nil, onlyNullValues: Boolean = false): Future[Seq[RedactedFiles]] = {
+    val filterSuffix = if(fileIds.isEmpty) {
+      ""
+    } else {
+      val fileString = fileIds.mkString("('", "','", "')")
+      s"""AND "RedactedFileId" IN $fileString """
+    }
+    val whereSuffix = if(onlyNullValues) {
+      """AND "FileId" IS NULL"""
+    } else {
+      ""
+    }
+    val idString = consignmentId.toString
+    val regexp = "(_R\\d*$)"
+    val similarTo = "%_R\\d*"
+    val sql = sql"""SELECT "RedactedFileId", "RedactedFileName", "FileId", "FileName" FROM "File" RIGHT JOIN
+        (
+        select "ConsignmentId"::text AS "RedactedConsignmentId",
+        "FileId"::text AS "RedactedFileId",
+        "ParentId"::text "RedactedParentId",
+        "FileName" AS "RedactedFileName",
+        array_upper(string_to_array("FileName", '.'), 1) AS "ArrayLength",
+        string_to_array("FileName", '.') AS "FileNameArray"
+         from "File"
+         WHERE "ConsignmentId"::text = $idString) AS RedactedFiles
+            ON "ParentId"::text = "RedactedParentId"::text AND concat(
+             array_to_string(
+                 array_append("FileNameArray"[0:"ArrayLength"-2], regexp_replace("FileNameArray"["ArrayLength"-1]::text, $regexp, '.')), '.'
+                 ), "FileNameArray"["ArrayLength"]) = "FileName"
+            WHERE "FileNameArray"["ArrayLength" - 1] SIMILAR TO $similarTo  AND "ArrayLength" > 1 AND "FileNameArray"["ArrayLength"] != '' #$whereSuffix #$filterSuffix;
+        """.stripMargin.as[RedactedFiles]
+    db.run(sql)
+  }
+
+  private val insertFileQuery = File returning File.map(_.fileid) into ((file, fileid) => file.copy(fileid = fileid))
 
   def getFilesWithPassedAntivirus(consignmentId: UUID): Future[Seq[Tables.FileRow]] = {
     val query = Avmetadata.join(File)
@@ -77,7 +118,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .on(_.fileid === _.fileid)
       .filter(_._1.consignmentid === consignmentId)
       .filterOpt(fileFilters.fileTypeIdentifier)(_._1.filetype === _)
-      .filterOpt(fileFilters.selectedFileIds)  (_._1.fileid inSet _)
+      .filterOpt(fileFilters.selectedFileIds)(_._1.fileid inSet _)
       .map(res => (res._1, res._2))
     db.run(query.result)
   }
@@ -138,5 +179,6 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
 case class FileFilters(fileTypeIdentifier: Option[String] = None, selectedFileIds: Option[List[UUID]] = None, parentId: Option[UUID] = None)
 
 object FileRepository {
+  case class RedactedFiles(redactedFileId: UUID, redactedFileName: String, fileId: Option[UUID], fileName: Option[String])
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
 }
