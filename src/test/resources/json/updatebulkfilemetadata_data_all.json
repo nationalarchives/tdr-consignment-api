@@ -1,6 +1,6 @@
 {
   "data": {
-    "addBulkFileMetadata": {
+    "updateBulkFileMetadata": {
       "fileIds": [
         "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
         "7076f399-b596-4161-a95d-e686c6435710",

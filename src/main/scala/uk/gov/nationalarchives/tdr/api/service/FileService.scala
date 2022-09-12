@@ -1,28 +1,32 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.util.UUID
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata, RedactedFiles}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
+import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
+import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
 
 class FileService(fileRepository: FileRepository,
+                  fileStatusRepository: FileStatusRepository,
                   consignmentRepository: ConsignmentRepository,
                   ffidMetadataService: FFIDMetadataService,
                   avMetadataService: AntivirusMetadataService,
@@ -59,6 +63,12 @@ class FileService(fileRepository: FileRepository,
             val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
             pathWithoutSlash == path
           }).head
+
+          //Add the 0 byte status here as know the file size at this point
+          //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
+          addFileStatusIfFileSizeIsZero(input, fileId)
+          addFileStatusForClientChecksum(input, fileId)
+          addFileStatusForClientFilePath(path, fileId)
           val fileMetadataRows = List(
             row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
             row(fileId, input.fileSize.toString, ClientSideFileSize),
@@ -78,6 +88,35 @@ class FileService(fileRepository: FileRepository,
     }
   }
 
+  def addFileStatusIfFileSizeIsZero(input: ClientSideMetadataInput, fileId: UUID): Unit =
+    if (input.fileSize == 0) {
+      val statusRow = FilestatusRow(uuidSource.uuid, fileId, FFID, ZeroByteFile, Timestamp.from(timeSource.now))
+      fileStatusRepository.addFileStatuses(List(statusRow))
+    }
+
+  def addFileStatusForClientChecksum(input: ClientSideMetadataInput, fileId: UUID): Unit = {
+    val clientChecksum = input.checksum match {
+      case "" => Failed
+      case _ => Success
+    }
+    val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientChecksum, clientChecksum, Timestamp.from(timeSource.now))
+    fileStatusRepository.addFileStatuses(List(statusRow))
+  }
+
+  def addFileStatusForClientFilePath(path: String, fileId: UUID): Unit = {
+    val clientFilePathStatus = path match {
+      case "" => Failed
+      case _ => Success
+    }
+    val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientFilePath, clientFilePathStatus, Timestamp.from(timeSource.now))
+    fileStatusRepository.addFileStatuses(List(statusRow))
+  }
+
+  def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
+    //For now only interested in basic file metadata
+    fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
+  }
+
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
     consignmentRepository.getConsignmentsOfFiles(fileIds)
       .map(_.map(consignmentByFile => FileOwnership(consignmentByFile._1, consignmentByFile._2.userid)))
@@ -87,7 +126,7 @@ class FileService(fileRepository: FileRepository,
     fileRepository.countFilesInConsignment(consignmentId)
   }
 
-  def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None): Future[List[File]] = {
+  def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields): Future[List[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
     for {
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
@@ -97,7 +136,12 @@ class FileService(fileRepository: FileRepository,
       ffidMetadataList <- getFfidMetadataList
       avList <- getAvList
       ffidStatus <- getFfidStatus
-      } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus).toList
+      redactedFilePairs <- if(queriedFileFields.originalFilePath) {
+        fileRepository.getRedactedFilePairs(consignmentId, fileIds = fileAndMetadataList.map(_._1.fileid))
+      } else {
+        Future(Seq())
+      }
+    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs).toList
   }
 
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]): Future[TDRConnection[File]] = {
@@ -108,9 +152,10 @@ class FileService(fileRepository: FileRepository,
     val limit = input.limit.getOrElse(filePageMaxLimit)
     val offset = input.currentPage.getOrElse(0) * limit
     val maxFiles: Int = min(limit, filePageMaxLimit)
+
     for {
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
-      numberOfFilesInFolder: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
+      totalItems: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
       getFileMetadata = fileMetadataService.getFileMetadata(consignmentId, fileIds)
       getFfidMetadataList = ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
@@ -122,9 +167,10 @@ class FileService(fileRepository: FileRepository,
       ffidStatus <- getFfidStatus
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
-      val files: Seq[File] = response.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
+      val sortedFileRows = response.sortBy(row => natural(row.filename.getOrElse("")))
+      val files: Seq[File] = sortedFileRows.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
-      val totalPages = Math.ceil(numberOfFilesInFolder.toDouble/limit.toDouble).toInt
+      val totalPages = Math.ceil(totalItems.toDouble / limit.toDouble).toInt
       TDRConnection(
         PageInfo(
           startCursor = edges.headOption.map(_.cursor),
@@ -133,6 +179,7 @@ class FileService(fileRepository: FileRepository,
           hasPreviousPage = currentCursor.isDefined
         ),
         edges,
+        totalItems,
         totalPages
       )
     }
@@ -159,13 +206,26 @@ object FileService {
       getFileMetadataValues(rows)
     }
 
-    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
+    def toFiles(avMetadata: List[AntivirusMetadata],
+                ffidMetadata: List[FFIDMetadata],
+                ffidStatus: Map[UUID, String],
+                redactedFiles: Seq[RedactedFiles]): Seq[File] = {
       response.groupBy(_._1).map {
         case (fr, fmr) =>
           val fileId = fr.fileid
+          val metadataValues = convertMetadataRows(fmr.flatMap(_._2))
+          val redactedFileEntry: Option[RedactedFiles] = redactedFiles.find(_.redactedFileId == fileId)
+          val originalFileResponseRow = redactedFileEntry
+            .flatMap(rf => response.find(responseRow => Option(responseRow._1.fileid) == rf.fileId && responseRow._2.exists(_.propertyname == ClientSideOriginalFilepath)))
+          val redactedOriginalFilePath = originalFileResponseRow.flatMap(_._2.map(_.value))
           File(
             fileId, fr.filetype, fr.filename, fr.parentid,
-            convertMetadataRows(fmr.flatMap(_._2)), ffidStatus.get(fileId), ffidMetadata.find(_.fileId == fileId), avMetadata.find(_.fileId == fileId))
+            metadataValues,
+            ffidStatus.get(fileId),
+            ffidMetadata.find(_.fileId == fileId),
+            avMetadata.find(_.fileId == fileId),
+            redactedOriginalFilePath
+          )
       }.toSeq
     }
   }
@@ -181,7 +241,7 @@ object FileService {
                 ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
       fileRows.map(fr => {
         val id = fr.fileid
-        val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None))
+        val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None))
         File(
           id, fr.filetype, fr.filename, fr.parentid,
           metadata,
@@ -204,5 +264,5 @@ object FileService {
 
   case class FileOwnership(fileId: UUID, userId: UUID)
 
-  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalPages: Int) extends Connection[T]
+  case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
 }

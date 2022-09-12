@@ -22,6 +22,7 @@
           "fileType": "File",
           "fileName": "fileTwoName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "originalFilePath": null,
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
@@ -63,6 +64,10 @@
             "rightsCopyright": "RightsCopyright value",
             "heldBy": "HeldBy value",
             "foiExemptionCode": "FoiExemptionCode value",
+            "ClosurePeriod": 1,
+            "ClosureStartDate": "2021-04-11T12:30:30.592853",
+            "FoiExemptionAsserted": "2021-03-12T12:30:30.592853",
+            "TitlePublic": true,
             "language": "Language value"
           },
           "ffidMetadata": {

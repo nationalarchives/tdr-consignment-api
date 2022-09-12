@@ -5,7 +5,6 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -176,7 +175,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
       val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty")
       val statusInput = FilestatusRow(UUID.randomUUID(), fileId, "Status Type", "Value", Timestamp.from(Instant.now()))
-      fileMetadataRepository.addChecksumMetadata(input, statusInput).futureValue
+      fileMetadataRepository.addChecksumMetadata(input, Seq(statusInput)).futureValue
       getFileStatusValue(fileId, utils) should equal("Value")
   }
 
@@ -217,7 +216,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
 
       response.length should equal(3)
-      val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
+      val filesMap: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
       val fileOneMetadata = filesMap.get(fileIdOne)
       val fileTwoMetadata = filesMap.get(fileIdTwo)
       val fileOneProperties = fileOneMetadata.get.groupBy(_.propertyname)
@@ -248,9 +247,161 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val response = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds)).futureValue
 
       response.length should equal(1)
-      val filesMap: Map[UUID, Seq[Tables.FilemetadataRow]] = response.groupBy(_.fileid)
-      val fileTwoMetadata = filesMap.get(fileIdTwo)
-      fileTwoMetadata.get.head.propertyname should equal("FilePropertyOne")
-      fileTwoMetadata.get.head.value should equal("Result of FileMetadata processing")
+      val filesMap: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
+      val fileTwoMetadata = filesMap(fileIdTwo)
+
+      fileTwoMetadata.head.propertyname should equal("FilePropertyOne")
+      fileTwoMetadata.head.value should equal("Result of FileMetadata processing")
   }
+
+  "getFileMetadata" should "return only the metadata rows of the files that have the specified property/properties" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val filePropertyOne = "FilePropertyOne"
+      val filePropertyTwo = "FilePropertyTwo"
+      utils.createConsignment(consignmentId, userId)
+      utils.createFile(fileIdOne, consignmentId)
+      utils.createFile(fileIdTwo, consignmentId)
+      utils.addFileProperty(filePropertyOne)
+      utils.addFileProperty("FilePropertyTwo")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyOne)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyTwo)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, filePropertyOne)
+
+      val selectedFileIds: Set[UUID] = Set(fileIdOne, fileIdTwo)
+      val response = fileMetadataRepository.getFileMetadata(
+        consignmentId, Some(selectedFileIds), Some(Set(filePropertyOne))
+      ).futureValue
+
+      response.length should equal(2)
+      response.foreach(
+        fileMetadataRow => List(fileIdOne, fileIdTwo).contains(fileMetadataRow.fileid)
+      )
+  }
+
+  "updateFileMetadataProperties" should "update the value and userId for the correct metadata rows and return the number of rows it updated" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val fileIdThree = UUID.fromString("f2e8a105-a251-41ce-89a0-a03c2b321277")
+      val userId2 = UUID.randomUUID()
+      utils.createConsignment(consignmentId, userId)
+      List(fileIdOne, fileIdTwo, fileIdThree).foreach(
+        fileId => utils.createFile(fileId, consignmentId)
+      )
+      utils.addFileProperty("FilePropertyOne")
+      utils.addFileProperty("FilePropertyTwo")
+      utils.addFileProperty("FilePropertyThree")
+      val metadataId1 = UUID.randomUUID()
+      val metadataId2 = UUID.randomUUID()
+      val metadataId3 = UUID.randomUUID()
+      val metadataId4 = UUID.randomUUID()
+      utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
+      utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId4.toString, fileIdThree.toString, "FilePropertyThree")
+      val newValue = "newValue"
+
+      val updateResponse: Seq[Int] = fileMetadataRepository.updateFileMetadataProperties(
+        Map(
+          "FilePropertyOne" -> FileMetadataUpdate(Seq(metadataId1, metadataId3), "FilePropertyOne", newValue, Timestamp.from(Instant.now()), userId2),
+          "FilePropertyThree" -> FileMetadataUpdate(Seq(metadataId4), "FilePropertyThree", newValue, Timestamp.from(Instant.now()), userId2))
+      ).futureValue
+
+      updateResponse should be(Seq(2, 1))
+
+      val filePropertyUpdates = ExpectedFilePropertyUpdates(
+        consignmentId = consignmentId,
+        changedProperties = Map(fileIdOne -> Seq("FilePropertyOne"), fileIdTwo -> Seq("FilePropertyOne"), fileIdThree -> Seq("FilePropertyThree")),
+        unchangedProperties = Map(fileIdOne -> Seq("FilePropertyTwo")),
+        newValue = newValue,
+        newUserId = userId2
+      )
+
+      checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates)
+  }
+
+  "updateFileMetadataProperties" should "return 0 if a file property that does not exist on the rows passed to it" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val userId2 = UUID.randomUUID()
+      utils.createConsignment(consignmentId, userId)
+      List(fileIdOne, fileIdTwo).foreach(
+        fileId => utils.createFile(fileId, consignmentId)
+      )
+      utils.addFileProperty("FilePropertyOne")
+      utils.addFileProperty("FilePropertyTwo")
+      utils.addFileProperty("FilePropertyThree")
+      val metadataId1 = UUID.randomUUID()
+      val metadataId2 = UUID.randomUUID()
+      val metadataId3 = UUID.randomUUID()
+      utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
+      utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
+      val newValue = "newValue"
+
+      val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
+
+      val updateResponse = fileMetadataRepository.updateFileMetadataProperties(
+        Map("NonExistentFileProperty" -> FileMetadataUpdate(
+          Seq(metadataId1, metadataId3), "NonExistentFileProperty", newValue, Timestamp.from(Instant.now()), userId2)
+        )
+      ).futureValue
+
+      updateResponse should be(List(0))
+      response.foreach(
+        metadataRow => List("FilePropertyOne", "FilePropertyTwo").contains(metadataRow.propertyname)
+      )
+  }
+
+  private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {
+    val response = fileMetadataRepository.getFileMetadata(filePropertyUpdates.consignmentId).futureValue
+    val metadataRowById: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
+
+    filePropertyUpdates.changedProperties.foreach{
+      case(fileId, propertiesChanged) =>
+        val fileMetadataForFile: Seq[FilemetadataRow] = metadataRowById.getOrElse(fileId, Seq())
+        val fileMetadataForFileByProperty: Map[String, Seq[FilemetadataRow]] = fileMetadataForFile.groupBy(_.propertyname)
+        propertiesChanged.foreach {
+          property => {
+            val metadataRow: FilemetadataRow = fileMetadataForFileByProperty.getOrElse(property, Seq()).head
+            metadataRow.value should equal(filePropertyUpdates.newValue)
+            metadataRow.userid should equal(filePropertyUpdates.newUserId)
+          }
+        }
+    }
+
+    filePropertyUpdates.unchangedProperties.foreach{
+      case(fileId, unchangedProperties) =>
+        val fileMetadataForFile: Seq[FilemetadataRow] = metadataRowById.getOrElse(fileId, Seq())
+        val fileMetadataForFileByProperty: Map[String, Seq[FilemetadataRow]] = fileMetadataForFile.groupBy(_.propertyname)
+        unchangedProperties.foreach {
+          property => {
+            val metadataRow: FilemetadataRow = fileMetadataForFileByProperty.getOrElse(property, Seq()).head
+            metadataRow.value should equal("Result of FileMetadata processing")
+            metadataRow.userid should equal(userId)
+          }
+        }
+    }
+  }
+
+  case class ExpectedFilePropertyUpdates(consignmentId: UUID,
+                                         changedProperties: Map[UUID, Seq[String]],
+                                         unchangedProperties: Map[UUID, Seq[String]],
+                                         newValue: String,
+                                         newUserId: UUID)
 }

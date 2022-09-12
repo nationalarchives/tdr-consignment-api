@@ -1,26 +1,20 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.time.LocalDateTime
-import java.util.UUID
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileMetadataUpdate, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{
-  AddBulkFileMetadataInput,
-  AddFileMetadataWithFileIdInput,
-  BulkFileMetadata,
-  FileMetadata,
-  FileMetadataWithFileId,
-  SHA256ServerSideChecksum
-}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
@@ -49,14 +43,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       case SHA256ServerSideChecksum => {
         for {
           cfm <- fileMetadataRepository.getFileMetadataByProperty(fileMetadataRow.fileid, SHA256ClientSideChecksum)
-          fileStatus: String = cfm.headOption match {
-            case Some(cfm) if cfm.value == fileMetadataRow.value => Success
-            case Some(_) => Mismatch
-            case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${fileMetadataRow.fileid}")
-          }
-          fileStatusRow: FilestatusRow = FilestatusRow(uuidSource.uuid, fileMetadataRow.fileid, ChecksumMatch, fileStatus, fileMetadataRow.datetime)
-          _ <- Future(loggingUtils.logFileFormatStatus("checksumMatch", fileMetadataRow.fileid, fileStatus))
-          row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRow)
+          fileStatusRows = Seq(getFileStatusRowForChecksumMatch(cfm.headOption, fileMetadataRow), getFileStatusRowForServerChecksum(fileMetadataRow))
+          row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRows)
         } yield FileMetadataWithFileId(fileMetadataRow.propertyname, row.fileid, row.value)
       } recover {
         case e: Throwable =>
@@ -66,27 +54,88 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     }
   }
 
-  def addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val fileMetadataProperties = addBulkFileMetadataInput.metadataProperties.distinct
-    val timestamp = Timestamp.from(timeSource.now)
-    val uniqueFileIds: Seq[UUID] = addBulkFileMetadataInput.fileIds.distinct
+  def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
+    val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
+    val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
+    val uniqueFileIds: Seq[UUID] = input.fileIds.distinct
+
     for {
-      fileRows <- fileRepository.getAllDescendants(uniqueFileIds)
-      fileIds: Seq[UUID] = fileRows.collect{case fileRow if fileRow.filetype.get == "File" => fileRow.fileid}
-      fileMetadataRows: Seq[FilemetadataRow] = for {
-        fileId <- fileIds
-        fileMetadata <- fileMetadataProperties
-      } yield FilemetadataRow(uuidSource.uuid, fileId, fileMetadata.value, timestamp, userId, fileMetadata.filePropertyName)
-      metadataRows <- fileMetadataRepository.addFileMetadata(fileMetadataRows)
-      fileIdsAndMetadata = metadataRows.foldLeft((Set[UUID](), Set[FileMetadata]())) {
-        (fileIdsAndMetadata, fileMetadataRow) => {
-          (
-            fileIdsAndMetadata._1 + fileMetadataRow.fileid,
-            fileIdsAndMetadata._2 + FileMetadata(fileMetadataRow.propertyname, fileMetadataRow.value)
-          )
-        }
+      existingFileRows <- fileRepository.getAllDescendants(uniqueFileIds)
+      //Current policy is not to associate metadata with 'Folders'
+      fileIds: Set[UUID] = existingFileRows.collect { case fileRow if fileRow.filetype.get == NodeType.fileTypeIdentifier => fileRow.fileid }.toSet
+      existingFileMetadataRows: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(input.consignmentId, Some(fileIds), Some(distinctPropertyNames))
+      fileIdToMetadataRows: Map[UUID, Seq[FilemetadataRow]] = existingFileMetadataRows.groupBy(_.fileid)
+
+      propertyActions: Set[PropertyAction] = fileIds.flatMap {
+        fileId => generatePropertyActions(fileId, distinctMetadataProperties, fileIdToMetadataRows)
       }
-    } yield BulkFileMetadata(fileIdsAndMetadata._1.toSeq, fileIdsAndMetadata._2.toSeq)
+      groupedPropertyActions: Map[String, Set[PropertyAction]] = propertyActions.groupBy(_.updateActionType)
+      addPropertyActions: Set[PropertyAction] = groupedPropertyActions.getOrElse("add", Set())
+      updatePropertyActions: Set[PropertyAction] = groupedPropertyActions.getOrElse("update", Set())
+
+      propertyUpdates: PropertyUpdates = generatePropertyUpdates(userId, addPropertyActions, updatePropertyActions)
+      _ <- updateFileMetadata(propertyUpdates)
+      fileIdsAdded: Set[UUID] = addPropertyActions.map(_.fileId)
+      fileIdsUpdated: Set[UUID] = updatePropertyActions.map(_.fileId)
+      metadataProperties = input.metadataProperties.map(metadataProperty => FileMetadata(metadataProperty.filePropertyName, metadataProperty.value))
+    } yield BulkFileMetadata((fileIdsAdded ++ fileIdsUpdated).toSeq, metadataProperties)
+  }
+
+  private def generatePropertyActions(fileId: UUID, metadataProperties: Set[UpdateFileMetadataInput],
+                                      existingFileMetadataRows: Map[UUID, Seq[FilemetadataRow]]): Set[PropertyAction] = {
+
+    val existingPropertiesForFile: Map[String, Seq[FilemetadataRow]] = existingFileMetadataRows.getOrElse(fileId, Seq()).groupBy(_.propertyname)
+
+    metadataProperties.map {
+      metadataProperty =>
+        if (!existingPropertiesForFile.contains(metadataProperty.filePropertyName)) {
+          PropertyAction("add", metadataProperty.filePropertyName, metadataProperty.value, fileId, uuidSource.uuid)
+        } else {
+          val existingProperty: FilemetadataRow = existingPropertiesForFile(metadataProperty.filePropertyName).head
+          val action = if (metadataProperty.value != existingProperty.value) {"update"} else {"noUpdate"}
+          PropertyAction(action, metadataProperty.filePropertyName, metadataProperty.value, fileId, existingProperty.metadataid)
+        }
+    }
+  }
+
+  private def generatePropertyUpdates(userId: UUID, addPropertyActions: Set[PropertyAction], updatePropertyActions: Set[PropertyAction]): PropertyUpdates = {
+    val propertiesRowsToAdd: Seq[FilemetadataRow] = addPropertyActions.map(
+      addActionType => FilemetadataRow(
+        addActionType.metadataId, addActionType.fileId, addActionType.propertyValue,
+        Timestamp.from(timeSource.now), userId, addActionType.propertyName
+      )
+    ).toSeq
+
+    val nameValueToUpdateActions: Map[(String, String), Set[PropertyAction]] = updatePropertyActions.groupBy(
+      propertyUpdateRow => (propertyUpdateRow.propertyName, propertyUpdateRow.propertyValue)
+    )
+
+    val propertiesRowsToUpdate: Map[String, FileMetadataUpdate] = nameValueToUpdateActions.map {
+      case ((propertyName, propertyValue), propertyUpdateActionType) =>
+        val metadataIdsToUpdate: Set[UUID] = propertyUpdateActionType.map(_.metadataId)
+        propertyName -> FileMetadataUpdate(metadataIdsToUpdate.toSeq, propertyName, propertyValue, Timestamp.from(timeSource.now), userId)
+    }
+
+    PropertyUpdates(propertiesRowsToAdd, propertiesRowsToUpdate)
+  }
+
+  private def updateFileMetadata(propertyUpdates: PropertyUpdates): Future[Unit] = {
+    val propertiesRowsToAdd: Seq[FilemetadataRow] = propertyUpdates.rowsToAdd
+    val propertiesRowsToUpdate: Map[String, FileMetadataUpdate] = propertyUpdates.rowsToUpdate
+    val addFileMetadata: Future[Seq[FilemetadataRow]] = fileMetadataRepository.addFileMetadata(propertiesRowsToAdd)
+    val updateFileMetadataProperties: Future[Seq[Int]] = fileMetadataRepository.updateFileMetadataProperties(propertiesRowsToUpdate)
+
+    for {
+      _ <- addFileMetadata
+      updatedRows <- updateFileMetadataProperties
+    } yield {
+      val totalRowsUpdated: Int = updatedRows.sum
+      val rowsToBeUpdated: Int = propertiesRowsToUpdate.values.map(_.metadataIds.size).sum
+
+      if (totalRowsUpdated != rowsToBeUpdated) {
+        throw new Exception(s"There was a problem: only $totalRowsUpdated out of $rowsToBeUpdated rows were updated")
+      }
+    }
   }
 
   def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
@@ -95,18 +144,38 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
         rows.groupBy(_.fileid).map {
           case (fileId, fileMetadata) => fileId -> getFileMetadataValues(fileMetadata)
         }
+    }
+
+  private def getFileStatusRowForChecksumMatch(checksumFileMetadata: Option[FilemetadataRow], fileMetadataInput: FilemetadataRow): FilestatusRow = {
+    val fileStatus = checksumFileMetadata match {
+      case Some(cfm) if cfm.value == fileMetadataInput.value => Success
+      case Some(_) => Mismatch
+      case None => throw new IllegalStateException(s"Cannot find client side checksum for file ${fileMetadataInput.fileid}")
+    }
+    loggingUtils.logFileFormatStatus("checksumMatch", fileMetadataInput.fileid, fileStatus)
+    FilestatusRow(uuidSource.uuid, fileMetadataInput.fileid, ChecksumMatch, fileStatus, fileMetadataInput.datetime)
+  }
+
+  private def getFileStatusRowForServerChecksum(fileMetadataInput: FilemetadataRow): FilestatusRow = {
+    val fileStatus = fileMetadataInput.value match {
+      case "" => Failed
+      case _ => Success
+    }
+    loggingUtils.logFileFormatStatus("serverChecksum", fileMetadataInput.fileid, fileStatus)
+    FilestatusRow(uuidSource.uuid, fileMetadataInput.fileid, ServerChecksum, fileStatus, fileMetadataInput.datetime)
   }
 }
 
 object FileMetadataService {
 
-  case class StaticMetadata(name: String, value: String)
-
   val SHA256ClientSideChecksum = "SHA256ClientSideChecksum"
   val ClientSideOriginalFilepath = "ClientSideOriginalFilepath"
   val ClientSideFileLastModifiedDate = "ClientSideFileLastModifiedDate"
   val ClientSideFileSize = "ClientSideFileSize"
-
+  val ClosurePeriod = "ClosurePeriod"
+  val ClosureStartDate = "ClosureStartDate"
+  val FoiExemptionAsserted = "FoiExemptionAsserted"
+  val TitlePublic = "TitlePublic"
   /**
    * Save default values for these properties because TDR currently only supports records which are Open, in English, etc.
    * Users agree to these conditions at a consignment level, so it's OK to save these as defaults for every file.
@@ -118,32 +187,11 @@ object FileMetadataService {
   val HeldBy: StaticMetadata = StaticMetadata("HeldBy", "TNA")
   val Language: StaticMetadata = StaticMetadata("Language", "English")
   val FoiExemptionCode: StaticMetadata = StaticMetadata("FoiExemptionCode", "open")
-
   val clientSideProperties = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
   val staticMetadataProperties = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 
-  case class File(fileId: UUID,
-                  fileType: Option[String] = None,
-                  fileName: Option[String] = None,
-                  parentId: Option[UUID] = None,
-                  metadata: FileMetadataValues,
-                  fileStatus: Option[String] = None,
-                  ffidMetadata: Option[FFIDMetadata],
-                  antivirusMetadata: Option[AntivirusMetadata])
-
-  case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
-                                clientSideOriginalFilePath: Option[String],
-                                clientSideLastModifiedDate: Option[LocalDateTime],
-                                clientSideFileSize: Option[Long],
-                                rightsCopyright: Option[String],
-                                legalStatus: Option[String],
-                                heldBy: Option[String],
-                                language: Option[String],
-                                foiExemptionCode: Option[String]
-                               )
-
   def getFileMetadataValues(fileMetadataRow: Seq[FilemetadataRow]): FileMetadataValues = {
-    val propertyNameMap: Map[String, String] = fileMetadataRow.groupBy(_.propertyname).transform{
+    val propertyNameMap: Map[String, String] = fileMetadataRow.groupBy(_.propertyname).transform {
       (_, value) => value.head.value
     }
     FileMetadataValues(
@@ -155,8 +203,45 @@ object FileMetadataService {
       propertyNameMap.get(LegalStatus.name),
       propertyNameMap.get(HeldBy.name),
       propertyNameMap.get(Language.name),
-      propertyNameMap.get(FoiExemptionCode.name)
+      propertyNameMap.get(FoiExemptionCode.name),
+      propertyNameMap.get(ClosurePeriod).map(_.toInt),
+      propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
+      propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
+      propertyNameMap.get(TitlePublic).map(_.toBoolean)
     )
   }
 
+  case class StaticMetadata(name: String, value: String)
+
+  case class File(fileId: UUID,
+                  fileType: Option[String] = None,
+                  fileName: Option[String] = None,
+                  parentId: Option[UUID] = None,
+                  metadata: FileMetadataValues,
+                  fileStatus: Option[String] = None,
+                  ffidMetadata: Option[FFIDMetadata],
+                  antivirusMetadata: Option[AntivirusMetadata],
+                  originalFilePath: Option[String] = None)
+
+  case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
+                                clientSideOriginalFilePath: Option[String],
+                                clientSideLastModifiedDate: Option[LocalDateTime],
+                                clientSideFileSize: Option[Long],
+                                rightsCopyright: Option[String],
+                                legalStatus: Option[String],
+                                heldBy: Option[String],
+                                language: Option[String],
+                                foiExemptionCode: Option[String],
+                                closurePeriod: Option[Int],
+                                closureStartDate: Option[LocalDateTime],
+                                foiExemptionAsserted: Option[LocalDateTime],
+                                titlePublic: Option[Boolean])
+
+  case class PropertyAction(updateActionType: String,
+                            propertyName: String,
+                            propertyValue: String,
+                            fileId: UUID,
+                            metadataId: UUID)
+
+  case class PropertyUpdates(rowsToAdd: Seq[FilemetadataRow] = Seq(), rowsToUpdate: Map[String, FileMetadataUpdate] = Map())
 }

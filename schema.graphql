@@ -7,11 +7,6 @@ input AddAntivirusMetadataInput {
   datetime: Long!
 }
 
-input AddBulkFileMetadataInput {
-  fileIds: [UUID!]!
-  metadataProperties: [AddFileMetadataInput!]!
-}
-
 input AddConsignmentInput {
   seriesid: UUID
   consignmentType: String!
@@ -23,15 +18,16 @@ input AddFileAndMetadataInput {
   emptyDirectories: [String!] = []
 }
 
-input AddFileMetadataInput {
-  filePropertyName: String!
-  value: String!
-}
-
 input AddFileMetadataWithFileIdInput {
   filePropertyName: String!
   fileId: UUID!
   value: String!
+}
+
+input AddFileStatusInput {
+  fileId: UUID!
+  statusType: String!
+  statusValue: String!
 }
 
 input AddFinalJudgmentTransferConfirmationInput {
@@ -57,6 +53,11 @@ input AddTransferAgreementPrivateBetaInput {
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
   allEnglish: Boolean!
+}
+
+input AllDescendantsInput {
+  consignmentId: UUID!
+  parentIds: [UUID!]!
 }
 
 type AntivirusMetadata {
@@ -172,6 +173,7 @@ type CustomMetadataField {
   multiValue: Boolean!
   defaultValue: String
   values: [CustomMetadataValues!]!
+  ordinal: Int!
 }
 
 type CustomMetadataValues {
@@ -180,11 +182,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
+  DateTime
+  Text
   Decimal
   Integer
   Boolean
-  Text
-  DateTime
 }
 
 type FFIDMetadata {
@@ -233,6 +235,7 @@ type File {
   fileStatus: String
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
+  originalFilePath: String
 }
 
 type FileChecks {
@@ -249,6 +252,7 @@ type FileConnection {
   "A list of edges."
   edges: [FileEdge]
   totalPages: Int
+  totalItems: Int
 }
 
 "An edge in a connection."
@@ -286,12 +290,22 @@ type FileMetadataValues {
   heldBy: String
   language: String
   foiExemptionCode: String
+  closurePeriod: Int
+  closureStartDate: LocalDateTime
+  foiExemptionAsserted: LocalDateTime
+  titlePublic: Boolean
 }
 
 type FileMetadataWithFileId {
   filePropertyName: String!
   fileId: UUID!
   value: String!
+}
+
+type FileStatus {
+  fileId: UUID!
+  statusType: String!
+  statusValue: String!
 }
 
 type FinalJudgmentTransferConfirmation {
@@ -323,10 +337,11 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
-  addBulkFileMetadata(addBulkFileMetadataInput: AddBulkFileMetadataInput!): BulkFileMetadata!
+  updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
+  addFileStatus(addFileStatusInput: AddFileStatusInput!): FileStatus!
 }
 
 "Information about pagination in a connection."
@@ -363,6 +378,7 @@ type Query {
   consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+  allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
 }
 
 type Series {
@@ -399,6 +415,12 @@ type TransferringBody {
 
 scalar UUID
 
+input UpdateBulkFileMetadataInput {
+  consignmentId: UUID!
+  fileIds: [UUID!]!
+  metadataProperties: [UpdateFileMetadataInput!]!
+}
+
 input UpdateConsignmentSeriesIdInput {
   consignmentId: UUID!
   seriesId: UUID!
@@ -409,6 +431,11 @@ input UpdateExportDataInput {
   exportLocation: String!
   exportDatetime: ZonedDateTime
   exportVersion: String!
+}
+
+input UpdateFileMetadataInput {
+  filePropertyName: String!
+  value: String!
 }
 
 scalar ZonedDateTime

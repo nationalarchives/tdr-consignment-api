@@ -107,7 +107,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
                   parentId: Option[UUID],
                   metadata: FileMetadataValues = FileMetadataValues(None, None, None, None, None, None, None, None, None),
                   fileStatus: Option[String],
-                  ffidMetadata: Option[FFIDMetadataValues])
+                  ffidMetadata: Option[FFIDMetadataValues],
+                  originalFilePath: Option[String])
 
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
 
@@ -195,7 +196,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val identificationBasisMatch = "TEST DATA identification"
       val puidMatch = "TEST DATA puid"
 
-      utils.addFileProperty(SHA256ServerSideChecksum)
+      List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitlePublic, ClosureStartDate).foreach(utils.addFileProperty)
+
       utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
       utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
       utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
@@ -219,6 +221,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId, propertyName, value)
         utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, propertyName, value)
       })
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureStartDate, "2021-04-11 12:30:30.592853")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionAsserted, "2021-03-12 12:30:30.592853")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, TitlePublic, "true")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosurePeriod, "1")
 
       val fileOneFfidMetadataId = utils.addFFIDMetadata(fileOneId)
       utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
@@ -531,6 +537,34 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val response: GraphqlQueryData = runTestQuery("query_paginated_files_parentid_filter", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return the original file ID when the file is a redacted one" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
+      utils.createConsignment(consignmentId, userId)
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      staticMetadataProperties.map(_.name).foreach(utils.addFileProperty)
+      clientSideProperties.foreach(utils.addFileProperty)
+      val originalFilePath = "/an/original/file/path"
+      val topDirectory = UUID.fromString("ce0a51a5-a224-474f-b3a4-df75effd5b34")
+      val originalFileId = UUID.fromString("6420152a-aaf2-4401-a309-f67ae35f5702")
+      val redactedFileId = UUID.randomUUID()
+      createDirectoryAndMetadata(consignmentId, topDirectory, utils, "directory")
+      utils.createFile(originalFileId, consignmentId, fileName = "original.txt", parentId = topDirectory.some)
+      utils.createFile(redactedFileId, consignmentId, fileName = "original_R.txt", parentId = topDirectory.some)
+      utils.addFileMetadata(UUID.randomUUID.toString, originalFileId.toString, ClientSideOriginalFilepath, originalFilePath)
+
+      val response: GraphqlQueryData = runTestQuery("query_redacted_original", validUserToken())
+      val originalFile = for {
+        data <- response.data
+        consignment <- data.getConsignment
+        files <- consignment.files
+        file <- files.find(_.fileId == redactedFileId)
+        originalFile <- file.originalFilePath
+      } yield originalFile
+      originalFile.contains(originalFilePath) should be(true)
   }
 
   "updateExportData" should "update the export data correctly" in withContainers {

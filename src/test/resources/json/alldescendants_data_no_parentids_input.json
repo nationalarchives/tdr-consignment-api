@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Field 'AllDescendantsInput.parentIds' of required type '[UUID!]!' was not provided. (line 1, column 38):\n{allDescendants(allDescendantsInput: {consignmentId: \"1cd5e07a-34c8-4751-8e81-98edd17d1729\"}){fileId fileType fileName parentId}}\n                                     ^",
+      "locations": [
+        {
+          "column": 38,
+          "line": 1
+        }
+      ]
+    }
+  ]
+}
