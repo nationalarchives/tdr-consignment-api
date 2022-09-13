@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileMetadataUpdate, FileRepository}
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -19,19 +19,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                           fileRepository: FileRepository,
+                          customMetadataPropertiesRepository: CustomMetadataPropertiesRepository,
                           timeSource: TimeSource, uuidSource: UUIDSource)(implicit val ec: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
-  def addStaticMetadata(files: Seq[FileRow], userId: UUID): Future[Seq[FilemetadataRow]] = {
-    val now = Timestamp.from(timeSource.now)
-    val fileMetadataRows = for {
-      staticMetadata <- staticMetadataProperties
-      fileId <- files.map(_.fileid)
-    } yield FilemetadataRow(uuidSource.uuid, fileId, staticMetadata.value, now, userId, staticMetadata.name)
-    fileMetadataRepository.addFileMetadata(fileMetadataRows)
+  def getCustomMetadataValues(): Future[Seq[FilepropertyvaluesRow]] = {
+    customMetadataPropertiesRepository.getCustomMetadataValues
   }
-
   def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInput, userId: UUID): Future[FileMetadataWithFileId] = {
     val fileMetadataRow =
       FilemetadataRow(uuidSource.uuid, addFileMetadataInput.fileId,
@@ -188,7 +183,8 @@ object FileMetadataService {
   val Language: StaticMetadata = StaticMetadata("Language", "English")
   val FoiExemptionCode: StaticMetadata = StaticMetadata("FoiExemptionCode", "open")
   val clientSideProperties = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
-  val staticMetadataProperties = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
+  val staticMetadataProperties: List[StaticMetadata] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
+//  val staticMetadataProperties2: List[StaticMetadata] = getCustomMetadataValues
 
   def getFileMetadataValues(fileMetadataRow: Seq[FilemetadataRow]): FileMetadataValues = {
     val propertyNameMap: Map[String, String] = fileMetadataRow.groupBy(_.propertyname).transform {
