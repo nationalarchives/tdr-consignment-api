@@ -184,7 +184,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val testSetUp = new UpdateBulkMetadataTestSetUp()
     testSetUp.stubRepoResponses()
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     val duplicateInputFileIds = testSetUp.inputFileIds ++ testSetUp.inputFileIds
     service.updateBulkFileMetadata(
       UpdateBulkFileMetadataInput(testSetUp.consignmentId, duplicateInputFileIds, testSetUp.metadataPropertiesWithNewValues), testSetUp.userId
@@ -203,7 +204,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRow)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     service.updateBulkFileMetadata(
       UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues), testSetUp.userId
     ).futureValue
@@ -223,7 +225,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRow)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     service.updateBulkFileMetadata(
       UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues), testSetUp.userId
     ).futureValue
@@ -257,7 +260,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, mockAddFileMetadataResponse, Seq(existingFileMetadataRows.length))
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     service.updateBulkFileMetadata(
       UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.userId
@@ -301,7 +305,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, Seq(), numberOfRowsWithPropertyName)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     val newMetadataPropertiesWithOneOldValue = Seq(
       UpdateFileMetadataInput("propertyName1", "value1"), // this value already exists on propertyName1, therefore, there is no need to update it
       UpdateFileMetadataInput("propertyName2", "newValue2")
@@ -345,7 +350,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, Seq(), mockAddFileMetadataResponse)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     service.updateBulkFileMetadata(
       UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.userId
@@ -382,7 +388,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, Seq(), Seq(existingFileMetadataRows.length))
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     service.updateBulkFileMetadata(
       UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.userId
@@ -424,7 +431,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, Seq(), Seq())
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource, testSetUp.fixedUUIDSource)
     service.updateBulkFileMetadata(
       UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
       testSetUp.userId

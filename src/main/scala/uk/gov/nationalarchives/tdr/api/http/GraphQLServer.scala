@@ -70,6 +70,7 @@ class GraphQLServer(slickSession: SlickSession) {
     }
   }
 
+  //scalastyle:off method.length
   private def generateConsignmentApiContext(accessToken: Token)(implicit ec: ExecutionContext): ConsignmentApiContext = {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
@@ -122,6 +123,7 @@ class GraphQLServer(slickSession: SlickSession) {
       customMetadataPropertiesService
     )
   }
+  //scalastyle:on method.length
 
   private def executeGraphQLQuery(query: Document, operation: Option[String], vars: JsObject, accessToken: Token)
                                  (implicit ec: ExecutionContext): Future[(StatusCode with Serializable, JsValue)] = {
