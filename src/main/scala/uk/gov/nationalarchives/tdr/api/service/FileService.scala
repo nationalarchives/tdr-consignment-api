@@ -50,14 +50,14 @@ class FileService(fileRepository: FileRepository,
     val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
-    val rows: Future[List[Rows]] = fileMetadataService.getCustomMetadataValues().map(staticMetadata => {
+    val rows: Future[List[Rows]] = fileMetadataService.getCustomMetadataValuesWithDefault.map(staticMetadata => {
       ((allEmptyDirectoryNodes ++ allFileNodes) map {
         case (path, treeNode) =>
           val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
           val fileId = treeNode.id
           val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
           val commonMetadataRows = row(fileId, path, ClientSideOriginalFilepath) ::
-            staticMetadata.map(property => row(fileId, property.propertyvalue, property.propertyname)).toList
+            staticMetadata.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
           if (treeNode.treeNodeType.isFileType) {
             val input = addFileAndMetadataInput.metadataInput.filter(m => {
               val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath

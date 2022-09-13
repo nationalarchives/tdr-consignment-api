@@ -24,8 +24,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
-  def getCustomMetadataValues(): Future[Seq[FilepropertyvaluesRow]] = {
-    customMetadataPropertiesRepository.getCustomMetadataValues
+  def getCustomMetadataValuesWithDefault: Future[Seq[FilepropertyvaluesRow]] = {
+    customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault
   }
   def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInput, userId: UUID): Future[FileMetadataWithFileId] = {
     val fileMetadataRow =
@@ -182,9 +182,7 @@ object FileMetadataService {
   val HeldBy: StaticMetadata = StaticMetadata("HeldBy", "TNA")
   val Language: StaticMetadata = StaticMetadata("Language", "English")
   val FoiExemptionCode: StaticMetadata = StaticMetadata("FoiExemptionCode", "open")
-  val clientSideProperties = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
-  val staticMetadataProperties: List[StaticMetadata] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
-//  val staticMetadataProperties2: List[StaticMetadata] = getCustomMetadataValues
+  val clientSideProperties: List[String] = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize)
 
   def getFileMetadataValues(fileMetadataRow: Seq[FilemetadataRow]): FileMetadataValues = {
     val propertyNameMap: Map[String, String] = fileMetadataRow.groupBy(_.propertyname).transform {
