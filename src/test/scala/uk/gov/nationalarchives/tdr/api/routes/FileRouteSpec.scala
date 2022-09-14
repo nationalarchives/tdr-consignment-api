@@ -58,7 +58,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId, userId)
 
-      staticMetadataProperties.foreach(staticmetadata => utils.createFilePropertyValues(staticmetadata.name, staticmetadata.value, default = true, 1, 1))
+      staticMetadataProperties.foreach(staticMetadata => utils.createFilePropertyValues(staticMetadata.name, staticMetadata.value, default = true, 1, 1))
       val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
       val distinctDirectoryCount = 3
       val fileCount = 5
