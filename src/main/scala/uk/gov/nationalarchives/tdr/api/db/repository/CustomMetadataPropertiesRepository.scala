@@ -18,6 +18,11 @@ class CustomMetadataPropertiesRepository(db: Database)(implicit val executionCon
     db.run(query.result)
   }
 
+  def getCustomMetadataValuesWithDefault: Future[Seq[FilepropertyvaluesRow]] = {
+    val query = Filepropertyvalues.filter(_.default)
+    db.run(query.result)
+  }
+
   def getCustomMetadataDependencies: Future[Seq[FilepropertydependenciesRow]] = {
     val query = Filepropertydependencies
     db.run(query.result)

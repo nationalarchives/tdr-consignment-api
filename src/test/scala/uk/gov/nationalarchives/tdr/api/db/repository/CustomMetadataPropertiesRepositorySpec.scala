@@ -37,6 +37,17 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
       response.secondaryvalue should equal(Some(1))
   }
 
+  "getCustomMetadataValuesWithDefault" should "return closure metadata values that have default set to 'true'" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
+      TestUtils(db).createFilePropertyValues("LegalStatus", "Public Record", default = true, 0, 1)
+      TestUtils(db).createFilePropertyValues("Language", "English", default = false, 0, 1)
+      val response = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.futureValue
+      response.size should equal(1)
+      response.head.propertyname should equal("LegalStatus")
+  }
+
   "getCustomMetadataDependencies" should "return the correct closure metadata dependencies" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database

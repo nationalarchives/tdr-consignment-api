@@ -50,37 +50,39 @@ class FileService(fileRepository: FileRepository,
     val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
+    val rows: Future[List[Rows]] = fileMetadataService.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
+      ((allEmptyDirectoryNodes ++ allFileNodes) map {
+        case (path, treeNode) =>
+          val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
+          val fileId = treeNode.id
+          val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
+          val commonMetadataRows = row(fileId, path, ClientSideOriginalFilepath) ::
+            filePropertyValue.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
+          if (treeNode.treeNodeType.isFileType) {
+            val input = addFileAndMetadataInput.metadataInput.filter(m => {
+              val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
+              pathWithoutSlash == path
+            }).head
 
-    val rowsWithMatchId: List[Rows] = ((allEmptyDirectoryNodes ++ allFileNodes) map {
-      case (path, treeNode) =>
-        val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
-        val fileId = treeNode.id
-        val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
-        val commonMetadataRows = row(fileId, path, ClientSideOriginalFilepath) ::
-          staticMetadataProperties.map(property => row(fileId, property.value, property.name))
-        if (treeNode.treeNodeType.isFileType) {
-          val input = addFileAndMetadataInput.metadataInput.filter(m => {
-            val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
-            pathWithoutSlash == path
-          }).head
-
-          //Add the 0 byte status here as know the file size at this point
-          //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
-          addFileStatusIfFileSizeIsZero(input, fileId)
-          addFileStatusForClientChecksum(input, fileId)
-          addFileStatusForClientFilePath(path, fileId)
-          val fileMetadataRows = List(
-            row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
-            row(fileId, input.fileSize.toString, ClientSideFileSize),
-            row(fileId, input.checksum, SHA256ClientSideChecksum)
-          )
-          MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId)
-        } else {
-          DirectoryRows(fileRow, commonMetadataRows)
-        }
-    }).toList
+            //Add the 0 byte status here as know the file size at this point
+            //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
+            addFileStatusIfFileSizeIsZero(input, fileId)
+            addFileStatusForClientChecksum(input, fileId)
+            addFileStatusForClientFilePath(path, fileId)
+            val fileMetadataRows = List(
+              row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
+              row(fileId, input.fileSize.toString, ClientSideFileSize),
+              row(fileId, input.checksum, SHA256ClientSideChecksum)
+            )
+            MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId)
+          } else {
+            DirectoryRows(fileRow, commonMetadataRows)
+          }
+      }).toList
+    })
 
     for {
+      rowsWithMatchId <- rows
       _ <- rowsWithMatchId.grouped(fileUploadBatchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
     } yield rowsWithMatchId.flatMap {
       case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil

@@ -51,12 +51,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     })
   }
 
-  def addTransferAgreementFileProperties(): Unit = {
-    staticMetadataProperties.foreach(propertyName => {
-      addFileProperty(propertyName.name)
-    })
-  }
-
   def addFinalTransferConfirmationProperties(): Unit = {
     finalTransferConfirmationProperties.foreach(propertyName => {
       addConsignmentProperty(propertyName)
@@ -513,4 +507,5 @@ object TestUtils {
   case class Locations(column: Int, line: Int)
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
+  val staticMetadataProperties: List[StaticMetadata] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 }
