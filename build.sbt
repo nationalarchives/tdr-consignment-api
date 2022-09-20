@@ -41,7 +41,7 @@ enablePlugins(GraphQLSchemaPlugin)
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
 lazy val akkaHttpVersion = "10.2.10"
-lazy val circeVersion = "0.14.2"
+lazy val circeVersion = "0.14.3"
 lazy val testContainersVersion = "0.40.10"
 
 libraryDependencies ++= Seq(
