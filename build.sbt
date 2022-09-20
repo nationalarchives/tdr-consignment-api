@@ -67,7 +67,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.3.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "ch.megard" %% "akka-http-cors" % "1.1.3",
-  "ch.qos.logback" % "logback-classic" % "1.4.0",
+  "ch.qos.logback" % "logback-classic" % "1.4.1",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
   "software.amazon.awssdk" % "rds" % "2.17.162",
