@@ -21,7 +21,7 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
         None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
     ))
     val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType", "closed_for", None, None, None)
+      FilepropertyvaluesRow("closureType", "Closed", None, None, None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
       FilepropertydependenciesRow(3, "ClosurePeriod", None)
@@ -35,7 +35,7 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
     val response = service.getCustomMetadata.futureValue
 
     response.size should equal(1)
-    response.head.values.head.value should equal("closed_for")
+    response.head.values.head.value should equal("Closed")
     response.head.values.head.dependencies.isEmpty should equal(true)
   }
 
@@ -48,7 +48,7 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
         None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
     ))
     val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType", "closed_for", None, Some(3), None)
+      FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
       FilepropertydependenciesRow(3, "ClosurePeriod", None)
@@ -77,7 +77,7 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
         None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(3))
     ))
     val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType", "closed_for", None, Some(3), None)
+      FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
       FilepropertydependenciesRow(3, "ClosurePeriod", None)
