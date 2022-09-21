@@ -92,8 +92,8 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
 
     response.size should equal(3)
     val responseMap = response.groupBy(_.name)
-    responseMap("firstValue").head.ordinal should equal(1)
-    responseMap("noOrdering").head.ordinal should equal(Int.MaxValue)
-    responseMap("thirdValue").head.ordinal should equal(3)
+    responseMap("firstValue").head.uiOrdinal should equal(1)
+    responseMap("noOrdering").head.uiOrdinal should equal(Int.MaxValue)
+    responseMap("thirdValue").head.uiOrdinal should equal(3)
   }
 }
