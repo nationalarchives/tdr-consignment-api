@@ -101,12 +101,12 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
     val mockPropertyResponse = Future(Seq(
       FilepropertyRow("firstValue", None, Some("First Value"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(1)),
+        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(1))
     ))
     val mockPropertyValuesResponse = Future(Seq(
       FilepropertyvaluesRow("firstValue", "orderedOneValue", None, None, None, Some(1)),
       FilepropertyvaluesRow("firstValue", "orderedTwoValue", None, None, None, Some(2)),
-      FilepropertyvaluesRow("firstValue", "notOrderedValue", None, None, None, None),
+      FilepropertyvaluesRow("firstValue", "notOrderedValue", None, None, None, None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
       FilepropertydependenciesRow(3, "ClosurePeriod", None)
