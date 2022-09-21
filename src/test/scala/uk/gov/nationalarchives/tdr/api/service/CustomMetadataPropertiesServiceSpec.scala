@@ -96,4 +96,33 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
     responseMap("noOrdering").head.uiOrdinal should equal(Int.MaxValue)
     responseMap("thirdValue").head.uiOrdinal should equal(3)
   }
+
+  "getCustomMetadata" should "return values in the correct order" in {
+    val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
+    val mockPropertyResponse = Future(Seq(
+      FilepropertyRow("firstValue", None, Some("First Value"), Timestamp.from(Instant.now()),
+        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(1)),
+    ))
+    val mockPropertyValuesResponse = Future(Seq(
+      FilepropertyvaluesRow("firstValue", "orderedOneValue", None, None, None, Some(1)),
+      FilepropertyvaluesRow("firstValue", "orderedTwoValue", None, None, None, Some(2)),
+      FilepropertyvaluesRow("firstValue", "notOrderedValue", None, None, None, None),
+    ))
+    val mockPropertyDependenciesResponse = Future(Seq(
+      FilepropertydependenciesRow(3, "ClosurePeriod", None)
+    ))
+
+    when(customMetadataPropertiesRepository.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
+    when(customMetadataPropertiesRepository.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
+    when(customMetadataPropertiesRepository.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
+
+    val service = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
+    val response = service.getCustomMetadata.futureValue
+
+    response.size should equal(1)
+    val responseMap = response.flatMap(_.values).groupBy(_.value)
+    responseMap("orderedOneValue").head.uiOrdinal should equal(1)
+    responseMap("orderedTwoValue").head.uiOrdinal should equal(2)
+    responseMap("notOrderedValue").head.uiOrdinal should equal(Int.MaxValue)
+  }
 }

@@ -44,6 +44,11 @@ lazy val akkaHttpVersion = "10.2.10"
 lazy val circeVersion = "0.14.3"
 lazy val testContainersVersion = "0.40.10"
 
+dependencyOverrides ++= Seq(
+  "com.typesafe.slick" %% "slick" % "3.4.0",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0"
+)
+
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "3.2.0",
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.4",
@@ -64,8 +69,8 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.2",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.22",
   "org.postgresql" % "postgresql" % "42.5.0",
-  "com.typesafe.slick" %% "slick" % "3.3.3",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
+  "com.typesafe.slick" %% "slick" % "3.4.0",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
   "ch.megard" %% "akka-http-cors" % "1.1.3",
   "ch.qos.logback" % "logback-classic" % "1.4.1",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",

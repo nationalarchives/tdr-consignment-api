@@ -42,6 +42,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
 
     val metadataValues: Seq[CustomMetadataValues] = values.getOrElse(fp.name, Nil).map{
       value =>
+        val valueOrdinal = value.ordinal.getOrElse(Int.MaxValue)
         value.dependencies.map{
           groupId => {
             val valueDependencies: Seq[CustomMetadataField] =
@@ -52,9 +53,9 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
                   propertyBelongingToGroupId.map(fp => rowsToMetadata(fp, values, dependencies, properties, dependencyBelongingToGroupId.default))
                 }
               } yield dependencyProperty
-            CustomMetadataValues(valueDependencies.toList, value.propertyvalue)
+            CustomMetadataValues(valueDependencies.toList, value.propertyvalue, valueOrdinal)
           }
-        }.getOrElse(CustomMetadataValues(Nil, value.propertyvalue))
+        }.getOrElse(CustomMetadataValues(Nil, value.propertyvalue, valueOrdinal))
     }
 
     CustomMetadataField(

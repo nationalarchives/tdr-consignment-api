@@ -23,7 +23,7 @@ object CustomMetadataFields {
   case object Defined extends PropertyType
   case object Supplied extends PropertyType
 
-  case class CustomMetadataValues(dependencies: List[CustomMetadataField], value: String)
+  case class CustomMetadataValues(dependencies: List[CustomMetadataField], value: String, uiOrdinal: Int)
   case class CustomMetadataField(
                             name: String, fullName: Option[String], description: Option[String], propertyType: PropertyType,
                             propertyGroup: Option[String], dataType: DataType, editable: Boolean,
