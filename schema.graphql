@@ -179,6 +179,7 @@ type CustomMetadataField {
 type CustomMetadataValues {
   dependencies: [CustomMetadataField!]!
   value: String!
+  uiOrdinal: Int!
 }
 
 enum DataType {
