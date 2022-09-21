@@ -121,7 +121,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setBoolean(3, default)
     ps.setInt(4, dependencies)
     ps.setInt(5, secondaryvalue)
-    ps.setObject(6, uiOrdinal.orNull, Types.INTEGER)
+    ps.setInt(6, uiOrdinal.getOrElse(Int.MinValue))
     ps.executeUpdate()
   }
 
