@@ -6,6 +6,7 @@ import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, ProjectedName, Projector, StringType, fields}
+import uk.gov.nationalarchives.tdr.api.auth.ValidateHasReportingAccess.{continue, reportingRole}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
@@ -34,6 +35,7 @@ object ConsignmentFields {
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
+
   case class FileEdge(node: File, cursor: String) extends Edge[File]
 
   case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: String)
@@ -45,12 +47,15 @@ object ConsignmentFields {
   case class FFIDProgress(filesProcessed: Int)
 
   case class FileChecks(antivirusProgress: AntivirusProgress, checksumProgress: ChecksumProgress, ffidProgress: FFIDProgress)
+
   case class TransferringBody(name: String, tdrCode: String)
+
   case class CurrentStatus(series: Option[String],
                            transferAgreement: Option[String],
                            upload: Option[String],
                            confirmTransfer: Option[String],
                            `export`: Option[String])
+
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
@@ -58,6 +63,8 @@ object ConsignmentFields {
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
+
+  case class ConsignmentFilter(userId: Option[UUID])
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -208,7 +215,13 @@ object ConsignmentFields {
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
         val currentCursor = ctx.args.argOpt("currentCursor")
-        ctx.ctx.consignmentService.getConsignments(limit, currentCursor)
+        val reportingAccess = ctx.ctx.accessToken.reportingRoles.contains(reportingRole)
+        val consignmentFilter = if (reportingAccess) {
+          None
+        } else {
+          Some(ConsignmentFilter(userId = Some(ctx.ctx.accessToken.userId)))
+        }
+        ctx.ctx.consignmentService.getConsignments(limit, currentCursor, consignmentFilter)
           .map(r => {
             val endCursor = r.lastCursor
             val edges = r.consignmentEdges
@@ -223,8 +236,7 @@ object ConsignmentFields {
             )
           }
         )
-      },
-      tags = List(ValidateHasReportingAccess)
+      }
     )
   )
 
