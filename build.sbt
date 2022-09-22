@@ -1,6 +1,4 @@
 import rocks.muki.graphql.quietError
-import rocks.muki.graphql.schema.SchemaLoader
-import sbt.File
 import sbt.Keys.libraryDependencies
 
 
@@ -43,11 +41,6 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 lazy val akkaHttpVersion = "10.2.10"
 lazy val circeVersion = "0.14.3"
 lazy val testContainersVersion = "0.40.10"
-
-dependencyOverrides ++= Seq(
-  "com.typesafe.slick" %% "slick" % "3.4.0",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0"
-)
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "3.2.0",
