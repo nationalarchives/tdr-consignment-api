@@ -112,14 +112,16 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     }.to(LazyList).toList
   }
 
-  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int): Unit = {
-    val sql = s"""INSERT INTO "FilePropertyValues" ("PropertyName", "PropertyValue", "Default", "Dependencies", "SecondaryValue") VALUES (?, ?, ?, ?, ?)"""
+  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int, uiOrdinal: Option[Int] = None): Unit = {
+    val sql = s"""INSERT INTO "FilePropertyValues" ("PropertyName", "PropertyValue", "Default", "Dependencies", "SecondaryValue", "Ordinal") VALUES (?, ?, ?, ?, ?, ?)"""
+
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, propertyName)
     ps.setString(2, propertyValue)
     ps.setBoolean(3, default)
     ps.setInt(4, dependencies)
     ps.setInt(5, secondaryvalue)
+    ps.setInt(6, uiOrdinal.getOrElse(Int.MinValue))
     ps.executeUpdate()
   }
 
