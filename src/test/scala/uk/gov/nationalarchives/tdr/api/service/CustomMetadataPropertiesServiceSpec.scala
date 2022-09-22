@@ -6,6 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
+import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.CustomMetadataField
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -14,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  "getCustomMetadata" should "correctly return sequence of metadataField" in {
+  "getCustomMetadata" should "correctly return sequence of CustomMetadataField without dependencies" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
     val mockPropertyResponse = Future(Seq(
       FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()),
@@ -32,14 +33,14 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
     when(customMetadataPropertiesRepository.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
     val service = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val response = service.getCustomMetadata.futureValue
+    val response: Seq[CustomMetadataField] = service.getCustomMetadata.futureValue
 
     response.size should equal(1)
     response.head.values.head.value should equal("Closed")
     response.head.values.head.dependencies.isEmpty should equal(true)
   }
 
-  "getCustomMetadata" should "correctly return sequence of metadataField with dependencies" in {
+  "getCustomMetadata" should "correctly return sequence of CustomMetadataField with dependencies" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
     val mockPropertyResponse = Future(Seq(
       FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()),
@@ -59,7 +60,7 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
     when(customMetadataPropertiesRepository.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
     val service = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val response = service.getCustomMetadata.futureValue
+    val response: Seq[CustomMetadataField] = service.getCustomMetadata.futureValue
 
     response.size should equal(2)
     response.head.values.size should equal(1)
@@ -88,7 +89,7 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
     when(customMetadataPropertiesRepository.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
     val service = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val response = service.getCustomMetadata.futureValue
+    val response: Seq[CustomMetadataField] = service.getCustomMetadata.futureValue
 
     response.size should equal(3)
     val responseMap = response.groupBy(_.name)
@@ -117,7 +118,7 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
     when(customMetadataPropertiesRepository.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
     val service = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val response = service.getCustomMetadata.futureValue
+    val response: Seq[CustomMetadataField] = service.getCustomMetadata.futureValue
 
     response.size should equal(1)
     val responseMap = response.flatMap(_.values).groupBy(_.value)
