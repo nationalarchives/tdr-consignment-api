@@ -293,7 +293,7 @@ type FileMetadataValues {
   closurePeriod: Int
   closureStartDate: LocalDateTime
   foiExemptionAsserted: LocalDateTime
-  titlePublic: Boolean
+  titleClosed: Boolean
 }
 
 type FileMetadataWithFileId {
