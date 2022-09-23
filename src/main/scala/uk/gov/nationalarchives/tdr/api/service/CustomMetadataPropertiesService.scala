@@ -23,7 +23,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
         val valuesByPropertyName: Map[String, Seq[FilepropertyvaluesRow]] = values.groupBy(_.propertyname)
         val propertyNamesValuesBelongTo: Seq[String] = valuesByPropertyName.keys.toSeq
         val dependencyNames: Seq[String] = dependencies.map(_.propertyname)
-        checkIfValuesAndDependenciesNamesAreValid(propertyNames, Map("values" -> propertyNamesValuesBelongTo, "dependencies" -> dependencyNames))
+        checkProperties(propertyNames, Map("values" -> propertyNamesValuesBelongTo, "dependencies" -> dependencyNames))
 
         val dependenciesByGroupId: Map[Int, Seq[FilepropertydependenciesRow]] = dependencies.groupBy(_.groupid)
 
@@ -39,7 +39,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
     }
   }
 
-  def checkIfValuesAndDependenciesNamesAreValid(properties: Seq[String], valuesAndDependencies: Map[String, Seq[String]]): Unit =
+  def checkProperties(properties: Seq[String], valuesAndDependencies: Map[String, Seq[String]]): Unit =
     valuesAndDependencies.foreach {
       case (table, names) => names.foreach {
         name => if(!properties.contains(name)) throw new Exception(
