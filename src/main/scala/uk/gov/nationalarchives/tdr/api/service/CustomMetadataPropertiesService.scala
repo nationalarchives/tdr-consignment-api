@@ -19,7 +19,12 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
 
     propertiesValuesAndDependencies.map {
       case (properties, values, dependencies) =>
+        val propertyNames: Seq[String] = properties.map(_.name)
         val valuesByPropertyName: Map[String, Seq[FilepropertyvaluesRow]] = values.groupBy(_.propertyname)
+        val propertyNamesValuesBelongTo: Seq[String] = valuesByPropertyName.keys.toSeq
+        val dependencyNames: Seq[String] = dependencies.map(_.propertyname)
+        checkIfValuesAndDependenciesNamesAreValid(propertyNames, Map("values" -> propertyNamesValuesBelongTo, "dependencies" -> dependencyNames))
+
         val dependenciesByGroupId: Map[Int, Seq[FilepropertydependenciesRow]] = dependencies.groupBy(_.groupid)
 
         properties.map{
@@ -28,11 +33,21 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
               valuesOfProperty <- valuesByPropertyName.get(property.name)
               valueLabelledAsTheDefault <- valuesOfProperty.find(_.default.getOrElse(false))
             } yield valueLabelledAsTheDefault.propertyvalue
-            rowsToMetadata(property, valuesByPropertyName, dependenciesByGroupId, properties,  defaultValue)
+            rowsToMetadata(property, valuesByPropertyName, dependenciesByGroupId, properties, defaultValue)
           }
         }.toList
     }
   }
+
+  def checkIfValuesAndDependenciesNamesAreValid(properties: Seq[String], valuesAndDependencies: Map[String, Seq[String]]): Unit =
+    valuesAndDependencies.foreach {
+      case (table, names) => names.foreach {
+        name => if(!properties.contains(name)) throw new Exception(
+          s"Error: Property name $name, in the $table table, does not exist in the FileProperty table"
+        )
+      }
+    }
+
 
   private def rowsToMetadata(fp: FilepropertyRow,
                              values: Map[String, Seq[FilepropertyvaluesRow]],
