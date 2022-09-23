@@ -51,12 +51,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     })
   }
 
-  def addTransferAgreementFileProperties(): Unit = {
-    staticMetadataProperties.foreach(propertyName => {
-      addFileProperty(propertyName.name)
-    })
-  }
-
   def addFinalTransferConfirmationProperties(): Unit = {
     finalTransferConfirmationProperties.foreach(propertyName => {
       addConsignmentProperty(propertyName)
@@ -118,14 +112,16 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     }.to(LazyList).toList
   }
 
-  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int): Unit = {
-    val sql = s"""INSERT INTO "FilePropertyValues" ("PropertyName", "PropertyValue", "Default", "Dependencies", "SecondaryValue") VALUES (?, ?, ?, ?, ?)"""
+  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int, uiOrdinal: Option[Int] = None): Unit = {
+    val sql = s"""INSERT INTO "FilePropertyValues" ("PropertyName", "PropertyValue", "Default", "Dependencies", "SecondaryValue", "Ordinal") VALUES (?, ?, ?, ?, ?, ?)"""
+
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, propertyName)
     ps.setString(2, propertyValue)
     ps.setBoolean(3, default)
     ps.setInt(4, dependencies)
     ps.setInt(5, secondaryvalue)
+    ps.setInt(6, uiOrdinal.getOrElse(Int.MinValue))
     ps.executeUpdate()
   }
 
@@ -513,4 +509,5 @@ object TestUtils {
   case class Locations(column: Int, line: Int)
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
+  val staticMetadataProperties: List[StaticMetadata] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 }

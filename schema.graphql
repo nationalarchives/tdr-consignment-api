@@ -173,12 +173,13 @@ type CustomMetadataField {
   multiValue: Boolean!
   defaultValue: String
   values: [CustomMetadataValues!]!
-  ordinal: Int!
+  uiOrdinal: Int!
 }
 
 type CustomMetadataValues {
   dependencies: [CustomMetadataField!]!
   value: String!
+  uiOrdinal: Int!
 }
 
 enum DataType {
