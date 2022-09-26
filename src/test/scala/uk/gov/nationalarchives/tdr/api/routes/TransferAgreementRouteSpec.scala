@@ -1,17 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import java.sql.{PreparedStatement, ResultSet, Types}
-import java.util.UUID
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService.transferAgreementProperties
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
+
+import java.sql.{PreparedStatement, ResultSet, Types}
+import java.util.UUID
 
 class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
@@ -43,12 +43,12 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
 
   case class AddTransferAgreementCompliance(addTransferAgreementCompliance: TransferAgreementCompliance) extends TestRequest
 
-  val runTAPrivateBetaTestMutation: (String, OAuth2BearerToken) => GraphqlTAPrivateBetaMutationData =
+  val runTAPrivateBetaTestMutation: (String, String) => GraphqlTAPrivateBetaMutationData =
     runTestRequest[GraphqlTAPrivateBetaMutationData](addTransferAgreementPrivateBetaJsonFilePrefix)
   val expectedTAPrivateBetaMutationResponse: String => GraphqlTAPrivateBetaMutationData =
     getDataFromFile[GraphqlTAPrivateBetaMutationData](addTransferAgreementPrivateBetaJsonFilePrefix)
 
-  val runTAComplianceTestMutation: (String, OAuth2BearerToken) => GraphqlTAComplianceMutationData =
+  val runTAComplianceTestMutation: (String, String) => GraphqlTAComplianceMutationData =
     runTestRequest[GraphqlTAComplianceMutationData](addTransferAgreementComplianceJsonFilePrefix)
   val expectedTAComplianceMutationResponse: String => GraphqlTAComplianceMutationData =
     getDataFromFile[GraphqlTAComplianceMutationData](addTransferAgreementComplianceJsonFilePrefix)

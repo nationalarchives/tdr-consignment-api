@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -29,7 +28,7 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
 
   case class AddFileStatus(addFileStatus: FileStatus)
 
-  val runAddFileStatusTestMutation: (String, OAuth2BearerToken) => GraphqlAddFileStatusMutationData =
+  val runAddFileStatusTestMutation: (String, String) => GraphqlAddFileStatusMutationData =
     runTestRequest[GraphqlAddFileStatusMutationData](addFileStatusPrefix)
 
   val expectedAddFileStatusMutationResponse: String => GraphqlAddFileStatusMutationData =

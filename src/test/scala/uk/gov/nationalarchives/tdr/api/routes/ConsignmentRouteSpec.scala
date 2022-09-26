@@ -1,9 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.UUID
-
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
@@ -16,6 +12,9 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
+
+import java.time.{LocalDateTime, ZonedDateTime}
+import java.util.UUID
 
 //scalastyle:off number.of.methods
 //scalastyle:off number.of.types
@@ -135,13 +134,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class StartUpload(startUpload: String)
 
-  val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
-  val runConsignmentsTestQuery: (String, OAuth2BearerToken) =>
+  val runTestQuery: (String, String) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
+  val runConsignmentsTestQuery: (String, String) =>
     GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
-  val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
-  val runTestStartUploadMutation: (String, OAuth2BearerToken) => GraphqlMutationStartUpload =
+  val runTestMutation: (String, String) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
+  val runTestStartUploadMutation: (String, String) => GraphqlMutationStartUpload =
     runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
-  val runUpdateConsignmentSeriesIdMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateSeriesIdOfConsignment =
+  val runUpdateConsignmentSeriesIdMutation: (String, String) => GraphqlMutationUpdateSeriesIdOfConsignment =
     runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String =>

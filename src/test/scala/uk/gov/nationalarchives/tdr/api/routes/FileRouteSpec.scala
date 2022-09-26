@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -39,12 +38,12 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   case class AddFilesAndMetadata(addFilesAndMetadata: List[FileMatches])
   case class AllDescendants(allDescendants: List[File])
 
-  val runTestMutationFileMetadata: (String, OAuth2BearerToken) => GraphqlMutationDataFilesMetadata =
+  val runTestMutationFileMetadata: (String, String) => GraphqlMutationDataFilesMetadata =
     runTestRequest[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
   val expectedFilesAndMetadataMutationResponse: String => GraphqlMutationDataFilesMetadata =
     getDataFromFile[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
 
-  val runTestQueryAllDescendants: (String, OAuth2BearerToken) => GraphqlQueryDataAllDescendants =
+  val runTestQueryAllDescendants: (String, String) => GraphqlQueryDataAllDescendants =
     runTestRequest[GraphqlQueryDataAllDescendants](allDescendantsJsonFilePrefix)
   val expectedAllDescendantsQueryResponse: String => GraphqlQueryDataAllDescendants =
     getDataFromFile[GraphqlQueryDataAllDescendants](allDescendantsJsonFilePrefix)

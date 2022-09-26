@@ -1,13 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
-import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
 import java.time.ZonedDateTime
@@ -17,13 +16,13 @@ import java.util.UUID
 class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
   private val addConsignmentStatusJsonFilePrefix: String = "json/addconsignmentstatus_"
-  val runAddConsignmentStatusTestMutation: (String, OAuth2BearerToken) => AddConsignmentStatusGraphqlMutationData =
+  val runAddConsignmentStatusTestMutation: (String, String) => AddConsignmentStatusGraphqlMutationData =
     runTestRequest[AddConsignmentStatusGraphqlMutationData](addConsignmentStatusJsonFilePrefix)
   val expectedAddConsignmentStatusMutationResponse: String => AddConsignmentStatusGraphqlMutationData =
     getDataFromFile[AddConsignmentStatusGraphqlMutationData](addConsignmentStatusJsonFilePrefix)
 
   private val updateConsignmentStatusJsonFilePrefix: String = "json/updateconsignmentstatus_"
-  val runUpdateConsignmentStatusTestMutation: (String, OAuth2BearerToken) => UpdateConsignmentStatusGraphqlMutationData =
+  val runUpdateConsignmentStatusTestMutation: (String, String) => UpdateConsignmentStatusGraphqlMutationData =
     runTestRequest[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)
   val expectedUpdateConsignmentStatusMutationResponse: String => UpdateConsignmentStatusGraphqlMutationData =
     getDataFromFile[UpdateConsignmentStatusGraphqlMutationData](updateConsignmentStatusJsonFilePrefix)

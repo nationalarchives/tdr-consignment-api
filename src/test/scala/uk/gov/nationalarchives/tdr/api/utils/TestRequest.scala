@@ -1,31 +1,41 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.FromResponseUnmarshaller
-import akka.stream.alpakka.slick.javadsl.SlickSession
-import com.typesafe.config.ConfigFactory
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import fs2.text.utf8.encode
+import fs2.{Pure, Stream}
+import org.http4s.circe.{jsonEncoder, jsonEncoderOf}
 import io.circe.Decoder
+import org.http4s.Credentials.Token
+import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
+import org.http4s.headers.{Authorization, `Content-Type`}
+import org.http4s.implicits.http4sLiteralsSyntax
+import org.http4s.{EntityEncoder, Headers, MediaType, Method, Request, Response}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.http.Routes
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.unmarshalResponse
+import org.typelevel.ci.CIStringSyntax
+import slick.jdbc.JdbcBackend.Database
+import uk.gov.nationalarchives.tdr.api.http.Http4sServer
 
 import scala.io.Source.fromResource
 import scala.reflect.ClassTag
 
-trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
+trait TestRequest extends AnyFlatSpec with Matchers {
 
-  def runTestRequest[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken)
+  def runTestRequest[A](prefix: String)(queryFileName: String, token: String)
                        (implicit decoder: Decoder[A], classTag: ClassTag[A])
   : A = {
-    implicit val unmarshaller: FromResponseUnmarshaller[A] = unmarshalResponse[A]()
-    val slickSession = SlickSession.forConfig("consignmentapi")
-    val route = new Routes(ConfigFactory.load(), slickSession).route
+    val database = Database.forConfig("consignmentapi.db")
     val query: String = fromResource(prefix + s"$queryFileName.json").mkString
-    Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(token) ~> route ~> check {
-      responseAs[A]
-    }
+    val body: Stream[Pure, Byte] = encode(Stream(query))
+    val credentials = Token(ci"Bearer", token)
+    val headers = Headers(
+      `Content-Type`(MediaType.application.json),
+      Authorization(credentials)
+    )
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", body = body, headers = headers)
+    ).unsafeRunSync()
+    response.as[A].unsafeRunSync()
   }
 }

@@ -1,37 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.stream.Materializer
-import akka.stream.alpakka.slick.javadsl.SlickSession
-import com.typesafe.config.ConfigFactory
+import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.Logger
+import uk.gov.nationalarchives.tdr.api.db.DbConnection
 
-import scala.concurrent.Await
 import scala.language.postfixOps
 
-object ApiServer extends App {
+object ApiServer extends IOApp {
 
-  val PORT = 8080
   val logger = Logger("ApiServer")
+  val server = new Http4sServer(DbConnection().db).server
 
-  implicit val actorSystem: ActorSystem = ActorSystem("graphql-server")
-  implicit val materializer: Materializer = Materializer(actorSystem)
-
-  import scala.concurrent.duration._
-
-  scala.sys.addShutdownHook(() -> shutdown())
-
-  val slickSession = SlickSession.forConfig("consignmentapi")
-
-  val routes = new Routes(ConfigFactory.load(), slickSession)
-
-  Http().newServerAt("0.0.0.0", PORT).bindFlow(routes.route)
-  logger.info(s"Consignment API is running")
-
-
-  def shutdown(): Unit = {
-    actorSystem.terminate()
-    Await.result(actorSystem.whenTerminated, 30 seconds)
-  }
+  override def run(args: List[String]): IO[ExitCode] = server.use(_ => IO.never).as(ExitCode.Success)
 }

@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
-import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
@@ -182,7 +181,7 @@ object ConsignmentFields {
   implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val ConnectionDefinition(_, consignmentConnections) =
-    Connection.definition[RequestContext, Connection, Consignment](
+    Connection.definition[ConsignmentApiContext, Connection, Consignment](
       name = "Consignment",
       nodeType = ConsignmentType
     )

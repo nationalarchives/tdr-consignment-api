@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.stream.alpakka.slick.scaladsl.SlickSession
 import com.dimafeng.testcontainers.scalatest.TestContainerForEach
 import com.dimafeng.testcontainers.{ContainerDef, PostgreSQLContainer}
 import com.typesafe.config.ConfigFactory
@@ -8,6 +7,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.testcontainers.utility.DockerImageName
 import slick.jdbc.JdbcBackend
+import slick.jdbc.JdbcBackend.Database
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 
@@ -50,13 +50,8 @@ object TestContainerUtils {
       ConfigFactory.invalidateCaches()
     }
 
-    def session: SlickSession = {
-      setUrlProperty()
-      SlickSession.forConfig("consignmentapi")
-    }
-
     def database: JdbcBackend#DatabaseDef = {
-      session.db
+      Database.forURL(container.jdbcUrl, password = container.password, user = container.username)
     }
   }
 }

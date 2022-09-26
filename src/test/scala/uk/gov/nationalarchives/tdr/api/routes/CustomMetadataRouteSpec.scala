@@ -1,14 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 
 import java.util.UUID
 
@@ -29,7 +28,7 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
   private val customMetadataJsonFilePrefix: String = "json/custommetadata_"
-  val runCustomMetadataTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData =
+  val runCustomMetadataTestQuery: (String, String) => GraphqlQueryData =
     runTestRequest[GraphqlQueryData](customMetadataJsonFilePrefix)
   val expectedCustomMetadataQueryResponse: String => GraphqlQueryData =
     getDataFromFile[GraphqlQueryData](customMetadataJsonFilePrefix)

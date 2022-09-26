@@ -1,12 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.db
 
-import akka.stream.alpakka.slick.scaladsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import scalacache.CacheConfig
 import scalacache.caffeine.CaffeineCache
 import scalacache.memoization._
 import scalacache.modes.try_._
 import slick.jdbc.JdbcBackend
+import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -16,11 +16,12 @@ import software.amazon.awssdk.services.rds.model.GenerateAuthenticationTokenRequ
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-class DbConnection(slickSession: SlickSession) {
+class DbConnection() {
   implicit val passwordCache: CaffeineCache[String] = CaffeineCache[String](CacheConfig())
 
   def db: JdbcBackend#DatabaseDef = {
-    val db = slickSession.db
+
+    val db = Database.forConfig("consignmentapi.db")
     db.source match {
       case hikariDataSource: HikariCPJdbcDataSource =>
         val configBean = hikariDataSource.ds.getHikariConfigMXBean
@@ -58,5 +59,5 @@ class DbConnection(slickSession: SlickSession) {
   }
 }
 object DbConnection {
-  def apply(slickSession: SlickSession): DbConnection = new DbConnection(slickSession)
+  def apply(): DbConnection = new DbConnection()
 }

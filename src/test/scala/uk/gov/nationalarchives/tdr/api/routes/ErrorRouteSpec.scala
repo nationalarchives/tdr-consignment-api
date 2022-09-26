@@ -1,14 +1,21 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
-import akka.stream.alpakka.slick.javadsl.SlickSession
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.ConfigFactory
+import fs2.text.utf8.encode
+import fs2.{Pure, Stream}
+import org.http4s.Credentials.Token
+import org.http4s.headers.{Authorization, `Content-Type`}
+import org.http4s.implicits.http4sLiteralsSyntax
+import org.http4s.{Headers, MediaType, Method, Request, Response}
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.http.Routes
+import org.typelevel.ci.CIStringSyntax
+import uk.gov.nationalarchives.tdr.api.http.Http4sServer
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.validUserToken
-import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
 import java.sql.PreparedStatement
 import scala.io.Source.fromResource
@@ -19,14 +26,21 @@ class ErrorRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "getConsignment" should "return the field name in the error message" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
       createDatabaseError(utils)
-      val route = new Routes(ConfigFactory.load, SlickSession.forConfig("consignmentapi")).route
-      Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
-        val entityResponse = entityAs[String]
-        response.status should equal(StatusCodes.InternalServerError)
-        entityResponse should equal(s"Request with field getConsignment failed")
-      }
+      val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
+      val body: Stream[Pure, Byte] = encode(Stream(query))
+      val credentials = Token(ci"Bearer", validUserToken())
+      val headers = Headers(
+          `Content-Type`(MediaType.application.json),
+          Authorization(credentials)
+      )
+      val response: Response[IO] = Http4sServer(container.database).corsWrapper.run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers, body = body)
+      ).unsafeRunSync()
+
+      val entityResponse = response.as[String]
+      response.status should equal(500)
+      entityResponse should equal(s"Request with field getConsignment failed")
       resetRenamedColumn(utils)
   }
 

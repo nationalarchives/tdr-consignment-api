@@ -1,7 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
-import akka.stream.Materializer
 import io.circe.Decoder
 import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
@@ -495,12 +493,6 @@ object TestUtils {
       case Left(e) => throw e
     }
   }
-
-  def unmarshalResponse[A]()(implicit mat: Materializer, ec: ExecutionContext, decoder: Decoder[A]): FromResponseUnmarshaller[A] = Unmarshaller(_ => {
-    res => {
-      Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))
-    }
-  })
 
   case class GraphqlError(message: String, extensions: Option[GraphqlErrorExtensions])
 

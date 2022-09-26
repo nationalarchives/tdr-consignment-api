@@ -1,19 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Success, VirusDetected}
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
-import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
-import java.sql.{PreparedStatement, ResultSet}
+import java.sql.ResultSet
 import java.util.UUID
 
 class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
@@ -37,7 +35,7 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
 
   case class AddAntivirusMetadata(addAntivirusMetadata: AntivirusMetadata) extends TestRequest
 
-  val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData =
+  val runTestMutation: (String, String) => GraphqlMutationData =
     runTestRequest[GraphqlMutationData](addAVMetadataJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addAVMetadataJsonFilePrefix)

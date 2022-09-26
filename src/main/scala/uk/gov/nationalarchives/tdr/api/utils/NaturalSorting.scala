@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import scala.util.matching.Regex
 import java.text.Normalizer
+import scala.util.matching.Regex
 
 /**
  *
@@ -15,9 +15,9 @@ object NaturalSorting {
     def compare(a: Array[String], b: Array[String]) : Int = {
       val l = Math.min(a.length, b.length)
       (0 until l).segmentLength(i => a(i) equals b(i)) match {
-        case i if i == l => Math.signum(a.length - b.length).toInt
+        case i if i == l => Math.signum(a.length.toFloat - b.length.toFloat).toInt
         case i => (a(i), b(i)) match {
-          case (INT(c), INT(d)) => Math.signum(c.toInt - d.toInt).toInt
+          case (INT(c), INT(d)) => Math.signum(c.toFloat - d.toFloat).toInt
           case (c, d) => c compareTo d
         }
       }

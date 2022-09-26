@@ -1,106 +1,123 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.HttpMethods.{GET, OPTIONS, POST}
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.stream.alpakka.slick.javadsl.SlickSession
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import org.http4s.headers._
+import org.http4s.implicits.http4sLiteralsSyntax
+import org.http4s.{Header, Headers, MediaType, Method, Request, Response}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.http.Routes
+import org.typelevel.ci.CIStringSyntax
+import slick.jdbc.JdbcBackend.Database
+import uk.gov.nationalarchives.tdr.api.http.Http4sServer
 
 import scala.jdk.CollectionConverters._
 
-class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
+class CorsSpec extends AnyFlatSpec with Matchers {
 
   private val defaultCrossOriginDomain = "https://some-frontend.example.com"
   private val secondaryCrossOriginDomain = "https://other-frontend.example.com"
   private val crossOriginUrls = List(defaultCrossOriginDomain, secondaryCrossOriginDomain).asJava
+  val database = Database.forConfig("consignmentapi.db")
 
   private val config = ConfigFactory.load()
     .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-  val session: SlickSession = SlickSession.forConfig("consignmentapi")
-  private val route = new Routes(config, session).route
 
   "the pre-flight request" should "allow credentials, required headers and methods" in {
-    Options("/graphql") ~> route ~> check {
-      header[`Access-Control-Allow-Credentials`].map(_.value) should contain("true")
-      header[`Access-Control-Allow-Headers`] should contain(`Access-Control-Allow-Headers`("Authorization", "Content-Type", "X-Requested-With"))
-      header[`Access-Control-Allow-Methods`] should contain(`Access-Control-Allow-Methods`(OPTIONS, POST, GET))
-    }
+    val headers = Headers(
+      `Content-Type`(MediaType.application.json)
+    )
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+    ).unsafeRunSync()
+    response.headers.get[`Access-Control-Allow-Credentials`] should contain("true")
+    response.headers.get[`Access-Control-Allow-Headers`] should contain("true")
+    response.headers.get[`Access-Control-Allow-Methods`] should contain("true")
   }
 
   "the pre-flight request" should "allow requests from the default cross-origin URL" in {
-    val headers = List(Origin(defaultCrossOriginDomain))
-
-    Options("/graphql").withHeaders(headers) ~> route ~> check {
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(defaultCrossOriginDomain)
-    }
+    val headers = Headers(
+      Header.Raw(ci"Origin", defaultCrossOriginDomain)
+    )
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+    ).unsafeRunSync()
+    response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(defaultCrossOriginDomain)
   }
 
   "the pre-flight request" should "allow requests from other configured cross-origin URLs" in {
-    val headers = List(Origin(secondaryCrossOriginDomain))
-
-    Options("/graphql").withHeaders(headers) ~> route ~> check {
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(secondaryCrossOriginDomain)
-    }
+    val headers = Headers(
+      Header.Raw(ci"Origin", secondaryCrossOriginDomain)
+    )
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+    ).unsafeRunSync()
+    response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(secondaryCrossOriginDomain)
   }
 
   "the pre-flight request" should "return the default origin if a different origin is given" in {
-    val headers = List(Origin("https://yet-another-domain.example.com"))
-
-    Options("/graphql").withHeaders(headers) ~> route ~> check {
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(defaultCrossOriginDomain)
-    }
+    val headers = Headers(
+      Header.Raw(ci"Origin", "https://yet-another-domain.example.com")
+    )
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+    ).unsafeRunSync()
+    response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(defaultCrossOriginDomain)
   }
 
   "the pre-flight request" should "return the default origin if no origin is given" in {
-    Options("/graphql") ~> route ~> check {
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(defaultCrossOriginDomain)
-    }
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql")
+    ).unsafeRunSync()
+    response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(defaultCrossOriginDomain)
   }
 
   "the pre-flight request" should "allow requests from an allowed port" in {
     val allowedDomain = "http://localhost:1234"
+    val headers = Headers(
+      Header.Raw(ci"Origin", allowedDomain)
+    )
+
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+    ).unsafeRunSync()
     val crossOriginUrls = List(allowedDomain).asJava
 
     val testConfig = ConfigFactory.load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-    val testRoute = new Routes(testConfig, session).route
 
-    val headers = List(Origin(allowedDomain))
-
-    Options("/graphql").withHeaders(headers) ~> testRoute ~> check {
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(allowedDomain)
-    }
+    response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(allowedDomain)
   }
 
   "the pre-flight request" should "not allow requests from an allowed domain with a different port" in {
     val allowedDomain = "http://localhost:1234"
     val domainWithOtherPort = "http://localhost:5678"
+    val headers = Headers(
+      Header.Raw(ci"Origin", domainWithOtherPort)
+    )
+
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+    ).unsafeRunSync()
     val crossOriginUrls = List(allowedDomain).asJava
 
     val testConfig = ConfigFactory.load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
-    val testRoute = new Routes(testConfig, session).route
 
-    val headers = List(Origin(domainWithOtherPort))
-
-    Options("/graphql").withHeaders(headers) ~> testRoute ~> check {
-      // Check that the response contains the only allowed port, NOT the requested port
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(allowedDomain)
-    }
+    response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(allowedDomain)
   }
 
   "the pre-flight request" should "return an allowed domain if multiple origins are given" in {
-    val headers = List(Origin(
-      "https://yet-another-domain.example.com",
-      secondaryCrossOriginDomain,
-      "https://a-third-domain.example.com"
-    ))
+    val headers = Headers(
+      Header.Raw(ci"Origin", "https://yet-another-domain.example.com"),
+      Header.Raw(ci"Origin", secondaryCrossOriginDomain),
+      Header.Raw(ci"Origin", "https://a-third-domain.example.com")
+    )
 
-    Options("/graphql").withHeaders(headers) ~> route ~> check {
-      header[`Access-Control-Allow-Origin`].map(_.value) should contain(secondaryCrossOriginDomain)
-    }
+    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
+      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+    ).unsafeRunSync()
+    response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(secondaryCrossOriginDomain)
   }
 }

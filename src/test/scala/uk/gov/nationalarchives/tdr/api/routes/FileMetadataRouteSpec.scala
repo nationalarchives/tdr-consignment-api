@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -8,9 +7,9 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, Success}
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
-import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
 import java.sql.{PreparedStatement, ResultSet, Types}
@@ -32,13 +31,13 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   case class AddFileMetadata(addFileMetadata: FileMetadataWithFileId)
   case class UpdateBulkFileMetadata(updateBulkFileMetadata: BulkFileMetadata)
 
-  val runAddFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlAddFileMetadataMutationData =
+  val runAddFileMetadataTestMutation: (String, String) => GraphqlAddFileMetadataMutationData =
     runTestRequest[GraphqlAddFileMetadataMutationData](addFileMetadataJsonFilePrefix)
 
   val expectedAddFileMetadataMutationResponse: String => GraphqlAddFileMetadataMutationData =
     getDataFromFile[GraphqlAddFileMetadataMutationData](addFileMetadataJsonFilePrefix)
 
-  val runUpdateBulkFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlUpdateBulkFileMetadataMutationData =
+  val runUpdateBulkFileMetadataTestMutation: (String, String) => GraphqlUpdateBulkFileMetadataMutationData =
     runTestRequest[GraphqlUpdateBulkFileMetadataMutationData](updateBulkFileMetadataJsonFilePrefix)
 
   val expectedUpdateBulkFileMetadataMutationResponse: String => GraphqlUpdateBulkFileMetadataMutationData =
