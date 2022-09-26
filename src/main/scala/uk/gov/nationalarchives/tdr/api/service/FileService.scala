@@ -132,14 +132,10 @@ class FileService(fileRepository: FileRepository,
     val filters = fileFilters.getOrElse(FileFilters())
     for {
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
-      ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId)
-      avList <- avMetadataService.getAntivirusMetadata(consignmentId)
-      ffidStatus <- fileStatusService.getFileStatus(consignmentId)
-      redactedFilePairs <- if(queriedFileFields.originalFilePath) {
-        fileRepository.getRedactedFilePairs(consignmentId, fileIds = fileAndMetadataList.map(_._1.fileid))
-      } else {
-        Future(Seq())
-      }
+      ffidMetadataList <- if(queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future(Nil)
+      avList <- if(queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
+      ffidStatus <- if(queriedFileFields.fileStatus) fileStatusService.getFileStatus(consignmentId) else Future(Map.empty[UUID, String])
+      redactedFilePairs <- if(queriedFileFields.originalFilePath) fileRepository.getRedactedFilePairs(consignmentId, fileAndMetadataList.map(_._1.fileid)) else Future(Seq())
     } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs).toList
   }
 
@@ -208,7 +204,8 @@ object FileService {
       response.groupBy(_._1).map {
         case (fr, fmr) =>
           val fileId = fr.fileid
-          val metadataValues = convertMetadataRows(fmr.flatMap(_._2))
+          val metadataRows = fmr.flatMap(_._2)
+          val metadataValues = convertMetadataRows(metadataRows)
           val redactedFileEntry: Option[RedactedFiles] = redactedFiles.find(_.redactedFileId == fileId)
           val originalFileResponseRow = redactedFileEntry
             .flatMap(rf => response.find(responseRow => Option(responseRow._1.fileid) == rf.fileId && responseRow._2.exists(_.propertyname == ClientSideOriginalFilepath)))
@@ -219,7 +216,8 @@ object FileService {
             ffidStatus.get(fileId),
             ffidMetadata.find(_.fileId == fileId),
             avMetadata.find(_.fileId == fileId),
-            redactedOriginalFilePath
+            redactedOriginalFilePath,
+            metadataRows.map(row => FileMetadataValue(row.propertyname, row.value)).toList
           )
       }.toSeq
     }

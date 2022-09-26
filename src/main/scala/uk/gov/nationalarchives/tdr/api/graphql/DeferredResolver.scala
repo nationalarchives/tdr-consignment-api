@@ -45,4 +45,8 @@ case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[Pagi
   extends Deferred[TDRConnection[File]]
 case class DeferCurrentConsignmentStatus(consignmentId: UUID) extends Deferred[CurrentStatus]
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]
-case class QueriedFileFields(originalFilePath: Boolean = false)
+
+case class QueriedFileFields(originalFilePath: Boolean = false,
+                             antivirusMetadata: Boolean = false,
+                             ffidMetadata: Boolean = false,
+                             fileStatus: Boolean = false)
