@@ -159,10 +159,10 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
 
   def createFileProperty(name: String, description: String, propertytype: String,
                          datatype: String, editable: Boolean, multivalue: Boolean,
-                         propertygroup: String, fullname: String): Unit = {
+                         propertygroup: String, fullname: String, exportOrdinal: Int = 1, allowExport: Boolean = false): Unit = {
     val sql =
       s"""INSERT INTO "FileProperty" ("Name", "Description", "CreatedDatetime", "ModifiedDatetime",""" +
-        s""" "PropertyType", "Datatype", "Editable", "MultiValue", "PropertyGroup", "FullName") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        s""" "PropertyType", "Datatype", "Editable", "MultiValue", "PropertyGroup", "FullName", "ExportOrdinal", "AllowExport") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
     ps.setString(2, description)
@@ -174,6 +174,8 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setBoolean(8, multivalue)
     ps.setString(9, propertygroup)
     ps.setString(10, fullname)
+    ps.setInt(11, exportOrdinal)
+    ps.setBoolean(12, allowExport)
     ps.executeUpdate()
   }
 

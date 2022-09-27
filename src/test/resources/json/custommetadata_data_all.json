@@ -29,7 +29,9 @@
             ],
             "uiOrdinal": 1
           }
-        ]
+        ],
+        "allowExport": false,
+        "exportOrdinal": 1
       },
       {
         "name": "TestDependency",
@@ -41,7 +43,9 @@
         "propertyType": "Defined",
         "dataType": "Text",
         "defaultValue": null,
-        "values": []
+        "values": [],
+        "allowExport": true,
+        "exportOrdinal": 2
       }
     ]
   }

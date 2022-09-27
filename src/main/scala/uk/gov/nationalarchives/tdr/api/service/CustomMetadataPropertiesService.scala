@@ -84,7 +84,9 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
       fp.multivalue.getOrElse(false),
       defaultValueOption,
       metadataValues.toList,
-      fp.uiordinal.getOrElse(Int.MaxValue)
+      fp.uiordinal.getOrElse(Int.MaxValue),
+      fp.allowexport,
+      fp.exportordinal.map(_.toInt)
     )
   }
 

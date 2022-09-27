@@ -254,12 +254,13 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, fileStatusRepositoryMock, consignmentRepositoryMock,
       ffidMetadataService, antivirusMetadataService, fileStatusService, fileMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load()
     )
-
-    val fileList: Seq[File] = service.getFileMetadata(consignmentId, queriedFileFields = queriedFileFieldsWithoutOriginalPath).futureValue
+    val queriedFileFields = QueriedFileFields(antivirusMetadata = true, ffidMetadata = true, fileStatus = true)
+    val fileList: Seq[File] = service.getFileMetadata(consignmentId, queriedFileFields = queriedFileFields).futureValue
 
     fileList.length should equal(1)
 
     val actualFileMetadata: File = fileList.head
+    val fileMetadata = fileAndMetadataRows.map(row => FileMetadataValue(row._2.get.propertyname, row._2.get.value)).toList
     val expectedFileMetadata = File(fileId,
       Some(NodeType.fileTypeIdentifier),
       Some("fileName"),
@@ -288,7 +289,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         "pronom",
         List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"))),
         datetime.getTime)),
-      Option(AntivirusMetadata(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp.getTime))
+      Option(AntivirusMetadata(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp.getTime)),
+      None,
+      fileMetadata
     )
 
     actualFileMetadata should equal(expectedFileMetadata)
@@ -338,11 +341,13 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, fileStatusRepositoryMock, consignmentRepositoryMock,
       ffidMetadataService, antivirusMetadataService, fileStatusService, fileMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
-    val fileMetadataList = service.getFileMetadata(consignmentId, queriedFileFields = queriedFileFieldsWithoutOriginalPath).futureValue
+    val queriedFileFields = QueriedFileFields(antivirusMetadata = true, ffidMetadata = true, fileStatus = true)
+    val fileMetadataList = service.getFileMetadata(consignmentId, queriedFileFields = queriedFileFields).futureValue
 
     fileMetadataList.length should equal(1)
 
     val actualFileMetadata = fileMetadataList.head
+    val fileMetadata = fileAndMetadataRows.map(row => FileMetadataValue(row._2.get.propertyname, row._2.get.value)).toList
     val expectedFileMetadata = File(fileId, None, None, None,
       FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None),
       Some("Success"),
@@ -355,7 +360,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         "pronom",
         List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"))),
         datetime.getTime)),
-      Option.empty
+      Option.empty, None, fileMetadata
     )
 
     actualFileMetadata should equal(expectedFileMetadata)
@@ -403,7 +408,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock, fileStatusRepositoryMock, consignmentRepositoryMock,
       ffidMetadataService, antivirusMetadataService, fileStatusService, fileMetadataService, FixedTimeSource, fixedUuidSource, ConfigFactory.load())
 
-    val queriedFieldsWithOriginalPath = QueriedFileFields(true)
+    val queriedFieldsWithOriginalPath = QueriedFileFields(originalFilePath = true)
     val fileMetadataList = service.getFileMetadata(consignmentId, queriedFileFields = queriedFieldsWithOriginalPath).futureValue
 
     fileMetadataList.length should equal(2)
