@@ -207,6 +207,8 @@ object FileMetadataService {
 
   case class StaticMetadata(name: String, value: String)
 
+  case class FileMetadataValue(name: String, value: String)
+
   case class File(fileId: UUID,
                   fileType: Option[String] = None,
                   fileName: Option[String] = None,
@@ -215,7 +217,8 @@ object FileMetadataService {
                   fileStatus: Option[String] = None,
                   ffidMetadata: Option[FFIDMetadata],
                   antivirusMetadata: Option[AntivirusMetadata],
-                  originalFilePath: Option[String] = None)
+                  originalFilePath: Option[String] = None,
+                  fileMetadata: List[FileMetadataValue] = Nil)
 
   case class FileMetadataValues(sha256ClientSideChecksum: Option[String],
                                 clientSideOriginalFilePath: Option[String],

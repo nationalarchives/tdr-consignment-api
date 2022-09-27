@@ -174,11 +174,14 @@ type CustomMetadataField {
   defaultValue: String
   values: [CustomMetadataValues!]!
   uiOrdinal: Int!
+  allowExport: Boolean!
+  exportOrdinal: Int
 }
 
 type CustomMetadataValues {
   dependencies: [CustomMetadataField!]!
   value: String!
+  uiOrdinal: Int!
 }
 
 enum DataType {
@@ -236,6 +239,7 @@ type File {
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
   originalFilePath: String
+  fileMetadata: [FileMetadataValue!]!
 }
 
 type FileChecks {
@@ -277,6 +281,11 @@ type FileMatches {
 
 type FileMetadata {
   filePropertyName: String!
+  value: String!
+}
+
+type FileMetadataValue {
+  name: String!
   value: String!
 }
 

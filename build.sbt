@@ -1,6 +1,4 @@
 import rocks.muki.graphql.quietError
-import rocks.muki.graphql.schema.SchemaLoader
-import sbt.File
 import sbt.Keys.libraryDependencies
 
 
@@ -10,7 +8,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "The consignment API for TDR"
 
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.9"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 (Compile / run / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
@@ -64,8 +62,8 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.2",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.22",
   "org.postgresql" % "postgresql" % "42.5.0",
-  "com.typesafe.slick" %% "slick" % "3.3.3",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
+  "com.typesafe.slick" %% "slick" % "3.4.0",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
   "ch.megard" %% "akka-http-cors" % "1.1.3",
   "ch.qos.logback" % "logback-classic" % "1.4.1",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
@@ -80,7 +78,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.12.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.78",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.84",
   "io.github.hakky54" % "logcaptor" % "2.7.10" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test

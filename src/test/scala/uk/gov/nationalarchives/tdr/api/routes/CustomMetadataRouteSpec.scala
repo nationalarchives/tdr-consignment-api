@@ -50,7 +50,7 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
                                   values: Option[List[CustomMetadataValues]]
                                 )
 
-  case class CustomMetadataValues(dependencies: List[CustomMetadataFields], value: String)
+  case class CustomMetadataValues(dependencies: List[CustomMetadataFields], value: String, uiOrdinal: Int)
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -59,11 +59,10 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
       val utils = TestUtils(container.database)
       val token = validUserToken(userId)
 
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId, Option(1))
 
       val expectedResponse = expectedCustomMetadataQueryResponse("data_all")
       val response = runCustomMetadataTestQuery("query_alldata", token)
-
       response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
   }
 
@@ -106,7 +105,7 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  private def addDummyFilePropertiesAndValuesToDb(utils: TestUtils, consignmentId: UUID, userId: UUID): Unit = {
+  private def addDummyFilePropertiesAndValuesToDb(utils: TestUtils, consignmentId: UUID, userId: UUID, uiOrdinal: Option[Int] = None): Unit = {
     utils.createConsignment(consignmentId, userId)
     utils.createFileProperty(
       "TestProperty",
@@ -127,10 +126,11 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
       editable = false,
       multivalue = false,
       "Test Dependency Group",
-      "Test Dependency"
+      "Test Dependency",
+      2, allowExport = true
     )
 
-    utils.createFilePropertyValues("TestProperty", "TestValue", default = true, 2, 1)
+    utils.createFilePropertyValues("TestProperty", "TestValue", default = true, 2, 1, uiOrdinal)
     utils.createFilePropertyDependencies(2, "TestDependency", "TestDependencyValue")
   }
  }

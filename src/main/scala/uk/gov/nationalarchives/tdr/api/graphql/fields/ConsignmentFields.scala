@@ -13,7 +13,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValues}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValue, FileMetadataValues}
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
 
 import java.time.ZonedDateTime
@@ -76,6 +76,8 @@ object ConsignmentFields {
     deriveObjectType[Unit, FFIDProgress]()
   implicit val TransferringBodyType: ObjectType[Unit, TransferringBody] =
     deriveObjectType[Unit, TransferringBody]()
+  implicit val FileMetadataValueType: ObjectType[Unit, FileMetadataValue] =
+    deriveObjectType[Unit, FileMetadataValue]()
   implicit val FileType: ObjectType[Unit, File] =
     deriveObjectType[Unit, File]()
   implicit val FileMetadataType: ObjectType[Unit, FileMetadataValues] = {
@@ -159,7 +161,12 @@ object ConsignmentFields {
         arguments = FileFiltersInputArg :: Nil,
         resolve = Projector((ctx, projected) => {
           val fileFilters = ctx.args.argOpt("fileFiltersInput")
-          val queriedFileFields = QueriedFileFields(projected.exists(_.name == "originalFilePath"))
+          val queriedFileFields = QueriedFileFields(
+            projected.exists(_.name == "originalFilePath"),
+            projected.exists(_.name == "antivirusMetadata"),
+            projected.exists(_.name == "ffidMetadata"),
+            projected.exists(_.name == "fileStatus")
+          )
           DeferFiles(ctx.value.consignmentid, fileFilters, queriedFileFields)
         })
       ),
