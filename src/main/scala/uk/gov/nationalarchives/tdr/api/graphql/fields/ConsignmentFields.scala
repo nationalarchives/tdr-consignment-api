@@ -5,8 +5,8 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, ProjectedName, Projector, StringType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.ValidateHasReportingAccess.{continue, reportingRole}
+import sangria.schema.{Argument, BooleanType, Context, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, Projector, StringType, fields}
+import uk.gov.nationalarchives.tdr.api.auth.ValidateHasConsignmentsAccess.reportingRole
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
@@ -206,6 +206,7 @@ object ConsignmentFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
+  val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
@@ -218,16 +219,9 @@ object ConsignmentFields {
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),
     Field("consignments", consignmentConnections,
-      arguments = List(LimitArg, CurrentCursorArg),
+      arguments = List(LimitArg, CurrentCursorArg, UserIdArg),
       resolve = ctx => {
-        val limit: Int = ctx.args.arg("limit")
-        val currentCursor = ctx.args.argOpt("currentCursor")
-        val reportingAccess = ctx.ctx.accessToken.reportingRoles.contains(reportingRole)
-        val consignmentFilter = if (reportingAccess) {
-          None
-        } else {
-          Some(ConsignmentFilter(userId = Some(ctx.ctx.accessToken.userId)))
-        }
+        val (limit, currentCursor, consignmentFilter) = getConsignmentsArgs(ctx)
         ctx.ctx.consignmentService.getConsignments(limit, currentCursor, consignmentFilter)
           .map(r => {
             val endCursor = r.lastCursor
@@ -243,7 +237,8 @@ object ConsignmentFields {
             )
           }
         )
-      }
+      },
+      tags = List(ValidateHasConsignmentsAccess)
     )
   )
 
@@ -278,4 +273,18 @@ object ConsignmentFields {
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)
     )
   )
+
+  private def getConsignmentsArgs(ctx: Context[ConsignmentApiContext, Unit]): (Int, Option[String], Option[ConsignmentFilter]) = {
+
+    val userId: Option[UUID] = ctx.args.argOpt("userId")
+    val limit: Int = ctx.args.arg("limit")
+    val currentCursor = ctx.args.argOpt("currentCursor")
+    val reportingAccess = ctx.ctx.accessToken.reportingRoles.contains(reportingRole)
+    val consignmentFilter = if (reportingAccess) {
+      None
+    } else {
+      Some(ConsignmentFilter(userId = userId))
+    }
+    (limit, currentCursor, consignmentFilter)
+  }
 }

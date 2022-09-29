@@ -1,5 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import cats.implicits.catsSyntaxOptionId
+
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
@@ -449,6 +451,42 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
     exportLocations should contain (exportLocation1)
     exportLocations should contain (exportLocation2)
+  }
+
+  "getConsignments" should "return all the consignments when consignment filter is passed" in {
+    val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+    val exportLocation2 = Some("Location2")
+    val exportLocation3 = Some("Location3")
+
+    val consignmentRowParams = List(
+      (consignmentId2, "consignment-ref2", 2L, exportLocation2),
+      (consignmentId3, "consignment-ref3", 3L, exportLocation3)
+    )
+
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3, p._4))
+
+    val limit = 2
+
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
+    when(consignmentRepoMock.getConsignments(limit, None, userId.some)).thenReturn(mockResponse)
+
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilter(userId.some).some).futureValue
+
+    response.lastCursor should be (Some("consignment-ref3"))
+    response.consignmentEdges should have size 2
+    val edges = response.consignmentEdges
+    val cursors: List[String] = edges.map(e => e.cursor).toList
+    cursors should contain ("consignment-ref2")
+    cursors should contain ("consignment-ref3")
+
+    val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
+    consignmentRefs should contain (consignmentId2)
+    consignmentRefs should contain (consignmentId3)
+
+    val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
+    exportLocations should contain (exportLocation2)
+    exportLocations should contain (exportLocation3)
   }
 
   "getConsignments" should "return empty list and no cursor if no consignments" in {

@@ -215,15 +215,16 @@ object ValidateFiles {
   }
 }
 
-object ValidateHasReportingAccess extends SyncAuthorisationTag {
+object ValidateHasConsignmentsAccess extends SyncAuthorisationTag {
   override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+    val userId: Option[UUID] = ctx.argOpt("userId")
     val token = ctx.ctx.accessToken
     val reportingAccess = token.reportingRoles.contains(reportingRole)
-    if (reportingAccess) {
+    if (reportingAccess || userId.contains(token.userId)) {
       continue
     } else {
       val tokenUserId = token.userId
-      throw AuthorisationException(s"User $tokenUserId does not have permission to run reporting")
+      throw AuthorisationException(s"User $tokenUserId does not have permission to access the consignments")
     }
   }
 }
