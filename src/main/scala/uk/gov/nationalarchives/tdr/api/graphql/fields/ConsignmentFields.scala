@@ -6,7 +6,6 @@ import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Context, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, Projector, StringType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.ValidateHasConsignmentsAccess.reportingRole
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters

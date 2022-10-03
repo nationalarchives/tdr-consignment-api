@@ -672,7 +672,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
-  "consignments" should "allow a user with reporting access can filter consignment by userId" in withContainers {
+  "consignments" should "allow a user with reporting access to filter consignments by userId" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentParams: List[ConsignmentParams] = List(
