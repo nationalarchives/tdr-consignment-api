@@ -4,7 +4,7 @@ import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.UpdateExportDataInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
@@ -233,7 +233,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       response should have size 0
   }
 
-  "getConsignments" should "return all the consignments which assigned to the given user id only" in withContainers {
+  "getConsignments" should "return all the consignments which belong to the given user id only" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
@@ -246,7 +246,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
       utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-      val response = consignmentRepository.getConsignments(10, None, userId.some).futureValue
+      val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(userId.some).some).futureValue
 
       response should have size 1
       response.map(cr => cr.consignmentid).head should equal(consignmentIdOne)

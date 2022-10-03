@@ -91,11 +91,11 @@ class ConsignmentService(
       row => convertRowToConsignment(row)))
   }
 
-  def getConsignments(limit: Int, currentCursor: Option[String], consignmentFilter: Option[ConsignmentFilter] = None): Future[PaginatedConsignments] = {
+  def getConsignments(limit: Int, currentCursor: Option[String], consignmentFilters: Option[ConsignmentFilters] = None): Future[PaginatedConsignments] = {
     val maxConsignments: Int = min(limit, maxLimit)
 
     for {
-      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, consignmentFilter.flatMap(_.userId))
+      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, consignmentFilters)
       hasNextPage = response.nonEmpty
       lastCursor: Option[String] = if (hasNextPage) Some(response.last.consignmentreference) else None
       paginatedConsignments = convertToEdges(response)

@@ -64,7 +64,7 @@ object ConsignmentFields {
 
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
-  case class ConsignmentFilter(userId: Option[UUID])
+  case class ConsignmentFilters(userId: Option[UUID])
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -88,8 +88,11 @@ object ConsignmentFields {
 
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
+  implicit val ConsignmentFiltersInputType: InputObjectType[ConsignmentFilters] = deriveInputObjectType[ConsignmentFilters]()
+
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
+  val ConsignmentFiltersInputArg: Argument[Option[ConsignmentFilters]] = Argument("consignmentFiltersInput", OptionInputType(ConsignmentFiltersInputType))
 
   implicit val ConnectionDefinition(_, fileConnections) =
     Connection.definition[ConsignmentApiContext, TDRConnection, File](
@@ -219,10 +222,12 @@ object ConsignmentFields {
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),
     Field("consignments", consignmentConnections,
-      arguments = List(LimitArg, CurrentCursorArg, UserIdArg),
+      arguments = List(LimitArg, CurrentCursorArg, ConsignmentFiltersInputArg),
       resolve = ctx => {
-        val (limit, currentCursor, consignmentFilter) = getConsignmentsArgs(ctx)
-        ctx.ctx.consignmentService.getConsignments(limit, currentCursor, consignmentFilter)
+        val limit: Int = ctx.args.arg("limit")
+        val currentCursor = ctx.args.argOpt("currentCursor")
+        val consignmentFilters = ctx.args.argOpt("consignmentFiltersInput")
+        ctx.ctx.consignmentService.getConsignments(limit, currentCursor, consignmentFilters)
           .map(r => {
             val endCursor = r.lastCursor
             val edges = r.consignmentEdges
@@ -273,18 +278,4 @@ object ConsignmentFields {
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)
     )
   )
-
-  private def getConsignmentsArgs(ctx: Context[ConsignmentApiContext, Unit]): (Int, Option[String], Option[ConsignmentFilter]) = {
-
-    val userId: Option[UUID] = ctx.args.argOpt("userId")
-    val limit: Int = ctx.args.arg("limit")
-    val currentCursor = ctx.args.argOpt("currentCursor")
-    val reportingAccess = ctx.ctx.accessToken.reportingRoles.contains(reportingRole)
-    val consignmentFilter = if (reportingAccess) {
-      None
-    } else {
-      Some(ConsignmentFilter(userId = userId))
-    }
-    (limit, currentCursor, consignmentFilter)
-  }
 }

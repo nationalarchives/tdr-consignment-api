@@ -643,7 +643,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data should equal(expectedResponse.data)
   }
 
-  "consignments" should "allow a user without reporting access to return only his consignments" in withContainers {
+  "consignments" should "allow a user without reporting access to return only their consignments" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentParams: List[ConsignmentParams] = List(
@@ -672,7 +672,36 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
-  "consignments" should "not allow a user without reporting access, can access the consignments without passing userId" in withContainers {
+  "consignments" should "allow a user with reporting access can filter consignment by userId" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentParams: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+          "consignment-ref1",
+          List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
+        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+          "consignment-ref2",
+          List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
+      )
+      val consignmentParams2: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
+          "consignment-ref3",
+          List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
+      )
+      val user2Id = UUID.randomUUID()
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      setUpConsignments(consignmentParams, utils)
+      setUpConsignmentsFor(consignmentParams2, utils, user2Id)
+
+      val reportingAccessToken = validReportingToken("reporting")
+
+      val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_userId")
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_userId", reportingAccessToken)
+
+      response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+  }
+
+  "consignments" should "not allow a user without reporting access to access consignments without passing userId" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentParams: List[ConsignmentParams] = List(
@@ -694,7 +723,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "consignments" should "not allow a user without reporting access, can access others consignments" in withContainers {
+  "consignments" should "not allow a user without reporting access to access other users' consignments" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val consignmentParams: List[ConsignmentParams] = List(
