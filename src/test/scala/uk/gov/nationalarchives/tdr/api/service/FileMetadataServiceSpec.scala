@@ -198,7 +198,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateBulkFileMetadata" should "only pass the file Ids of the folder, into getFileMetadata if a folder Id was passed as in an input Id" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
+    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
     val existingFileMetadataRow =
       Seq(FilemetadataRow(UUID.randomUUID(), UUID.randomUUID(), "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"))
 
@@ -219,7 +219,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateBulkFileMetadata" should "pass the correct consignment Id and property names to getFileMetadata" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
+    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
     val existingFileMetadataRow =
       Seq(FilemetadataRow(UUID.randomUUID(), UUID.randomUUID(), "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"))
 
@@ -241,7 +241,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateBulkFileMetadata" should "add metadata rows that haven't already been added and update those that have" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
+    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
     val existingFileMetadataRows = Seq(
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
@@ -291,7 +291,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     "'value' (of its FileMetadata row) differs from the value the user is trying to set" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
+    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
     val existingFileMetadataRows =
       Seq(
         FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
@@ -333,7 +333,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateBulkFileMetadata" should "only add metadata rows but not update any" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
+    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
 
     val mockAddFileMetadataResponse = Seq(
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
@@ -372,7 +372,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateBulkFileMetadata" should "only update metadata rows but not add any" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
+    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
     val existingFileMetadataRows = Seq(
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
@@ -414,7 +414,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateBulkFileMetadata" should "not add or update any metadata rows if they already exist" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.folderAndItsFiles, testSetUp.inputFileIds, testSetUp.userId)
+    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
 
     val existingFileMetadataRows = Seq(
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
