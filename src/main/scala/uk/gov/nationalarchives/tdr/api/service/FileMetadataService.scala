@@ -24,9 +24,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
-  def getCustomMetadataValuesWithDefault: Future[Seq[FilepropertyvaluesRow]] = {
-    customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault
-  }
+  def getCustomMetadataValuesWithDefault: Future[Seq[FilepropertyvaluesRow]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault
+
   def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInput, userId: UUID): Future[FileMetadataWithFileId] = {
     val fileMetadataRow =
       FilemetadataRow(uuidSource.uuid, addFileMetadataInput.fileId,
@@ -80,16 +79,27 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
                                       existingFileMetadataRows: Map[UUID, Seq[FilemetadataRow]]): Set[PropertyAction] = {
 
     val existingPropertiesForFile: Map[String, Seq[FilemetadataRow]] = existingFileMetadataRows.getOrElse(fileId, Seq()).groupBy(_.propertyname)
+    val existingPropertyNameAndItsValues: Map[String, Seq[String]] = existingPropertiesForFile.map{
+      case (propertyName, fileMetadataRow) => (propertyName, fileMetadataRow.map(_.value))
+    }
 
     metadataProperties.map {
-      metadataProperty =>
-        if (!existingPropertiesForFile.contains(metadataProperty.filePropertyName)) {
-          PropertyAction("add", metadataProperty.filePropertyName, metadataProperty.value, fileId, uuidSource.uuid)
-        } else {
-          val existingProperty: FilemetadataRow = existingPropertiesForFile(metadataProperty.filePropertyName).head
-          val action = if (metadataProperty.value != existingProperty.value) {"update"} else {"noUpdate"}
-          PropertyAction(action, metadataProperty.filePropertyName, metadataProperty.value, fileId, existingProperty.metadataid)
+      metadataProperty => {
+        val valuesBelongingToProperty: Option[Seq[String]] = existingPropertyNameAndItsValues.get(metadataProperty.filePropertyName)
+
+        valuesBelongingToProperty match {
+          case None => PropertyAction("add", metadataProperty.filePropertyName, metadataProperty.value, fileId, uuidSource.uuid)
+          case Some(valuesAssignedToProperty) =>
+            if (valuesAssignedToProperty.contains(metadataProperty.value)) {
+              PropertyAction("noUpdate", metadataProperty.filePropertyName, metadataProperty.value, fileId, uuidSource.uuid)
+            } else if (metadataProperty.filePropertyIsMultiValue) {
+              PropertyAction("add", metadataProperty.filePropertyName, metadataProperty.value, fileId, uuidSource.uuid)
+            } else {
+              val existingProperty: FilemetadataRow = existingPropertiesForFile(metadataProperty.filePropertyName).head
+              PropertyAction("update", metadataProperty.filePropertyName, metadataProperty.value, fileId, existingProperty.metadataid)
+            }
         }
+      }
     }
   }
 
