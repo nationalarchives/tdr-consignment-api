@@ -173,6 +173,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
       utils.addFileProperty("property1")
       utils.addFileProperty("property2")
+      utils.addFileProperty("property3")
 
       // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
       utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
@@ -180,6 +181,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
       utils.createFile(fileThreeId, consignmentId)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "property3", "value3")
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property1", "oldvalue1")
 
       val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData = expectedUpdateBulkFileMetadataMutationResponse("data_all")
@@ -219,6 +221,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
       utils.addFileProperty("property1")
       utils.addFileProperty("property2")
+      utils.addFileProperty("property3")
 
       // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
       utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
@@ -228,6 +231,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createFile(fileThreeId, consignmentId)
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property1", "value1")
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property2", "value2")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property3", "value3")
 
       val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData =
         expectedUpdateBulkFileMetadataMutationResponse("data_values_already_exist_on_file")

@@ -185,11 +185,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
+  Boolean
+  Integer
+  Decimal
   DateTime
   Text
-  Decimal
-  Integer
-  Boolean
 }
 
 type FFIDMetadata {
@@ -443,6 +443,7 @@ input UpdateExportDataInput {
 }
 
 input UpdateFileMetadataInput {
+  filePropertyIsMultiValue: Boolean!
   filePropertyName: String!
   value: String!
 }

@@ -11,10 +11,12 @@
       ],
       "metadataProperties": [
         {
+          "filePropertyIsMultiValue": false,
           "filePropertyName": "property1",
           "value": "value1"
         },
         {
+          "filePropertyIsMultiValue": false,
           "filePropertyName": "property2",
           "value": "value2"
         }
