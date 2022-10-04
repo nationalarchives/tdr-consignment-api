@@ -139,6 +139,10 @@ type ConsignmentEdge {
   cursor: String!
 }
 
+input ConsignmentFilters {
+  userId: UUID
+}
+
 type ConsignmentStatus {
   consignmentStatusId: UUID!
   consignmentId: UUID!
@@ -384,7 +388,7 @@ enum PropertyType {
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
-  consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
+  consignments(limit: Int!, currentCursor: String, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!

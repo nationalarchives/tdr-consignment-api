@@ -5,6 +5,7 @@ import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.ConsignmentFilters
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
@@ -55,8 +56,9 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignments(limit: Int, after: Option[String]): Future[Seq[ConsignmentRow]] = {
-    val query = Consignment.filterOpt(after)(_.consignmentreference > _)
+  def getConsignments(limit: Int, after: Option[String], consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
+    val query = Consignment.filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
+      .filterOpt(after)(_.consignmentreference > _)
       .sortBy(_.consignmentreference)
       .take(limit)
     db.run(query.result)
