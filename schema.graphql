@@ -139,6 +139,10 @@ type ConsignmentEdge {
   cursor: String!
 }
 
+input ConsignmentFilters {
+  userId: UUID
+}
+
 type ConsignmentStatus {
   consignmentStatusId: UUID!
   consignmentId: UUID!
@@ -174,6 +178,8 @@ type CustomMetadataField {
   defaultValue: String
   values: [CustomMetadataValues!]!
   uiOrdinal: Int!
+  allowExport: Boolean!
+  exportOrdinal: Int
 }
 
 type CustomMetadataValues {
@@ -237,6 +243,7 @@ type File {
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
   originalFilePath: String
+  fileMetadata: [FileMetadataValue!]!
 }
 
 type FileChecks {
@@ -278,6 +285,11 @@ type FileMatches {
 
 type FileMetadata {
   filePropertyName: String!
+  value: String!
+}
+
+type FileMetadataValue {
+  name: String!
   value: String!
 }
 
@@ -376,7 +388,7 @@ enum PropertyType {
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
-  consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
+  consignments(limit: Int!, currentCursor: String, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!

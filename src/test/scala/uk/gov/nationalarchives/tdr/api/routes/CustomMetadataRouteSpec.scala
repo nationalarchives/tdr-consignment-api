@@ -126,7 +126,8 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
       editable = false,
       multivalue = false,
       "Test Dependency Group",
-      "Test Dependency"
+      "Test Dependency",
+      2, allowExport = true
     )
 
     utils.createFilePropertyValues("TestProperty", "TestValue", default = true, 2, 1, uiOrdinal)

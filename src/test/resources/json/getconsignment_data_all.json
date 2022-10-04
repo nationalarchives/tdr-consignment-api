@@ -23,6 +23,48 @@
           "fileName": "fileTwoName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
           "originalFilePath": null,
+          "fileMetadata": [
+            {
+              "name": "SHA256ServerSideChecksum",
+              "value": "Result of FileMetadata processing"
+            },
+            {
+              "name": "SHA256ClientSideChecksum",
+              "value": "SHA256ClientSideChecksum value"
+            },
+            {
+              "name": "ClientSideOriginalFilepath",
+              "value": "ClientSideOriginalFilepath value"
+            },
+            {
+              "name": "ClientSideFileLastModifiedDate",
+              "value": "2021-03-11 12:30:30.592853"
+            },
+            {
+              "name": "ClientSideFileSize",
+              "value": "1"
+            },
+            {
+              "name": "RightsCopyright",
+              "value": "RightsCopyright value"
+            },
+            {
+              "name": "LegalStatus",
+              "value": "LegalStatus value"
+            },
+            {
+              "name": "HeldBy",
+              "value": "HeldBy value"
+            },
+            {
+              "name": "Language",
+              "value": "Language value"
+            },
+            {
+              "name": "FoiExemptionCode",
+              "value": "FoiExemptionCode value"
+            }
+          ],
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
