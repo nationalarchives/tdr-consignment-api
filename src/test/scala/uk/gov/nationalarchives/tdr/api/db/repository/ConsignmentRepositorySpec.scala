@@ -1,9 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.UpdateExportDataInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
@@ -230,6 +231,46 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
       val response = consignmentRepository.getConsignments(2, Some("")).futureValue
       response should have size 0
+  }
+
+  "getConsignments" should "return all the consignments which belong to the given user id only" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+      val utils = TestUtils(db)
+
+      utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+
+      val user2Id: UUID = UUID.randomUUID()
+      val consignmentIdForUser2: UUID = UUID.randomUUID()
+
+      utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
+
+      val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(userId.some).some).futureValue
+
+      response should have size 1
+      response.map(cr => cr.consignmentid).head should equal(consignmentIdOne)
+  }
+
+  "getConsignments" should "return all the consignments for all the users when user id is not passed" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+      val utils = TestUtils(db)
+
+      utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+
+      val user2Id: UUID = UUID.randomUUID()
+      val consignmentIdForUser2: UUID = UUID.randomUUID()
+
+      utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
+
+      val response = consignmentRepository.getConsignments(10, None, None).futureValue
+
+      response should have size 2
+      val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+      consignmentIds should contain(consignmentIdOne)
+      consignmentIds should contain(consignmentIdForUser2)
   }
 
   private def createConsignments(utils: TestUtils): Unit = {
