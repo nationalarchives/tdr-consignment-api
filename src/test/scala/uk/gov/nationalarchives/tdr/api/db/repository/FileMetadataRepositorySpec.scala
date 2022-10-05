@@ -368,6 +368,37 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       )
   }
 
+  "deleteFileMetadata" should "delete metadata rows for the selected files that have the specified property/properties" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val filePropertyOne = "FilePropertyOne"
+      val filePropertyTwo = "FilePropertyTwo"
+      utils.createConsignment(consignmentId, userId)
+      utils.createFile(fileIdOne, consignmentId)
+      utils.createFile(fileIdTwo, consignmentId)
+      utils.addFileProperty(filePropertyOne)
+      utils.addFileProperty(filePropertyTwo)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyOne)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyTwo)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, filePropertyOne)
+
+      val selectedFileIds: Set[UUID] = Set(fileIdOne, fileIdTwo)
+
+      val deleteResponse = fileMetadataRepository.deleteFileMetadata(selectedFileIds, Set(filePropertyOne)).futureValue
+      deleteResponse should equal(2)
+
+      val response = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds), Some(Set(filePropertyOne))).futureValue
+      response.length should equal(0)
+
+      val response2 = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds), Some(Set(filePropertyTwo))).futureValue
+      response2.length should equal(1)
+  }
+
   private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {
     val response = fileMetadataRepository.getFileMetadata(filePropertyUpdates.consignmentId).futureValue
     val metadataRowById: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
