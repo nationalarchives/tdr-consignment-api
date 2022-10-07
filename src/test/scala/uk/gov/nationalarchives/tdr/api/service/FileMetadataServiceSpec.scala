@@ -499,6 +499,18 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     response(fileIdTwo).foiExemptionAsserted.get should equal(foiExemptionAsserted.toLocalDateTime)
   }
 
+  "getSumOfFileSizes" should "return the sum of the file sizes" in {
+    val fileMetadataRepository = mock[FileMetadataRepository]
+    val consignmentId = UUID.randomUUID()
+    when(fileMetadataRepository.getSumOfFileSizes(any[UUID])).thenReturn(Future(1))
+
+    val service = new FileMetadataService(fileMetadataRepository, mock[FileRepository], mock[CustomMetadataPropertiesRepository], FixedTimeSource, new FixedUUIDSource())
+    val result = service.getSumOfFileSizes(consignmentId).futureValue
+
+    result should equal(1)
+    verify(fileMetadataRepository, times(1)).getSumOfFileSizes(consignmentId)
+  }
+
   private def generateFileRows(fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID], fixedUserId: UUID): Seq[FileRow] = {
     val consignmentId = UUID.randomUUID()
     val timestamp: Timestamp = Timestamp.from(FixedTimeSource.now)
