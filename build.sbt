@@ -44,7 +44,7 @@ lazy val testContainersVersion = "0.40.10"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "3.3.0",
-  "org.sangria-graphql" %% "sangria-slowlog" % "2.0.4",
+  "org.sangria-graphql" %% "sangria-slowlog" % "2.0.5",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "2.1.0",
@@ -78,7 +78,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.12.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.86",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.87",
   "io.github.hakky54" % "logcaptor" % "2.7.10" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
