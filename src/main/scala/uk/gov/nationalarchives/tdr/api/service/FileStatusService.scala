@@ -78,4 +78,7 @@ object FileStatusService {
   val Zip = "Zip"
   val NonJudgmentFormat = "NonJudgmentFormat"
   val ZeroByteFile = "ZeroByteFile"
+  val InProgress = "InProgress"
+  val Completed = "Completed"
+  val CompletedWithIssues = "CompletedWithIssues"
 }
