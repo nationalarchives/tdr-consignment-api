@@ -246,10 +246,26 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
       utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-      val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(userId.some).some).futureValue
+      val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(userId.some, None).some).futureValue
 
       response should have size 1
       response.map(cr => cr.consignmentid).head should equal(consignmentIdOne)
+  }
+
+  "getConsignments" should "return all the consignments which belong to the given consignment type only" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+      val utils = TestUtils(db)
+
+      utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+
+      utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", consignmentType = "judgment")
+
+      val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(None, "judgment".some).some).futureValue
+
+      response should have size 1
+      response.map(cr => cr.consignmentid).head should equal(consignmentIdTwo)
   }
 
   "getConsignments" should "return all the consignments for all the users when user id is not passed" in withContainers {
