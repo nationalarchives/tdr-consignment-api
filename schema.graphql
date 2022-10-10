@@ -110,6 +110,7 @@ type Consignment {
   consignmentType: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
+  totalFileSize: Int!
   fileChecks: FileChecks!
   parentFolder: String
   parentFolderId: UUID
@@ -141,6 +142,7 @@ type ConsignmentEdge {
 
 input ConsignmentFilters {
   userId: UUID
+  consignmentType: String
 }
 
 type ConsignmentStatus {

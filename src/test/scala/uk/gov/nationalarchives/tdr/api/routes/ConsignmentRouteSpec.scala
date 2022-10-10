@@ -214,7 +214,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         utils.addFileProperty(propertyName)
         val value = propertyName match {
           case ClientSideFileLastModifiedDate => "2021-03-11 12:30:30.592853"
-          case ClientSideFileSize => "1"
+          case ClientSideFileSize => "2"
           case _ => s"$propertyName value"
         }
         utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, propertyName, value)
@@ -752,6 +752,25 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
+  "consignments" should "allow a user with reporting access to filter consignments by consignment type" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentParams: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),"consignment-ref1",Nil),
+        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),"consignment-ref2",Nil, "judgment")
+      )
+
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      setUpConsignments(consignmentParams, utils)
+
+      val reportingAccessToken = validReportingToken("reporting")
+
+      val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_consignment_type")
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_consignment_type", reportingAccessToken)
+
+      response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+  }
+
   "consignments" should "throw an error if user does not have reporting access" in withContainers {
     case _: PostgreSQLContainer =>
       val exportAccessToken = invalidReportingToken()
@@ -850,7 +869,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private def setUpConsignmentsFor(consignmentParams: List[ConsignmentParams], utils: TestUtils, userId: UUID): Unit = {
 
     consignmentParams.foreach(ps => {
-      utils.createConsignment(ps.consignmentId, userId, fixedSeriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId)
+      utils.createConsignment(ps.consignmentId, userId, fixedSeriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId, consignmentType = ps.consignmentType)
       utils.createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
       utils.addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
       ps.fileIds.foreach(fs => {
@@ -907,4 +926,4 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 }
 
-case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID])
+case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID], consignmentType: String = "standard")

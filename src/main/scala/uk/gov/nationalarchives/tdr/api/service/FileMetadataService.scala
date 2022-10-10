@@ -24,6 +24,10 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
+  def getSumOfFileSizes(consignmentId: UUID): Future[Int] = {
+    fileMetadataRepository.getSumOfFileSizes(consignmentId)
+  }
+
   def getCustomMetadataValuesWithDefault: Future[Seq[FilepropertyvaluesRow]] = {
     customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault
   }
