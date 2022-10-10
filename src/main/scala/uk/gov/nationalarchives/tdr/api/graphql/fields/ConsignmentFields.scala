@@ -5,7 +5,7 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, Context, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, Projector, StringType, fields}
+import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, Projector, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
@@ -63,7 +63,7 @@ object ConsignmentFields {
 
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
-  case class ConsignmentFilters(userId: Option[UUID])
+  case class ConsignmentFilters(userId: Option[UUID], consignmentType: Option[String])
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -131,6 +131,11 @@ object ConsignmentFields {
         "totalFiles",
         IntType,
         resolve = context => DeferTotalFiles(context.value.consignmentid)
+      ),
+      Field(
+        "totalFileSize",
+        IntType,
+        resolve = context => DeferFileSizeSum(context.value.consignmentid)
       ),
       Field(
         "fileChecks",

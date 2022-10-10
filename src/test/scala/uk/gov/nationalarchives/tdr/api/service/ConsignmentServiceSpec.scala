@@ -469,9 +469,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit, None, ConsignmentFilters(userId.some).some)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some)).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some).some).futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some).futureValue
 
     response.lastCursor should be (Some("consignment-ref3"))
     response.consignmentEdges should have size 2

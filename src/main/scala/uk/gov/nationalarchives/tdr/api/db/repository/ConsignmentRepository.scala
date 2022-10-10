@@ -57,7 +57,9 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
   }
 
   def getConsignments(limit: Int, after: Option[String], consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
-    val query = Consignment.filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
+    val query = Consignment
+      .filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
+      .filterOpt(consignmentFilters.flatMap(_.consignmentType))(_.consignmenttype === _)
       .filterOpt(after)(_.consignmentreference > _)
       .sortBy(_.consignmentreference)
       .take(limit)
