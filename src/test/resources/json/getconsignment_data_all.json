@@ -16,6 +16,7 @@
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",
       "totalFiles": 3,
+      "totalFileSize": 6,
       "files": [
         {
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
@@ -42,7 +43,7 @@
             },
             {
               "name": "ClientSideFileSize",
-              "value": "1"
+              "value": "2"
             },
             {
               "name": "RightsCopyright",
@@ -68,7 +69,7 @@
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 1,
+            "clientSideFileSize": 2,
             "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
             "rightsCopyright": "RightsCopyright value",
             "heldBy": "HeldBy value",
@@ -101,7 +102,7 @@
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 1,
+            "clientSideFileSize": 2,
             "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
             "rightsCopyright": "RightsCopyright value",
             "heldBy": "HeldBy value",
@@ -137,7 +138,7 @@
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 1,
+            "clientSideFileSize": 2,
             "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
             "rightsCopyright": "RightsCopyright value",
             "heldBy": "HeldBy value",

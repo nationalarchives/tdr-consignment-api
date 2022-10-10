@@ -16,6 +16,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
   override def resolve(deferred: Vector[Deferred[Any]], context: ConsignmentApiContext, queryState: Any)(implicit ec: ExecutionContext): Vector[Future[Any]] = {
     deferred.map {
       case DeferTotalFiles(consignmentId) => context.fileService.fileCount(consignmentId)
+      case DeferFileSizeSum(consignmentId) => context.fileMetadataService.getSumOfFileSizes(consignmentId)
       case DeferFileChecksProgress(consignmentId) =>
         context.consignmentService.getConsignmentFileProgress(consignmentId)
       case DeferParentFolder(consignmentId) => context.consignmentService.getConsignmentParentFolder(consignmentId)
@@ -35,6 +36,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
 }
 
 case class DeferTotalFiles(consignmentId: UUID) extends Deferred[Int]
+case class DeferFileSizeSum(consignmentId: UUID) extends Deferred[Int]
 case class DeferFileChecksProgress(consignmentId: UUID) extends Deferred[FileChecks]
 case class DeferParentFolder(consignmentId: UUID) extends Deferred[Option[String]]
 case class DeferParentFolderId(consignmentId: UUID) extends Deferred[Option[UUID]]

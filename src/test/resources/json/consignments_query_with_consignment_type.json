@@ -1,0 +1,3 @@
+{
+  "query": "{ consignments(limit: 2, consignmentFiltersInput: { consignmentType: \"judgment\" }) { pageInfo { startCursor, endCursor, hasNextPage, hasPreviousPage }, edges { node { consignmentid, consignmentReference }}}}"
+}

@@ -5,6 +5,7 @@ import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -17,6 +18,15 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
 
   private val insertFileStatusQuery =
     Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
+
+  def getSumOfFileSizes(consignmentId: UUID): Future[Int] = {
+    val query = Filemetadata.join(File)
+      .on(_.fileid === _.fileid)
+      .filter(_._2.consignmentid === consignmentId)
+      .filter(_._1.propertyname === ClientSideFileSize)
+      .map(_._1.value.asColumnOf[Int]).sum.getOrElse(0)
+    db.run(query.result)
+  }
 
   def addFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[FilemetadataRow]] = {
     db.run(insertFileMetadataQuery ++= rows)
