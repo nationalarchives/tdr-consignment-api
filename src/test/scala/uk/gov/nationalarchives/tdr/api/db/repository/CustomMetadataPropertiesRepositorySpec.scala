@@ -6,8 +6,12 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 
+import scala.concurrent.duration.DurationInt
+
 class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 60.seconds)
 
   "getCustomMetadataProperty" should "return the correct closure metadata property" in withContainers {
     case container: PostgreSQLContainer =>
