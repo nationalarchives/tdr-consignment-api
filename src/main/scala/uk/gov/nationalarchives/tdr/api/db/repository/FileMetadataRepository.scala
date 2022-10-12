@@ -67,6 +67,15 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(DBIO.sequence(dbUpdate).transactionally)
   }
 
+  def deleteFileMetadata(selectedFileIds: Set[UUID], propertyNames: Set[String]): Future[Int] = {
+    val query = Filemetadata
+      .filter(_.fileid inSetBind selectedFileIds)
+      .filter(_.propertyname inSetBind propertyNames)
+      .delete
+
+    db.run(query)
+  }
+
   def countProcessedChecksumInConsignment(consignmentId: UUID): Future[Int] = {
     val query = Filemetadata.join(File)
       .on(_.fileid === _.fileid).join(Fileproperty)

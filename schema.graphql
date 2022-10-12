@@ -449,6 +449,7 @@ input UpdateExportDataInput {
 }
 
 input UpdateFileMetadataInput {
+  filePropertyIsMultiValue: Boolean!
   filePropertyName: String!
   value: String!
 }
