@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataDelete, FileMetadataRepository, FileMetadataUpdate, FileRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -289,6 +289,8 @@ object FileMetadataService {
                             propertyValue: String,
                             fileId: UUID,
                             metadataId: UUID)
+
+  case class FileMetadataDelete(fileIds: Set[UUID], propertyNamesToDelete: Set[String])
 
   case class PropertyUpdates(metadataToDelete: FileMetadataDelete,
                              rowsToAdd: Seq[FilemetadataRow] = Seq(),

@@ -91,5 +91,3 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
 }
 
 case class FileMetadataUpdate(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID)
-
-case class FileMetadataDelete(fileIds: Set[UUID], propertyNamesToDelete: Set[String])
