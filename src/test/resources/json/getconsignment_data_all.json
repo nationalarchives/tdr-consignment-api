@@ -110,7 +110,7 @@
             "ClosurePeriod": 1,
             "ClosureStartDate": "2021-04-11T12:30:30.592853",
             "FoiExemptionAsserted": "2021-03-12T12:30:30.592853",
-            "TitlePublic": true,
+            "TitleClosed": true,
             "language": "Language value"
           },
           "ffidMetadata": {
