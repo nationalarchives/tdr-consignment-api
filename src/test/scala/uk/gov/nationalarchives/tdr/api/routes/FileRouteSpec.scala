@@ -95,6 +95,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId)
+      utils.createConsignmentStatus(consignmentId, ClientChecks, InProgress)
       utils.createFile(UUID.randomUUID(), consignmentId)
 
       runTestMutationFileMetadata("mutation_metadatawitherrors", validUserToken())
@@ -122,6 +123,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId)
+      utils.createConsignmentStatus(consignmentId, ClientChecks, InProgress)
       utils.createFile(UUID.randomUUID(), consignmentId)
 
       runTestMutationFileMetadata("mutation_alldata_1", validUserToken())
