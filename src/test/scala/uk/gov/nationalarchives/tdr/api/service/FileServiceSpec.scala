@@ -680,15 +680,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       when(fileRepositoryMock.addFiles(any[Seq[FileRow]], any[Seq[FilemetadataRow]])).thenReturn(Future(Nil))
       val consignmentStatusService = mock[ConsignmentStatusService]
       val statusCaptor: ArgumentCaptor[ConsignmentStatusInput] = ArgumentCaptor.forClass(classOf[ConsignmentStatusInput])
-      val consignmentStatusResponse = ConsignmentStatus(UUID.randomUUID(), UUID.randomUUID(), "statusType", "value", ZonedDateTime.now(), None)
-      when(consignmentStatusService.addConsignmentStatus(statusCaptor.capture())).thenReturn(Future(consignmentStatusResponse))
+      when(consignmentStatusService.updateConsignmentStatus(statusCaptor.capture())).thenReturn(Future(1))
 
       val fileService = new FileService(fileRepositoryMock, fileStatusRepositoryMock, consignmentRepositoryMock, consignmentStatusService,
         mock[FFIDMetadataService], mock[AntivirusMetadataService], mock[FileStatusService], fileMetadataService, FixedTimeSource, uuidSource, ConfigFactory.load)
 
       fileService.addFile(AddFileAndMetadataInput(UUID.randomUUID(), List(metadataInput)), userId).futureValue
 
-      verify(consignmentStatusService, times(1)).addConsignmentStatus(any[ConsignmentStatusInput])
+      verify(consignmentStatusService, times(1)).updateConsignmentStatus(any[ConsignmentStatusInput])
       val consignmentStatus = statusCaptor.getAllValues.asScala.filter(_.statusType == "ClientChecks").head
       consignmentStatus.statusValue should equal(status)
     }
@@ -1112,8 +1111,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
   private def mockConsignmentStatusService(): ConsignmentStatusService = {
     val consignmentStatusService = mock[ConsignmentStatusService]
-    val consignmentStatusResponse = ConsignmentStatus(UUID.randomUUID(), UUID.randomUUID(), "statusType", "value", ZonedDateTime.now(), None)
-    when(consignmentStatusService.addConsignmentStatus(any[ConsignmentStatusInput])).thenReturn(Future(consignmentStatusResponse))
+    when(consignmentStatusService.updateConsignmentStatus(any[ConsignmentStatusInput])).thenReturn(Future(1))
     consignmentStatusService
   }
 }

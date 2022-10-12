@@ -96,7 +96,7 @@ class FileService(fileRepository: FileRepository,
       rowsWithMatchId <- rows
       _ <- rowsWithMatchId.grouped(fileUploadBatchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
       consignmentCheckStatus = rowsWithMatchId.find(_.clientChecks != Completed).map(_.clientChecks).getOrElse(Completed)
-      _ <- consignmentStatusService.addConsignmentStatus(ConsignmentStatusInput(consignmentId, ClientChecks, consignmentCheckStatus))
+      _ <- consignmentStatusService.updateConsignmentStatus(ConsignmentStatusInput(consignmentId, ClientChecks, consignmentCheckStatus))
     } yield rowsWithMatchId.flatMap {
       case MatchedFileRows(fileRow, _, matchId, _) => FileMatches(fileRow.fileid, matchId) :: Nil
       case _ => Nil

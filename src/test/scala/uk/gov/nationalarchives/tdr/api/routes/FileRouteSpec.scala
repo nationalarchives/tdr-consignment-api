@@ -7,6 +7,7 @@ import io.circe.generic.extras.auto._
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.clientSideProperties
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecks, InProgress}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -95,6 +96,20 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId)
       utils.createFile(UUID.randomUUID(), consignmentId)
+
+      runTestMutationFileMetadata("mutation_metadatawitherrors", validUserToken())
+      val status = utils.getConsignmentStatus(consignmentId, "ClientChecks")
+      status.getString("Value") should equal("CompletedWithIssues")
+  }
+
+  "The api" should "set the clientChecks status to CompleteWithErrors if there is invalid metadata and an existing status" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
+      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
+      utils.createConsignment(consignmentId)
+      utils.createFile(UUID.randomUUID(), consignmentId)
+      utils.createConsignmentStatus(consignmentId, ClientChecks, InProgress)
 
       runTestMutationFileMetadata("mutation_metadatawitherrors", validUserToken())
       val status = utils.getConsignmentStatus(consignmentId, "ClientChecks")
