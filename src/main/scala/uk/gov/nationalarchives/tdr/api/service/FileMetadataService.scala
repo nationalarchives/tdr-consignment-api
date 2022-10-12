@@ -165,11 +165,10 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     val updateFileMetadataProperties: Future[Seq[Int]] = fileMetadataRepository.updateFileMetadataProperties(propertiesRowsToUpdate)
 
     for {
-      deletedRows <- deleteFileMetadata
+      totalRowsDeleted <- deleteFileMetadata
       _ <- addFileMetadata
       updatedRows <- updateFileMetadataProperties
     } yield {
-      val totalRowsDeleted: Int = deletedRows
       val rowsToBeDeleted: Int = metadataToDelete.fileIds.size * metadataToDelete.propertyNamesToDelete.size
       val totalRowsUpdated: Int = updatedRows.sum
       val rowsToBeUpdated: Int = propertiesRowsToUpdate.values.map(_.metadataIds.size).sum
