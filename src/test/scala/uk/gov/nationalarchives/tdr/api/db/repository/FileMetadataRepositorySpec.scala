@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
@@ -397,6 +398,38 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
       val response2 = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds), Some(Set(filePropertyTwo))).futureValue
       response2.length should equal(1)
+  }
+
+  "getSumOfFileSizes" should "return the sum of file sizes" in withContainers {
+    case container: PostgreSQLContainer =>
+      val consignmentId = UUID.randomUUID()
+      val fileIdOne = UUID.randomUUID()
+      val fileIdTwo = UUID.randomUUID()
+      val fileIdThree = UUID.randomUUID()
+      val utils = TestUtils(container.database)
+      utils.createConsignment(consignmentId, userId)
+      utils.addFileProperty(ClientSideFileSize)
+      List((fileIdOne, "1"), (fileIdTwo, "2"), (fileIdThree, "3")).foreach {
+        case (id, size) =>
+          utils.createFile(id, consignmentId)
+          utils.addFileMetadata(UUID.randomUUID().toString, id.toString, ClientSideFileSize, size)
+      }
+      val repository = new FileMetadataRepository(container.database)
+      val sum = repository.getSumOfFileSizes(consignmentId).futureValue
+      sum should equal(6)
+  }
+
+  "getSumOfFileSizes" should "return zero if there is no metadata" in withContainers {
+    case container: PostgreSQLContainer =>
+      val consignmentId = UUID.randomUUID()
+      val utils = TestUtils(container.database)
+      utils.createConsignment(consignmentId, userId)
+      utils.createFile(UUID.randomUUID(), consignmentId)
+      utils.createFile(UUID.randomUUID(), consignmentId)
+      utils.createFile(UUID.randomUUID(), consignmentId)
+      val repository = new FileMetadataRepository(container.database)
+      val sum = repository.getSumOfFileSizes(consignmentId).futureValue
+      sum should equal(0)
   }
 
   private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {

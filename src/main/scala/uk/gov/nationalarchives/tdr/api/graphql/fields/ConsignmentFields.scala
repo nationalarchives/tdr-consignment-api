@@ -5,7 +5,7 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, ProjectedName, Projector, StringType, fields}
+import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, Projector, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
@@ -34,6 +34,7 @@ object ConsignmentFields {
                         )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
+
   case class FileEdge(node: File, cursor: String) extends Edge[File]
 
   case class AddConsignmentInput(seriesid: Option[UUID] = None, consignmentType: String)
@@ -45,12 +46,15 @@ object ConsignmentFields {
   case class FFIDProgress(filesProcessed: Int)
 
   case class FileChecks(antivirusProgress: AntivirusProgress, checksumProgress: ChecksumProgress, ffidProgress: FFIDProgress)
+
   case class TransferringBody(name: String, tdrCode: String)
+
   case class CurrentStatus(series: Option[String],
                            transferAgreement: Option[String],
                            upload: Option[String],
                            confirmTransfer: Option[String],
                            `export`: Option[String])
+
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
@@ -58,6 +62,8 @@ object ConsignmentFields {
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
+
+  case class ConsignmentFilters(userId: Option[UUID], consignmentType: Option[String])
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -81,8 +87,11 @@ object ConsignmentFields {
 
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
+  implicit val ConsignmentFiltersInputType: InputObjectType[ConsignmentFilters] = deriveInputObjectType[ConsignmentFilters]()
+
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
+  val ConsignmentFiltersInputArg: Argument[Option[ConsignmentFilters]] = Argument("consignmentFiltersInput", OptionInputType(ConsignmentFiltersInputType))
 
   implicit val ConnectionDefinition(_, fileConnections) =
     Connection.definition[ConsignmentApiContext, TDRConnection, File](
@@ -122,6 +131,11 @@ object ConsignmentFields {
         "totalFiles",
         IntType,
         resolve = context => DeferTotalFiles(context.value.consignmentid)
+      ),
+      Field(
+        "totalFileSize",
+        IntType,
+        resolve = context => DeferFileSizeSum(context.value.consignmentid)
       ),
       Field(
         "fileChecks",
@@ -199,6 +213,7 @@ object ConsignmentFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
+  val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
@@ -211,11 +226,12 @@ object ConsignmentFields {
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),
     Field("consignments", consignmentConnections,
-      arguments = List(LimitArg, CurrentCursorArg),
+      arguments = List(LimitArg, CurrentCursorArg, ConsignmentFiltersInputArg),
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
         val currentCursor = ctx.args.argOpt("currentCursor")
-        ctx.ctx.consignmentService.getConsignments(limit, currentCursor)
+        val consignmentFilters = ctx.args.argOpt("consignmentFiltersInput")
+        ctx.ctx.consignmentService.getConsignments(limit, currentCursor, consignmentFilters)
           .map(r => {
             val endCursor = r.lastCursor
             val edges = r.consignmentEdges
@@ -231,7 +247,7 @@ object ConsignmentFields {
           }
         )
       },
-      tags = List(ValidateHasReportingAccess)
+      tags = List(ValidateHasConsignmentsAccess)
     )
   )
 

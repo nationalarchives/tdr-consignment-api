@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.auth
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.auth.ValidateUserOwnsFiles.continue
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.UpdateConsignmentSeriesIdInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.BulkFileMetadataInputArg
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatusInputArg
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
@@ -215,15 +215,16 @@ object ValidateFiles {
   }
 }
 
-object ValidateHasReportingAccess extends SyncAuthorisationTag {
+object ValidateHasConsignmentsAccess extends SyncAuthorisationTag {
   override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+    val consignmentFilters: Option[ConsignmentFilters] = ctx.args.argOpt("consignmentFiltersInput")
     val token = ctx.ctx.accessToken
     val reportingAccess = token.reportingRoles.contains(reportingRole)
-    if (reportingAccess) {
+    if (reportingAccess || consignmentFilters.exists(_.userId.contains(token.userId))) {
       continue
     } else {
       val tokenUserId = token.userId
-      throw AuthorisationException(s"User $tokenUserId does not have permission to run reporting")
+      throw AuthorisationException(s"User $tokenUserId does not have permission to access the consignments")
     }
   }
 }

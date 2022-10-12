@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.routes
 
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
-
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
@@ -12,13 +11,14 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.{userId, _}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
 
 //scalastyle:off number.of.methods
 //scalastyle:off number.of.types
+//scalastyle:off file.size.limit
 class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
@@ -196,7 +196,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val identificationBasisMatch = "TEST DATA identification"
       val puidMatch = "TEST DATA puid"
 
-      List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitlePublic, ClosureStartDate).foreach(utils.addFileProperty)
+      List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitleClosed, ClosureStartDate).foreach(utils.addFileProperty)
 
       utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
       utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
@@ -214,7 +214,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         utils.addFileProperty(propertyName)
         val value = propertyName match {
           case ClientSideFileLastModifiedDate => "2021-03-11 12:30:30.592853"
-          case ClientSideFileSize => "1"
+          case ClientSideFileSize => "2"
           case _ => s"$propertyName value"
         }
         utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, propertyName, value)
@@ -223,7 +223,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       })
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureStartDate, "2021-04-11 12:30:30.592853")
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionAsserted, "2021-03-12 12:30:30.592853")
-      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, TitlePublic, "true")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, TitleClosed, "true")
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosurePeriod, "1")
 
       val fileOneFfidMetadataId = utils.addFFIDMetadata(fileOneId)
@@ -643,6 +643,134 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data should equal(expectedResponse.data)
   }
 
+  "consignments" should "allow a user without reporting access to return only their consignments" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentParams: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+          "consignment-ref1",
+          List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
+        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+          "consignment-ref2",
+          List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
+      )
+      val consignmentParams2: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
+          "consignment-ref3",
+          List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
+      )
+      val user2Id = UUID.randomUUID()
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      setUpConsignments(consignmentParams, utils)
+      setUpConsignmentsFor(consignmentParams2, utils, user2Id)
+
+      val userAccessToken = validUserTokenNoBody
+
+      val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_userId")
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_userId", userAccessToken)
+
+      response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+  }
+
+  "consignments" should "allow a user with reporting access to filter consignments by userId" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentParams: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+          "consignment-ref1",
+          List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
+        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+          "consignment-ref2",
+          List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
+      )
+      val consignmentParams2: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
+          "consignment-ref3",
+          List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
+      )
+      val user2Id = UUID.randomUUID()
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      setUpConsignments(consignmentParams, utils)
+      setUpConsignmentsFor(consignmentParams2, utils, user2Id)
+
+      val reportingAccessToken = validReportingToken("reporting")
+
+      val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_userId")
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_userId", reportingAccessToken)
+
+      response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+  }
+
+  "consignments" should "not allow a user without reporting access to access consignments without passing userId" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentParams: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+          "consignment-ref1",
+          List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
+        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+          "consignment-ref2",
+          List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
+      )
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      setUpConsignments(consignmentParams, utils)
+
+      val userAccessToken = validUserTokenNoBody
+
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_no_userId", userAccessToken)
+
+      response.errors should have size 1
+      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+  }
+
+  "consignments" should "not allow a user without reporting access to access other users' consignments" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentParams: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),
+          "consignment-ref1",
+          List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
+        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),
+          "consignment-ref2",
+          List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
+      )
+      val consignmentParams2: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"),
+          "consignment-ref3",
+          List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
+      )
+      val user2Id = UUID.fromString("fa8487b7-c76a-4816-8084-ee1139c92f98")
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      setUpConsignments(consignmentParams, utils)
+      setUpConsignmentsFor(consignmentParams2, utils, user2Id)
+
+      val userAccessToken = validUserTokenNoBody
+
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_other_userId", userAccessToken)
+
+      response.errors should have size 1
+      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+  }
+
+  "consignments" should "allow a user with reporting access to filter consignments by consignment type" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentParams: List[ConsignmentParams] = List(
+        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"),"consignment-ref1",Nil),
+        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"),"consignment-ref2",Nil, "judgment")
+      )
+
+      utils.addFileProperty(SHA256ServerSideChecksum)
+      setUpConsignments(consignmentParams, utils)
+
+      val reportingAccessToken = validReportingToken("reporting")
+
+      val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_consignment_type")
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_consignment_type", reportingAccessToken)
+
+      response.data.get.consignments should equal(expectedResponse.data.get.consignments)
+  }
+
   "consignments" should "throw an error if user does not have reporting access" in withContainers {
     case _: PostgreSQLContainer =>
       val exportAccessToken = invalidReportingToken()
@@ -735,8 +863,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private def setUpConsignments(consignmentParams: List[ConsignmentParams], utils: TestUtils): Unit = {
     (staticMetadataProperties.map(_.name) ++ clientSideProperties).foreach(prop => utils.addFileProperty(prop))
 
+    setUpConsignmentsFor(consignmentParams, utils, userId)
+  }
+
+  private def setUpConsignmentsFor(consignmentParams: List[ConsignmentParams], utils: TestUtils, userId: UUID): Unit = {
+
     consignmentParams.foreach(ps => {
-      utils.createConsignment(ps.consignmentId, userId, fixedSeriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId)
+      utils.createConsignment(ps.consignmentId, userId, fixedSeriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId, consignmentType = ps.consignmentType)
       utils.createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
       utils.addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
       ps.fileIds.foreach(fs => {
@@ -793,4 +926,4 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 }
 
-case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID])
+case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID], consignmentType: String = "standard")

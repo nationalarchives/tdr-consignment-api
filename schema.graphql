@@ -110,6 +110,7 @@ type Consignment {
   consignmentType: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
+  totalFileSize: Int!
   fileChecks: FileChecks!
   parentFolder: String
   parentFolderId: UUID
@@ -137,6 +138,11 @@ type ConsignmentEdge {
 
   "A cursor for use in pagination."
   cursor: String!
+}
+
+input ConsignmentFilters {
+  userId: UUID
+  consignmentType: String
 }
 
 type ConsignmentStatus {
@@ -185,11 +191,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Boolean
   Integer
-  Decimal
-  DateTime
   Text
+  DateTime
+  Boolean
+  Decimal
 }
 
 type FFIDMetadata {
@@ -302,7 +308,7 @@ type FileMetadataValues {
   closurePeriod: Int
   closureStartDate: LocalDateTime
   foiExemptionAsserted: LocalDateTime
-  titlePublic: Boolean
+  titleClosed: Boolean
 }
 
 type FileMetadataWithFileId {
@@ -384,7 +390,7 @@ enum PropertyType {
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
-  consignments(limit: Int!, currentCursor: String): ConsignmentConnection!
+  consignments(limit: Int!, currentCursor: String, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!

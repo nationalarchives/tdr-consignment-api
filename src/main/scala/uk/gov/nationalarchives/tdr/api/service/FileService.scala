@@ -9,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatusInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
@@ -28,6 +29,7 @@ import scala.math.min
 class FileService(fileRepository: FileRepository,
                   fileStatusRepository: FileStatusRepository,
                   consignmentRepository: ConsignmentRepository,
+                  consignmentStatusService: ConsignmentStatusService,
                   ffidMetadataService: FFIDMetadataService,
                   avMetadataService: AntivirusMetadataService,
                   fileStatusService: FileStatusService,
@@ -66,52 +68,68 @@ class FileService(fileRepository: FileRepository,
 
             //Add the 0 byte status here as know the file size at this point
             //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
-            addFileStatusIfFileSizeIsZero(input, fileId)
-            addFileStatusForClientChecksum(input, fileId)
-            addFileStatusForClientFilePath(path, fileId)
+            val zeroByteFileStatus = addFileStatusIfFileSizeIsZero(input, fileId)
+            val clientChecksumStatus = addFileStatusForClientChecksum(input, fileId)
+            val clientFilePathStatus = addFileStatusForClientFilePath(path, fileId)
+            val clientChecks = if(zeroByteFileStatus == Success && clientChecksumStatus == Success && clientFilePathStatus == Success) {
+              Completed
+            } else {
+              CompletedWithIssues
+            }
             val fileMetadataRows = List(
               row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
               row(fileId, input.fileSize.toString, ClientSideFileSize),
               row(fileId, input.checksum, SHA256ClientSideChecksum)
             )
-            MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId)
+            MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId, clientChecks)
           } else {
             DirectoryRows(fileRow, commonMetadataRows)
           }
       }).toList
     })
 
+    generateMatchedRows(consignmentId, rows)
+  }
+
+  private def generateMatchedRows(consignmentId: UUID, rows: Future[List[Rows]]): Future[List[FileMatches]] = {
     for {
       rowsWithMatchId <- rows
       _ <- rowsWithMatchId.grouped(fileUploadBatchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
+      consignmentCheckStatus = rowsWithMatchId.find(_.clientChecks != Completed).map(_.clientChecks).getOrElse(Completed)
+      _ <- consignmentStatusService.updateConsignmentStatus(ConsignmentStatusInput(consignmentId, ClientChecks, consignmentCheckStatus))
     } yield rowsWithMatchId.flatMap {
-      case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
+      case MatchedFileRows(fileRow, _, matchId, _) => FileMatches(fileRow.fileid, matchId) :: Nil
       case _ => Nil
     }
   }
 
-  def addFileStatusIfFileSizeIsZero(input: ClientSideMetadataInput, fileId: UUID): Unit =
+  def addFileStatusIfFileSizeIsZero(input: ClientSideMetadataInput, fileId: UUID): String =
     if (input.fileSize == 0) {
       val statusRow = FilestatusRow(uuidSource.uuid, fileId, FFID, ZeroByteFile, Timestamp.from(timeSource.now))
       fileStatusRepository.addFileStatuses(List(statusRow))
+      ZeroByteFile
+    } else {
+      Success
     }
 
-  def addFileStatusForClientChecksum(input: ClientSideMetadataInput, fileId: UUID): Unit = {
+  def addFileStatusForClientChecksum(input: ClientSideMetadataInput, fileId: UUID): String = {
     val clientChecksum = input.checksum match {
       case "" => Failed
       case _ => Success
     }
     val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientChecksum, clientChecksum, Timestamp.from(timeSource.now))
     fileStatusRepository.addFileStatuses(List(statusRow))
+    clientChecksum
   }
 
-  def addFileStatusForClientFilePath(path: String, fileId: UUID): Unit = {
+  def addFileStatusForClientFilePath(path: String, fileId: UUID): String = {
     val clientFilePathStatus = path match {
       case "" => Failed
       case _ => Success
     }
     val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientFilePath, clientFilePathStatus, Timestamp.from(timeSource.now))
     fileStatusRepository.addFileStatuses(List(statusRow))
+    clientFilePathStatus
   }
 
   def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
@@ -249,11 +267,12 @@ object FileService {
   trait Rows {
     val fileRow: FileRow
     val metadataRows: List[FilemetadataRow]
+    val clientChecks: String
   }
 
-  case class MatchedFileRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], matchId: Long) extends Rows
+  case class MatchedFileRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], matchId: Long, clientChecks: String) extends Rows
 
-  case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow]) extends Rows
+  case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], clientChecks: String = Completed) extends Rows
 
   case class FileOwnership(fileId: UUID, userId: UUID)
 

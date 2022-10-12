@@ -24,6 +24,8 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
+  def getSumOfFileSizes(consignmentId: UUID): Future[Int] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
+
   def getCustomMetadataValuesWithDefault: Future[Seq[FilepropertyvaluesRow]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault
 
   def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInput, userId: UUID): Future[FileMetadataWithFileId] = {
@@ -219,7 +221,7 @@ object FileMetadataService {
   val ClosurePeriod = "ClosurePeriod"
   val ClosureStartDate = "ClosureStartDate"
   val FoiExemptionAsserted = "FoiExemptionAsserted"
-  val TitlePublic = "TitlePublic"
+  val TitleClosed = "TitleClosed"
   /**
    * Save default values for these properties because TDR currently only supports records which are Open, in English, etc.
    * Users agree to these conditions at a consignment level, so it's OK to save these as defaults for every file.
@@ -250,7 +252,7 @@ object FileMetadataService {
       propertyNameMap.get(ClosurePeriod).map(_.toInt),
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
-      propertyNameMap.get(TitlePublic).map(_.toBoolean)
+      propertyNameMap.get(TitleClosed).map(_.toBoolean)
     )
   }
 
@@ -281,7 +283,7 @@ object FileMetadataService {
                                 closurePeriod: Option[Int],
                                 closureStartDate: Option[LocalDateTime],
                                 foiExemptionAsserted: Option[LocalDateTime],
-                                titlePublic: Option[Boolean])
+                                titleClosed: Option[Boolean])
 
   case class PropertyAction(updateActionType: String,
                             propertyName: String,

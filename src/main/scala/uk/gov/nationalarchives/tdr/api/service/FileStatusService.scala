@@ -68,6 +68,7 @@ object FileStatusService {
   val ServerChecksum = "ServerChecksum"
   val ClientChecksum = "ClientChecksum"
   val ClientFilePath = "ClientFilePath"
+  val ClientChecks = "ClientChecks"
 
   //Values
   val Success = "Success"
@@ -78,4 +79,7 @@ object FileStatusService {
   val Zip = "Zip"
   val NonJudgmentFormat = "NonJudgmentFormat"
   val ZeroByteFile = "ZeroByteFile"
+  val InProgress = "InProgress"
+  val Completed = "Completed"
+  val CompletedWithIssues = "CompletedWithIssues"
 }

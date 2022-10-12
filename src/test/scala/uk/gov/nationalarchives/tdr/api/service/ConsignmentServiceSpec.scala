@@ -1,5 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import cats.implicits.catsSyntaxOptionId
+
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
@@ -451,6 +453,42 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     exportLocations should contain (exportLocation2)
   }
 
+  "getConsignments" should "return filtered consignments when consignment filter is passed" in {
+    val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+    val exportLocation2 = Some("Location2")
+    val exportLocation3 = Some("Location3")
+
+    val consignmentRowParams = List(
+      (consignmentId2, "consignment-ref2", 2L, exportLocation2),
+      (consignmentId3, "consignment-ref3", 3L, exportLocation3)
+    )
+
+    val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3, p._4))
+
+    val limit = 2
+
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
+    when(consignmentRepoMock.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some)).thenReturn(mockResponse)
+
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some).futureValue
+
+    response.lastCursor should be (Some("consignment-ref3"))
+    response.consignmentEdges should have size 2
+    val edges = response.consignmentEdges
+    val cursors: List[String] = edges.map(e => e.cursor).toList
+    cursors should contain ("consignment-ref2")
+    cursors should contain ("consignment-ref3")
+
+    val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
+    consignmentRefs should contain (consignmentId2)
+    consignmentRefs should contain (consignmentId3)
+
+    val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
+    exportLocations should contain (exportLocation2)
+    exportLocations should contain (exportLocation3)
+  }
+
   "getConsignments" should "return empty list and no cursor if no consignments" in {
     val limit = 2
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
@@ -474,7 +512,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   }
 
   "startUpload" should "create an upload in progress status and add the parent folder" in {
-    val consignmentStatusCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
+    val consignmentStatusCaptor: ArgumentCaptor[List[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[List[ConsignmentstatusRow]])
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
     val parentFolderCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val parentFolder = "parentFolder"
@@ -485,12 +523,28 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       .thenReturn(Future.successful(parentFolder))
     consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
 
-    val statusRow = consignmentStatusCaptor.getValue
+    val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == "Upload").get
     statusRow.consignmentid should be (consignmentId)
     statusRow.statustype should be ("Upload")
     statusRow.value should be ("InProgress")
     consignmentIdCaptor.getValue should be (consignmentId)
     parentFolderCaptor.getValue should be (parentFolder)
+  }
+
+  "startUpload" should "create a ClientChecks in progress status" in {
+    val consignmentStatusCaptor: ArgumentCaptor[List[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[List[ConsignmentstatusRow]])
+    val parentFolder = "parentFolder"
+
+    when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
+    when(consignmentRepoMock.addParentFolder
+    (any[UUID], any[String], consignmentStatusCaptor.capture())(any[ExecutionContext]))
+      .thenReturn(Future.successful(parentFolder))
+    consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
+
+    val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == "ClientChecks").get
+    statusRow.consignmentid should be(consignmentId)
+    statusRow.statustype should be("ClientChecks")
+    statusRow.value should be("InProgress")
   }
 
   "startUpload" should "return an error if there is an existing consignment status" in {

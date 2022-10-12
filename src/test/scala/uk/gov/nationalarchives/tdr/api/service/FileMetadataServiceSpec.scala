@@ -644,7 +644,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, closureStartDate.toString, Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosureStartDate),
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, foiExemptionAsserted.toString, Timestamp.from(FixedTimeSource.now),
         UUID.randomUUID(), FoiExemptionAsserted),
-      FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), TitlePublic),
+      FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), TitleClosed),
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosurePeriod)
     ))
 
@@ -660,8 +660,20 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     response(fileIdTwo).foiExemptionCode.get should equal("valueTwo")
     response(fileIdTwo).closureStartDate.get should equal(closureStartDate.toLocalDateTime)
     response(fileIdTwo).closurePeriod.get should equal(1)
-    response(fileIdTwo).titlePublic.get should equal(true)
+    response(fileIdTwo).titleClosed.get should equal(true)
     response(fileIdTwo).foiExemptionAsserted.get should equal(foiExemptionAsserted.toLocalDateTime)
+  }
+
+  "getSumOfFileSizes" should "return the sum of the file sizes" in {
+    val fileMetadataRepository = mock[FileMetadataRepository]
+    val consignmentId = UUID.randomUUID()
+    when(fileMetadataRepository.getSumOfFileSizes(any[UUID])).thenReturn(Future(1))
+
+    val service = new FileMetadataService(fileMetadataRepository, mock[FileRepository], mock[CustomMetadataPropertiesRepository], FixedTimeSource, new FixedUUIDSource())
+    val result = service.getSumOfFileSizes(consignmentId).futureValue
+
+    result should equal(1)
+    verify(fileMetadataRepository, times(1)).getSumOfFileSizes(consignmentId)
   }
 
   private def generateFileRows(fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID], fixedUserId: UUID): Seq[FileRow] = {
