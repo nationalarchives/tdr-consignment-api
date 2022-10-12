@@ -12,7 +12,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields.Series
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Completed, InProgress}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -35,13 +35,13 @@ class ConsignmentService(
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
     consignmentStatusRepository.getConsignmentStatus(startUploadInput.consignmentId).flatMap(status => {
-      val uploadStatus = status.find(s => s.statustype == "Upload")
+      val uploadStatus = status.find(s => s.statustype == Upload)
       if(uploadStatus.isDefined) {
         throw ConsignmentStateException(s"Existing consignment upload status is '${uploadStatus.get.value}', so cannot start new upload")
       }
       val now = Timestamp.from(timeSource.now)
-      val consignmentStatusUploadRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, "Upload", InProgress, now)
-      val consignmentStatusClientChecksRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, "ClientChecks", InProgress, now)
+      val consignmentStatusUploadRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, Upload, InProgress, now)
+      val consignmentStatusClientChecksRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, ClientChecks, InProgress, now)
       consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder, List(consignmentStatusUploadRow, consignmentStatusClientChecksRow))
     })
   }

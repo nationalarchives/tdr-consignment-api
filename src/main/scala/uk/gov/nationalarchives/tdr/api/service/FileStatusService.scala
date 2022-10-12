@@ -68,6 +68,7 @@ object FileStatusService {
   val ServerChecksum = "ServerChecksum"
   val ClientChecksum = "ClientChecksum"
   val ClientFilePath = "ClientFilePath"
+  val ClientChecks = "ClientChecks"
 
   //Values
   val Success = "Success"
