@@ -575,7 +575,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val testSetUp = new UpdateBulkMetadataTestSetUp()
     val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
     val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
-    val fileId1 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
 
     val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1), testSetUp.userId)
 
