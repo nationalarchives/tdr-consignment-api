@@ -1,0 +1,11 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Error: There is no defined action for a Export statusType with no statusValue. Please provide either a defined action or a statusValue",
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    }
+  ]
+}

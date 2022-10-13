@@ -1,0 +1,11 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Error: There are no Upload statuses for any of files. Either the upload hasn't started yet or there has been a failure to report the file statuses",
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    }
+  ]
+}

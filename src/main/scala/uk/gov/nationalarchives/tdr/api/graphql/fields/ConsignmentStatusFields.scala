@@ -23,7 +23,7 @@ object ConsignmentStatusFields {
 
   case class ConsignmentStatusInput(consignmentId: UUID,
                                     statusType: String,
-                                    statusValue: String) extends UserOwnsConsignment
+                                    statusValue: Option[String]) extends UserOwnsConsignment
 
   val ConsignmentStatusInputType: InputObjectType[ConsignmentStatusInput] =
     deriveInputObjectType[ConsignmentStatusInput]()

@@ -157,7 +157,7 @@ type ConsignmentStatus {
 input ConsignmentStatusInput {
   consignmentId: UUID!
   statusType: String!
-  statusValue: String!
+  statusValue: String
 }
 
 type CurrentStatus {
@@ -192,10 +192,10 @@ type CustomMetadataValues {
 
 enum DataType {
   Integer
-  Text
-  DateTime
   Boolean
+  Text
   Decimal
+  DateTime
 }
 
 type FFIDMetadata {
