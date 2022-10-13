@@ -43,11 +43,11 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   val customMetadataPropertiesRepositoryMock: CustomMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
   val fileMetadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
   val fileRepositoryMock: FileRepository = mock[FileRepository]
+  val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val antivirusMetadataRepositoryMock: AntivirusMetadataRepository = mock[AntivirusMetadataRepository]
   val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, uuidSource)
-  val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepositoryMock, uuidSource, FixedTimeSource)
-  val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
+  val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepositoryMock, fileStatusRepositoryMock, uuidSource, FixedTimeSource)
   val disallowedPuidsRepositoryMock: DisallowedPuidsRepository = mock[DisallowedPuidsRepository]
 
   val queriedFileFieldsWithoutOriginalPath: QueriedFileFields = QueriedFileFields()
@@ -689,7 +689,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
       verify(consignmentStatusService, times(1)).updateConsignmentStatus(any[ConsignmentStatusInput])
       val consignmentStatus = statusCaptor.getAllValues.asScala.filter(_.statusType == "ClientChecks").head
-      consignmentStatus.statusValue should equal(status)
+      consignmentStatus.statusValue should equal(Some(status))
     }
   }
 
