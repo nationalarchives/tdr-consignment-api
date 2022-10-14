@@ -55,11 +55,11 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def updateFileMetadataProperties(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
+  def updateFileMetadataProperties(selectedFileIds: Set[UUID], updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
     val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
       case (propertyName, update) => Filemetadata
+        .filter(fm => fm.fileid inSetBind selectedFileIds)
         .filter(fm => fm.propertyname === propertyName)
-        .filter(fm => fm.metadataid inSet update.metadataIds)
         .map(fm => (fm.value, fm.userid, fm.datetime))
         .update((update.value, update.userId, update.dateTime))
     }.toSeq

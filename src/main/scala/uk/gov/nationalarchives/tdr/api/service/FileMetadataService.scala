@@ -71,11 +71,44 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       updatePropertyActions: Set[PropertyAction] = groupedPropertyActions.getOrElse("update", Set())
 
       propertyUpdates: PropertyUpdates = generatePropertyUpdates(userId, deletePropertyActions, addPropertyActions, updatePropertyActions)
-      _ <- updateFileMetadata(input.consignmentId, propertyUpdates)
+      _ <- updateFileMetadata(fileIds, propertyUpdates)
       fileIdsAdded: Set[UUID] = addPropertyActions.map(_.fileId)
       fileIdsUpdated: Set[UUID] = updatePropertyActions.map(_.fileId)
       metadataProperties = input.metadataProperties.map(metadataProperty => FileMetadata(metadataProperty.filePropertyName, metadataProperty.value))
     } yield BulkFileMetadata((fileIdsAdded ++ fileIdsUpdated).toSeq, metadataProperties)
+  }
+
+  def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
+
+    for {
+      existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
+      fileIds: Set[UUID] = existingFileRows.collect { case fileRow if fileRow.filetype.get == NodeType.fileTypeIdentifier => fileRow.fileid }.toSet
+      metadataValues <- customMetadataPropertiesRepository.getCustomMetadataValues
+      groupId = metadataValues.find(property => property.propertyname == ClosureType && property.propertyvalue == "Closed")
+        .map(_.dependencies).getOrElse(throw new IllegalStateException("Can't find metadata property 'ClosureType' with value 'Closed' in the db"))
+      dependencies <- customMetadataPropertiesRepository.getCustomMetadataDependencies
+      propertyNames = dependencies.filter(dependency => groupId.contains(dependency.groupid)).map(_.propertyname)
+
+      (fileMetadataToUpdate, fileMetadataToDelete) = getFileMetadataToUpdateAndDelete(metadataValues, propertyNames, userId)
+      _ <- fileMetadataRepository.updateFileMetadataProperties(fileIds, fileMetadataToUpdate)
+      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, fileMetadataToDelete.toSet)
+    } yield DeleteFileMetadata(fileIds.toSeq, propertyNames)
+  }
+
+  private def getFileMetadataToUpdateAndDelete(metadataValues: Seq[FilepropertyvaluesRow], propertyNames: Seq[String], userId: UUID)
+  : (Map[String, FileMetadataUpdate], Seq[String]) = {
+    val metadataValuesWithDefault = metadataValues.filter(_.default.contains(true))
+    val (fileMetadataToUpdate, fileMetadataToDelete) = propertyNames.partition(name => metadataValuesWithDefault.exists(_.propertyname == name))
+
+    val update: (String, String) => FileMetadataUpdate = FileMetadataUpdate(Nil, _, _, Timestamp.from(timeSource.now), userId)
+
+    val fileMetadataUpdates = fileMetadataToUpdate.map(propertyName =>
+      propertyName -> update(propertyName, metadataValuesWithDefault.find(_.propertyname == propertyName).head.propertyvalue)).toMap
+
+    val additionalFileMetadataUpdate = metadataValuesWithDefault.find(_.propertyname == ClosureType)
+      .map(property => property.propertyname -> update(property.propertyname, property.propertyvalue)).head
+
+    (fileMetadataUpdates + additionalFileMetadataUpdate, fileMetadataToDelete)
   }
 
   private def getPropertyActions(fileId: UUID, metadataProperties: Set[UpdateFileMetadataInput],
@@ -156,13 +189,13 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     PropertyUpdates(metadataIdsToDelete, propertiesRowsToAdd, propertiesRowsToUpdate)
   }
 
-  private def updateFileMetadata(consignmentId: UUID, propertyUpdates: PropertyUpdates): Future[Unit] = {
+  private def updateFileMetadata(fileIds: Set[UUID], propertyUpdates: PropertyUpdates): Future[Unit] = {
     val metadataToDelete: FileMetadataDelete = propertyUpdates.metadataToDelete
     val propertiesRowsToAdd: Seq[FilemetadataRow] = propertyUpdates.rowsToAdd
     val propertiesRowsToUpdate: Map[String, FileMetadataUpdate] = propertyUpdates.rowsToUpdate
     val deleteFileMetadata: Future[Int] = fileMetadataRepository.deleteFileMetadata(metadataToDelete.fileIds, metadataToDelete.propertyNamesToDelete)
     val addFileMetadata: Future[Seq[FilemetadataRow]] = fileMetadataRepository.addFileMetadata(propertiesRowsToAdd)
-    val updateFileMetadataProperties: Future[Seq[Int]] = fileMetadataRepository.updateFileMetadataProperties(propertiesRowsToUpdate)
+    val updateFileMetadataProperties: Future[Seq[Int]] = fileMetadataRepository.updateFileMetadataProperties(fileIds, propertiesRowsToUpdate)
 
     for {
       totalRowsDeleted <- deleteFileMetadata
@@ -221,6 +254,8 @@ object FileMetadataService {
   val ClosureStartDate = "ClosureStartDate"
   val FoiExemptionAsserted = "FoiExemptionAsserted"
   val TitleClosed = "TitleClosed"
+  val ClosureType = "ClosureType"
+
   /**
    * Save default values for these properties because TDR currently only supports records which are Open, in English, etc.
    * Users agree to these conditions at a consignment level, so it's OK to save these as defaults for every file.

@@ -3,8 +3,9 @@ package uk.gov.nationalarchives.tdr.api.auth
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.auth.ValidateUserOwnsFiles.continue
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.BulkFileMetadataInputArg
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadataInputArg, DeleteFileMetadataInputArg}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatusInputArg
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
@@ -190,12 +191,25 @@ object ValidateUserOwnsFilesForFileStatusInput extends AuthorisationTag {
   }
 }
 
+object ValidateUserOwnsFilesForDeleteMetadataInput extends AuthorisationTag {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
+                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+    val deleteFileMetadataInput = ctx.arg(DeleteFileMetadataInputArg)
+    val fileIds = deleteFileMetadataInput.fileIds
+
+    ValidateFiles.validate(ctx, fileIds)
+  }
+}
+
 object ValidateFiles {
 
   def validate(ctx: Context[ConsignmentApiContext, _], fileIds: Seq[UUID])
               (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val userId = ctx.ctx.accessToken.userId
 
+    if (fileIds.isEmpty) {
+      throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
+    }
     for {
       fileIdsAndOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
       fileIdsBelongingToAConsignment: Seq[UUID] = fileIdsAndOwner.map(_.fileId)

@@ -28,7 +28,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
   private def getFileStatusValue(fileId: UUID, utils: TestUtils): String =
     utils.getFileStatusResult(fileId, "Status Type").head
 
-  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int=1): Assertion = {
+  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int = 1): Assertion = {
     utils.countFileMetadata(fileId) should be(numberOfFileMetadataRows)
   }
 
@@ -285,7 +285,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       )
   }
 
-  "updateFileMetadataProperties" should "update the value and userId for the correct metadata rows and return the number of rows it updated" in withContainers {
+  "updateFileMetadataProperties" should "update the value and userId for the selected file ids only and return the number of rows it updated" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val utils = TestUtils(db)
@@ -294,11 +294,11 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
       val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
       val fileIdThree = UUID.fromString("f2e8a105-a251-41ce-89a0-a03c2b321277")
+      val fileIdFour = UUID.randomUUID()
       val userId2 = UUID.randomUUID()
       utils.createConsignment(consignmentId, userId)
-      List(fileIdOne, fileIdTwo, fileIdThree).foreach(
-        fileId => utils.createFile(fileId, consignmentId)
-      )
+      List(fileIdOne, fileIdTwo, fileIdThree, fileIdFour).foreach(utils.createFile(_, consignmentId))
+
       utils.addFileProperty("FilePropertyOne")
       utils.addFileProperty("FilePropertyTwo")
       utils.addFileProperty("FilePropertyThree")
@@ -310,9 +310,10 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
       utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
       utils.addFileMetadata(metadataId4.toString, fileIdThree.toString, "FilePropertyThree")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileIdFour.toString, "FilePropertyOne", "test value")
       val newValue = "newValue"
 
-      val updateResponse: Seq[Int] = fileMetadataRepository.updateFileMetadataProperties(
+      val updateResponse: Seq[Int] = fileMetadataRepository.updateFileMetadataProperties(Set(fileIdOne, fileIdTwo, fileIdThree),
         Map(
           "FilePropertyOne" -> FileMetadataUpdate(Seq(metadataId1, metadataId3), "FilePropertyOne", newValue, Timestamp.from(Instant.now()), userId2),
           "FilePropertyThree" -> FileMetadataUpdate(Seq(metadataId4), "FilePropertyThree", newValue, Timestamp.from(Instant.now()), userId2))
@@ -329,6 +330,9 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       )
 
       checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates)
+
+      val fileMetadata = fileMetadataRepository.getFileMetadataByProperty(fileIdFour, "FilePropertyOne").futureValue
+      fileMetadata.head.value should equal("test value")
   }
 
   "updateFileMetadataProperties" should "return 0 if a file property that does not exist on the rows passed to it" in withContainers {
@@ -357,7 +361,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
       val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
 
-      val updateResponse = fileMetadataRepository.updateFileMetadataProperties(
+      val updateResponse = fileMetadataRepository.updateFileMetadataProperties(Set(fileIdOne, fileIdTwo),
         Map("NonExistentFileProperty" -> FileMetadataUpdate(
           Seq(metadataId1, metadataId3), "NonExistentFileProperty", newValue, Timestamp.from(Instant.now()), userId2)
         )
@@ -436,8 +440,8 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val response = fileMetadataRepository.getFileMetadata(filePropertyUpdates.consignmentId).futureValue
     val metadataRowById: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
 
-    filePropertyUpdates.changedProperties.foreach{
-      case(fileId, propertiesChanged) =>
+    filePropertyUpdates.changedProperties.foreach {
+      case (fileId, propertiesChanged) =>
         val fileMetadataForFile: Seq[FilemetadataRow] = metadataRowById.getOrElse(fileId, Seq())
         val fileMetadataForFileByProperty: Map[String, Seq[FilemetadataRow]] = fileMetadataForFile.groupBy(_.propertyname)
         propertiesChanged.foreach {
@@ -449,8 +453,8 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
         }
     }
 
-    filePropertyUpdates.unchangedProperties.foreach{
-      case(fileId, unchangedProperties) =>
+    filePropertyUpdates.unchangedProperties.foreach {
+      case (fileId, unchangedProperties) =>
         val fileMetadataForFile: Seq[FilemetadataRow] = metadataRowById.getOrElse(fileId, Seq())
         val fileMetadataForFileByProperty: Map[String, Seq[FilemetadataRow]] = fileMetadataForFile.groupBy(_.propertyname)
         unchangedProperties.foreach {
