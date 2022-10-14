@@ -19,6 +19,7 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
+//scalastyle:off file.size.limit
 class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
@@ -692,7 +693,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
       FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
       FilepropertyvaluesRow("TitleClosed", "false", Some(true), Some(1), None, None),
-      FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None),
+      FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
       FilepropertydependenciesRow(3, "ClosurePeriod", None),
@@ -748,7 +749,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
       FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
       FilepropertyvaluesRow("TitleClosed", "false", Some(true), Some(1), None, None),
-      FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None),
+      FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None)
     ))
     val mockPropertyDependenciesResponse = Future(Seq(
       FilepropertydependenciesRow(3, "TitleClosed", None),
@@ -847,7 +848,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileId2: UUID = UUID.randomUUID()
     val folderAndItsFiles: Seq[UUID] = Seq(folderId, fileInFolderId1, fileInFolderId2, fileInFolderId3)
     val inputFileIds: Seq[UUID] = Seq(folderId, fileId1, fileId2)
-    val allFileIds : Set[UUID] = Set(fileId1, fileId2, fileInFolderId1, fileInFolderId2, fileInFolderId3)
 
     val propertyName1: String = "propertyName1"
 
