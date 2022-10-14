@@ -71,7 +71,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
       updatePropertyActions: Set[PropertyAction] = groupedPropertyActions.getOrElse("update", Set())
 
       propertyUpdates: PropertyUpdates = generatePropertyUpdates(userId, deletePropertyActions, addPropertyActions, updatePropertyActions)
-      _ <- updateFileMetadata(fileIds, propertyUpdates)
+      _ <- updateFileMetadata(propertyUpdates)
       fileIdsAdded: Set[UUID] = addPropertyActions.map(_.fileId)
       fileIdsUpdated: Set[UUID] = updatePropertyActions.map(_.fileId)
       metadataProperties = input.metadataProperties.map(metadataProperty => FileMetadata(metadataProperty.filePropertyName, metadataProperty.value))
@@ -189,13 +189,13 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository,
     PropertyUpdates(metadataIdsToDelete, propertiesRowsToAdd, propertiesRowsToUpdate)
   }
 
-  private def updateFileMetadata(fileIds: Set[UUID], propertyUpdates: PropertyUpdates): Future[Unit] = {
+  private def updateFileMetadata(propertyUpdates: PropertyUpdates): Future[Unit] = {
     val metadataToDelete: FileMetadataDelete = propertyUpdates.metadataToDelete
     val propertiesRowsToAdd: Seq[FilemetadataRow] = propertyUpdates.rowsToAdd
     val propertiesRowsToUpdate: Map[String, FileMetadataUpdate] = propertyUpdates.rowsToUpdate
     val deleteFileMetadata: Future[Int] = fileMetadataRepository.deleteFileMetadata(metadataToDelete.fileIds, metadataToDelete.propertyNamesToDelete)
     val addFileMetadata: Future[Seq[FilemetadataRow]] = fileMetadataRepository.addFileMetadata(propertiesRowsToAdd)
-    val updateFileMetadataProperties: Future[Seq[Int]] = fileMetadataRepository.updateFileMetadataProperties(fileIds, propertiesRowsToUpdate)
+    val updateFileMetadataProperties: Future[Seq[Int]] = fileMetadataRepository.updateFileMetadataProperties(propertiesRowsToUpdate)
 
     for {
       totalRowsDeleted <- deleteFileMetadata

@@ -55,6 +55,19 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
+  // TODO: Since we are not gonna use this method anymore after refactoring (TDR-2477), please remove this method.
+  def updateFileMetadataProperties(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
+    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
+      case (propertyName, update) => Filemetadata
+        .filter(fm => fm.propertyname === propertyName)
+        .filter(fm => fm.metadataid inSet update.metadataIds)
+        .map(fm => (fm.value, fm.userid, fm.datetime))
+        .update((update.value, update.userId, update.dateTime))
+    }.toSeq
+
+    db.run(DBIO.sequence(dbUpdate).transactionally)
+  }
+
   def updateFileMetadataProperties(selectedFileIds: Set[UUID], updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
     val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
       case (propertyName, update) => Filemetadata

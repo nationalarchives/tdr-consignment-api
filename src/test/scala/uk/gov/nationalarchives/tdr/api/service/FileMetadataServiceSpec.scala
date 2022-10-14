@@ -270,7 +270,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val addFileMetadataArgument = testSetUp.addFileMetadataCaptor.getValue
     val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
-    val updateFileMetadataFileIdsArgument: Set[UUID] = testSetUp.updateFileMetadataFileIsArgCaptor.getValue
     val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap {
       case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
     }
@@ -287,7 +286,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       case (propertyName, metadataRow) => metadataRow.value.startsWith("newValue") && propertyName.last == metadataRow.value.last
     } should equal(true)
     updateFileMetadataIdsArgument.sorted should equal(existingFileMetadataRows.map(_.metadataid).sorted)
-    updateFileMetadataFileIdsArgument should equal(testSetUp.allFileIds)
   }
 
   "updateBulkFileMetadata" should "pass into 'updateFileMetadata', only the metadataIds where the " +
@@ -362,7 +360,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
 
-    verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Set[UUID]], any[Map[String, FileMetadataUpdate]])
+    verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Map[String, FileMetadataUpdate]])
     testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
 
     addFileMetadataArgument.nonEmpty should equal(true)
@@ -451,7 +449,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
 
     verify(testSetUp.metadataRepositoryMock, times(1)).addFileMetadata(any[Seq[FilemetadataRow]])
-    verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Set[UUID]], any[Map[String, FileMetadataUpdate]])
+    verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Map[String, FileMetadataUpdate]])
   }
 
   "updateBulkFileMetadata" should "add all submitted values as metadata rows for a multiValue property, if there are no values for the property" in {
@@ -609,7 +607,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     verify(testSetUp.metadataRepositoryMock, times(1)).deleteFileMetadata(any[Set[UUID]], any[Set[String]])
     verify(testSetUp.metadataRepositoryMock, times(1)).addFileMetadata(any[Seq[FilemetadataRow]])
-    verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Set[UUID]], any[Map[String, FileMetadataUpdate]])
+    verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Map[String, FileMetadataUpdate]])
   }
 
   "getFileMetadata" should "call the repository with the correct arguments" in {
@@ -873,7 +871,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val propertyNameDeleteFileMetadataCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
     val addFileMetadataCaptor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
     val updateFileMetadataPropsArgCaptor: ArgumentCaptor[Map[String, FileMetadataUpdate]] = ArgumentCaptor.forClass(classOf[Map[String, FileMetadataUpdate]])
-    val updateFileMetadataFileIsArgCaptor: ArgumentCaptor[Set[UUID]] = ArgumentCaptor.forClass(classOf[Set[UUID]])
 
     def stubRepoResponses(getAllDescendantsResponse: Seq[FileRow] = Seq(), getFileMetadataResponse: Seq[FilemetadataRow] = Seq(),
                           deleteFileMetadataResponse: Int = 0, addFileMetadataResponse: Seq[FilemetadataRow] = Seq(),
@@ -887,7 +884,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         .thenReturn(Future(deleteFileMetadataResponse))
       when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
         .thenReturn(Future(addFileMetadataResponse))
-      when(metadataRepositoryMock.updateFileMetadataProperties(updateFileMetadataFileIsArgCaptor.capture(), updateFileMetadataPropsArgCaptor.capture()))
+      when(metadataRepositoryMock.updateFileMetadataProperties(updateFileMetadataPropsArgCaptor.capture()))
         .thenReturn(Future(updateFileMetadataPropertiesResponse))
     }
   }

@@ -285,6 +285,53 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       )
   }
 
+  // TODO: Remove it once the refactoring is done as a port of (TDR-2477).
+  "updateFileMetadataProperties" should "update the value and userId for the correct metadata rows and return the number of rows it updated" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val utils = TestUtils(db)
+      val fileMetadataRepository = new FileMetadataRepository(db)
+      val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+      val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+      val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+      val fileIdThree = UUID.fromString("f2e8a105-a251-41ce-89a0-a03c2b321277")
+      val userId2 = UUID.randomUUID()
+      utils.createConsignment(consignmentId, userId)
+      List(fileIdOne, fileIdTwo, fileIdThree).foreach(
+        fileId => utils.createFile(fileId, consignmentId)
+      )
+      utils.addFileProperty("FilePropertyOne")
+      utils.addFileProperty("FilePropertyTwo")
+      utils.addFileProperty("FilePropertyThree")
+      val metadataId1 = UUID.randomUUID()
+      val metadataId2 = UUID.randomUUID()
+      val metadataId3 = UUID.randomUUID()
+      val metadataId4 = UUID.randomUUID()
+      utils.addFileMetadata(metadataId1.toString, fileIdOne.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId2.toString, fileIdOne.toString, "FilePropertyTwo")
+      utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
+      utils.addFileMetadata(metadataId4.toString, fileIdThree.toString, "FilePropertyThree")
+      val newValue = "newValue"
+
+      val updateResponse: Seq[Int] = fileMetadataRepository.updateFileMetadataProperties(
+        Map(
+          "FilePropertyOne" -> FileMetadataUpdate(Seq(metadataId1, metadataId3), "FilePropertyOne", newValue, Timestamp.from(Instant.now()), userId2),
+          "FilePropertyThree" -> FileMetadataUpdate(Seq(metadataId4), "FilePropertyThree", newValue, Timestamp.from(Instant.now()), userId2))
+      ).futureValue
+
+      updateResponse should be(Seq(2, 1))
+
+      val filePropertyUpdates = ExpectedFilePropertyUpdates(
+        consignmentId = consignmentId,
+        changedProperties = Map(fileIdOne -> Seq("FilePropertyOne"), fileIdTwo -> Seq("FilePropertyOne"), fileIdThree -> Seq("FilePropertyThree")),
+        unchangedProperties = Map(fileIdOne -> Seq("FilePropertyTwo")),
+        newValue = newValue,
+        newUserId = userId2
+      )
+
+      checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates)
+  }
+
   "updateFileMetadataProperties" should "update the value and userId for the selected file ids only and return the number of rows it updated" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
