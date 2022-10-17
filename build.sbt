@@ -8,7 +8,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "The consignment API for TDR"
 
-scalaVersion := "2.13.9"
+scalaVersion := "2.13.10"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 (Compile / run / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.5",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
-  "org.sangria-graphql" %% "sangria-relay" % "2.1.1",
+  "org.sangria-graphql" %% "sangria-relay" % "3.0.0",
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
