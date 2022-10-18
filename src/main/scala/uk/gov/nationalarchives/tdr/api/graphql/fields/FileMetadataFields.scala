@@ -16,13 +16,21 @@ object FileMetadataFields {
   }
 
   val SHA256ServerSideChecksum = "SHA256ServerSideChecksum"
+
   case class FileMetadata(filePropertyName: String, value: String) extends FileMetadataBase
   case class UpdateFileMetadataInput(filePropertyIsMultiValue: Boolean, filePropertyName: String, value: String) extends FileMetadataBase
 
   case class FileMetadataWithFileId(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
+
   case class BulkFileMetadata(fileIds: Seq[UUID], metadataProperties: Seq[FileMetadata])
+
   case class AddFileMetadataWithFileIdInput(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
+
   case class UpdateBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[UpdateFileMetadataInput])
+
+  case class DeleteFileMetadata(fileIds: Seq[UUID], filePropertyNames: Seq[String])
+
+  case class DeleteFileMetadataInput(fileIds: Seq[UUID])
 
   implicit val FileMetadataType: ObjectType[Unit, FileMetadata] = deriveObjectType[Unit, FileMetadata]()
   implicit val InputFileMetadataType: InputObjectType[UpdateFileMetadataInput] = deriveInputObjectType[UpdateFileMetadataInput]()
@@ -30,23 +38,32 @@ object FileMetadataFields {
   implicit val FileMetadataWithFileIdType: ObjectType[Unit, FileMetadataWithFileId] = deriveObjectType[Unit, FileMetadataWithFileId]()
   implicit val AddFileMetadataInputType: InputObjectType[AddFileMetadataWithFileIdInput] = deriveInputObjectType[AddFileMetadataWithFileIdInput]()
 
+  implicit val DeleteFileMetadataType: ObjectType[Unit, DeleteFileMetadata] = deriveObjectType[Unit, DeleteFileMetadata]()
+  val DeleteFileMetadataInputType: InputObjectType[DeleteFileMetadataInput] = deriveInputObjectType[DeleteFileMetadataInput]()
+
   val BulkFileMetadataType: ObjectType[Unit, BulkFileMetadata] = deriveObjectType[Unit, BulkFileMetadata]()
   val UpdateBulkFileMetadataInputType: InputObjectType[UpdateBulkFileMetadataInput] = deriveInputObjectType[UpdateBulkFileMetadataInput]()
 
   implicit val FileMetadataWithFileIdInputArg: Argument[AddFileMetadataWithFileIdInput] = Argument("addFileMetadataWithFileIdInput", AddFileMetadataInputType)
   implicit val BulkFileMetadataInputArg: Argument[UpdateBulkFileMetadataInput] =
     Argument("updateBulkFileMetadataInput", UpdateBulkFileMetadataInputType)
+  implicit val DeleteFileMetadataInputArg: Argument[DeleteFileMetadataInput] = Argument("deleteFileMetadataInput", DeleteFileMetadataInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field("addFileMetadata", FileMetadataWithFileIdType,
-      arguments=FileMetadataWithFileIdInputArg :: Nil,
+      arguments = FileMetadataWithFileIdInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.addFileMetadata(ctx.arg(FileMetadataWithFileIdInputArg), ctx.ctx.accessToken.userId),
-      tags=List(ValidateHasChecksumMetadataAccess)
+      tags = List(ValidateHasChecksumMetadataAccess)
     ),
     Field("updateBulkFileMetadata", BulkFileMetadataType,
-      arguments=BulkFileMetadataInputArg :: Nil,
+      arguments = BulkFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.updateBulkFileMetadata(ctx.arg(BulkFileMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags=List(ValidateUserOwnsFiles)
+      tags = List(ValidateUserOwnsFiles(BulkFileMetadataInputArg))
+    ),
+    Field("deleteFileMetadata", DeleteFileMetadataType,
+      arguments = DeleteFileMetadataInputArg :: Nil,
+      resolve = ctx => ctx.ctx.fileMetadataService.deleteFileMetadata(ctx.arg(DeleteFileMetadataInputArg), ctx.ctx.accessToken.userId),
+      tags = List(ValidateUserOwnsFiles(DeleteFileMetadataInputArg))
     )
   )
 }
