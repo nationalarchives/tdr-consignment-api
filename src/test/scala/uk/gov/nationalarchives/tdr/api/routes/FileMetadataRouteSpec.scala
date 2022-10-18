@@ -383,7 +383,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
       val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+      addDummyFileProperties(utils, consignmentId, userId)
       createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
 
       val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_all")
@@ -412,7 +412,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
       val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+      addDummyFileProperties(utils, consignmentId, userId)
       createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
 
       val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_missing_fileids")
@@ -434,7 +434,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
       val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+      addDummyFileProperties(utils, consignmentId, userId)
       createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
 
       val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_empty_fileids")
@@ -458,7 +458,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
       val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+      addDummyFileProperties(utils, consignmentId, userId)
       createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
 
       val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_error_not_file_owner")
@@ -543,7 +543,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     })
   }
 
-  private def addDummyFilePropertiesAndValuesToDb(utils: TestUtils, consignmentId: UUID, userId: UUID, uiOrdinal: Option[Int] = None): Unit = {
+  private def addDummyFileProperties(utils: TestUtils, consignmentId: UUID, userId: UUID, uiOrdinal: Option[Int] = None): Unit = {
     utils.createConsignment(consignmentId, userId)
     utils.createFileProperty("ClosureType",
       "It's the Test Property",

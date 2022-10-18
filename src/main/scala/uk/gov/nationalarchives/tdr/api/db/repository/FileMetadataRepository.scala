@@ -55,7 +55,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  // TODO: Since we are not gonna use this method anymore after refactoring (TDR-2477), please remove this method.
+  // TODO: This method should be removed as part of the refactoring for TDR-2477: https://national-archives.atlassian.net/browse/TDR-2477.
   def updateFileMetadataProperties(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
     val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
       case (propertyName, update) => Filemetadata

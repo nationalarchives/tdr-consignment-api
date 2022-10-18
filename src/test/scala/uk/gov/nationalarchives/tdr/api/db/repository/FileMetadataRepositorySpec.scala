@@ -285,7 +285,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       )
   }
 
-  // TODO: Remove it once the refactoring is done as a port of (TDR-2477).
+  // TODO: Remove it once the refactoring is done as part of TDR-2477: https://national-archives.atlassian.net/browse/TDR-2477
   "updateFileMetadataProperties" should "update the value and userId for the correct metadata rows and return the number of rows it updated" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database

@@ -5,7 +5,7 @@ import io.circe.generic.auto._
 import sangria.macros.derive.{deriveInputObjectType, deriveObjectType}
 import sangria.marshalling.circe._
 import sangria.schema.{Argument, Field, InputObjectType, ObjectType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasChecksumMetadataAccess, ValidateUserOwnsFiles, ValidateUserOwnsFilesForDeleteMetadataInput}
+import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasChecksumMetadataAccess, ValidateUserOwnsFiles}
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import FieldTypes._
 
@@ -58,12 +58,12 @@ object FileMetadataFields {
     Field("updateBulkFileMetadata", BulkFileMetadataType,
       arguments = BulkFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.updateBulkFileMetadata(ctx.arg(BulkFileMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags = List(ValidateUserOwnsFiles)
+      tags = List(ValidateUserOwnsFiles(BulkFileMetadataInputArg))
     ),
     Field("deleteFileMetadata", DeleteFileMetadataType,
       arguments = DeleteFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.deleteFileMetadata(ctx.arg(DeleteFileMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags = List(ValidateUserOwnsFilesForDeleteMetadataInput)
+      tags = List(ValidateUserOwnsFiles(DeleteFileMetadataInputArg))
     )
   )
 }
