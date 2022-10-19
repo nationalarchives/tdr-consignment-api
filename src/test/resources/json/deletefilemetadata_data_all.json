@@ -1,0 +1,14 @@
+{
+  "data": {
+    "deleteFileMetadata": {
+      "fileIds": [
+        "51c55218-1322-4453-9ef8-2300ef1c0fef",
+        "7076f399-b596-4161-a95d-e686c6435710"
+      ],
+      "filePropertyNames": [
+        "TestDependency1",
+        "TestDependency2"
+      ]
+    }
+  }
+}
