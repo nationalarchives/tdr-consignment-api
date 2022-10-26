@@ -198,6 +198,15 @@ enum DataType {
   DateTime
 }
 
+type DeleteFileMetadata {
+  fileIds: [UUID!]!
+  filePropertyNames: [String!]!
+}
+
+input DeleteFileMetadataInput {
+  fileIds: [UUID!]!
+}
+
 type FFIDMetadata {
   fileId: UUID!
   software: String!
@@ -353,6 +362,7 @@ type Mutation {
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
   updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
+  deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!

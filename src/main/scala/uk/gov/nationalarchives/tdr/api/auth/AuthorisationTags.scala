@@ -2,10 +2,10 @@ package uk.gov.nationalarchives.tdr.api.auth
 
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
-import uk.gov.nationalarchives.tdr.api.auth.ValidateUserOwnsFiles.continue
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.BulkFileMetadataInputArg
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatusInputArg
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
@@ -170,32 +170,23 @@ object ValidateHasExportAccess extends SyncAuthorisationTag {
   }
 }
 
-object ValidateUserOwnsFiles extends AuthorisationTag {
+
+case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])
                             (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
-    val addBulkMetadataInput = ctx.arg(BulkFileMetadataInputArg)
-    val fileIds = addBulkMetadataInput.fileIds.toSeq
 
-    ValidateFiles.validate(ctx, fileIds)
-  }
-}
+    val arg: T = ctx.arg[T](argument.name)
+    val fileIds: Seq[UUID] = arg match {
+      case input: DeleteFileMetadataInput => input.fileIds
+      case input: UpdateBulkFileMetadataInput => input.fileIds
+      case input: AddFileStatusInput => Seq(input.fileId)
+    }
 
-object ValidateUserOwnsFilesForFileStatusInput extends AuthorisationTag {
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
-    val addFileStatusInput = ctx.arg(FileStatusInputArg)
-    val fileIds = Seq(addFileStatusInput.fileId)
-
-    ValidateFiles.validate(ctx, fileIds)
-  }
-}
-
-object ValidateFiles {
-
-  def validate(ctx: Context[ConsignmentApiContext, _], fileIds: Seq[UUID])
-              (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val userId = ctx.ctx.accessToken.userId
 
+    if (fileIds.isEmpty) {
+      throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
+    }
     for {
       fileIdsAndOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
       fileIdsBelongingToAConsignment: Seq[UUID] = fileIdsAndOwner.map(_.fileId)

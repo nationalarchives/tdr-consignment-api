@@ -1,0 +1,8 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "User '29f65c4e-0eb8-4719-afdb-ace1bcbae4b6' does not own the files they are trying to access:\n7076f399-b596-4161-a95d-e686c6435710\nd74650ff-21b1-402d-8c59-b114698a8341"
+    }
+  ]
+}

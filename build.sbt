@@ -8,7 +8,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "The consignment API for TDR"
 
-scalaVersion := "2.13.9"
+scalaVersion := "2.13.10"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 (Compile / run / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-slowlog" % "2.0.5",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
-  "org.sangria-graphql" %% "sangria-relay" % "2.1.1",
+  "org.sangria-graphql" %% "sangria-relay" % "3.0.0",
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
@@ -59,7 +59,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.14.1",
   "io.circe" %% "circe-generic" % circeVersion,
-  "io.circe" %% "circe-generic-extras" % "0.14.2",
+  "io.circe" %% "circe-generic-extras" % "0.14.3",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.22",
   "org.postgresql" % "postgresql" % "42.5.0",
   "com.typesafe.slick" %% "slick" % "3.4.0",
@@ -68,8 +68,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.4.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
-  "software.amazon.awssdk" % "rds" % "2.17.162",
-  "software.amazon.awssdk" % "sts" % "2.17.162",
+  "software.amazon.awssdk" % "rds" % "2.18.2",
+  "software.amazon.awssdk" % "sts" % "2.18.2",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.14" % Test,
@@ -78,7 +78,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.12.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.88",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.90",
   "io.github.hakky54" % "logcaptor" % "2.7.10" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test

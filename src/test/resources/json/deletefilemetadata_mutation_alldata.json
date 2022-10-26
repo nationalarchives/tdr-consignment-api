@@ -1,0 +1,11 @@
+{
+  "query": "mutation deleteFileMetadata($deleteFileMetadataInput: DeleteFileMetadataInput!) {deleteFileMetadata(deleteFileMetadataInput:$deleteFileMetadataInput) {fileIds,filePropertyNames}}",
+  "variables": {
+    "deleteFileMetadataInput" : {
+      "fileIds": [
+        "7076f399-b596-4161-a95d-e686c6435710",
+        "d74650ff-21b1-402d-8c59-b114698a8341"
+      ]
+    }
+  }
+}

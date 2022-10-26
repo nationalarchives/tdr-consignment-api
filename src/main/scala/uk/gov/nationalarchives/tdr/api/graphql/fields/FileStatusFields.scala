@@ -6,7 +6,7 @@ import sangria.marshalling.circe._
 import sangria.schema.{Argument, Field, InputObjectType, ObjectType, fields}
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import FieldTypes._
-import uk.gov.nationalarchives.tdr.api.auth.ValidateUserOwnsFilesForFileStatusInput
+import uk.gov.nationalarchives.tdr.api.auth.{ValidateUserOwnsFiles}
 
 import java.util.UUID
 
@@ -26,7 +26,7 @@ object FileStatusFields {
     Field("addFileStatus", FileStatusType,
       arguments = FileStatusInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileStatusService.addFileStatus(ctx.arg(FileStatusInputArg)),
-      tags = List(ValidateUserOwnsFilesForFileStatusInput)
+      tags = List(ValidateUserOwnsFiles(FileStatusInputArg))
     )
   )
 }
