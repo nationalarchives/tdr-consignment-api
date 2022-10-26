@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Error: There are no Upload statuses for any of files. Either the upload hasn't started yet or there has been a failure to report the file statuses",
+      "message": "Error: There are no Upload statuses for any of the files from consignment a8dc972d-58f9-4733-8bb2-4254b89a35f2",
       "extensions": {
         "code": "INVALID_INPUT_DATA"
       }

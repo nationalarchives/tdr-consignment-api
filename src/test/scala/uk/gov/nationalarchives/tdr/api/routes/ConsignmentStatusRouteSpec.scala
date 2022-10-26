@@ -155,7 +155,7 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val statusType = "Upload"
+      val statusType = "Series"
       val statusValue = "InProgress"
       val token = validUserToken(userId)
 

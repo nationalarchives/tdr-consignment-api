@@ -19,6 +19,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
                                uuidSource: UUIDSource,
                                timeSource: TimeSource)
                               (implicit val executionContext: ExecutionContext) {
+  private val statusesToUpdateBasedOnFile: Set[String] = Set("Upload")
 
   def addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput): Future[ConsignmentStatus] = {
     validateStatusTypeAndValue(addConsignmentStatusInput)
@@ -70,42 +71,31 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
 
   def updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput): Future[Int] = {
     val statusType: String = updateConsignmentStatusInput.statusType
-    for {
-      statusValue <- updateConsignmentStatusInput.statusValue match {
-        case Some(value) => Future.successful(value)
-        case None =>
-          statusType match {
-            case "Upload" =>
-              for {
-                fileUploadStatuses <- fileStatusRepository.getFileStatus(updateConsignmentStatusInput.consignmentId, statusType)
-              } yield {
-                if(fileUploadStatuses.isEmpty){
-                  throw InputDataException(
-                    s"Error: There are no Upload statuses for any of files. Either the upload hasn't started yet or there has been a failure to report the file statuses"
-                  )
-                }
-                val allFilesUploadedSuccessfully: Boolean = fileUploadStatuses.forall(_.value == Success)
-                if (allFilesUploadedSuccessfully) "Completed" else "CompletedWithIssues"
-              }
-            case _ =>
-              throw InputDataException(
-                s"Error: There is no defined action for a $statusType statusType with no statusValue. Please provide either a defined action or a statusValue"
-              )
-          }
-      }
-      updateConsignmentStatusInputWithNewValue = updateConsignmentStatusInput.copy(statusValue = Some(statusValue))
-      statusTypeAndValueAreValid = validateStatusTypeAndValue(updateConsignmentStatusInputWithNewValue)
 
-      updated <- consignmentStatusRepository.updateConsignmentStatus(
+    if (statusesToUpdateBasedOnFile.contains(statusType)) {
+      updateBasedOnFileStatus(updateConsignmentStatusInput.consignmentId, statusType)
+    } else {
+      validateStatusTypeAndValue(updateConsignmentStatusInput)
+      consignmentStatusRepository.updateConsignmentStatus(
         updateConsignmentStatusInput.consignmentId,
         updateConsignmentStatusInput.statusType,
-        statusValue,
+        updateConsignmentStatusInput.statusValue.get, // if this value is None, then it should through an error as this should not be possible after the validation
         Timestamp.from(timeSource.now)
       )
+    }
+  }
+
+  private def updateBasedOnFileStatus(consignmentId: UUID, statusType: String): Future[Int] = {
+    val noFileStatusesError = s"Error: There are no $statusType statuses for any of the files from consignment $consignmentId"
+    for {
+      fileUploadStatuses <- fileStatusRepository.getFileStatus(consignmentId, statusType)
+      successful = if(fileUploadStatuses.isEmpty) throw InputDataException(noFileStatusesError) else fileUploadStatuses.forall(_.value == Success)
+      consignmentStatus = if(successful) "Completed" else "CompletedWithIssues"
+      updated <- consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, consignmentStatus, Timestamp.from(timeSource.now))
     } yield updated
   }
 
-  private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput) = {
+  private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput): Boolean = {
     val statusType: String = consignmentStatusInput.statusType
     val statusValue: String = consignmentStatusInput.statusValue.getOrElse("")
 

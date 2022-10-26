@@ -26,9 +26,20 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
   val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, fileStatusRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
 
+  val statusTypes: TableFor1[String] = Table(
+    "Types",
+    "Series",
+    "TransferAgreement",
+    "Upload",
+    "ConfirmTransfer",
+    "Export",
+    "ClientChecks"
+  )
+
   val statusValues: TableFor1[String] = Table(
     "Value",
     "Completed",
+    "CompletedWithIssues",
     "InProgress",
     "Failed"
   )
@@ -285,7 +296,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     "updateConsignmentStatus" should s"pass the correct consignment status and value '$statusValue' to the repository method" in {
       val fixedUUIDSource = new FixedUUIDSource()
       val expectedConsignmentId = fixedUUIDSource.uuid
-      val expectedStatusType = "Upload"
+      val expectedStatusType = "TransferAgreement"
       val expectedStatusValue = statusValue
       val modifiedTime = Timestamp.from(FixedTimeSource.now)
       val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
@@ -340,15 +351,14 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
 
     thrownException.getMessage should equal(
-      "The future returned an exception of type: uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, with message: " +
-      s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'."
+      s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'"
     )
   }
 
   "updateConsignmentStatus" should "throw an exception if an incorrect statusValue has been passed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
+    val expectedStatusType = "Series"
     val expectedStatusValue = "InvalidStatusValue"
 
     val updateConsignmentStatusInput =
@@ -359,8 +369,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
 
     thrownException.getMessage should equal(
-      "The future returned an exception of type: uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, with message: " +
-        s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'."
+        s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'"
     )
   }
 
@@ -378,8 +387,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
 
     thrownException.getMessage should equal(
-      "The future returned an exception of type: uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, with message: " +
-        s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'."
+        s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'"
     )
   }
 
@@ -420,21 +428,62 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     statusTypeCaptor.getValue should equal(expectedStatusType)
   }
 
-  "updateConsignmentStatus" should s"throw an InputDataException when only a consignmentId and non-'Upload' statusType have been passed in" in {
-    val fixedUUIDSource = new FixedUUIDSource()
-    val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Series"
+  forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
+    "updateConsignmentStatus" should s"not call fileStatus repo if a non-'Upload' statusType of ${nonUploadStatusType} has been passed in" in {
+      val fixedUUIDSource = new FixedUUIDSource()
+      val expectedConsignmentId = fixedUUIDSource.uuid
+      val expectedStatusValue = "Completed"
+      val modifiedTime = Timestamp.from(FixedTimeSource.now)
+      val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+      val statusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+      val statusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+      val modifiedTimeCaptor: ArgumentCaptor[Timestamp] = ArgumentCaptor.forClass(classOf[Timestamp])
 
-    val updateConsignmentStatusInput =
-      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, None)
+      val consignmentStatusMockRepoResponse: Future[Int] = Future.successful(1)
 
-    val thrownException = intercept[Exception] {
-      consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
+      when(
+        consignmentStatusRepositoryMock.updateConsignmentStatus(
+        consignmentIdCaptor.capture(),
+        statusTypeCaptor.capture(),
+        statusValueCaptor.capture(),
+        modifiedTimeCaptor.capture()
+        )
+      ).thenReturn(consignmentStatusMockRepoResponse)
+
+      val updateConsignmentStatusInput =
+        ConsignmentStatusInput(expectedConsignmentId, nonUploadStatusType, Some(expectedStatusValue))
+
+      val response: Int = consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
+
+      verify(fileStatusRepositoryMock, times(0)).getFileStatus(
+        any[UUID],
+        any[String],
+        any[Option[Set[UUID]]]
+      )
+      response should be(1)
+      consignmentIdCaptor.getValue should equal(expectedConsignmentId)
+      statusTypeCaptor.getValue should equal(nonUploadStatusType)
+      statusValueCaptor.getValue should equal(expectedStatusValue)
+      modifiedTimeCaptor.getValue should equal(modifiedTime)
     }
+  }
 
-    thrownException.getMessage should equal(
-      "Error: There is no defined action for a Series statusType with no statusValue. Please provide either a defined action or a statusValue"
-    )
+  forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
+    "updateConsignmentStatus" should s"throw an InputDataException when only a consignmentId and a non-'Upload' statusType of ${nonUploadStatusType} has been passed in" in {
+      val fixedUUIDSource = new FixedUUIDSource()
+      val expectedConsignmentId = fixedUUIDSource.uuid
+
+      val updateConsignmentStatusInput =
+        ConsignmentStatusInput(expectedConsignmentId, nonUploadStatusType, None)
+
+      val thrownException = intercept[Exception] {
+        consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
+      }
+
+      thrownException.getMessage should equal(
+        s"Invalid ConsignmentStatus input: either '${nonUploadStatusType}' or ''"
+      )
+    }
   }
 
   "updateConsignmentStatus" should s"generate a 'Completed' statusValue when only a consignmentId and 'Upload' statusType have been passed in " +
@@ -517,8 +566,49 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     statusValueCaptor.getValue should equal(expectedStatusValue)
   }
 
+  "updateConsignmentStatus" should s"(given an Upload statusType) generate a statusValue based on the file status, even when a statusValue was passed in" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "Upload"
+    val passedInStatusValue = "InProgress"
+    val expectedStatusValue = "Completed"
+    val statusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+
+    val consignmentStatusMockRepoResponse: Future[Int] = Future.successful(1)
+    val fileStatusMockRepoResponse: Future[Seq[FilestatusRow]] = Future.successful(
+      Seq(
+        FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), "Upload", "Success", Timestamp.from(Instant.now())),
+        FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), "Upload", "Success", Timestamp.from(Instant.now())),
+        FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), "Upload", "Success", Timestamp.from(Instant.now()))
+      )
+    )
+    when(
+      consignmentStatusRepositoryMock.updateConsignmentStatus(
+        any[UUID],
+        any[String],
+        statusValueCaptor.capture(),
+        any[Timestamp]
+      )
+    ).thenReturn(consignmentStatusMockRepoResponse)
+
+    when(
+      fileStatusRepositoryMock.getFileStatus(
+        any[UUID],
+        any[String],
+        any[Option[Set[UUID]]]
+      )
+    ).thenReturn(fileStatusMockRepoResponse)
+
+    val updateConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(passedInStatusValue))
+
+    consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
+
+    statusValueCaptor.getValue should equal(expectedStatusValue)
+  }
+
   "updateConsignmentStatus" should s"throw an InputDataException if an Upload statusType was provided, a statusValue wasn't provided " +
-    "but none of the consignment's files had statuses" in {
+    "but none of the consignment's files had Upload statuses" in {
     // This is just in case either, the client has forgotten to provide a statusValue or is trying to prematurely set
     // the Upload status to "Complete/CompletedWithIssues" either accidentally or intentionally
 
@@ -543,7 +633,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
     thrownException.getMessage should equal(
       "The future returned an exception of type: uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, " +
-        "with message: Error: There are no Upload statuses for any of files. Either the upload hasn't started yet or there has been a failure to report the file statuses."
+        s"with message: Error: There are no Upload statuses for any of the files from consignment $expectedConsignmentId."
     )
   }
 
