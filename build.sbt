@@ -59,7 +59,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.14.1",
   "io.circe" %% "circe-generic" % circeVersion,
-  "io.circe" %% "circe-generic-extras" % "0.14.2",
+  "io.circe" %% "circe-generic-extras" % "0.14.3",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.22",
   "org.postgresql" % "postgresql" % "42.5.0",
   "com.typesafe.slick" %% "slick" % "3.4.0",
