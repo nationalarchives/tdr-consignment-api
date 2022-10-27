@@ -608,9 +608,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   }
 
   "updateConsignmentStatus" should s"throw an InputDataException for an Upload statusType with no statusValue, where no consignment files have an Upload status" in {
-    // This is just in case either, the client has forgotten to provide a statusValue or is trying to prematurely set
-    // the Upload status to "Complete/CompletedWithIssues" either accidentally or intentionally
-
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "Upload"

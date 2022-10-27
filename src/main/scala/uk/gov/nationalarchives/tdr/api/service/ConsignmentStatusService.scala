@@ -79,7 +79,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       consignmentStatusRepository.updateConsignmentStatus(
         updateConsignmentStatusInput.consignmentId,
         updateConsignmentStatusInput.statusType,
-        updateConsignmentStatusInput.statusValue.get, // if this value is None, then it should through an error as this should not be possible after the validation
+        updateConsignmentStatusInput.statusValue.get,
         Timestamp.from(timeSource.now)
       )
     }
