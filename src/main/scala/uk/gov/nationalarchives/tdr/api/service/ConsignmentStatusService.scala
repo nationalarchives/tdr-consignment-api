@@ -19,7 +19,13 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
                                uuidSource: UUIDSource,
                                timeSource: TimeSource)
                               (implicit val executionContext: ExecutionContext) {
-  private val statusesToUpdateBasedOnFile: Set[String] = Set("Upload")
+
+  implicit class ConsignmentStatusInputHelper(input: ConsignmentStatusInput) {
+    private val statusesToUpdateBasedOnFile: Set[String] = Set("Upload")
+
+    def statusValueToString: String = input.statusValue.getOrElse("")
+    def statusTypeUpdatesBasedOnFileStatuses: Boolean = statusesToUpdateBasedOnFile.contains(input.statusType)
+  }
 
   def addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput): Future[ConsignmentStatus] = {
     validateStatusTypeAndValue(addConsignmentStatusInput)
@@ -38,7 +44,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
           uuidSource.uuid,
           addConsignmentStatusInput.consignmentId,
           addConsignmentStatusInput.statusType,
-          addConsignmentStatusInput.statusValue.getOrElse(""),
+          addConsignmentStatusInput.statusValueToString,
           Timestamp.from(timeSource.now)
         )
         consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
@@ -70,10 +76,8 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
   }
 
   def updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput): Future[Int] = {
-    val statusType: String = updateConsignmentStatusInput.statusType
-
-    if (statusesToUpdateBasedOnFile.contains(statusType)) {
-      updateBasedOnFileStatus(updateConsignmentStatusInput.consignmentId, statusType)
+    if (updateConsignmentStatusInput.statusTypeUpdatesBasedOnFileStatuses) {
+      updateBasedOnFileStatus(updateConsignmentStatusInput.consignmentId, updateConsignmentStatusInput.statusType)
     } else {
       validateStatusTypeAndValue(updateConsignmentStatusInput)
       consignmentStatusRepository.updateConsignmentStatus(
@@ -97,7 +101,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
 
   private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput): Boolean = {
     val statusType: String = consignmentStatusInput.statusType
-    val statusValue: String = consignmentStatusInput.statusValue.getOrElse("")
+    val statusValue: String = consignmentStatusInput.statusValueToString
 
     if(validStatusTypes.contains(statusType) && validStatusValues.contains(statusValue)) {
       true
