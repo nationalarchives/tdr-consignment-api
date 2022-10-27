@@ -270,7 +270,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "updateConsignmentStatus" should "return an error if statusType is 'Upload', statusValue wasn't passed in but no files have 'Upload' statuses" in withContainers {
+  "updateConsignmentStatus" should "return an error if statusType is 'Upload' and no statusValue is passed, " +
+    "where consignment has no files with 'Upload' statuses" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
@@ -291,7 +292,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload', statusValue wasn't passed in " +
+  "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload' and no statusValue was passed in, " +
+    "where all consignment files have 'Success' Upload statuses " +
     "and files have 'Success' Upload statuses" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
@@ -317,8 +319,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
   }
 
-  "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload', statusValue wasn't passed in " +
-    "and not all files have 'Success' Upload statuses" in withContainers {
+  "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload' and no statusValue was passed in, " +
+    "where some consignment files have 'Success' Upload statuses" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")

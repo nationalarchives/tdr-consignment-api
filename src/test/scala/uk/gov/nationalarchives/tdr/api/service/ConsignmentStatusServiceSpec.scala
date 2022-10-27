@@ -391,7 +391,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     )
   }
 
-  "updateConsignmentStatus" should s"call fileStatus repo in order to generate a statusValue when only a consignmentId and 'Upload' statusType have been passed in" in {
+  "updateConsignmentStatus" should s"call fileStatus repo to generate a statusValue when a consignmentId and 'Upload' statusType have been passed in" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "Upload"
@@ -469,7 +469,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   }
 
   forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
-    "updateConsignmentStatus" should s"throw an InputDataException when only a consignmentId and a non-'Upload' statusType of ${nonUploadStatusType} has been passed in" in {
+    "updateConsignmentStatus" should s"throw an InputDataException when a consignmentId and a non-'Upload' statusType of ${nonUploadStatusType} has been passed in" in {
       val fixedUUIDSource = new FixedUUIDSource()
       val expectedConsignmentId = fixedUUIDSource.uuid
 
@@ -486,7 +486,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
   }
 
-  "updateConsignmentStatus" should s"generate a 'Completed' statusValue when only a consignmentId and 'Upload' statusType have been passed in " +
+  "updateConsignmentStatus" should s"generate a 'Completed' statusValue when a consignmentId and 'Upload' statusType have been passed in " +
     "and all files have an 'Upload' statusValue of 'Success'" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
@@ -527,7 +527,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     statusValueCaptor.getValue should equal(expectedStatusValue)
   }
 
-  "updateConsignmentStatus" should s"generate a 'CompletedWithIssues' statusValue when only a consignmentId and 'Upload' statusType have been passed in " +
+  "updateConsignmentStatus" should s"generate a 'CompletedWithIssues' statusValue when a consignmentId and 'Upload' statusType have been passed in " +
     "and at least one file has an 'Upload' statusValue of 'Failed'" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
@@ -566,7 +566,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     statusValueCaptor.getValue should equal(expectedStatusValue)
   }
 
-  "updateConsignmentStatus" should s"(given an Upload statusType) generate a statusValue based on the file status, even when a statusValue was passed in" in {
+  "updateConsignmentStatus" should s"for Upload statusType, ignore any statusValue passed in and generate the statusValue based on the file statuses of the consignment" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "Upload"
@@ -607,8 +607,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     statusValueCaptor.getValue should equal(expectedStatusValue)
   }
 
-  "updateConsignmentStatus" should s"throw an InputDataException if an Upload statusType was provided, a statusValue wasn't provided " +
-    "but none of the consignment's files had Upload statuses" in {
+  "updateConsignmentStatus" should s"throw an InputDataException for an Upload statusType with no statusValue, where no consignment files have an Upload status" in {
     // This is just in case either, the client has forgotten to provide a statusValue or is trying to prematurely set
     // the Upload status to "Complete/CompletedWithIssues" either accidentally or intentionally
 
@@ -633,7 +632,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
     thrownException.getMessage should equal(
       "The future returned an exception of type: uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, " +
-        s"with message: Error: There are no Upload statuses for any of the files from consignment $expectedConsignmentId."
+        s"with message: Error: There are no Upload statuses for any files from consignment $expectedConsignmentId."
     )
   }
 
