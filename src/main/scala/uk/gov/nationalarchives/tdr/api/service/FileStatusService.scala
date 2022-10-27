@@ -39,17 +39,19 @@ class FileStatusService(
 
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
     for {
-      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, FFID, selectedFileIds)
+      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, Set(FFID), selectedFileIds)
       fileStatusMap = ffidStatus.flatMap(fileStatusRow => Map(fileStatusRow.fileid -> fileStatusRow.value)).toMap
     } yield fileStatusMap
   }
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
     for {
-      checksumMatchStatus <- fileStatusRepository.getFileStatus(consignmentId, ChecksumMatch)
-      avStatus <- fileStatusRepository.getFileStatus(consignmentId, Antivirus)
-      ffidStatusRows <- fileStatusRepository.getFileStatus(consignmentId, FFID)
-      ffidStatuses = ffidStatusRows.map(_.value)
+      fileChecks <- fileStatusRepository.getFileStatus(consignmentId, Set(ChecksumMatch, Antivirus, FFID))
+      fileChecksGroupedByStatusType: Map[String, Seq[FilestatusRow]] = fileChecks.groupBy(_.statustype)
+      checksumMatchStatus: Seq[FilestatusRow] = fileChecksGroupedByStatusType.getOrElse(ChecksumMatch, Seq())
+      avStatus: Seq[FilestatusRow] = fileChecksGroupedByStatusType.getOrElse(Antivirus, Seq())
+      ffidStatusRows: Seq[FilestatusRow] = fileChecksGroupedByStatusType.getOrElse(FFID, Seq())
+      ffidStatuses: Seq[String] = ffidStatusRows.map(_.value)
       failedFFIDStatuses <- disallowedPuidsRepository.activeReasons()
       failedRedactedFiles <- fileRepository.getRedactedFilePairs(consignmentId, onlyNullValues = true)
     } yield {

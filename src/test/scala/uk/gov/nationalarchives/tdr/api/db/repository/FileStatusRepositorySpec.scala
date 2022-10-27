@@ -55,7 +55,7 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
       utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type", "Value")
       utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type", "Value")
 
-      val response = fileStatusRepository.getFileStatus(consignmentId, "Status Type").futureValue
+      val response = fileStatusRepository.getFileStatus(consignmentId, Set("Status Type")).futureValue
       response.size shouldBe 2
   }
 
@@ -71,7 +71,7 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
       utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type", "Value")
       utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type", "Value")
 
-      val response = fileStatusRepository.getFileStatus(consignmentId, "Status Type", Some(Set(fileOneId))).futureValue
+      val response = fileStatusRepository.getFileStatus(consignmentId, Set("Status Type"), Some(Set(fileOneId))).futureValue
       response.size shouldBe 1
       response.head.fileid shouldBe fileOneId
   }

@@ -15,11 +15,11 @@ class FileStatusRepository(db: Database) {
     db.run(insertQuery ++= fileStatusRows)
   }
 
-  def getFileStatus(consignmentId: UUID, statusType: String, selectedFileIds: Option[Set[UUID]] = None): Future[Seq[FilestatusRow]] = {
+  def getFileStatus(consignmentId: UUID, statusTypes: Set[String], selectedFileIds: Option[Set[UUID]] = None): Future[Seq[FilestatusRow]] = {
     val query = Filestatus.join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
-      .filter(_._1.statustype === statusType)
+      .filter(_._1.statustype inSetBind statusTypes)
       .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)
       .map(_._1)
     db.run(query.result)

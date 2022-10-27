@@ -39,8 +39,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     reset(fileStatusRepositoryMock)
   }
 
-  def mockResponse(statusType: String, rows: Seq[FilestatusRow]): ScalaOngoingStubbing[Future[Seq[FilestatusRow]]] =
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId, statusType)).thenReturn(Future(rows))
+  def mockResponse(statusTypes: Set[String], rows: Seq[FilestatusRow]): ScalaOngoingStubbing[Future[Seq[FilestatusRow]]] =
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId, statusTypes)).thenReturn(Future(rows))
 
   def mockRedactedResponse(redactedResponse: Seq[RedactedFiles]): ScalaOngoingStubbing[Future[Seq[RedactedFiles]]] =
     when(fileRepositoryMock.getRedactedFilePairs(consignmentId, onlyNullValues = true)).thenReturn(Future(redactedResponse))
@@ -106,45 +106,50 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "allChecksSucceeded" should "return true if the checksum match, antivirus and ffid statuses are 'Success'" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(Antivirus, Success), fileStatusRow(FFID, Success))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(true)
   }
 
   "allChecksSucceeded" should "return true if the ffid status is an inactive disallowed status and the checksum match and antivirus statuses are 'Success'" in {
     mockRedactedResponse(Seq())
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(Antivirus, Success), fileStatusRow(ChecksumMatch, Success), fileStatusRow(FFID, inactiveDisallowedPuid))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(true)
   }
 
   "allChecksSucceeded" should "return false if the checksum match status is 'Mismatch' and the antivirus and ffid statuses are 'Success'" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(Antivirus, Success), fileStatusRow(FFID, Success))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "allChecksSucceeded" should "return false if the antivirus status is 'VirusDetected' and the checksum and ffid statuses are 'Success'" in {
     mockRedactedResponse(Seq())
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, VirusDetected)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(Antivirus, VirusDetected), fileStatusRow(ChecksumMatch, Success), fileStatusRow(FFID, Success))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "allChecksSucceeded" should "return false if the ffid status is an active disallowed status and the checksum match and antivirus statuses are 'Success'" in {
     mockRedactedResponse(Seq())
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(Antivirus, Success), fileStatusRow(ChecksumMatch, Success), fileStatusRow(FFID, activeDisallowedPuid1))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -152,9 +157,10 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return false if antivirus status is 'VirusDetected', " +
     "the checksum match status is 'Mismatch' and the ffid status an active disallowed puid" in {
     mockRedactedResponse(Seq())
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, VirusDetected)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(Antivirus, VirusDetected), fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(FFID, activeDisallowedPuid1))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -162,36 +168,40 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return false if antivirus status is 'VirusDetected', " +
     "the checksum match status is 'Mismatch' and the ffid status is an inactive disallowed puid" in {
     mockRedactedResponse(Seq())
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, VirusDetected)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(Antivirus, VirusDetected), fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(FFID, inactiveDisallowedPuid))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "allChecksSucceeded" should "return false if there are no antivirus file status rows and the checksum match and ffid statuses are 'Success'" in {
     mockRedactedResponse(Seq())
-    mockResponse(Antivirus, Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(FFID, Success))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "allChecksSucceeded" should "return false if there are no checksum match file status rows and the antivirus and ffid statuses are 'Success" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq())
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(Antivirus, Success), fileStatusRow(FFID, Success))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "allChecksSucceeded" should "return false if there are no ffid file status rows and the antivirus and checksum match statuses are 'Success" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq())
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success))
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -199,9 +209,17 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return false if there are multiple checksum match rows including a failure " +
     "and multiple successful antivirus and ffid rows" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success), fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Mismatch),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(FFID, Success),
+        fileStatusRow(FFID, Success)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -209,9 +227,17 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return false if there are multiple checksum match rows including a failure, " +
     "ffid success and inactive disallowed puid rows, and multiple successful antivirus rows" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid), fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Mismatch),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(FFID, inactiveDisallowedPuid),
+        fileStatusRow(FFID, Success)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -219,9 +245,17 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return false if there are multiple antivirus rows including a failure " +
     "and multiple successful checksum match and ffid rows" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, VirusDetected)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success), fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(Antivirus, VirusDetected),
+        fileStatusRow(FFID, Success),
+        fileStatusRow(FFID, Success)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -229,9 +263,17 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return false if there are multiple antivirus rows including a failure, " +
     "ffid success and inactive disallowed puid rows, and multiple successful checksum matches" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, VirusDetected)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid), fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(Antivirus, VirusDetected),
+        fileStatusRow(FFID, inactiveDisallowedPuid),
+        fileStatusRow(FFID, Success)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -239,9 +281,17 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return false if there are multiple ffid rows including an active disallowed puid " +
     "and multiple successful checksum match and antivirus rows" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1), fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(FFID, activeDisallowedPuid1),
+        fileStatusRow(FFID, Success)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
@@ -249,34 +299,55 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "allChecksSucceeded" should "return true if there are multiple ffid rows including success and inactive disallowed puid " +
     "and multiple successful checksum match and antivirus rows" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, inactiveDisallowedPuid), fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(FFID, inactiveDisallowedPuid),
+        fileStatusRow(FFID, Success)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(true)
   }
 
   "allChecksSucceeded" should "return false if there are multiple ffid failure rows and multiple successful checksum match and antivirus rows" in {
     mockRedactedResponse(Seq())
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, activeDisallowedPuid1), fileStatusRow(FFID, activeDisallowedPuid2)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(FFID, activeDisallowedPuid1),
+        fileStatusRow(FFID, activeDisallowedPuid2)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "allChecksSucceeded" should "return false if there are missing original files with a redacted file" in {
     mockRedactedResponse(Seq(RedactedFiles(UUID.randomUUID(), "redacted_R.txt", None, None)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(Antivirus, Seq(fileStatusRow(Antivirus, Success)))
-    mockResponse(ChecksumMatch, Seq(fileStatusRow(ChecksumMatch, Success)))
-    mockResponse(FFID, Seq(fileStatusRow(FFID, Success)))
+    mockResponse(
+      Set(ChecksumMatch, Antivirus, FFID),
+      Seq(
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(Antivirus, Success),
+        fileStatusRow(ChecksumMatch, Success),
+        fileStatusRow(FFID, Success)
+      )
+    )
     val response = createFileStatusService().allChecksSucceeded(consignmentId).futureValue
     response should equal(false)
   }
 
   "getFileStatus" should "return a Map Consisting of a FileId key and status value" in {
-    mockResponse(FFID, Seq(FilestatusRow(UUID.randomUUID(), consignmentId, FFID, Success, Timestamp.from(Instant.now))))
+    mockResponse(Set(FFID), Seq(FilestatusRow(UUID.randomUUID(), consignmentId, FFID, Success, Timestamp.from(Instant.now))))
     val response = createFileStatusService().getFileStatus(consignmentId).futureValue
     val expected = Map(consignmentId -> Success)
     response should equal(expected)
