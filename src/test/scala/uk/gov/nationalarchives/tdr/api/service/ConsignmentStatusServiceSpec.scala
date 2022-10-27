@@ -319,7 +319,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       when(
         fileStatusRepositoryMock.getFileStatus(
           any[UUID],
-          any[String],
+          any[Set[String]],
           any[Option[Set[UUID]]]
         )
       ).thenReturn(fileStatusMockRepoResponse)
@@ -396,7 +396,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "Upload"
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
-    val statusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+    val statusTypeCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
 
     val consignmentStatusMockRepoResponse: Future[Int] = Future.successful(1)
     val fileStatusMockRepoResponse: Future[Seq[FilestatusRow]] = Future.successful(
@@ -425,7 +425,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
 
     consignmentIdCaptor.getValue should equal(expectedConsignmentId)
-    statusTypeCaptor.getValue should equal(expectedStatusType)
+    statusTypeCaptor.getValue.contains(expectedStatusType) should equal(true)
   }
 
   forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
@@ -457,7 +457,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
       verify(fileStatusRepositoryMock, times(0)).getFileStatus(
         any[UUID],
-        any[String],
+        any[Set[String]],
         any[Option[Set[UUID]]]
       )
       response should be(1)
@@ -514,7 +514,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     when(
       fileStatusRepositoryMock.getFileStatus(
         any[UUID],
-        any[String],
+        any[Set[String]],
         any[Option[Set[UUID]]]
       )
     ).thenReturn(fileStatusMockRepoResponse)
@@ -555,7 +555,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     when(
       fileStatusRepositoryMock.getFileStatus(
         expectedConsignmentId,
-        expectedStatusType
+        Set(expectedStatusType)
       )
     ).thenReturn(fileStatusMockRepoResponse)
 
@@ -594,7 +594,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     when(
       fileStatusRepositoryMock.getFileStatus(
         any[UUID],
-        any[String],
+        any[Set[String]],
         any[Option[Set[UUID]]]
       )
     ).thenReturn(fileStatusMockRepoResponse)
@@ -617,7 +617,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     when(
       fileStatusRepositoryMock.getFileStatus(
         expectedConsignmentId,
-        expectedStatusType
+        Set(expectedStatusType)
       )
     ).thenReturn(fileStatusMockRepoResponse)
 

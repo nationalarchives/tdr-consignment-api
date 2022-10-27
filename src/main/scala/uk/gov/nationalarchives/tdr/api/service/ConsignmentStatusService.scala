@@ -92,7 +92,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
   private def updateBasedOnFileStatus(consignmentId: UUID, statusType: String): Future[Int] = {
     val noFileStatusesError = s"Error: There are no $statusType statuses for any files from consignment $consignmentId"
     for {
-      fileUploadStatuses <- fileStatusRepository.getFileStatus(consignmentId, statusType)
+      fileUploadStatuses <- fileStatusRepository.getFileStatus(consignmentId, Set(statusType))
       successful = if(fileUploadStatuses.isEmpty) throw InputDataException(noFileStatusesError) else fileUploadStatuses.forall(_.value == Success)
       consignmentStatus = if(successful) "Completed" else "CompletedWithIssues"
       updated <- consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, consignmentStatus, Timestamp.from(timeSource.now))
