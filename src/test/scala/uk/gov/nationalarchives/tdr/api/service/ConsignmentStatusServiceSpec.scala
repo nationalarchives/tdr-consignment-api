@@ -429,7 +429,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   }
 
   forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
-    "updateConsignmentStatus" should s"not call fileStatus repo if a non-'Upload' statusType of ${nonUploadStatusType} has been passed in" in {
+    "updateConsignmentStatus" should s"not call fileStatus repo if a non-'Upload' statusType of $nonUploadStatusType has been passed in" in {
       val fixedUUIDSource = new FixedUUIDSource()
       val expectedConsignmentId = fixedUUIDSource.uuid
       val expectedStatusValue = "Completed"
@@ -469,7 +469,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   }
 
   forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
-    "updateConsignmentStatus" should s"throw an InputDataException when a consignmentId and a non-'Upload' statusType of ${nonUploadStatusType} has been passed in" in {
+    "updateConsignmentStatus" should s"throw an InputDataException when a consignmentId and a non-'Upload' statusType of $nonUploadStatusType has been passed in" in {
       val fixedUUIDSource = new FixedUUIDSource()
       val expectedConsignmentId = fixedUUIDSource.uuid
 
@@ -481,7 +481,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       }
 
       thrownException.getMessage should equal(
-        s"Invalid ConsignmentStatus input: either '${nonUploadStatusType}' or ''"
+        s"Invalid ConsignmentStatus input: either '$nonUploadStatusType' or ''"
       )
     }
   }
