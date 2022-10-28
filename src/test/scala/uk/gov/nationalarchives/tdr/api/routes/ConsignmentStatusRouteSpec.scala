@@ -293,8 +293,7 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
   }
 
   "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload' and no statusValue was passed in, " +
-    "where all consignment files have 'Success' Upload statuses " +
-    "and files have 'Success' Upload statuses" in withContainers {
+    "where all consignment files have 'Success' Upload statuses " in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
