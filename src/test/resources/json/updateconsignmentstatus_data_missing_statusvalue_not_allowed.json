@@ -1,0 +1,11 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Invalid ConsignmentStatus input: either 'Export' or ''",
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    }
+  ]
+}
