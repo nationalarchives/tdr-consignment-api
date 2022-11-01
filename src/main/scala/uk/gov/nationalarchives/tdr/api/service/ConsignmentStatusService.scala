@@ -7,7 +7,7 @@ import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.Success
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Failed, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import java.sql.Timestamp
@@ -93,7 +93,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
     val noFileStatusesError = s"Error: There are no $statusType statuses for any files from consignment $consignmentId"
     for {
       fileUploadStatuses <- fileStatusRepository.getFileStatus(consignmentId, Set(statusType))
-      successful = if(fileUploadStatuses.isEmpty) throw InputDataException(noFileStatusesError) else fileUploadStatuses.forall(_.value == Success)
+      successful = !fileUploadStatuses.exists(_.value == Failed)
       consignmentStatus = if(successful) "Completed" else "CompletedWithIssues"
       updated <- consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, consignmentStatus, Timestamp.from(timeSource.now))
     } yield updated

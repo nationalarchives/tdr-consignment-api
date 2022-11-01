@@ -270,27 +270,27 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "updateConsignmentStatus" should "return an error if statusType is 'Upload' and no statusValue is passed, " +
-    "where consignment has no files with 'Upload' statuses" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val token = validUserToken(userId)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val fileId = UUID.fromString("411e232f-bd48-4159-8fc5-7f083d406d91")
-      val statusType = "Series"
-      val statusValue = "InProgress"
-      utils.createConsignment(consignmentId, userId)
-      utils.createFile(fileId, consignmentId)
-
-      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
-
-      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_no_files_uploaded")
-      val response = runUpdateConsignmentStatusTestMutation("mutation_no_files_uploaded", token)
-
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
-  }
+//  "updateConsignmentStatus" should "return an error if statusType is 'Upload' and no statusValue is passed, " +
+//    "where consignment has no files with 'Upload' statuses" in withContainers {
+//    case container: PostgreSQLContainer =>
+//      val utils = TestUtils(container.database)
+//      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+//      val token = validUserToken(userId)
+//      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+//      val fileId = UUID.fromString("411e232f-bd48-4159-8fc5-7f083d406d91")
+//      val statusType = "Series"
+//      val statusValue = "InProgress"
+//      utils.createConsignment(consignmentId, userId)
+//      utils.createFile(fileId, consignmentId)
+//
+//      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+//
+//      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_no_files_uploaded")
+//      val response = runUpdateConsignmentStatusTestMutation("mutation_no_files_uploaded", token)
+//
+//      response.errors.head.message should equal(expectedResponse.errors.head.message)
+//      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+//  }
 
   "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload' and no statusValue was passed in, " +
     "where all consignment files have 'Success' Upload statuses " in withContainers {
