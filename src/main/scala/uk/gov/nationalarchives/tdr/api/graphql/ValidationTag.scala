@@ -8,8 +8,7 @@ import scala.language.postfixOps
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait ValidationTag extends FieldTag {
-  def validate(ctx: Context[ConsignmentApiContext, _])
-              (implicit executionContext: ExecutionContext): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+  def validate(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): BeforeFieldResult[ConsignmentApiContext, Unit] = {
     val validationResult = validateAsync(ctx)
 
     // Awaiting a Future is risky because the thread will block until the response is returned or the timeout is reached.
@@ -21,8 +20,7 @@ trait ValidationTag extends FieldTag {
     Await.result(validationResult, 5 seconds)
   }
 
-  def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                   (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]]
+  def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]]
 
   val continue: BeforeFieldResult[ConsignmentApiContext, Unit] = BeforeFieldResult(())
 }

@@ -18,10 +18,6 @@ object SeriesFields {
   val BodyArg = Argument("body", StringType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("getSeries", ListType(SeriesType),
-      arguments=BodyArg :: Nil,
-      resolve = ctx => ctx.ctx.seriesService.getSeries(ctx.arg(BodyArg)),
-      tags=List(ValidateBody)
-    )
+    Field("getSeries", ListType(SeriesType), arguments = BodyArg :: Nil, resolve = ctx => ctx.ctx.seriesService.getSeries(ctx.arg(BodyArg)), tags = List(ValidateBody))
   )
 }

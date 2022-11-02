@@ -38,71 +38,68 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
 
   case class GetCustomMetadataFields(customMetadata: List[CustomMetadataFields])
 
-  case class CustomMetadataFields(name: String,
-                                  fullName: Option[String],
-                                  description: Option[String],
-                                  propertyGroup: Option[String],
-                                  editable: Boolean,
-                                  multiValue: Boolean,
-                                  propertyType: String,
-                                  dataType: String,
-                                  defaultValue: Option[String],
-                                  values: Option[List[CustomMetadataValues]]
-                                )
+  case class CustomMetadataFields(
+      name: String,
+      fullName: Option[String],
+      description: Option[String],
+      propertyGroup: Option[String],
+      editable: Boolean,
+      multiValue: Boolean,
+      propertyType: String,
+      dataType: String,
+      defaultValue: Option[String],
+      values: Option[List[CustomMetadataValues]]
+  )
 
   case class CustomMetadataValues(dependencies: List[CustomMetadataFields], value: String, uiOrdinal: Int)
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
-  "customMetadata" should "return all of the closure metadata with the correct arguments" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val token = validUserToken(userId)
+  "customMetadata" should "return all of the closure metadata with the correct arguments" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val token = validUserToken(userId)
 
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId, Option(1))
+    addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId, Option(1))
 
-      val expectedResponse = expectedCustomMetadataQueryResponse("data_all")
-      val response = runCustomMetadataTestQuery("query_alldata", token)
-      response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
+    val expectedResponse = expectedCustomMetadataQueryResponse("data_all")
+    val response = runCustomMetadataTestQuery("query_alldata", token)
+    response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
   }
 
-  "customMetadata" should "return all requested fields" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val token = validUserToken(userId)
+  "customMetadata" should "return all requested fields" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val token = validUserToken(userId)
 
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+    addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
-      val expectedResponse = expectedCustomMetadataQueryResponse("data_some")
-      val response = runCustomMetadataTestQuery("query_somedata", token)
+    val expectedResponse = expectedCustomMetadataQueryResponse("data_some")
+    val response = runCustomMetadataTestQuery("query_somedata", token)
 
-      response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
+    response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
   }
 
-  "customMetadata" should "return an error if the consignmentId was not provided" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val token = validUserToken(userId)
+  "customMetadata" should "return an error if the consignmentId was not provided" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val token = validUserToken(userId)
 
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+    addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
-      val expectedResponse = expectedCustomMetadataQueryResponse("data_error_no_consignmentid")
-      val response = runCustomMetadataTestQuery("query_no_consignmentid", token)
+    val expectedResponse = expectedCustomMetadataQueryResponse("data_error_no_consignmentid")
+    val response = runCustomMetadataTestQuery("query_no_consignmentid", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "customMetadata" should "return an error if the consignmentId provided was not valid" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val token = validUserToken(userId)
+  "customMetadata" should "return an error if the consignmentId provided was not valid" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val token = validUserToken(userId)
 
-      addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
+    addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
-      val expectedResponse = expectedCustomMetadataQueryResponse("data_invalid_consignmentid")
-      val response = runCustomMetadataTestQuery("query_invalid_consignmentid", token)
+    val expectedResponse = expectedCustomMetadataQueryResponse("data_invalid_consignmentid")
+    val response = runCustomMetadataTestQuery("query_invalid_consignmentid", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   private def addDummyFilePropertiesAndValuesToDb(utils: TestUtils, consignmentId: UUID, userId: UUID, uiOrdinal: Option[Int] = None): Unit = {
@@ -127,10 +124,11 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
       multivalue = false,
       "Test Dependency Group",
       "Test Dependency",
-      2, allowExport = true
+      2,
+      allowExport = true
     )
 
     utils.createFilePropertyValues("TestProperty", "TestValue", default = true, 2, 1, uiOrdinal)
     utils.createFilePropertyDependencies(2, "TestDependency", "TestDependencyValue")
   }
- }
+}

@@ -50,17 +50,23 @@ object FileMetadataFields {
   implicit val DeleteFileMetadataInputArg: Argument[DeleteFileMetadataInput] = Argument("deleteFileMetadataInput", DeleteFileMetadataInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addFileMetadata", FileMetadataWithFileIdType,
+    Field(
+      "addFileMetadata",
+      FileMetadataWithFileIdType,
       arguments = FileMetadataWithFileIdInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.addFileMetadata(ctx.arg(FileMetadataWithFileIdInputArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateHasChecksumMetadataAccess)
     ),
-    Field("updateBulkFileMetadata", BulkFileMetadataType,
+    Field(
+      "updateBulkFileMetadata",
+      BulkFileMetadataType,
       arguments = BulkFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.updateBulkFileMetadata(ctx.arg(BulkFileMetadataInputArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateUserOwnsFiles(BulkFileMetadataInputArg))
     ),
-    Field("deleteFileMetadata", DeleteFileMetadataType,
+    Field(
+      "deleteFileMetadata",
+      DeleteFileMetadataType,
       arguments = DeleteFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.deleteFileMetadata(ctx.arg(DeleteFileMetadataInputArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateUserOwnsFiles(DeleteFileMetadataInputArg))

@@ -25,11 +25,20 @@ object CustomMetadataFields {
 
   case class CustomMetadataValues(dependencies: List[CustomMetadataField], value: String, uiOrdinal: Int)
   case class CustomMetadataField(
-                            name: String, fullName: Option[String], description: Option[String], propertyType: PropertyType,
-                            propertyGroup: Option[String], dataType: DataType, editable: Boolean,
-                            multiValue: Boolean, defaultValue: Option[String], values: List[CustomMetadataValues], uiOrdinal: Int,
-                            allowExport: Boolean = false, exportOrdinal: Option[Int] = None
-                          )
+      name: String,
+      fullName: Option[String],
+      description: Option[String],
+      propertyType: PropertyType,
+      propertyGroup: Option[String],
+      dataType: DataType,
+      editable: Boolean,
+      multiValue: Boolean,
+      defaultValue: Option[String],
+      values: List[CustomMetadataValues],
+      uiOrdinal: Int,
+      allowExport: Boolean = false,
+      exportOrdinal: Option[Int] = None
+  )
 
   implicit val DataTypeType: EnumType[DataType] = deriveEnumType[DataType]()
   implicit val PropertyTypeType: EnumType[PropertyType] = deriveEnumType[PropertyType]()
@@ -38,7 +47,9 @@ object CustomMetadataFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("customMetadata", ListType(MetadataFieldsType),
+    Field(
+      "customMetadata",
+      ListType(MetadataFieldsType),
       arguments = ConsignmentIdArg :: Nil,
       resolve = ctx => ctx.ctx.customMetadataPropertiesService.getCustomMetadata,
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))

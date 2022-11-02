@@ -21,20 +21,22 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
   }
 
   def updateExportData(exportDataInput: ConsignmentFields.UpdateExportDataInput): Future[Int] = {
-    //Temporarily generate timestamp until value passed in by clients
+    // Temporarily generate timestamp until value passed in by clients
     val exportDatetime = exportDataInput.exportDatetime match {
       case Some(zdt) => zdt.toTimestamp
-      case None => Timestamp.from(timeSource.now)
+      case None      => Timestamp.from(timeSource.now)
     }
 
-    val update = Consignment.filter(_.consignmentid === exportDataInput.consignmentId)
+    val update = Consignment
+      .filter(_.consignmentid === exportDataInput.consignmentId)
       .map(c => (c.exportlocation, c.exportdatetime, c.exportversion))
       .update((Option(exportDataInput.exportLocation), Some(exportDatetime), Option(exportDataInput.exportVersion)))
     db.run(update)
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID, timestamp: Timestamp): Future[Int] = {
-    val update = Consignment.filter(_.consignmentid === consignmentId)
+    val update = Consignment
+      .filter(_.consignmentid === consignmentId)
       .map(c => (c.transferinitiateddatetime, c.transferinitiatedby))
       .update((Option(timestamp), Some(userId)))
     db.run(update)
@@ -42,13 +44,14 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
 
   def getNextConsignmentSequence(implicit executionContext: ExecutionContext): Future[Long] = {
     val query = sql"select nextval('consignment_sequence_id')".as[Long]
-    db.run(query).map(result => {
-      if (result.size == 1) {
-        result.head
-      } else {
-        throw new IllegalStateException(s"Expected single consignment sequence value but got: ${result.size} values instead.")
-      }
-    })
+    db.run(query)
+      .map(result => {
+        if (result.size == 1) {
+          result.head
+        } else {
+          throw new IllegalStateException(s"Expected single consignment sequence value but got: ${result.size} values instead.")
+        }
+      })
   }
 
   def getConsignment(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
@@ -67,7 +70,8 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
   }
 
   def getSeriesOfConsignment(consignmentId: UUID)(implicit executionContext: ExecutionContext): Future[Seq[SeriesRow]] = {
-    val query = Consignment.join(Series)
+    val query = Consignment
+      .join(Series)
       .on(_.seriesid === _.seriesid)
       .filter(_._1.consignmentid === consignmentId)
       .map(rows => rows._2)
@@ -75,14 +79,16 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
   }
 
   def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: ConsignmentFields.UpdateConsignmentSeriesIdInput): Future[Int] = {
-    val update = Consignment.filter(_.consignmentid === updateConsignmentSeriesIdInput.consignmentId)
+    val update = Consignment
+      .filter(_.consignmentid === updateConsignmentSeriesIdInput.consignmentId)
       .map(t => t.seriesid)
       .update(Some(updateConsignmentSeriesIdInput.seriesId))
     db.run(update)
   }
 
   def getTransferringBodyOfConsignment(consignmentId: UUID)(implicit executionContext: ExecutionContext): Future[Seq[BodyRow]] = {
-    val query = Consignment.join(Body)
+    val query = Consignment
+      .join(Body)
       .on(_.bodyid === _.bodyid)
       .filter(_._1.consignmentid === consignmentId)
       .map(rows => rows._2)
@@ -95,8 +101,7 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignmentsOfFiles(fileIds: Seq[UUID])
-                            (implicit executionContext: ExecutionContext): Future[Seq[(UUID, ConsignmentRow)]] = {
+  def getConsignmentsOfFiles(fileIds: Seq[UUID])(implicit executionContext: ExecutionContext): Future[Seq[(UUID, ConsignmentRow)]] = {
     val query = for {
       (file, consignment) <- File.join(Consignment).on(_.consignmentid === _.consignmentid).filter(_._1.fileid.inSet(fileIds))
     } yield (file.fileid, consignment)
@@ -108,8 +113,7 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(updateAction).map(_ => ())
   }
 
-  def addParentFolder(consignmentId: UUID, parentFolder: String, consignmentStatusRows: List[ConsignmentstatusRow])
-                     (implicit executionContext: ExecutionContext): Future[String] = {
+  def addParentFolder(consignmentId: UUID, parentFolder: String, consignmentStatusRows: List[ConsignmentstatusRow])(implicit executionContext: ExecutionContext): Future[String] = {
     val updateAction = Consignment.filter(_.consignmentid === consignmentId).map(c => c.parentfolder).update(Option(parentFolder))
     val consignmentStatusAction = Consignmentstatus ++= consignmentStatusRows
     val allActions = DBIO.seq(updateAction, consignmentStatusAction).transactionally

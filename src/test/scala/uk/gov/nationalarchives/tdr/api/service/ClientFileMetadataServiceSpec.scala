@@ -33,14 +33,16 @@ class ClientFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with M
     def row(name: String, value: String): FilemetadataRow =
       FilemetadataRow(clientMetadataUuid, fileUuid, value, Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), name)
 
-    val mockResponse = Future(Seq(
-      row(ClientSideFileSize, dummyFileSize.toString),
-      row(ClientSideFileLastModifiedDate, dummyTimestamp.toString),
-      row(ClientSideOriginalFilepath, "dummy/original/path"),
-      row(SHA256ClientSideChecksum, "dummyCheckSum")
-    ))
+    val mockResponse = Future(
+      Seq(
+        row(ClientSideFileSize, dummyFileSize.toString),
+        row(ClientSideFileLastModifiedDate, dummyTimestamp.toString),
+        row(ClientSideOriginalFilepath, "dummy/original/path"),
+        row(SHA256ClientSideChecksum, "dummyCheckSum")
+      )
+    )
 
-    when(repositoryMock.getFileMetadataByProperty(fileUuid, clientSideProperties:_*)).thenReturn(mockResponse)
+    when(repositoryMock.getFileMetadataByProperty(fileUuid, clientSideProperties: _*)).thenReturn(mockResponse)
 
     val service = new ClientFileMetadataService(repositoryMock)
     val result = service.getClientFileMetadata(fileUuid).futureValue
@@ -57,7 +59,7 @@ class ClientFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with M
     val fixedUuidSource = new FixedUUIDSource()
     val fileUuid = UUID.randomUUID()
     val repositoryMock = mock[FileMetadataRepository]
-    when(repositoryMock.getFileMetadataByProperty(fileUuid, clientSideProperties:_*)).thenReturn(Future(Seq()))
+    when(repositoryMock.getFileMetadataByProperty(fileUuid, clientSideProperties: _*)).thenReturn(Future(Seq()))
     val service = new ClientFileMetadataService(repositoryMock)
     val caught: Throwable = service.getClientFileMetadata(fileUuid).failed.futureValue
     caught.getMessage should equal(s"Could not find client metadata for file $fileUuid")

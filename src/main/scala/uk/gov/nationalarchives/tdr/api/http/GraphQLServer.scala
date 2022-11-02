@@ -57,12 +57,12 @@ class GraphQLServer(slickSession: SlickSession) {
 
     QueryParser.parse(query) match {
       case Success(queryAst) =>
-        val operation = fields.get("operationName") collect {
-          case JsString(op) => op
+        val operation = fields.get("operationName") collect { case JsString(op) =>
+          op
         }
         val variables = fields.get("variables") match {
           case Some(obj: JsObject) => obj
-          case _ => JsObject.empty
+          case _                   => JsObject.empty
         }
         complete(executeGraphQLQuery(queryAst, operation, variables, accessToken))
       case Failure(error) =>
@@ -70,7 +70,7 @@ class GraphQLServer(slickSession: SlickSession) {
     }
   }
 
-  //scalastyle:off method.length
+  // scalastyle:off method.length
   private def generateConsignmentApiContext(accessToken: Token)(implicit ec: ExecutionContext): ConsignmentApiContext = {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
@@ -87,23 +87,41 @@ class GraphQLServer(slickSession: SlickSession) {
     val allowedPuidsRepository = new AllowedPuidsRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
-    val consignmentService = new ConsignmentService(consignmentRepository, consignmentStatusRepository, fileMetadataRepository, fileRepository,
-      ffidMetadataRepository, transferringBodyService, timeSource, uuidSource, config)
+    val consignmentService = new ConsignmentService(
+      consignmentRepository,
+      consignmentStatusRepository,
+      fileMetadataRepository,
+      fileRepository,
+      ffidMetadataRepository,
+      transferringBodyService,
+      timeSource,
+      uuidSource,
+      config
+    )
     val seriesService = new SeriesService(new SeriesRepository(db), uuidSource)
-    val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), new ConsignmentStatusRepository(db),
-      uuidSource, timeSource)
-    val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository,
-      uuidSource, timeSource)
+    val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), new ConsignmentStatusRepository(db), uuidSource, timeSource)
+    val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, fileRepository, customMetadataPropertiesRepository, timeSource, uuidSource)
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository,
-      allowedPuidsRepository, disallowedPuidsRepository, timeSource, uuidSource)
+    val ffidMetadataService =
+      new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository, allowedPuidsRepository, disallowedPuidsRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileRepository, fileStatusRepository, disallowedPuidsRepository, uuidSource)
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
-    val fileService = new FileService(fileRepository, fileStatusRepository, consignmentRepository, consignmentStatusService, ffidMetadataService,
-      antivirusMetadataService, fileStatusService, fileMetadataService, new CurrentTimeSource, uuidSource, config)
+    val fileService = new FileService(
+      fileRepository,
+      fileStatusRepository,
+      consignmentRepository,
+      consignmentStatusService,
+      ffidMetadataService,
+      antivirusMetadataService,
+      fileStatusService,
+      fileMetadataService,
+      new CurrentTimeSource,
+      uuidSource,
+      config
+    )
     val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
 
     ConsignmentApiContext(
@@ -123,24 +141,29 @@ class GraphQLServer(slickSession: SlickSession) {
       customMetadataPropertiesService
     )
   }
-  //scalastyle:on method.length
+  // scalastyle:on method.length
 
-  private def executeGraphQLQuery(query: Document, operation: Option[String], vars: JsObject, accessToken: Token)
-                                 (implicit ec: ExecutionContext): Future[(StatusCode with Serializable, JsValue)] = {
+  private def executeGraphQLQuery(query: Document, operation: Option[String], vars: JsObject, accessToken: Token)(implicit
+      ec: ExecutionContext
+  ): Future[(StatusCode with Serializable, JsValue)] = {
     val context = generateConsignmentApiContext(accessToken: Token)
 
-    Executor.execute(
-      GraphQlTypes.schema,
-      query, context,
-      variables = vars,
-      operationName = operation,
-      deferredResolver = new DeferredResolver,
-      middleware = new ValidationAuthoriser :: new ConsignmentStateValidator :: Nil,
-      exceptionHandler = exceptionHandler
-    ).map(OK -> _).recover {
-      case error: QueryAnalysisError => BadRequest -> error.resolveError
-      case error: ErrorWithResolver => InternalServerError -> error.resolveError
-    }
+    Executor
+      .execute(
+        GraphQlTypes.schema,
+        query,
+        context,
+        variables = vars,
+        operationName = operation,
+        deferredResolver = new DeferredResolver,
+        middleware = new ValidationAuthoriser :: new ConsignmentStateValidator :: Nil,
+        exceptionHandler = exceptionHandler
+      )
+      .map(OK -> _)
+      .recover {
+        case error: QueryAnalysisError => BadRequest -> error.resolveError
+        case error: ErrorWithResolver  => InternalServerError -> error.resolveError
+      }
   }
 }
 object GraphQLServer {

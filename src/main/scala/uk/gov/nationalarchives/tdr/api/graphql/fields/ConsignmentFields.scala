@@ -21,17 +21,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object ConsignmentFields {
 
-  case class Consignment(consignmentid: UUID,
-                         userid: UUID,
-                         seriesid: Option[UUID],
-                         createdDateTime: ZonedDateTime,
-                         transferInitiatedDatetime: Option[ZonedDateTime],
-                         exportDatetime: Option[ZonedDateTime],
-                         exportLocation: Option[String],
-                         consignmentReference: String,
-                         consignmentType: String,
-                         bodyId: UUID
-                        )
+  case class Consignment(
+      consignmentid: UUID,
+      userid: UUID,
+      seriesid: Option[UUID],
+      createdDateTime: ZonedDateTime,
+      transferInitiatedDatetime: Option[ZonedDateTime],
+      exportDatetime: Option[ZonedDateTime],
+      exportLocation: Option[String],
+      consignmentReference: String,
+      consignmentType: String,
+      bodyId: UUID
+  )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
 
@@ -49,11 +50,7 @@ object ConsignmentFields {
 
   case class TransferringBody(name: String, tdrCode: String)
 
-  case class CurrentStatus(series: Option[String],
-                           transferAgreement: Option[String],
-                           upload: Option[String],
-                           confirmTransfer: Option[String],
-                           `export`: Option[String])
+  case class CurrentStatus(series: Option[String], transferAgreement: Option[String], upload: Option[String], confirmTransfer: Option[String], `export`: Option[String])
 
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
@@ -220,18 +217,23 @@ object ConsignmentFields {
     Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("getConsignment", OptionType(ConsignmentType),
+    Field(
+      "getConsignment",
+      OptionType(ConsignmentType),
       arguments = ConsignmentIdArg :: PaginationInputArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.getConsignment(ctx.arg(ConsignmentIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),
-    Field("consignments", consignmentConnections,
+    Field(
+      "consignments",
+      consignmentConnections,
       arguments = List(LimitArg, CurrentCursorArg, ConsignmentFiltersInputArg),
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
         val currentCursor = ctx.args.argOpt("currentCursor")
         val consignmentFilters = ctx.args.argOpt("consignmentFiltersInput")
-        ctx.ctx.consignmentService.getConsignments(limit, currentCursor, consignmentFilters)
+        ctx.ctx.consignmentService
+          .getConsignments(limit, currentCursor, consignmentFilters)
           .map(r => {
             val endCursor = r.lastCursor
             val edges = r.consignmentEdges
@@ -244,39 +246,48 @@ object ConsignmentFields {
               ),
               edges
             )
-          }
-        )
+          })
       },
       tags = List(ValidateHasConsignmentsAccess)
     )
   )
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addConsignment", ConsignmentType,
+    Field(
+      "addConsignment",
+      ConsignmentType,
       arguments = ConsignmentInputArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentService.addConsignment(
-        ctx.arg(ConsignmentInputArg),
-        ctx.ctx.accessToken
-      ),
+      resolve = ctx =>
+        ctx.ctx.consignmentService.addConsignment(
+          ctx.arg(ConsignmentInputArg),
+          ctx.ctx.accessToken
+        ),
       tags = Nil
     ),
-    Field("updateTransferInitiated", OptionType(IntType),
+    Field(
+      "updateTransferInitiated",
+      OptionType(IntType),
       arguments = ConsignmentIdArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentService.updateTransferInitiated(ctx.arg(ConsignmentIdArg),
-        ctx.ctx.accessToken.userId),
+      resolve = ctx => ctx.ctx.consignmentService.updateTransferInitiated(ctx.arg(ConsignmentIdArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
     ),
-    Field("updateExportData", OptionType(IntType),
+    Field(
+      "updateExportData",
+      OptionType(IntType),
       arguments = ExportDataArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateExportData(ctx.arg(ExportDataArg)),
       tags = List(ValidateHasExportAccess)
     ),
-    Field("startUpload", StringType,
+    Field(
+      "startUpload",
+      StringType,
       arguments = StartUploadArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.startUpload(ctx.arg(StartUploadArg)),
       tags = List(ValidateUserHasAccessToConsignment(StartUploadArg), ValidateNoPreviousUploadForConsignment)
     ),
-    Field("updateConsignmentSeriesId", OptionType(IntType),
+    Field(
+      "updateConsignmentSeriesId",
+      OptionType(IntType),
       arguments = UpdateConsignmentSeriesIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateSeriesIdOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)

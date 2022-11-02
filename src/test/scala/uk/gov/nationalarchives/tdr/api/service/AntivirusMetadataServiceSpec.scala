@@ -90,14 +90,18 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val dummyTimestamp = Timestamp.from(FixedTimeSource.now)
     val consignmentId = UUID.randomUUID()
     val avRepositoryMock = mock[AntivirusMetadataRepository]
-    val mockResponse = Future.successful(Seq(AvmetadataRow(
-      fixedFileUuid,
-      "software",
-      "software version",
-      "database version",
-      "result",
-      dummyTimestamp
-    )))
+    val mockResponse = Future.successful(
+      Seq(
+        AvmetadataRow(
+          fixedFileUuid,
+          "software",
+          "software version",
+          "database version",
+          "result",
+          dummyTimestamp
+        )
+      )
+    )
 
     when(avRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(mockResponse)
     val response = new AntivirusMetadataService(avRepositoryMock, new FixedUUIDSource(), FixedTimeSource).getAntivirusMetadata(consignmentId).futureValue
@@ -111,14 +115,16 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
   }
 
   private def mockAvResponse(fixedFileUuid: UUID, result: String): Future[AvmetadataRow] = {
-    Future.successful(AvmetadataRow(
-      fixedFileUuid,
-      "software",
-      "software version",
-      "database version",
-      result,
-      Timestamp.from(FixedTimeSource.now)
-    ))
+    Future.successful(
+      AvmetadataRow(
+        fixedFileUuid,
+        "software",
+        "software version",
+        "database version",
+        result,
+        Timestamp.from(FixedTimeSource.now)
+      )
+    )
   }
 
   private def avServiceInput(fixedFileUuid: UUID, result: String): AddAntivirusMetadataInput = {

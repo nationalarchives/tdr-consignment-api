@@ -10,7 +10,7 @@ object ConsignmentType {
     def validateType: String = {
       value match {
         case _ if isStandard | isJudgment => value
-        case _ => throw InputDataException(s"Invalid consignment type '$value' for consignment")
+        case _                            => throw InputDataException(s"Invalid consignment type '$value' for consignment")
       }
     }
 

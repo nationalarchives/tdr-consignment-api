@@ -26,18 +26,19 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
 
-class FileService(fileRepository: FileRepository,
-                  fileStatusRepository: FileStatusRepository,
-                  consignmentRepository: ConsignmentRepository,
-                  consignmentStatusService: ConsignmentStatusService,
-                  ffidMetadataService: FFIDMetadataService,
-                  avMetadataService: AntivirusMetadataService,
-                  fileStatusService: FileStatusService,
-                  fileMetadataService: FileMetadataService,
-                  timeSource: TimeSource,
-                  uuidSource: UUIDSource,
-                  config: Config
-                 )(implicit val executionContext: ExecutionContext) {
+class FileService(
+    fileRepository: FileRepository,
+    fileStatusRepository: FileStatusRepository,
+    consignmentRepository: ConsignmentRepository,
+    consignmentStatusService: ConsignmentStatusService,
+    ffidMetadataService: FFIDMetadataService,
+    avMetadataService: AntivirusMetadataService,
+    fileStatusService: FileStatusService,
+    fileMetadataService: FileMetadataService,
+    timeSource: TimeSource,
+    uuidSource: UUIDSource,
+    config: Config
+)(implicit val executionContext: ExecutionContext) {
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
 
@@ -53,38 +54,39 @@ class FileService(fileRepository: FileRepository,
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = fileMetadataService.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
-      ((allEmptyDirectoryNodes ++ allFileNodes) map {
-        case (path, treeNode) =>
-          val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
-          val fileId = treeNode.id
-          val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
-          val commonMetadataRows = row(fileId, path, ClientSideOriginalFilepath) ::
-            filePropertyValue.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
-          if (treeNode.treeNodeType.isFileType) {
-            val input = addFileAndMetadataInput.metadataInput.filter(m => {
+      ((allEmptyDirectoryNodes ++ allFileNodes) map { case (path, treeNode) =>
+        val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
+        val fileId = treeNode.id
+        val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
+        val commonMetadataRows = row(fileId, path, ClientSideOriginalFilepath) ::
+          filePropertyValue.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
+        if (treeNode.treeNodeType.isFileType) {
+          val input = addFileAndMetadataInput.metadataInput
+            .filter(m => {
               val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
               pathWithoutSlash == path
-            }).head
+            })
+            .head
 
-            //Add the 0 byte status here as know the file size at this point
-            //DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
-            val zeroByteFileStatus = addFileStatusIfFileSizeIsZero(input, fileId)
-            val clientChecksumStatus = addFileStatusForClientChecksum(input, fileId)
-            val clientFilePathStatus = addFileStatusForClientFilePath(path, fileId)
-            val clientChecks = if(zeroByteFileStatus == Success && clientChecksumStatus == Success && clientFilePathStatus == Success) {
-              Completed
-            } else {
-              CompletedWithIssues
-            }
-            val fileMetadataRows = List(
-              row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
-              row(fileId, input.fileSize.toString, ClientSideFileSize),
-              row(fileId, input.checksum, SHA256ClientSideChecksum)
-            )
-            MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId, clientChecks)
+          // Add the 0 byte status here as know the file size at this point
+          // DROID does not identify 0 byte files therefore cannot set this status at the FFID stage
+          val zeroByteFileStatus = addFileStatusIfFileSizeIsZero(input, fileId)
+          val clientChecksumStatus = addFileStatusForClientChecksum(input, fileId)
+          val clientFilePathStatus = addFileStatusForClientFilePath(path, fileId)
+          val clientChecks = if (zeroByteFileStatus == Success && clientChecksumStatus == Success && clientFilePathStatus == Success) {
+            Completed
           } else {
-            DirectoryRows(fileRow, commonMetadataRows)
+            CompletedWithIssues
           }
+          val fileMetadataRows = List(
+            row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
+            row(fileId, input.fileSize.toString, ClientSideFileSize),
+            row(fileId, input.checksum, SHA256ClientSideChecksum)
+          )
+          MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId, clientChecks)
+        } else {
+          DirectoryRows(fileRow, commonMetadataRows)
+        }
       }).toList
     })
 
@@ -99,7 +101,7 @@ class FileService(fileRepository: FileRepository,
       _ <- consignmentStatusService.updateConsignmentStatus(ConsignmentStatusInput(consignmentId, ClientChecks, Some(consignmentCheckStatus)))
     } yield rowsWithMatchId.flatMap {
       case MatchedFileRows(fileRow, _, matchId, _) => FileMatches(fileRow.fileid, matchId) :: Nil
-      case _ => Nil
+      case _                                       => Nil
     }
   }
 
@@ -115,7 +117,7 @@ class FileService(fileRepository: FileRepository,
   def addFileStatusForClientChecksum(input: ClientSideMetadataInput, fileId: UUID): String = {
     val clientChecksum = input.checksum match {
       case "" => Failed
-      case _ => Success
+      case _  => Success
     }
     val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientChecksum, clientChecksum, Timestamp.from(timeSource.now))
     fileStatusRepository.addFileStatuses(List(statusRow))
@@ -125,7 +127,7 @@ class FileService(fileRepository: FileRepository,
   def addFileStatusForClientFilePath(path: String, fileId: UUID): String = {
     val clientFilePathStatus = path match {
       case "" => Failed
-      case _ => Success
+      case _  => Success
     }
     val statusRow = FilestatusRow(uuidSource.uuid, fileId, ClientFilePath, clientFilePathStatus, Timestamp.from(timeSource.now))
     fileStatusRepository.addFileStatuses(List(statusRow))
@@ -133,12 +135,13 @@ class FileService(fileRepository: FileRepository,
   }
 
   def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
-    //For now only interested in basic file metadata
+    // For now only interested in basic file metadata
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
-    consignmentRepository.getConsignmentsOfFiles(fileIds)
+    consignmentRepository
+      .getConsignmentsOfFiles(fileIds)
       .map(_.map(consignmentByFile => FileOwnership(consignmentByFile._1, consignmentByFile._2.userid)))
   }
 
@@ -150,16 +153,15 @@ class FileService(fileRepository: FileRepository,
     val filters = fileFilters.getOrElse(FileFilters())
     for {
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
-      ffidMetadataList <- if(queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future(Nil)
-      avList <- if(queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
-      ffidStatus <- if(queriedFileFields.fileStatus) fileStatusService.getFileStatus(consignmentId) else Future(Map.empty[UUID, String])
-      redactedFilePairs <- if(queriedFileFields.originalFilePath) fileRepository.getRedactedFilePairs(consignmentId, fileAndMetadataList.map(_._1.fileid)) else Future(Seq())
+      ffidMetadataList <- if (queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future(Nil)
+      avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
+      ffidStatus <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatus(consignmentId) else Future(Map.empty[UUID, String])
+      redactedFilePairs <- if (queriedFileFields.originalFilePath) fileRepository.getRedactedFilePairs(consignmentId, fileAndMetadataList.map(_._1.fileid)) else Future(Seq())
     } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs).toList
   }
 
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]): Future[TDRConnection[File]] = {
-    val input = paginationInput.getOrElse(
-      throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
+    val input = paginationInput.getOrElse(throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
     val filters = input.fileFilters.getOrElse(FileFilters())
     val currentCursor = input.currentCursor
     val limit = input.limit.getOrElse(filePageMaxLimit)
@@ -215,12 +217,10 @@ object FileService {
       getFileMetadataValues(rows)
     }
 
-    def toFiles(avMetadata: List[AntivirusMetadata],
-                ffidMetadata: List[FFIDMetadata],
-                ffidStatus: Map[UUID, String],
-                redactedFiles: Seq[RedactedFiles]): Seq[File] = {
-      response.groupBy(_._1).map {
-        case (fr, fmr) =>
+    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String], redactedFiles: Seq[RedactedFiles]): Seq[File] = {
+      response
+        .groupBy(_._1)
+        .map { case (fr, fmr) =>
           val fileId = fr.fileid
           val metadataRows = fmr.flatMap(_._2)
           val metadataValues = convertMetadataRows(metadataRows)
@@ -229,7 +229,10 @@ object FileService {
             .flatMap(rf => response.find(responseRow => Option(responseRow._1.fileid) == rf.fileId && responseRow._2.exists(_.propertyname == ClientSideOriginalFilepath)))
           val redactedOriginalFilePath = originalFileResponseRow.flatMap(_._2.map(_.value))
           File(
-            fileId, fr.filetype, fr.filename, fr.parentid,
+            fileId,
+            fr.filetype,
+            fr.filename,
+            fr.parentid,
             metadataValues,
             ffidStatus.get(fileId),
             ffidMetadata.find(_.fileId == fileId),
@@ -237,7 +240,8 @@ object FileService {
             redactedOriginalFilePath,
             metadataRows.map(row => FileMetadataValue(row.propertyname, row.value)).toList
           )
-      }.toSeq
+        }
+        .toSeq
     }
   }
 
@@ -248,13 +252,15 @@ object FileService {
   }
 
   implicit class FileRowsHelper(fileRows: Seq[FileRow]) {
-    def toFiles(fileMetadata: Map[UUID, FileMetadataValues], avMetadata: List[AntivirusMetadata],
-                ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
+    def toFiles(fileMetadata: Map[UUID, FileMetadataValues], avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String]): Seq[File] = {
       fileRows.map(fr => {
         val id = fr.fileid
         val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None))
         File(
-          id, fr.filetype, fr.filename, fr.parentid,
+          id,
+          fr.filetype,
+          fr.filename,
+          fr.parentid,
           metadata,
           ffidStatus.get(id),
           ffidMetadata.find(_.fileId == id),

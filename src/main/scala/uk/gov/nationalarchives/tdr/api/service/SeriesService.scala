@@ -9,7 +9,6 @@ class SeriesService(seriesRepository: SeriesRepository, uuidSource: UUIDSource)(
 
   def getSeries(body: String): Future[Seq[Series]] = {
     val series = seriesRepository.getSeries(body)
-    series.map(seriesRows =>
-      seriesRows.map(s => Series(s.seriesid, s.bodyid, s.name, s.code, s.description)))
+    series.map(seriesRows => seriesRows.map(s => Series(s.seriesid, s.bodyid, s.name, s.code, s.description)))
   }
 }

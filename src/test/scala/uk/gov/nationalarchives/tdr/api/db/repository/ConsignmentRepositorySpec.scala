@@ -25,189 +25,177 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  "addParentFolder" should "add parent folder name to an existing consignment row" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
-      val utils = TestUtils(db)
-      utils.createConsignment(consignmentId, userId)
+  "addParentFolder" should "add parent folder name to an existing consignment row" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
 
-      consignmentRepository.addParentFolder(consignmentId, "TEST ADD PARENT FOLDER NAME").futureValue
+    consignmentRepository.addParentFolder(consignmentId, "TEST ADD PARENT FOLDER NAME").futureValue
 
-      val parentFolderName = consignmentRepository.getConsignment(consignmentId).futureValue.map(consignment => consignment.parentfolder)
+    val parentFolderName = consignmentRepository.getConsignment(consignmentId).futureValue.map(consignment => consignment.parentfolder)
 
-      parentFolderName should contain only Some("TEST ADD PARENT FOLDER NAME")
+    parentFolderName should contain only Some("TEST ADD PARENT FOLDER NAME")
   }
 
-  "updateExportData" should "update the export data for a given consignment" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
-      val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
-      val exportLocation = "exportLocation"
-      val exportVersion = "0.0.Version"
-      val updateExportDataInput = UpdateExportDataInput(consignmentId, exportLocation, Some(fixedZonedDatetime), exportVersion)
-      val utils = TestUtils(db)
-      utils.createConsignment(consignmentId, userId)
-      val response = consignmentRepository.updateExportData(updateExportDataInput).futureValue
-      val consignmentFromDb = utils.getConsignment(consignmentId)
+  "updateExportData" should "update the export data for a given consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
+    val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
+    val exportLocation = "exportLocation"
+    val exportVersion = "0.0.Version"
+    val updateExportDataInput = UpdateExportDataInput(consignmentId, exportLocation, Some(fixedZonedDatetime), exportVersion)
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
+    val response = consignmentRepository.updateExportData(updateExportDataInput).futureValue
+    val consignmentFromDb = utils.getConsignment(consignmentId)
 
-      response should be(1)
+    response should be(1)
 
-      consignmentFromDb.getString("ExportLocation") should equal(exportLocation)
-      consignmentFromDb.getTimestamp("ExportDatetime") should equal(Timestamp.valueOf(fixedZonedDatetime.toLocalDateTime))
-      consignmentFromDb.getString("ExportVersion") should equal(exportVersion)
+    consignmentFromDb.getString("ExportLocation") should equal(exportLocation)
+    consignmentFromDb.getTimestamp("ExportDatetime") should equal(Timestamp.valueOf(fixedZonedDatetime.toLocalDateTime))
+    consignmentFromDb.getString("ExportVersion") should equal(exportVersion)
   }
 
-  "getParentFolder" should "get parent folder name for a consignment" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
-      val utils = TestUtils(db)
-      utils.createConsignment(consignmentId, userId)
-      consignmentRepository.addParentFolder(consignmentId, "TEST GET PARENT FOLDER NAME").futureValue
+  "getParentFolder" should "get parent folder name for a consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
+    consignmentRepository.addParentFolder(consignmentId, "TEST GET PARENT FOLDER NAME").futureValue
 
-      val parentFolderName = consignmentRepository.getParentFolder(consignmentId).futureValue
+    val parentFolderName = consignmentRepository.getParentFolder(consignmentId).futureValue
 
-      parentFolderName should be(Some("TEST GET PARENT FOLDER NAME"))
+    parentFolderName should be(Some("TEST GET PARENT FOLDER NAME"))
   }
 
-  "getParentFolder" should "return nothing if no parent folder exists" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val consignmentId = UUID.fromString("8233b9a4-5c2d-4c2d-9355-e6ec5751fea5")
-      val utils = TestUtils(db)
-      utils.createConsignment(consignmentId, userId)
+  "getParentFolder" should "return nothing if no parent folder exists" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentId = UUID.fromString("8233b9a4-5c2d-4c2d-9355-e6ec5751fea5")
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
 
-      val parentFolderName = consignmentRepository.getParentFolder(consignmentId).futureValue
+    val parentFolderName = consignmentRepository.getParentFolder(consignmentId).futureValue
 
-      parentFolderName should be(None)
+    parentFolderName should be(None)
   }
 
-  "getSeriesOfConsignment" should "get the series for a consignment" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val consignmentId = UUID.fromString("b59a8bfd-5709-46c7-a5e9-71bae146e2f1")
-      val seriesId = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861")
-      val bodyId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-      val seriesCode = "MOCK1"
-      val utils = TestUtils(db)
-      utils.addTransferringBody(bodyId, "Test", "Test")
-      utils.addSeries(seriesId, bodyId, seriesCode)
-      utils.createConsignment(consignmentId, userId)
+  "getSeriesOfConsignment" should "get the series for a consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentId = UUID.fromString("b59a8bfd-5709-46c7-a5e9-71bae146e2f1")
+    val seriesId = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861")
+    val bodyId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val seriesCode = "MOCK1"
+    val utils = TestUtils(db)
+    utils.addTransferringBody(bodyId, "Test", "Test")
+    utils.addSeries(seriesId, bodyId, seriesCode)
+    utils.createConsignment(consignmentId, userId)
 
-      val consignmentSeries = consignmentRepository.getSeriesOfConsignment(consignmentId).futureValue.head
+    val consignmentSeries = consignmentRepository.getSeriesOfConsignment(consignmentId).futureValue.head
 
-      consignmentSeries.code should be(seriesCode)
+    consignmentSeries.code should be(seriesCode)
   }
 
-  "getTransferringBodyOfConsignment" should "get the transferring body for a consignment" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
-      val seriesId = UUID.fromString("845a4589-d412-49d7-80c6-63969112728a")
-      val bodyId = UUID.fromString("edb31587-4357-4e63-b40c-75368c9d9cc9")
-      val bodyName = "Some transferring body name"
-      val seriesCode = "Mock series"
-      val utils = TestUtils(db)
-      utils.addTransferringBody(bodyId, bodyName, "some-body-code")
-      utils.addSeries(seriesId, bodyId, seriesCode)
-      utils.createConsignment(consignmentId, userId, seriesId, bodyId = bodyId)
+  "getTransferringBodyOfConsignment" should "get the transferring body for a consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
+    val seriesId = UUID.fromString("845a4589-d412-49d7-80c6-63969112728a")
+    val bodyId = UUID.fromString("edb31587-4357-4e63-b40c-75368c9d9cc9")
+    val bodyName = "Some transferring body name"
+    val seriesCode = "Mock series"
+    val utils = TestUtils(db)
+    utils.addTransferringBody(bodyId, bodyName, "some-body-code")
+    utils.addSeries(seriesId, bodyId, seriesCode)
+    utils.createConsignment(consignmentId, userId, seriesId, bodyId = bodyId)
 
-      val consignmentBody = consignmentRepository.getTransferringBodyOfConsignment(consignmentId).futureValue.head
+    val consignmentBody = consignmentRepository.getTransferringBodyOfConsignment(consignmentId).futureValue.head
 
-      consignmentBody.name should be(bodyName)
+    consignmentBody.name should be(bodyName)
   }
 
-  "getNextConsignmentSequence" should "get the next sequence ID number for a consignment row" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val consignmentIdOne = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
-      val consignmentIdTwo = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
-      val utils = TestUtils(db)
-      val currentSequence: Long = consignmentRepository.getNextConsignmentSequence.futureValue
-      utils.createConsignment(consignmentIdOne, userId)
-      utils.createConsignment(consignmentIdTwo, userId)
+  "getNextConsignmentSequence" should "get the next sequence ID number for a consignment row" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentIdOne = UUID.fromString("20fe77a7-51b3-434c-b5f6-a14e814a2e05")
+    val consignmentIdTwo = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
+    val utils = TestUtils(db)
+    val currentSequence: Long = consignmentRepository.getNextConsignmentSequence.futureValue
+    utils.createConsignment(consignmentIdOne, userId)
+    utils.createConsignment(consignmentIdTwo, userId)
 
-      val sequenceId: Long = consignmentRepository.getNextConsignmentSequence.futureValue
-      val expectedSeq = currentSequence + 3
+    val sequenceId: Long = consignmentRepository.getNextConsignmentSequence.futureValue
+    val expectedSeq = currentSequence + 3
 
-      sequenceId should be(expectedSeq)
+    sequenceId should be(expectedSeq)
   }
 
-  "getConsignment" should "return the consignment given the consignment id" in withContainers {
-    case container: PostgreSQLContainer =>
-      val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
-      utils.createConsignment(consignmentId, userId)
+  "getConsignment" should "return the consignment given the consignment id" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
 
-      val response = consignmentRepository.getConsignment(consignmentId).futureValue
+    val response = consignmentRepository.getConsignment(consignmentId).futureValue
 
-      response should have size 1
-      response.headOption.get.consignmentid should equal(consignmentId)
+    response should have size 1
+    response.headOption.get.consignmentid should equal(consignmentId)
   }
 
-  "getConsignments" should "return all consignments after the cursor up to the limit value" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
-      createConsignments(utils)
+  "getConsignments" should "return all consignments after the cursor up to the limit value" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
 
-      val response = consignmentRepository.getConsignments(2, Some("TDR-2021-A")).futureValue
+    val response = consignmentRepository.getConsignments(2, Some("TDR-2021-A")).futureValue
 
-      response should have size 2
-      val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-      consignmentIds should contain(consignmentIdTwo)
-      consignmentIds should contain(consignmentIdThree)
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain(consignmentIdTwo)
+    consignmentIds should contain(consignmentIdThree)
   }
 
-  "getConsignments" should "return all consignments up to limit where no cursor provided including first consignment" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
-      createConsignments(utils)
+  "getConsignments" should "return all consignments up to limit where no cursor provided including first consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
 
-      val response = consignmentRepository.getConsignments(2, None).futureValue
-      response should have size 2
-      val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-      consignmentIds should contain(consignmentIdOne)
-      consignmentIds should contain(consignmentIdTwo)
+    val response = consignmentRepository.getConsignments(2, None).futureValue
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain(consignmentIdOne)
+    consignmentIds should contain(consignmentIdTwo)
   }
 
-  "getConsignments" should "return all consignments up to limit where empty cursor provided" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
-      createConsignments(utils)
+  "getConsignments" should "return all consignments up to limit where empty cursor provided" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
 
-      val response = consignmentRepository.getConsignments(2, Some("")).futureValue
-      response should have size 2
-      val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-      consignmentIds should contain(consignmentIdOne)
-      consignmentIds should contain(consignmentIdTwo)
+    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain(consignmentIdOne)
+    consignmentIds should contain(consignmentIdTwo)
   }
 
-  "getConsignments" should "return no consignments where limit set at '0'" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
-      createConsignments(utils)
+  "getConsignments" should "return no consignments where limit set at '0'" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
 
-      val response = consignmentRepository.getConsignments(0, Some("TDR-2021-A")).futureValue
-      response should have size 0
+    val response = consignmentRepository.getConsignments(0, Some("TDR-2021-A")).futureValue
+    response should have size 0
   }
 
   "getConsignments" should "return consignments where non-existent cursor value provided, and reference is greater than the cursor value" in withContainers {
@@ -224,69 +212,65 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       consignmentIds should contain(consignmentIdTwo)
   }
 
-  "getConsignments" should "return no consignments where there are no consignments" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+  "getConsignments" should "return no consignments where there are no consignments" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
 
-      val response = consignmentRepository.getConsignments(2, Some("")).futureValue
-      response should have size 0
+    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
+    response should have size 0
   }
 
-  "getConsignments" should "return all the consignments which belong to the given user id only" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
+  "getConsignments" should "return all the consignments which belong to the given user id only" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
 
-      utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
 
-      val user2Id: UUID = UUID.randomUUID()
-      val consignmentIdForUser2: UUID = UUID.randomUUID()
+    val user2Id: UUID = UUID.randomUUID()
+    val consignmentIdForUser2: UUID = UUID.randomUUID()
 
-      utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
+    utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-      val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(userId.some, None).some).futureValue
+    val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(userId.some, None).some).futureValue
 
-      response should have size 1
-      response.map(cr => cr.consignmentid).head should equal(consignmentIdOne)
+    response should have size 1
+    response.map(cr => cr.consignmentid).head should equal(consignmentIdOne)
   }
 
-  "getConsignments" should "return all the consignments which belong to the given consignment type only" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
+  "getConsignments" should "return all the consignments which belong to the given consignment type only" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
 
-      utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
 
-      utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", consignmentType = "judgment")
+    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", consignmentType = "judgment")
 
-      val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(None, "judgment".some).some).futureValue
+    val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(None, "judgment".some).some).futureValue
 
-      response should have size 1
-      response.map(cr => cr.consignmentid).head should equal(consignmentIdTwo)
+    response should have size 1
+    response.map(cr => cr.consignmentid).head should equal(consignmentIdTwo)
   }
 
-  "getConsignments" should "return all the consignments for all the users when user id is not passed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-      val utils = TestUtils(db)
+  "getConsignments" should "return all the consignments for all the users when user id is not passed" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
 
-      utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
 
-      val user2Id: UUID = UUID.randomUUID()
-      val consignmentIdForUser2: UUID = UUID.randomUUID()
+    val user2Id: UUID = UUID.randomUUID()
+    val consignmentIdForUser2: UUID = UUID.randomUUID()
 
-      utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
+    utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-      val response = consignmentRepository.getConsignments(10, None, None).futureValue
+    val response = consignmentRepository.getConsignments(10, None, None).futureValue
 
-      response should have size 2
-      val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-      consignmentIds should contain(consignmentIdOne)
-      consignmentIds should contain(consignmentIdForUser2)
+    response should have size 2
+    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
+    consignmentIds should contain(consignmentIdOne)
+    consignmentIds should contain(consignmentIdForUser2)
   }
 
   private def createConsignments(utils: TestUtils): Unit = {

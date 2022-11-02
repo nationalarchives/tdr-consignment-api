@@ -11,33 +11,36 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
-  implicit val getFileResult: GetResult[FileRow] = GetResult(r => FileRow(
-    UUID.fromString(r.nextString()),
-    UUID.fromString(r.nextString()),
-    UUID.fromString(r.nextString()),
-    r.nextTimestamp(),
-    r.nextBooleanOption(),
-    r.nextStringOption(),
-    r.nextStringOption(),
-    r.nextStringOption().map(UUID.fromString)
-  ))
+  implicit val getFileResult: GetResult[FileRow] = GetResult(r =>
+    FileRow(
+      UUID.fromString(r.nextString()),
+      UUID.fromString(r.nextString()),
+      UUID.fromString(r.nextString()),
+      r.nextTimestamp(),
+      r.nextBooleanOption(),
+      r.nextStringOption(),
+      r.nextStringOption(),
+      r.nextStringOption().map(UUID.fromString)
+    )
+  )
 
-  implicit val getRedactedFileResult: GetResult[RedactedFiles] = GetResult(r => RedactedFiles(
-    UUID.fromString(r.nextString()),
-    r.nextString(),
-    r.nextStringOption().map(UUID.fromString),
-    r.nextStringOption()
-  ))
-
+  implicit val getRedactedFileResult: GetResult[RedactedFiles] = GetResult(r =>
+    RedactedFiles(
+      UUID.fromString(r.nextString()),
+      r.nextString(),
+      r.nextStringOption().map(UUID.fromString),
+      r.nextStringOption()
+    )
+  )
 
   def getRedactedFilePairs(consignmentId: UUID, fileIds: Seq[UUID] = Nil, onlyNullValues: Boolean = false): Future[Seq[RedactedFiles]] = {
-    val filterSuffix = if(fileIds.isEmpty) {
+    val filterSuffix = if (fileIds.isEmpty) {
       ""
     } else {
       val fileString = fileIds.mkString("('", "','", "')")
       s"""AND "RedactedFileId" IN $fileString """
     }
-    val whereSuffix = if(onlyNullValues) {
+    val whereSuffix = if (onlyNullValues) {
       """AND "FileId" IS NULL"""
     } else {
       ""
@@ -67,7 +70,8 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   private val insertFileQuery = File returning File.map(_.fileid) into ((file, fileid) => file.copy(fileid = fileid))
 
   def getFilesWithPassedAntivirus(consignmentId: UUID): Future[Seq[Tables.FileRow]] = {
-    val query = Avmetadata.join(File)
+    val query = Avmetadata
+      .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._2.filetype === NodeType.fileTypeIdentifier)
@@ -77,7 +81,8 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 
   def getConsignmentForFile(fileId: UUID): Future[Seq[Tables.ConsignmentRow]] = {
-    val query = File.join(Consignment)
+    val query = File
+      .join(Consignment)
       .on(_.consignmentid === _.consignmentid)
       .filter(_._1.fileid === fileId)
       .map(rows => rows._2)
@@ -92,10 +97,9 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   def addFiles(fileRows: Seq[FileRow], fileMetadataRows: Seq[FilemetadataRow]): Future[Unit] =
     db.run(DBIO.seq(File ++= fileRows, Filemetadata ++= fileMetadataRows).transactionally)
 
-  def countFilesInConsignment(consignmentId: UUID,
-                              parentId: Option[UUID] = None,
-                              fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
-    val query = File.filter(_.consignmentid === consignmentId)
+  def countFilesInConsignment(consignmentId: UUID, parentId: Option[UUID] = None, fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
       .filterOpt(fileTypeIdentifier)(_.filetype === _)
       .filterOpt(parentId)(_.parentid === _)
       .length
@@ -103,7 +107,8 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 
   def countProcessedAvMetadataInConsignment(consignmentId: UUID): Future[Int] = {
-    val query = Avmetadata.join(File)
+    val query = Avmetadata
+      .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._2.filetype === NodeType.fileTypeIdentifier)
@@ -114,7 +119,8 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 
   def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[FileRepositoryMetadata]] = {
-    val query = File.joinLeft(Filemetadata)
+    val query = File
+      .joinLeft(Filemetadata)
       .on(_.fileid === _.fileid)
       .filter(_._1.consignmentid === consignmentId)
       .filterOpt(fileFilters.fileTypeIdentifier)(_._1.filetype === _)
@@ -123,11 +129,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def getPaginatedFiles(consignmentId: UUID,
-                        limit: Int,
-                        offset: Int,
-                        after: Option[String],
-                        fileFilters: FileFilters): Future[Seq[FileRow]] = {
+  def getPaginatedFiles(consignmentId: UUID, limit: Int, offset: Int, after: Option[String], fileFilters: FileFilters): Future[Seq[FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)
       .filterOpt(fileFilters.parentId)(_.parentid === _)

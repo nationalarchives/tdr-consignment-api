@@ -17,7 +17,8 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
   private val secondaryCrossOriginDomain = "https://other-frontend.example.com"
   private val crossOriginUrls = List(defaultCrossOriginDomain, secondaryCrossOriginDomain).asJava
 
-  private val config = ConfigFactory.load()
+  private val config = ConfigFactory
+    .load()
     .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
   val session: SlickSession = SlickSession.forConfig("consignmentapi")
   private val route = new Routes(config, session).route
@@ -64,7 +65,8 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
     val allowedDomain = "http://localhost:1234"
     val crossOriginUrls = List(allowedDomain).asJava
 
-    val testConfig = ConfigFactory.load()
+    val testConfig = ConfigFactory
+      .load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
     val testRoute = new Routes(testConfig, session).route
 
@@ -80,7 +82,8 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
     val domainWithOtherPort = "http://localhost:5678"
     val crossOriginUrls = List(allowedDomain).asJava
 
-    val testConfig = ConfigFactory.load()
+    val testConfig = ConfigFactory
+      .load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
     val testRoute = new Routes(testConfig, session).route
 
@@ -93,11 +96,13 @@ class CorsSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest {
   }
 
   "the pre-flight request" should "return an allowed domain if multiple origins are given" in {
-    val headers = List(Origin(
-      "https://yet-another-domain.example.com",
-      secondaryCrossOriginDomain,
-      "https://a-third-domain.example.com"
-    ))
+    val headers = List(
+      Origin(
+        "https://yet-another-domain.example.com",
+        secondaryCrossOriginDomain,
+        "https://a-third-domain.example.com"
+      )
+    )
 
     Options("/graphql").withHeaders(headers) ~> route ~> check {
       header[`Access-Control-Allow-Origin`].map(_.value) should contain(secondaryCrossOriginDomain)

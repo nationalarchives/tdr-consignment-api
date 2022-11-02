@@ -27,7 +27,7 @@ class RoutesSpec extends AnyFlatSpec with BeforeAndAfterEach with TestRequest {
 
     Post("/") ~> routes.logging(complete(resp))
 
-    logCaptor.getWarnLogs.isEmpty shouldBe(true)
+    logCaptor.getWarnLogs.isEmpty shouldBe (true)
   }
 
   "non 200 response" should "be logged as warning" in {
@@ -36,18 +36,18 @@ class RoutesSpec extends AnyFlatSpec with BeforeAndAfterEach with TestRequest {
     Post("/") ~> routes.logging(complete(resp))
 
     val warnings = logCaptor.getWarnLogs.asScala.toList
-    warnings.size shouldBe(1)
-    warnings.head.contains("Non 200 Response") shouldBe(true)
-    warnings.head.contains("Request:") shouldBe(true)
-    warnings.head.contains("Response:") shouldBe(true)
+    warnings.size shouldBe (1)
+    warnings.head.contains("Non 200 Response") shouldBe (true)
+    warnings.head.contains("Request:") shouldBe (true)
+    warnings.head.contains("Response:") shouldBe (true)
   }
 
   "rejected request" should "be logged as warning" in {
     Post("/") ~> routes.logging(reject(AuthorizationFailedRejection))
 
     val warnings = logCaptor.getWarnLogs.asScala.toList
-    warnings.size shouldBe(1)
-    warnings.head shouldEqual("Rejected Reason: AuthorizationFailedRejection")
+    warnings.size shouldBe (1)
+    warnings.head shouldEqual ("Rejected Reason: AuthorizationFailedRejection")
   }
 
   private def createHttpResponse(status: StatusCode): HttpResponse = {

@@ -13,23 +13,13 @@ import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 
 object FinalTransferConfirmationFields {
 
-  case class FinalTransferConfirmation(consignmentId: UUID,
-                                       finalOpenRecordsConfirmed: Boolean,
-                                       legalCustodyTransferConfirmed: Boolean
-                                      )
+  case class FinalTransferConfirmation(consignmentId: UUID, finalOpenRecordsConfirmed: Boolean, legalCustodyTransferConfirmed: Boolean)
 
-  case class AddFinalTransferConfirmationInput(consignmentId: UUID,
-                                               finalOpenRecordsConfirmed: Boolean,
-                                               legalCustodyTransferConfirmed: Boolean
-                                              ) extends UserOwnsConsignment
+  case class AddFinalTransferConfirmationInput(consignmentId: UUID, finalOpenRecordsConfirmed: Boolean, legalCustodyTransferConfirmed: Boolean) extends UserOwnsConsignment
 
-  case class FinalJudgmentTransferConfirmation(consignmentId: UUID,
-                                               legalCustodyTransferConfirmed: Boolean
-                                              )
+  case class FinalJudgmentTransferConfirmation(consignmentId: UUID, legalCustodyTransferConfirmed: Boolean)
 
-  case class AddFinalJudgmentTransferConfirmationInput(consignmentId: UUID,
-                                                       legalCustodyTransferConfirmed: Boolean
-                                                      ) extends UserOwnsConsignment
+  case class AddFinalJudgmentTransferConfirmationInput(consignmentId: UUID, legalCustodyTransferConfirmed: Boolean) extends UserOwnsConsignment
 
   implicit val FinalTransferConfirmationType: ObjectType[Unit, FinalTransferConfirmation] =
     deriveObjectType[Unit, FinalTransferConfirmation]()
@@ -48,16 +38,19 @@ object FinalTransferConfirmationFields {
     Argument("addFinalJudgmentTransferConfirmationInput", AddFinalJudgmentTransferConfirmationInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addFinalTransferConfirmation", FinalTransferConfirmationType,
+    Field(
+      "addFinalTransferConfirmation",
+      FinalTransferConfirmationType,
       arguments = FinalTransferConfirmationInputArg :: Nil,
-      resolve = ctx => ctx.ctx.finalTransferConfirmationService.addFinalTransferConfirmation(ctx.arg(FinalTransferConfirmationInputArg),
-        ctx.ctx.accessToken.userId),
+      resolve = ctx => ctx.ctx.finalTransferConfirmationService.addFinalTransferConfirmation(ctx.arg(FinalTransferConfirmationInputArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateUserHasAccessToConsignment(FinalTransferConfirmationInputArg))
     ),
-    Field("addFinalJudgmentTransferConfirmation", addFinalTransferConfirmationType,
+    Field(
+      "addFinalJudgmentTransferConfirmation",
+      addFinalTransferConfirmationType,
       arguments = FinalJudgmentTransferConfirmationInputArg :: Nil,
-      resolve = ctx => ctx.ctx.finalTransferConfirmationService.addFinalJudgmentTransferConfirmation(ctx.arg(FinalJudgmentTransferConfirmationInputArg),
-        ctx.ctx.accessToken.userId),
+      resolve =
+        ctx => ctx.ctx.finalTransferConfirmationService.addFinalJudgmentTransferConfirmation(ctx.arg(FinalJudgmentTransferConfirmationInputArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateUserHasAccessToConsignment(FinalJudgmentTransferConfirmationInputArg))
     )
   )

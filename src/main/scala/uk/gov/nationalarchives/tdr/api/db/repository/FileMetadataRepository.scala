@@ -20,11 +20,14 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Int] = {
-    val query = Filemetadata.join(File)
+    val query = Filemetadata
+      .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._1.propertyname === ClientSideFileSize)
-      .map(_._1.value.asColumnOf[Int]).sum.getOrElse(0)
+      .map(_._1.value.asColumnOf[Int])
+      .sum
+      .getOrElse(0)
     db.run(query.result)
   }
 
@@ -44,9 +47,9 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None,
-                      propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
-    val query = Filemetadata.join(File)
+  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None, propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
+    val query = Filemetadata
+      .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filterOpt(propertyNames)(_._1.propertyname inSetBind _)
@@ -57,8 +60,8 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
 
   // TODO: This method should be removed as part of the refactoring for TDR-2477: https://national-archives.atlassian.net/browse/TDR-2477.
   def updateFileMetadataProperties(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
-    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
-      case (propertyName, update) => Filemetadata
+    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map { case (propertyName, update) =>
+      Filemetadata
         .filter(fm => fm.propertyname === propertyName)
         .filter(fm => fm.metadataid inSet update.metadataIds)
         .map(fm => (fm.value, fm.userid, fm.datetime))
@@ -69,8 +72,8 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
   }
 
   def updateFileMetadataProperties(selectedFileIds: Set[UUID], updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
-    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
-      case (propertyName, update) => Filemetadata
+    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map { case (propertyName, update) =>
+      Filemetadata
         .filter(fm => fm.fileid inSetBind selectedFileIds)
         .filter(fm => fm.propertyname === propertyName)
         .map(fm => (fm.value, fm.userid, fm.datetime))
@@ -90,8 +93,10 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
   }
 
   def countProcessedChecksumInConsignment(consignmentId: UUID): Future[Int] = {
-    val query = Filemetadata.join(File)
-      .on(_.fileid === _.fileid).join(Fileproperty)
+    val query = Filemetadata
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .join(Fileproperty)
       .on(_._1.propertyname === _.name)
       .filter(_._1._2.consignmentid === consignmentId)
       .filter(_._2.name === SHA256ServerSideChecksum)

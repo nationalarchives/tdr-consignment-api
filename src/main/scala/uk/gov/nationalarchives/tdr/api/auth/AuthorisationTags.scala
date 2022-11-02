@@ -24,8 +24,7 @@ trait AuthorisationTag extends ValidationTag {
 }
 
 trait SyncAuthorisationTag extends AuthorisationTag {
-  final def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                         (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+  final def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     Future.successful(validateSync(ctx))
   }
 
@@ -49,12 +48,10 @@ object ValidateBody extends SyncAuthorisationTag {
 
 object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
-    val userBody = token.transferringBody.getOrElse(
-      throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
+    val userBody = token.transferringBody.getOrElse(throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
     val consignmentSeriesInput = ctx.arg[UpdateConsignmentSeriesIdInput]("updateConsignmentSeriesId")
     val seriesId: UUID = consignmentSeriesInput.seriesId
     val consignmentId: UUID = consignmentSeriesInput.consignmentId
@@ -77,8 +74,7 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 }
 
 case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends AuthorisationTag {
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
     val exportAccess = token.backendChecksRoles.contains(exportRole)
@@ -86,7 +82,7 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends 
     val arg: T = ctx.arg[T](argument.name)
     val consignmentId: UUID = arg match {
       case uoc: UserOwnsConsignment => uoc.consignmentId
-      case id: UUID => id
+      case id: UUID                 => id
     }
 
     ctx.ctx.consignmentService
@@ -170,16 +166,14 @@ object ValidateHasExportAccess extends SyncAuthorisationTag {
   }
 }
 
-
 case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends AuthorisationTag {
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
 
     val arg: T = ctx.arg[T](argument.name)
     val fileIds: Seq[UUID] = arg match {
-      case input: DeleteFileMetadataInput => input.fileIds
+      case input: DeleteFileMetadataInput     => input.fileIds
       case input: UpdateBulkFileMetadataInput => input.fileIds
-      case input: AddFileStatusInput => Seq(input.fileId)
+      case input: AddFileStatusInput          => Seq(input.fileId)
     }
 
     val userId = ctx.ctx.accessToken.userId
@@ -196,12 +190,13 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       }
       allFilesBelongToAConsignment = filesThatDoNotBelongToAConsignment.isEmpty
       allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
-      result = if (allFilesBelongToAConsignment && allFilesBelongToTheUser) {
-        continue
-      } else {
-        val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
-        throw AuthorisationException(s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")}")
-      }
+      result =
+        if (allFilesBelongToAConsignment && allFilesBelongToTheUser) {
+          continue
+        } else {
+          val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
+          throw AuthorisationException(s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")}")
+        }
     } yield result
   }
 }

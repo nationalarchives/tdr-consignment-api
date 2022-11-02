@@ -35,4 +35,4 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v3
-      - run: sbt scalastyle test:scalastyle 'graphqlValidateSchema "build" "consignmentApi"'
+      - run: sbt scalafmtCheckAll 'graphqlValidateSchema "build" "consignmentApi"'

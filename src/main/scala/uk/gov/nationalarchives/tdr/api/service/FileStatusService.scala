@@ -11,18 +11,17 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileStatusService(
-                         fileRepository: FileRepository,
-                         fileStatusRepository: FileStatusRepository,
-                         disallowedPuidsRepository: DisallowedPuidsRepository,
-                         uuidSource: UUIDSource)(implicit val executionContext: ExecutionContext) {
+class FileStatusService(fileRepository: FileRepository, fileStatusRepository: FileStatusRepository, disallowedPuidsRepository: DisallowedPuidsRepository, uuidSource: UUIDSource)(
+    implicit val executionContext: ExecutionContext
+) {
 
   def addFileStatus(addFileStatusInput: AddFileStatusInput): Future[FileStatus] = {
 
     for {
       _ <- validateStatusTypeAndValue(addFileStatusInput)
-      _ <- fileStatusRepository.addFileStatuses(List(FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType,
-        addFileStatusInput.statusValue, Timestamp.from(Instant.now()))))
+      _ <- fileStatusRepository.addFileStatuses(
+        List(FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now())))
+      )
     } yield FileStatus(addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue)
   }
 
@@ -56,13 +55,13 @@ class FileStatusService(
       failedRedactedFiles <- fileRepository.getRedactedFilePairs(consignmentId, onlyNullValues = true)
     } yield {
       failedRedactedFiles.isEmpty && checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
-        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter(failedFFIDStatuses.contains(_))).isEmpty
+      (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter(failedFFIDStatuses.contains(_))).isEmpty
     }
   }
 }
 
 object FileStatusService {
-  //Status types
+  // Status types
   val ChecksumMatch = "ChecksumMatch"
   val Antivirus = "Antivirus"
   val FFID = "FFID"
@@ -72,7 +71,7 @@ object FileStatusService {
   val ClientFilePath = "ClientFilePath"
   val ClientChecks = "ClientChecks"
 
-  //Values
+  // Values
   val Success = "Success"
   val Failed = "Failed"
   val Mismatch = "Mismatch"

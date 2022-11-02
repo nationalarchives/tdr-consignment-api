@@ -25,7 +25,8 @@ trait Cors {
   }
 
   private def allowedOrigin(originHeader: Option[Origin]): String = {
-    val domainsInHeader = originHeader.map(_.origins)
+    val domainsInHeader = originHeader
+      .map(_.origins)
       .getOrElse(Seq.empty)
       .map(_.toString)
     val overlappingDomains = domainsInHeader.intersect(frontendUrls)

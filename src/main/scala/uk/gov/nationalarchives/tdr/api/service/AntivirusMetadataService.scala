@@ -14,26 +14,22 @@ import scala.concurrent.{ExecutionContext, Future}
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
-class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRepository, uuidSource: UUIDSource, timeSource: TimeSource)
-                              (implicit val executionContext: ExecutionContext) {
+class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRepository, uuidSource: UUIDSource, timeSource: TimeSource)(implicit
+    val executionContext: ExecutionContext
+) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("AntivirusMetadataService"))
 
   def addAntivirusMetadata(input: AddAntivirusMetadataInput): Future[AntivirusMetadata] = {
 
-    val inputRow = AvmetadataRow(
-      input.fileId,
-      input.software,
-      input.softwareVersion,
-      input.databaseVersion,
-      input.result,
-      Timestamp.from(Instant.ofEpochMilli(input.datetime)))
+    val inputRow = AvmetadataRow(input.fileId, input.software, input.softwareVersion, input.databaseVersion, input.result, Timestamp.from(Instant.ofEpochMilli(input.datetime)))
     val fileStatusValue = input.result match {
       case "" => Success
-      case _ => VirusDetected
+      case _  => VirusDetected
     }
     val fileStatusRow = FilestatusRow(uuidSource.uuid, input.fileId, Antivirus, fileStatusValue, Timestamp.from(timeSource.now))
-    val avMatch = if(fileStatusValue == VirusDetected) { s": ${input.result}" } else { "" }
+    val avMatch = if (fileStatusValue == VirusDetected) { s": ${input.result}" }
+    else { "" }
 
     loggingUtils.logFileFormatStatus("antivirus", input.fileId, fileStatusValue + avMatch)
 
@@ -52,7 +48,8 @@ class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRep
   }
 
   def getAntivirusMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[List[AntivirusMetadata]] = {
-    antivirusMetadataRepository.getAntivirusMetadata(consignmentId, selectedFileIds)
+    antivirusMetadataRepository
+      .getAntivirusMetadata(consignmentId, selectedFileIds)
       .map(r => r.map(rowToAntivirusMetadata).toList)
   }
 }

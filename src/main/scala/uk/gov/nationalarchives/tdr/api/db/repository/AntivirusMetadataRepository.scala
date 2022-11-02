@@ -19,7 +19,8 @@ class AntivirusMetadataRepository(db: Database)(implicit val executionContext: E
   }
 
   def getAntivirusMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Seq[AvmetadataRow]] = {
-    val query = Avmetadata.join(File)
+    val query = Avmetadata
+      .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)

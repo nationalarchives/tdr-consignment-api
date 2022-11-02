@@ -16,7 +16,8 @@ class FileStatusRepository(db: Database) {
   }
 
   def getFileStatus(consignmentId: UUID, statusTypes: Set[String], selectedFileIds: Option[Set[UUID]] = None): Future[Seq[FilestatusRow]] = {
-    val query = Filestatus.join(File)
+    val query = Filestatus
+      .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._1.statustype inSetBind statusTypes)

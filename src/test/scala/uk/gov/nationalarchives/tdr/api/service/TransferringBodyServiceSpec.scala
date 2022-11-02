@@ -49,8 +49,10 @@ class TransferringBodyServiceSpec extends AnyFlatSpec with MockitoSugar with Mat
 
     val thrownException = intercept[Exception] { service.getBodyByCode(bodyCode).futureValue }
 
-    thrownException.getMessage should equal("The future returned an exception of type: " +
-      "uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, with message: " +
-      "No transferring body found for code 'CODE123'.")
+    thrownException.getMessage should equal(
+      "The future returned an exception of type: " +
+        "uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, with message: " +
+        "No transferring body found for code 'CODE123'."
+    )
   }
 }
