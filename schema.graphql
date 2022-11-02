@@ -191,11 +191,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Integer
-  Boolean
-  Text
-  Decimal
   DateTime
+  Integer
+  Text
+  Boolean
+  Decimal
 }
 
 type DeleteFileMetadata {
@@ -318,6 +318,7 @@ type FileMetadataValues {
   closureStartDate: LocalDateTime
   foiExemptionAsserted: LocalDateTime
   titleClosed: Boolean
+  descriptionClosed: Boolean
 }
 
 type FileMetadataWithFileId {

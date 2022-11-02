@@ -646,6 +646,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, foiExemptionAsserted.toString, Timestamp.from(FixedTimeSource.now),
         UUID.randomUUID(), FoiExemptionAsserted),
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), TitleClosed),
+      FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), DescriptionClosed),
       FilemetadataRow(UUID.randomUUID(), fileIdTwo, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosurePeriod)
     ))
 
@@ -662,6 +663,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     response(fileIdTwo).closureStartDate.get should equal(closureStartDate.toLocalDateTime)
     response(fileIdTwo).closurePeriod.get should equal(1)
     response(fileIdTwo).titleClosed.get should equal(true)
+    response(fileIdTwo).descriptionClosed.get should equal(true)
     response(fileIdTwo).foiExemptionAsserted.get should equal(foiExemptionAsserted.toLocalDateTime)
   }
 

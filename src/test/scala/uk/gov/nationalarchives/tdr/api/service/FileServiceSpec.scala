@@ -170,23 +170,23 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val parentFolder = files.find(_.fileId == parentFolderId).get
     parentFolder.fileName.get shouldBe "folderName"
-    parentFolder.metadata shouldBe FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None)
+    parentFolder.metadata shouldBe FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
     val fileOne = files.find(_.fileId == fileIdOne).get
     fileOne.fileName.get shouldBe "fileOneName"
     fileOne.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime),
-      None, None, None, None, None, None, None, None, None, None)
+      None, None, None, None, None, None, None, None, None, None, None)
     fileOne.originalFilePath.isDefined should be(false)
 
     val fileTwo = files.find(_.fileId == fileIdTwo).get
     fileTwo.fileName.get shouldBe "fileTwoName"
     fileTwo.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime),
-      None, None, None, None, None, None, None, None, None, None)
+      None, None, None, None, None, None, None, None, None, None, None)
     fileTwo.originalFilePath.isDefined should be(false)
 
     val fileThree = files.find(_.fileId == fileIdThree).get
     fileThree.fileName.get shouldBe "fileThreeName"
-    fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None)
+    fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
     fileThree.originalFilePath.isDefined should be(false)
   }
 
@@ -231,7 +231,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (fileRow, Some(fileMetadataRow(fileId, "ClosurePeriod", "0"))),
       (fileRow, Some(fileMetadataRow(fileId, "ClosureStartDate", closureStartDate.toString))),
       (fileRow, Some(fileMetadataRow(fileId, "FoiExemptionAsserted", foiExemptionAsserted.toString))),
-      (fileRow, Some(fileMetadataRow(fileId, "TitleClosed", "true")))
+      (fileRow, Some(fileMetadataRow(fileId, "TitleClosed", "true"))),
+      (fileRow, Some(fileMetadataRow(fileId, "DescriptionPublic", "true")))
     )
 
     val mockAvMetadataResponse = Future(
@@ -282,6 +283,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         Some(0),
         Some(closureStartDate.toLocalDateTime),
         Some(foiExemptionAsserted.toLocalDateTime),
+        Some(true),
         Some(true)),
       Some("Success"),
       Some(FFIDMetadata(
@@ -353,7 +355,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val actualFileMetadata = fileMetadataList.head
     val fileMetadata = fileAndMetadataRows.map(row => FileMetadataValue(row._2.get.propertyname, row._2.get.value)).toList
     val expectedFileMetadata = File(fileId, None, None, None,
-      FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None),
+      FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None),
       Some("Success"),
       Some(FFIDMetadata(
         fileId,
@@ -1050,7 +1052,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     firstFile.fileName shouldBe Some("fileName1")
     firstFile.fileType shouldBe Some("File")
     firstFile.parentId shouldBe Some(parentId)
-    firstFile.metadata shouldEqual FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None)
+    firstFile.metadata shouldEqual FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
     firstFile.antivirusMetadata shouldBe None
     firstFile.ffidMetadata shouldBe None
 
@@ -1059,7 +1061,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     secondFile.fileName shouldBe Some("fileName2")
     secondFile.fileType shouldBe Some("File")
     secondFile.parentId shouldBe Some(parentId)
-    secondFile.metadata shouldEqual FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None)
+    secondFile.metadata shouldEqual FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
     secondFile.antivirusMetadata shouldBe None
     secondFile.ffidMetadata shouldBe None
   }

@@ -254,6 +254,7 @@ object FileMetadataService {
   val ClosureStartDate = "ClosureStartDate"
   val FoiExemptionAsserted = "FoiExemptionAsserted"
   val TitleClosed = "TitleClosed"
+  val DescriptionClosed = "DescriptionPublic"
   val ClosureType = "ClosureType"
 
   /**
@@ -286,7 +287,8 @@ object FileMetadataService {
       propertyNameMap.get(ClosurePeriod).map(_.toInt),
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
-      propertyNameMap.get(TitleClosed).map(_.toBoolean)
+      propertyNameMap.get(TitleClosed).map(_.toBoolean),
+      propertyNameMap.get(DescriptionClosed).map(_.toBoolean)
     )
   }
 
@@ -317,7 +319,8 @@ object FileMetadataService {
                                 closurePeriod: Option[Int],
                                 closureStartDate: Option[LocalDateTime],
                                 foiExemptionAsserted: Option[LocalDateTime],
-                                titleClosed: Option[Boolean])
+                                titleClosed: Option[Boolean],
+                                descriptionClosed: Option[Boolean])
 
   case class PropertyAction(updateActionType: String,
                             propertyName: String,
