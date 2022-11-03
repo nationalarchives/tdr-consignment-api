@@ -8,7 +8,7 @@ class FixedUUIDSource extends UUIDSource {
   var idx: Int = -1
   override def uuid: UUID = {
     idx += 1
-    if(idx > 18) {
+    if (idx > 18) {
       UUID.randomUUID()
     } else {
       List(

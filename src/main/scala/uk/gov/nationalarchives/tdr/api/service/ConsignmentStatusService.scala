@@ -14,11 +14,12 @@ import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRepository,
-                               fileStatusRepository: FileStatusRepository,
-                               uuidSource: UUIDSource,
-                               timeSource: TimeSource)
-                              (implicit val executionContext: ExecutionContext) {
+class ConsignmentStatusService(
+    consignmentStatusRepository: ConsignmentStatusRepository,
+    fileStatusRepository: FileStatusRepository,
+    uuidSource: UUIDSource,
+    timeSource: TimeSource
+)(implicit val executionContext: ExecutionContext) {
 
   implicit class ConsignmentStatusInputHelper(input: ConsignmentStatusInput) {
     private val statusesToUpdateBasedOnFile: Set[String] = Set("Upload")
@@ -35,7 +36,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       statusType = addConsignmentStatusInput.statusType
       existingConsignmentStatusRow = consignmentStatuses.find(csr => csr.statustype == statusType)
       consignmentStatusRow <- {
-        if(existingConsignmentStatusRow.isDefined) {
+        if (existingConsignmentStatusRow.isDefined) {
           throw ConsignmentStateException(
             s"Existing consignment $statusType status is '${existingConsignmentStatusRow.get.value}'; new entry cannot be added"
           )
@@ -50,23 +51,24 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
         consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
       }
     } yield {
-        ConsignmentStatus(
-          consignmentStatusRow.consignmentstatusid,
-          consignmentStatusRow.consignmentid,
-          consignmentStatusRow.statustype,
-          consignmentStatusRow.value,
-          consignmentStatusRow.createddatetime.toZonedDateTime,
-          consignmentStatusRow.modifieddatetime.map(timestamp => timestamp.toZonedDateTime)
-        )
-      }
+      ConsignmentStatus(
+        consignmentStatusRow.consignmentstatusid,
+        consignmentStatusRow.consignmentid,
+        consignmentStatusRow.statustype,
+        consignmentStatusRow.value,
+        consignmentStatusRow.createddatetime.toZonedDateTime,
+        consignmentStatusRow.modifieddatetime.map(timestamp => timestamp.toZonedDateTime)
+      )
     }
+  }
 
   def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
     for {
       consignmentStatuses <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
     } yield {
       val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statustype, cs.value)).toMap
-      CurrentStatus(consignmentStatusTypesAndVals.get("Series"),
+      CurrentStatus(
+        consignmentStatusTypesAndVals.get("Series"),
         consignmentStatusTypesAndVals.get("TransferAgreement"),
         consignmentStatusTypesAndVals.get("Upload"),
         consignmentStatusTypesAndVals.get("ConfirmTransfer"),
@@ -94,7 +96,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
     for {
       fileUploadStatuses <- fileStatusRepository.getFileStatus(consignmentId, Set(statusType))
       successful = !fileUploadStatuses.exists(_.value == Failed)
-      consignmentStatus = if(successful) "Completed" else "CompletedWithIssues"
+      consignmentStatus = if (successful) "Completed" else "CompletedWithIssues"
       updated <- consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, consignmentStatus, Timestamp.from(timeSource.now))
     } yield updated
   }
@@ -103,7 +105,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
     val statusType: String = consignmentStatusInput.statusType
     val statusValue: String = consignmentStatusInput.statusValueToString
 
-    if(validStatusTypes.contains(statusType) && validStatusValues.contains(statusValue)) {
+    if (validStatusTypes.contains(statusType) && validStatusValues.contains(statusValue)) {
       true
     } else {
       throw InputDataException(s"Invalid ConsignmentStatus input: either '$statusType' or '$statusValue'")

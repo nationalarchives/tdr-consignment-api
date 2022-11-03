@@ -17,18 +17,22 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
 
   "getCustomMetadata" should "correctly return sequence of CustomMetadataField without dependencies" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
-    val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-      FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
-    ))
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType", "Closed", None, None, None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "ClosurePeriod", None)
-    ))
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("closureType", "Closed", None, None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None)
+      )
+    )
 
     when(customMetadataPropertiesRepository.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepository.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
@@ -44,18 +48,22 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
 
   "getCustomMetadata" should "correctly return sequence of CustomMetadataField with dependencies" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
-    val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-      FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
-    ))
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "ClosurePeriod", None)
-    ))
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None)
+      )
+    )
 
     when(customMetadataPropertiesRepository.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepository.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
@@ -71,19 +79,34 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
 
   "getCustomMetadata" should "throw an error if propertyName of a value is not present in FileProperty table" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
-    val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("propertyNameNotInValues", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-      FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
-    ))
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None),
-      FilepropertyvaluesRow("ClosurePeriod", "0", None, None, None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "ClosurePeriod", None)
-    ))
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow(
+          "propertyNameNotInValues",
+          None,
+          Some("Closure Type"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("Closure")
+        ),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None),
+        FilepropertyvaluesRow("ClosurePeriod", "0", None, None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None)
+      )
+    )
 
     when(customMetadataPropertiesRepository.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepository.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
@@ -103,17 +126,22 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
 
   "getCustomMetadata" should "throw an error if dependency name is not present in FileProperty table" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
-    val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
-    ))
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("ClosurePeriod", "0", None, None, None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "ClosurePeriod", None),
-      FilepropertydependenciesRow(3, "dependencyNameNotInFileProperty", None)
-    ))
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("ClosurePeriod", "0", None, None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None),
+        FilepropertydependenciesRow(3, "dependencyNameNotInFileProperty", None)
+      )
+    )
 
     when(customMetadataPropertiesRepository.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepository.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
@@ -133,24 +161,25 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
 
   "getCustomMetadata" should "return fields in the correct order" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
-    val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("firstValue", None, Some("First Value"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(1)),
-      FilepropertyRow("noOrdering", None, Some("No ordering"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), None),
-      FilepropertyRow("thirdValue", None, Some("Third Value"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(3)),
-      FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), None),
-        FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), None)
-    ))
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "ClosurePeriod", None)
-    ))
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("firstValue", None, Some("First Value"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(1)),
+        FilepropertyRow("noOrdering", None, Some("No ordering"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), None),
+        FilepropertyRow("thirdValue", None, Some("Third Value"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(3)),
+        FilepropertyRow("closureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), None),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), None)
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("closureType", "Closed", None, Some(3), None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None)
+      )
+    )
 
     when(customMetadataPropertiesRepository.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepository.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
@@ -170,20 +199,24 @@ class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar 
 
   "getCustomMetadata" should "return values in the correct order" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
-    val mockPropertyResponse = Future(Seq(
-      FilepropertyRow("firstValue", None, Some("First Value"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(1)),
-      FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()),
-        None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
-    ))
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("firstValue", "orderedOneValue", None, None, None, Some(1)),
-      FilepropertyvaluesRow("firstValue", "orderedTwoValue", None, None, None, Some(2)),
-      FilepropertyvaluesRow("firstValue", "notOrderedValue", None, None, None, None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "ClosurePeriod", None)
-    ))
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("firstValue", None, Some("First Value"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"), Option(1)),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("firstValue", "orderedOneValue", None, None, None, Some(1)),
+        FilepropertyvaluesRow("firstValue", "orderedTwoValue", None, None, None, Some(2)),
+        FilepropertyvaluesRow("firstValue", "notOrderedValue", None, None, None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None)
+      )
+    )
 
     when(customMetadataPropertiesRepository.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepository.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)

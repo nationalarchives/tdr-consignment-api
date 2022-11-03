@@ -11,19 +11,9 @@ import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 
 object AntivirusMetadataFields {
-  case class AntivirusMetadata(fileId: UUID,
-                               software: String,
-                               softwareVersion: String,
-                               databaseVersion: String,
-                               result: String,
-                               datetime: Long)
+  case class AntivirusMetadata(fileId: UUID, software: String, softwareVersion: String, databaseVersion: String, result: String, datetime: Long)
 
-  case class AddAntivirusMetadataInput(fileId: UUID,
-                                       software: String,
-                                       softwareVersion: String,
-                                       databaseVersion: String,
-                                       result: String,
-                                       datetime: Long)
+  case class AddAntivirusMetadataInput(fileId: UUID, software: String, softwareVersion: String, databaseVersion: String, result: String, datetime: Long)
 
   implicit val AntivirusMetadataType: ObjectType[Unit, AntivirusMetadata] = deriveObjectType[Unit, AntivirusMetadata]()
   implicit val AddAntivirusMetadataInputType: InputObjectType[AddAntivirusMetadataInput] = deriveInputObjectType[AddAntivirusMetadataInput]()
@@ -31,9 +21,12 @@ object AntivirusMetadataFields {
   val AntivirusMetadataInputArg = Argument("addAntivirusMetadataInput", AddAntivirusMetadataInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addAntivirusMetadata", AntivirusMetadataType,
-      arguments=AntivirusMetadataInputArg :: Nil,
+    Field(
+      "addAntivirusMetadata",
+      AntivirusMetadataType,
+      arguments = AntivirusMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.antivirusMetadataService.addAntivirusMetadata(ctx.arg(AntivirusMetadataInputArg)),
-      tags=List(ValidateHasAntiVirusMetadataAccess)
-    ))
+      tags = List(ValidateHasAntiVirusMetadataAccess)
+    )
+  )
 }

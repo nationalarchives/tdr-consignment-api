@@ -7,10 +7,7 @@ import java.util.UUID
 
 class LoggingUtils(logger: Logger) {
   def logFileFormatStatus(fileCheck: String, fileId: UUID, fileCheckStatus: String): Unit =
-    logger.info("File check {} for fileId {} completed with status {}",
-      value("fileCheck",fileCheck),
-      value("fileId", fileId),
-      value("fileCheckStatus", fileCheckStatus))
+    logger.info("File check {} for fileId {} completed with status {}", value("fileCheck", fileCheck), value("fileId", fileId), value("fileCheckStatus", fileCheckStatus))
 }
 
 object LoggingUtils {

@@ -13,27 +13,25 @@ class AllowedPuidsRespositorySpec extends TestContainerUtils with ScalaFutures w
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  "checkAllowedPuidExists" should "return 'true' if puid present" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val utils = TestUtils(db)
-      val allowedPuidsRepository = new AllowedPuidsRepository(db)
+  "checkAllowedPuidExists" should "return 'true' if puid present" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val allowedPuidsRepository = new AllowedPuidsRepository(db)
 
-      utils.createAllowedPuids("puid1", "description 1", "reason1")
+    utils.createAllowedPuids("puid1", "description 1", "reason1")
 
-      val result = allowedPuidsRepository.checkAllowedPuidExists("puid1").futureValue
-      result shouldBe true
+    val result = allowedPuidsRepository.checkAllowedPuidExists("puid1").futureValue
+    result shouldBe true
   }
 
-  "checkAllowedPuidExists" should "return 'false' if puid not present" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val utils = TestUtils(db)
-      val allowedPuidsRepository = new AllowedPuidsRepository(db)
+  "checkAllowedPuidExists" should "return 'false' if puid not present" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val allowedPuidsRepository = new AllowedPuidsRepository(db)
 
-      utils.createAllowedPuids("puid1", "description 1", "reason1")
+    utils.createAllowedPuids("puid1", "description 1", "reason1")
 
-      val result = allowedPuidsRepository.checkAllowedPuidExists("puid2").futureValue
-      result shouldBe false
+    val result = allowedPuidsRepository.checkAllowedPuidExists("puid2").futureValue
+    result shouldBe false
   }
 }

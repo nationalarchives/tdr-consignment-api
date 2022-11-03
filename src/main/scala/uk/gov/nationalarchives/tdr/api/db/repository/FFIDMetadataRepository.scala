@@ -21,8 +21,10 @@ class FFIDMetadataRepository(db: Database)(implicit val executionContext: Execut
   }
 
   def countProcessedFfidMetadata(consignmentId: UUID): Future[Int] = {
-    val query = Ffidmetadata.join(File)
-      .on(_.fileid === _.fileid).join(Ffidmetadatamatches)
+    val query = Ffidmetadata
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .join(Ffidmetadatamatches)
       .on(_._1.ffidmetadataid === _.ffidmetadataid)
       .filter(_._1._2.consignmentid === consignmentId)
       .groupBy(_._1._2.fileid)
@@ -32,8 +34,10 @@ class FFIDMetadataRepository(db: Database)(implicit val executionContext: Execut
   }
 
   def getFFIDMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Seq[FFIDRepositoryMetadata]] = {
-    val query = Ffidmetadata.join(File)
-      .on(_.fileid === _.fileid).join(Ffidmetadatamatches)
+    val query = Ffidmetadata
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .join(Ffidmetadatamatches)
       .on(_._1.ffidmetadataid === _.ffidmetadataid)
       .filter(_._1._2.consignmentid === consignmentId)
       .filterOpt(selectedFileIds)(_._1._2.fileid inSetBind _)

@@ -20,30 +20,32 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
 
 class ConsignmentService(
-                          consignmentRepository: ConsignmentRepository,
-                          consignmentStatusRepository: ConsignmentStatusRepository,
-                          fileMetadataRepository: FileMetadataRepository,
-                          fileRepository: FileRepository,
-                          ffidMetadataRepository: FFIDMetadataRepository,
-                          transferringBodyService: TransferringBodyService,
-                          timeSource: TimeSource,
-                          uuidSource: UUIDSource,
-                          config: Config
-                        )(implicit val executionContext: ExecutionContext) {
+    consignmentRepository: ConsignmentRepository,
+    consignmentStatusRepository: ConsignmentStatusRepository,
+    fileMetadataRepository: FileMetadataRepository,
+    fileRepository: FileRepository,
+    ffidMetadataRepository: FFIDMetadataRepository,
+    transferringBodyService: TransferringBodyService,
+    timeSource: TimeSource,
+    uuidSource: UUIDSource,
+    config: Config
+)(implicit val executionContext: ExecutionContext) {
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
-    consignmentStatusRepository.getConsignmentStatus(startUploadInput.consignmentId).flatMap(status => {
-      val uploadStatus = status.find(s => s.statustype == Upload)
-      if(uploadStatus.isDefined) {
-        throw ConsignmentStateException(s"Existing consignment upload status is '${uploadStatus.get.value}', so cannot start new upload")
-      }
-      val now = Timestamp.from(timeSource.now)
-      val consignmentStatusUploadRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, Upload, InProgress, now)
-      val consignmentStatusClientChecksRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, ClientChecks, InProgress, now)
-      consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder, List(consignmentStatusUploadRow, consignmentStatusClientChecksRow))
-    })
+    consignmentStatusRepository
+      .getConsignmentStatus(startUploadInput.consignmentId)
+      .flatMap(status => {
+        val uploadStatus = status.find(s => s.statustype == Upload)
+        if (uploadStatus.isDefined) {
+          throw ConsignmentStateException(s"Existing consignment upload status is '${uploadStatus.get.value}', so cannot start new upload")
+        }
+        val now = Timestamp.from(timeSource.now)
+        val consignmentStatusUploadRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, Upload, InProgress, now)
+        val consignmentStatusClientChecksRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, ClientChecks, InProgress, now)
+        consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder, List(consignmentStatusUploadRow, consignmentStatusClientChecksRow))
+      })
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
@@ -63,33 +65,29 @@ class ConsignmentService(
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
     val consignmentType: String = addConsignmentInput.consignmentType.validateType
 
-    val userBody = token.transferringBody.getOrElse(
-      throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
+    val userBody = token.transferringBody.getOrElse(throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
 
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
       body <- transferringBodyService.getBodyByCode(userBody)
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentRow = ConsignmentRow(
-          uuidSource.uuid,
-          addConsignmentInput.seriesid,
-          token.userId,
-          Timestamp.from(now),
-          consignmentsequence = sequence,
-          consignmentreference = consignmentRef,
-          consignmenttype = consignmentType,
-          bodyid = body.bodyId
-        )
-      consignment <- consignmentRepository.addConsignment(consignmentRow).map(
-        row => convertRowToConsignment(row)
+        uuidSource.uuid,
+        addConsignmentInput.seriesid,
+        token.userId,
+        Timestamp.from(now),
+        consignmentsequence = sequence,
+        consignmentreference = consignmentRef,
+        consignmenttype = consignmentType,
+        bodyid = body.bodyId
       )
+      consignment <- consignmentRepository.addConsignment(consignmentRow).map(row => convertRowToConsignment(row))
     } yield consignment
   }
 
   def getConsignment(consignmentId: UUID): Future[Option[Consignment]] = {
     val consignments = consignmentRepository.getConsignment(consignmentId)
-    consignments.map(rows => rows.headOption.map(
-      row => convertRowToConsignment(row)))
+    consignments.map(rows => rows.headOption.map(row => convertRowToConsignment(row)))
   }
 
   def getConsignments(limit: Int, currentCursor: Option[String], consignmentFilters: Option[ConsignmentFilters] = None): Future[PaginatedConsignments] = {
@@ -105,8 +103,7 @@ class ConsignmentService(
 
   def getSeriesOfConsignment(consignmentId: UUID): Future[Option[Series]] = {
     val consignment: Future[Seq[SeriesRow]] = consignmentRepository.getSeriesOfConsignment(consignmentId)
-    consignment.map(rows => rows.headOption.map(
-      series => Series(series.seriesid, series.bodyid, series.name, series.code, series.description)))
+    consignment.map(rows => rows.headOption.map(series => Series(series.seriesid, series.bodyid, series.name, series.code, series.description)))
   }
 
   def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
@@ -121,8 +118,7 @@ class ConsignmentService(
 
   def getTransferringBodyOfConsignment(consignmentId: UUID): Future[Option[TransferringBody]] = {
     val consignment: Future[Seq[BodyRow]] = consignmentRepository.getTransferringBodyOfConsignment(consignmentId)
-    consignment.map(rows => rows.headOption.map(
-      transferringBody => TransferringBody(transferringBody.name, transferringBody.tdrcode)))
+    consignment.map(rows => rows.headOption.map(transferringBody => TransferringBody(transferringBody.name, transferringBody.tdrcode)))
   }
 
   def consignmentHasFiles(consignmentId: UUID): Future[Boolean] = {
@@ -152,11 +148,13 @@ class ConsignmentService(
       row.exportlocation,
       row.consignmentreference,
       row.consignmenttype,
-      row.bodyid)
+      row.bodyid
+    )
   }
 
   private def convertToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
-    consignmentRows.map(cr => convertRowToConsignment(cr))
+    consignmentRows
+      .map(cr => convertRowToConsignment(cr))
       .map(c => ConsignmentEdge(c, c.consignmentReference))
   }
 }

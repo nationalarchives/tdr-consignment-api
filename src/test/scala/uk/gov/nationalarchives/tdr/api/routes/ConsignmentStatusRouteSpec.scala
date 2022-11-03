@@ -13,7 +13,6 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, T
 import java.time.ZonedDateTime
 import java.util.UUID
 
-
 class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
   private val addConsignmentStatusJsonFilePrefix: String = "json/addconsignmentstatus_"
@@ -36,44 +35,44 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
   case class AddConsignmentStatusComplete(addConsignmentStatus: ConsignmentStatus)
   case class UpdateConsignmentStatusComplete(updateConsignmentStatus: Option[Int])
 
-  case class ConsignmentStatus(consignmentStatusId: Option[UUID],
-                               consignmentId: Option[UUID],
-                               statusType: Option[String],
-                               value: Option[String],
-                               modifiedDatetime: Option[ZonedDateTime])
+  case class ConsignmentStatus(
+      consignmentStatusId: Option[UUID],
+      consignmentId: Option[UUID],
+      statusType: Option[String],
+      value: Option[String],
+      modifiedDatetime: Option[ZonedDateTime]
+  )
 
-  "addConsignmentStatus" should "add consignment status" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val token = validUserToken(userId)
+  "addConsignmentStatus" should "add consignment status" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val token = validUserToken(userId)
 
-      utils.createConsignment(consignmentId, userId)
+    utils.createConsignment(consignmentId, userId)
 
-      val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_all")
-      val response = runAddConsignmentStatusTestMutation("mutation_data_all", token)
+    val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_all")
+    val response = runAddConsignmentStatusTestMutation("mutation_data_all", token)
 
-      response.data.get.addConsignmentStatus should equal(expectedResponse.data.get.addConsignmentStatus)
+    response.data.get.addConsignmentStatus should equal(expectedResponse.data.get.addConsignmentStatus)
   }
 
-  "addConsignmentStatus" should "return an error if the consignment statusType for the consignment already exists" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val statusType = "Upload"
-      val statusValue = "InProgress"
-      val token = validUserToken(userId)
+  "addConsignmentStatus" should "return an error if the consignment statusType for the consignment already exists" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val statusType = "Upload"
+    val statusValue = "InProgress"
+    val token = validUserToken(userId)
 
-      utils.createConsignment(consignmentId, userId)
-      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_statusType_already_exists")
-      val response = runAddConsignmentStatusTestMutation("mutation_statusType_already_exists", token)
+    val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_statusType_already_exists")
+    val response = runAddConsignmentStatusTestMutation("mutation_statusType_already_exists", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions.get.code should equal("INVALID_CONSIGNMENT_STATE")
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions.get.code should equal("INVALID_CONSIGNMENT_STATE")
   }
 
   "addConsignmentStatus" should "not allow a user to add the consignment status of a consignment that they did not create" in withContainers {
@@ -93,79 +92,74 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "addConsignmentStatus" should "return an error if a consignment that doesn't exist is queried" in withContainers {
-    case container: PostgreSQLContainer =>
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
+  "addConsignmentStatus" should "return an error if a consignment that doesn't exist is queried" in withContainers { case container: PostgreSQLContainer =>
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
 
-      val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_consignmentid")
-      val response = runAddConsignmentStatusTestMutation("mutation_invalid_consignmentid", token)
+    val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_consignmentid")
+    val response = runAddConsignmentStatusTestMutation("mutation_invalid_consignmentid", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "addConsignmentStatus" should "return an error if an invalid statusType is passed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      utils.createConsignment(consignmentId, userId)
+  "addConsignmentStatus" should "return an error if an invalid statusType is passed" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    utils.createConsignment(consignmentId, userId)
 
-      val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_statustype")
-      val response = runAddConsignmentStatusTestMutation("mutation_invalid_statustype", token)
+    val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_statustype")
+    val response = runAddConsignmentStatusTestMutation("mutation_invalid_statustype", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "addConsignmentStatus" should "return an error if an invalid statusValue is passed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      utils.createConsignment(consignmentId, userId)
+  "addConsignmentStatus" should "return an error if an invalid statusValue is passed" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    utils.createConsignment(consignmentId, userId)
 
-      val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_statusvalue")
-      val response = runAddConsignmentStatusTestMutation("mutation_invalid_statusvalue", token)
+    val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_statusvalue")
+    val response = runAddConsignmentStatusTestMutation("mutation_invalid_statusvalue", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "addConsignmentStatus" should "return an error if an invalid statusType and statusValue is passed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      utils.createConsignment(consignmentId, userId)
+  "addConsignmentStatus" should "return an error if an invalid statusType and statusValue is passed" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    utils.createConsignment(consignmentId, userId)
 
-      val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_statustype_and_statusvalue")
-      val response = runAddConsignmentStatusTestMutation("mutation_invalid_statustype_and_statusvalue", token)
+    val expectedResponse = expectedAddConsignmentStatusMutationResponse("data_invalid_statustype_and_statusvalue")
+    val response = runAddConsignmentStatusTestMutation("mutation_invalid_statustype_and_statusvalue", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "updateConsignmentStatus" should "update consignment status" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val statusType = "Series"
-      val statusValue = "InProgress"
-      val token = validUserToken(userId)
+  "updateConsignmentStatus" should "update consignment status" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val statusType = "Series"
+    val statusValue = "InProgress"
+    val token = validUserToken(userId)
 
-      utils.createConsignment(consignmentId, userId)
-      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_all")
-      val response = runUpdateConsignmentStatusTestMutation("mutation_data_all", token)
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_all")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_data_all", token)
 
-      response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
+    response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
   }
 
   "updateConsignmentStatus" should "not allow a user to update the consignment status of a consignment that they did not create" in withContainers {
@@ -188,91 +182,85 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "updateConsignmentStatus" should "return an error if a consignment that doesn't exist is queried" in withContainers {
-    case container: PostgreSQLContainer =>
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
+  "updateConsignmentStatus" should "return an error if a consignment that doesn't exist is queried" in withContainers { case container: PostgreSQLContainer =>
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
 
-      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_consignmentid")
-      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_consignmentid", token)
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_consignmentid")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_consignmentid", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "updateConsignmentStatus" should "return an error if an invalid statusType is passed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
+  "updateConsignmentStatus" should "return an error if an invalid statusType is passed" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
 
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val statusType = "Upload"
-      val statusValue = "InProgress"
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val statusType = "Upload"
+    val statusValue = "InProgress"
 
-      utils.createConsignment(consignmentId, userId)
-      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statustype")
-      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statustype", token)
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statustype")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statustype", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "updateConsignmentStatus" should "return an error if an invalid statusValue is passed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val statusType = "Upload"
-      val statusValue = "InProgress"
-      utils.createConsignment(consignmentId, userId)
-      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+  "updateConsignmentStatus" should "return an error if an invalid statusValue is passed" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val statusType = "Upload"
+    val statusValue = "InProgress"
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statusvalue")
-      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statusvalue", token)
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statusvalue")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statusvalue", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "updateConsignmentStatus" should "return an error if an invalid statusType and statusValue is passed" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-      val token = validUserToken(userId)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      val statusType = "Upload"
-      val statusValue = "InProgress"
-      utils.createConsignment(consignmentId, userId)
-      utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+  "updateConsignmentStatus" should "return an error if an invalid statusType and statusValue is passed" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
+    val token = validUserToken(userId)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val statusType = "Upload"
+    val statusValue = "InProgress"
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
-      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statustype_and_statusvalue")
-      val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statustype_and_statusvalue", token)
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_invalid_statustype_and_statusvalue")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_invalid_statustype_and_statusvalue", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
-  "updateConsignmentStatus" should "return an error if statusValue is missing and the statusType isn't 'Upload'" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val token = validUserToken(userId)
-      val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-      utils.createConsignment(consignmentId, userId)
+  "updateConsignmentStatus" should "return an error if statusValue is missing and the statusType isn't 'Upload'" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val token = validUserToken(userId)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    utils.createConsignment(consignmentId, userId)
 
-      val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_missing_statusvalue_not_allowed")
-      val response = runUpdateConsignmentStatusTestMutation("mutation_missing_statusvalue_not_allowed", token)
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_missing_statusvalue_not_allowed")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_missing_statusvalue_not_allowed", token)
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
   "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload' and no statusValue was passed in, " +
-    "where all consignment files have 'Success' Upload statuses " in withContainers {
-    case container: PostgreSQLContainer =>
+    "where all consignment files have 'Success' Upload statuses " in withContainers { case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
       val token = validUserToken(userId)
@@ -294,11 +282,10 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val response = runUpdateConsignmentStatusTestMutation("mutation_files_all_uploaded_successfully", token)
 
       response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
-  }
+    }
 
   "updateConsignmentStatus" should "update the consignment status if statusType is 'Upload' and no statusValue was passed in, " +
-    "where some consignment files have 'Success' Upload statuses" in withContainers {
-    case container: PostgreSQLContainer =>
+    "where some consignment files have 'Success' Upload statuses" in withContainers { case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
       val token = validUserToken(userId)
@@ -319,5 +306,5 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val response = runUpdateConsignmentStatusTestMutation("mutation_not_all_files_uploaded_successfully", token)
 
       response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
-  }
+    }
 }

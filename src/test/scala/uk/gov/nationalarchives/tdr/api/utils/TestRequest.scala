@@ -17,9 +17,7 @@ import scala.reflect.ClassTag
 
 trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
 
-  def runTestRequest[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken)
-                       (implicit decoder: Decoder[A], classTag: ClassTag[A])
-  : A = {
+  def runTestRequest[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken)(implicit decoder: Decoder[A], classTag: ClassTag[A]): A = {
     implicit val unmarshaller: FromResponseUnmarshaller[A] = unmarshalResponse[A]()
     val slickSession = SlickSession.forConfig("consignmentapi")
     val route = new Routes(ConfigFactory.load(), slickSession).route

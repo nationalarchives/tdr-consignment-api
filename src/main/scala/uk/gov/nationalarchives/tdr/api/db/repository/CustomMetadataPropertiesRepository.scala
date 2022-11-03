@@ -1,8 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.Tables.{Fileproperty, FilepropertyRow, Filepropertydependencies, FilepropertydependenciesRow,
-  Filepropertyvalues, FilepropertyvaluesRow}
+import uk.gov.nationalarchives.Tables.{Fileproperty, FilepropertyRow, Filepropertydependencies, FilepropertydependenciesRow, Filepropertyvalues, FilepropertyvaluesRow}
 
 import scala.concurrent.{ExecutionContext, Future}
 

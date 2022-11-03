@@ -5,7 +5,7 @@ import uk.gov.nationalarchives.oci.{Alphabet, BaseCoder, IncludedAlphabet}
 
 object ConsignmentReference {
   val alphabet: Alphabet = Alphabet.loadAlphabet(Right(IncludedAlphabet.GCRb25)) match {
-    case Left(error) => throw new Exception(s"Error loading the GCRb25 encoding alphabet", error)
+    case Left(error)     => throw new Exception(s"Error loading the GCRb25 encoding alphabet", error)
     case Right(alphabet) => alphabet
   }
   val baseNumber = 25

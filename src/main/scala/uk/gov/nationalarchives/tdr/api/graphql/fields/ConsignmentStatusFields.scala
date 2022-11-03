@@ -14,16 +14,16 @@ import java.util.UUID
 
 object ConsignmentStatusFields {
 
-  case class ConsignmentStatus(consignmentStatusId: UUID,
-                               consignmentId: UUID,
-                               statusType: String,
-                               value: String,
-                               createdDatetime: ZonedDateTime,
-                               modifiedDatetime: Option[ZonedDateTime])
+  case class ConsignmentStatus(
+      consignmentStatusId: UUID,
+      consignmentId: UUID,
+      statusType: String,
+      value: String,
+      createdDatetime: ZonedDateTime,
+      modifiedDatetime: Option[ZonedDateTime]
+  )
 
-  case class ConsignmentStatusInput(consignmentId: UUID,
-                                    statusType: String,
-                                    statusValue: Option[String]) extends UserOwnsConsignment
+  case class ConsignmentStatusInput(consignmentId: UUID, statusType: String, statusValue: Option[String]) extends UserOwnsConsignment
 
   val ConsignmentStatusInputType: InputObjectType[ConsignmentStatusInput] =
     deriveInputObjectType[ConsignmentStatusInput]()
@@ -36,16 +36,21 @@ object ConsignmentStatusFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addConsignmentStatus", ConsignmentStatusType,
+    Field(
+      "addConsignmentStatus",
+      ConsignmentStatusType,
       arguments = AddConsignmentStatusArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentStatusService.addConsignmentStatus(ctx.arg(AddConsignmentStatusArg)),
       tags = List(ValidateUserHasAccessToConsignment(AddConsignmentStatusArg))
     ),
-    Field("updateConsignmentStatus", OptionType(IntType),
+    Field(
+      "updateConsignmentStatus",
+      OptionType(IntType),
       arguments = UpdateConsignmentStatusArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentStatusService.updateConsignmentStatus(
-        ctx.arg(UpdateConsignmentStatusArg)
-      ),
+      resolve = ctx =>
+        ctx.ctx.consignmentStatusService.updateConsignmentStatus(
+          ctx.arg(UpdateConsignmentStatusArg)
+        ),
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentStatusArg))
     )
   )

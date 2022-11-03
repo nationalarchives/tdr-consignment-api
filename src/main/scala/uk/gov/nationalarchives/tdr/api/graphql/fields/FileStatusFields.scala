@@ -16,14 +16,15 @@ object FileStatusFields {
 
   case class AddFileStatusInput(fileId: UUID, statusType: String, statusValue: String)
 
-
   implicit val FileStatusType: ObjectType[Unit, FileStatus] = deriveObjectType[Unit, FileStatus]()
   implicit val AddFileStatusInputType: InputObjectType[AddFileStatusInput] = deriveInputObjectType[AddFileStatusInput]()
 
   implicit val FileStatusInputArg: Argument[AddFileStatusInput] = Argument("addFileStatusInput", AddFileStatusInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addFileStatus", FileStatusType,
+    Field(
+      "addFileStatus",
+      FileStatusType,
       arguments = FileStatusInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileStatusService.addFileStatus(ctx.arg(FileStatusInputArg)),
       tags = List(ValidateUserOwnsFiles(FileStatusInputArg))

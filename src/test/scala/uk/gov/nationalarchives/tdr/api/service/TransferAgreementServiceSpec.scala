@@ -36,11 +36,13 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val dateTime = Timestamp.from(FixedTimeSource.now)
     def row(name: String, value: String): ConsignmentmetadataRow =
       ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
-    val mockResponse = Future.successful(Seq(
-      row("AllEnglishConfirmed", "true"),
-      row("CrownCopyrightConfirmed", "true"),
-      row("PublicRecordsConfirmed", "true")
-    ))
+    val mockResponse = Future.successful(
+      Seq(
+        row("AllEnglishConfirmed", "true"),
+        row("CrownCopyrightConfirmed", "true"),
+        row("PublicRecordsConfirmed", "true")
+      )
+    )
     val statusType = "TransferAgreement"
     val statusValue = "InProgress"
 
@@ -50,14 +52,12 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(Future.successful(mockTaConsignmentStatus))
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
-    val transferAgreementResult: TransferAgreementPrivateBeta = service.addTransferAgreementPrivateBeta(
-      AddTransferAgreementPrivateBetaInput(
-        consignmentId,
-        allCrownCopyright = true,
-        allEnglish = true,
-        allPublicRecords = true),
-      userId
-    ).futureValue
+    val transferAgreementResult: TransferAgreementPrivateBeta = service
+      .addTransferAgreementPrivateBeta(
+        AddTransferAgreementPrivateBetaInput(consignmentId, allCrownCopyright = true, allEnglish = true, allPublicRecords = true),
+        userId
+      )
+      .futureValue
 
     transferAgreementResult.consignmentId shouldBe consignmentId
     transferAgreementResult.allCrownCopyright shouldBe true
@@ -75,29 +75,31 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val statusType = "TransferAgreement"
     def row(name: String, value: String): ConsignmentmetadataRow =
       ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
-    val mockResponse = Future.successful(Seq(
-      row("AppraisalSelectionSignOffConfirmed", "true"),
-      row("InitialOpenRecordsConfirmed", "true"),
-      row("SensitivityReviewSignOffConfirmed", "true")
-    ))
+    val mockResponse = Future.successful(
+      Seq(
+        row("AppraisalSelectionSignOffConfirmed", "true"),
+        row("InitialOpenRecordsConfirmed", "true"),
+        row("SensitivityReviewSignOffConfirmed", "true")
+      )
+    )
     val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val statusValue = "Completed"
 
     when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
-    when(consignmentStatusRepositoryMock
-      .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp]))
+    when(
+      consignmentStatusRepositoryMock
+        .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp])
+    )
       .thenReturn(Future.successful(1))
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
-    val transferAgreementResult: TransferAgreementCompliance = service.addTransferAgreementCompliance(
-      AddTransferAgreementComplianceInput(
-        consignmentId,
-        initialOpenRecords = true,
-        appraisalSelectionSignedOff = true,
-        sensitivityReviewSignedOff = true),
-      userId
-    ).futureValue
+    val transferAgreementResult: TransferAgreementCompliance = service
+      .addTransferAgreementCompliance(
+        AddTransferAgreementComplianceInput(consignmentId, initialOpenRecords = true, appraisalSelectionSignedOff = true, sensitivityReviewSignedOff = true),
+        userId
+      )
+      .futureValue
 
     val transferAgreementStatusType = transferAgreementStatusTypeCaptor.getValue
     val transferAgreementStatusValue = transferAgreementStatusValueCaptor.getValue
@@ -143,8 +145,10 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
 
     val mockResponse = Future.successful(1)
-    when(consignmentStatusRepositoryMock
-      .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp]))
+    when(
+      consignmentStatusRepositoryMock
+        .updateConsignmentStatus(any[UUID], transferAgreementStatusTypeCaptor.capture(), transferAgreementStatusValueCaptor.capture(), any[Timestamp])
+    )
       .thenReturn(mockResponse)
 
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)

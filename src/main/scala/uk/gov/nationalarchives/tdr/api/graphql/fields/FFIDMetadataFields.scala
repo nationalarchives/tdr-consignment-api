@@ -12,22 +12,26 @@ import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 
 object FFIDMetadataFields {
 
-  case class FFIDMetadata(fileId: UUID,
-                          software: String,
-                          softwareVersion: String,
-                          binarySignatureFileVersion: String,
-                          containerSignatureFileVersion: String,
-                          method: String,
-                          matches: List[FFIDMetadataMatches],
-                          datetime: Long)
+  case class FFIDMetadata(
+      fileId: UUID,
+      software: String,
+      softwareVersion: String,
+      binarySignatureFileVersion: String,
+      containerSignatureFileVersion: String,
+      method: String,
+      matches: List[FFIDMetadataMatches],
+      datetime: Long
+  )
 
-  case class FFIDMetadataInput(fileId: UUID,
-                               software: String,
-                               softwareVersion: String,
-                               binarySignatureFileVersion: String,
-                               containerSignatureFileVersion: String,
-                               method: String,
-                               matches: List[FFIDMetadataInputMatches])
+  case class FFIDMetadataInput(
+      fileId: UUID,
+      software: String,
+      softwareVersion: String,
+      binarySignatureFileVersion: String,
+      containerSignatureFileVersion: String,
+      method: String,
+      matches: List[FFIDMetadataInputMatches]
+  )
 
   case class FFIDMetadataInputMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
@@ -40,9 +44,12 @@ object FFIDMetadataFields {
   val FileFormatMetadataInputArg = Argument("addFFIDMetadataInput", AddFFFIDMetadataInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addFFIDMetadata", FFIDMetadataType,
+    Field(
+      "addFFIDMetadata",
+      FFIDMetadataType,
       arguments = FileFormatMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.ffidMetadataService.addFFIDMetadata(ctx.arg(FileFormatMetadataInputArg)),
       tags = List(ValidateHasFFIDMetadataAccess)
-    ))
+    )
+  )
 }

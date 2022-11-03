@@ -9,21 +9,22 @@ import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.Tables.FilemetadataRow
 import scala.concurrent.{ExecutionContext, Future}
 
-class ClientFileMetadataService(fileMetadataRepository: FileMetadataRepository)
-                               (implicit val executionContext: ExecutionContext) {
+class ClientFileMetadataService(fileMetadataRepository: FileMetadataRepository)(implicit val executionContext: ExecutionContext) {
 
   def getClientFileMetadata(fileId: UUID): Future[ClientFileMetadata] = {
-    fileMetadataRepository.getFileMetadataByProperty(fileId, clientSideProperties: _*)
+    fileMetadataRepository
+      .getFileMetadataByProperty(fileId, clientSideProperties: _*)
       .map(rows => convertToResponse(fileId, rows))
       .recover {
         case nse: NoSuchElementException => throw InputDataException(s"Could not find client metadata for file $fileId", Some(nse))
-        case e: SQLException => throw InputDataException(e.getLocalizedMessage, Some(e))
+        case e: SQLException             => throw InputDataException(e.getLocalizedMessage, Some(e))
       }
   }
 
   private def convertToResponse(fileId: UUID, rows: Seq[FilemetadataRow]): ClientFileMetadata = {
     val propertyNameToValue = rows.map(row => row.propertyname -> row.value).toMap
-    ClientFileMetadata(fileId,
+    ClientFileMetadata(
+      fileId,
       propertyNameToValue.get(ClientSideOriginalFilepath),
       propertyNameToValue.get(SHA256ClientSideChecksum),
       Some("SHA256"),

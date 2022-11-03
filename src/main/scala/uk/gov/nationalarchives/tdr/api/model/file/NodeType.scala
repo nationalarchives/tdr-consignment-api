@@ -23,7 +23,7 @@ object NodeType {
     def validateType: String = {
       value match {
         case _ if isFileType | isDirectoryType => value
-        case _ => throw InputDataException(s"Invalid file type '$value' for path")
+        case _                                 => throw InputDataException(s"Invalid file type '$value' for path")
       }
     }
 

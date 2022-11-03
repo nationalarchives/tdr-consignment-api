@@ -35,46 +35,51 @@ class Routes(val config: Config, slickSession: SlickSession) extends Cors {
   val ttlSeconds: Int = 3600
   val transportSecurityMaxAge = 31536000
   val exceptionHandler: ExceptionHandler =
-    ExceptionHandler {
-      case ex: Throwable =>
-        entity(as[JsValue]) { requestJson =>
-          val JsObject(fields) = requestJson
-          val JsString(query) = fields("query")
+    ExceptionHandler { case ex: Throwable =>
+      entity(as[JsValue]) { requestJson =>
+        val JsObject(fields) = requestJson
+        val JsString(query) = fields("query")
 
-          QueryParser.parse(query) match {
-            case Failure(parseException) =>
-              logger.error(s"Error parsing entity $requestJson", parseException)
-              logger.error(ex.getMessage, ex)
-              complete(HttpResponse(InternalServerError, entity = ex.getMessage))
-            case Success(document) =>
-              val fieldName = document.definitions.headOption.flatMap {
-                case operationDefinition: OperationDefinition => operationDefinition.selections.headOption.map {
-                  case field: Field => field.outputName
-                  case _ => None
-                }
+        QueryParser.parse(query) match {
+          case Failure(parseException) =>
+            logger.error(s"Error parsing entity $requestJson", parseException)
+            logger.error(ex.getMessage, ex)
+            complete(HttpResponse(InternalServerError, entity = ex.getMessage))
+          case Success(document) =>
+            val fieldName = document.definitions.headOption
+              .flatMap {
+                case operationDefinition: OperationDefinition =>
+                  operationDefinition.selections.headOption.map {
+                    case field: Field => field.outputName
+                    case _            => None
+                  }
                 case _ => None
-              }.getOrElse("Unknown field")
+              }
+              .getOrElse("Unknown field")
 
-              val errorMessage = s"Request with field $fieldName failed"
-              logger.error(errorMessage, ex)
-              complete(HttpResponse(InternalServerError, entity = errorMessage))
-          }
+            val errorMessage = s"Request with field $fieldName failed"
+            logger.error(errorMessage, ex)
+            complete(HttpResponse(InternalServerError, entity = errorMessage))
         }
+      }
     }
   implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(url, "tdr", ttlSeconds)
   val route: Route =
     logging {
       handleExceptions(exceptionHandler) {
         optionalHeaderValueByType(Origin) { originHeader =>
-          corsHandler((post & path("graphql")) {
-            authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
-              respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
-                entity(as[JsValue]) { requestJson =>
-                  GraphQLServer(slickSession).endpoint(requestJson, accessToken)
+          corsHandler(
+            (post & path("graphql")) {
+              authenticateOAuth2Async("tdr", tokenAuthenticator) { accessToken =>
+                respondWithHeader(`Strict-Transport-Security`(transportSecurityMaxAge, includeSubDomains = true)) {
+                  entity(as[JsValue]) { requestJson =>
+                    GraphQLServer(slickSession).endpoint(requestJson, accessToken)
+                  }
                 }
               }
-            }
-          }, originHeader)
+            },
+            originHeader
+          )
         }
       } ~ (get & path("healthcheck")) {
         complete(StatusCodes.OK)
@@ -92,13 +97,17 @@ class Routes(val config: Config, slickSession: SlickSession) extends Cors {
   // https://doc.akka.io/docs/akka-http/10.0/routing-dsl/directives/security-directives/authenticateOAuth2Async.html
   def tokenAuthenticator(credentials: Credentials): Future[Option[Token]] = {
     credentials match {
-      case Credentials.Provided(token) => Future {
-        KeycloakUtils().token(token).left.map(
-          e => {
-            logger.error(e.getMessage, e)
-            AuthorisationException(e.getMessage)
-          }).toOption
-      }
+      case Credentials.Provided(token) =>
+        Future {
+          KeycloakUtils()
+            .token(token)
+            .left
+            .map(e => {
+              logger.error(e.getMessage, e)
+              AuthorisationException(e.getMessage)
+            })
+            .toOption
+        }
       case _ => Future.successful(None)
     }
   }
@@ -108,8 +117,10 @@ class Routes(val config: Config, slickSession: SlickSession) extends Cors {
       res match {
         case Complete(resp) =>
           if (resp.status.isFailure()) {
-            logger.warn(s"Non 200 Response - Request: $req, Request Entity: ${Unmarshal(req.entity).to[String].toString}, " +
-              s"Response: ${Unmarshal(resp).to[String].toString}")
+            logger.warn(
+              s"Non 200 Response - Request: $req, Request Entity: ${Unmarshal(req.entity).to[String].toString}, " +
+                s"Response: ${Unmarshal(resp).to[String].toString}"
+            )
           }
         case Rejected(reason) =>
           logger.warn(s"Rejected Reason: " + reason.mkString(", "))

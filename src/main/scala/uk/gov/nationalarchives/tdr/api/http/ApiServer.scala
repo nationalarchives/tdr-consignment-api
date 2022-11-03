@@ -29,7 +29,6 @@ object ApiServer extends App {
   Http().newServerAt("0.0.0.0", PORT).bindFlow(routes.route)
   logger.info(s"Consignment API is running")
 
-
   def shutdown(): Unit = {
     actorSystem.terminate()
     Await.result(actorSystem.whenTerminated, 30 seconds)

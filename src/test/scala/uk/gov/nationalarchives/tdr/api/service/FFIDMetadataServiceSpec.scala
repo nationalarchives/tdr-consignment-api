@@ -26,8 +26,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val allowedPuidsRepositoryMock = mockAllowedPuidResponse(validPuid)
     val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(validPuid)
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      mock[FFIDMetadataRepository],
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
 
     val status = service.checkStatus(validPuid, consignmentType = "standard").futureValue
     status shouldBe successStatusValue
@@ -38,8 +45,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val allowedPuidsRepositoryMock = mockAllowedPuidResponse(passwordProtectedPuid)
     val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(passwordProtectedPuid, "DisallowedReason")
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      mock[FFIDMetadataRepository],
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
 
     val status = service.checkStatus(passwordProtectedPuid, "standard").futureValue
     status shouldBe "DisallowedReason"
@@ -50,8 +64,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val allowedPuidsRepositoryMock = mockAllowedPuidResponse(inactiveDisallowedPuid)
     val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(inactiveDisallowedPuid, "NonActiveDisallowedReason", false)
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      mock[FFIDMetadataRepository],
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
 
     val status = service.checkStatus(inactiveDisallowedPuid, "standard").futureValue
     status shouldBe "NonActiveDisallowedReason"
@@ -62,8 +83,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val allowedPuidsRepositoryMock = mockAllowedPuidResponse(validJudgmentPuid, existInAllowedPuid = true)
     val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(validJudgmentPuid)
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      mock[FFIDMetadataRepository],
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
 
     val status = service.checkStatus(validJudgmentPuid, consignmentType = "judgment").futureValue
     status shouldBe successStatusValue
@@ -74,8 +102,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val allowedPuidsRepositoryMock = mockAllowedPuidResponse(nonJudgmentPuid)
     val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(nonJudgmentPuid, "InactiveDisallowedReason", false)
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      mock[FFIDMetadataRepository],
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
 
     val status = service.checkStatus(nonJudgmentPuid, "judgment").futureValue
     status shouldBe "NonJudgmentFormat"
@@ -86,8 +121,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val allowedPuidsRepositoryMock = mockAllowedPuidResponse(passwordProtectedPuid)
     val disallowedPuidsRepositoryMock = mockDisallowedPuidResponse(passwordProtectedPuid, "DisallowedReason")
 
-    val service = new FFIDMetadataService(mock[FFIDMetadataRepository], mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      mock[FFIDMetadataRepository],
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
 
     val status = service.checkStatus(passwordProtectedPuid, "judgment").futureValue
     status shouldBe "DisallowedReason"
@@ -128,8 +170,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository,
-      allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      metadataRepository,
+      matchesRepository,
+      fileRepository,
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
     service.addFFIDMetadata(getMetadataInput(fixedFileUuid)).futureValue
     fileIdCaptor.getValue shouldBe fixedFileUuid
     metadataCaptor.getValue should equal(mockMetadataRow)
@@ -169,8 +218,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(metadataRepository.addFFIDMetadata(metadataCaptor.capture(), fileStatusCaptor.capture())).thenReturn(mockMetadataResponse)
     when(matchesRepository.addFFIDMetadataMatches(matchCaptor.capture())).thenReturn(mockMetadataMatchesResponse)
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository,
-      allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      metadataRepository,
+      matchesRepository,
+      fileRepository,
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
     val result = service.addFFIDMetadata(getMetadataInput(fixedFileUuid)).futureValue
     result.fileId shouldEqual fixedFileUuid
     result.software shouldEqual "software"
@@ -205,8 +261,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       List()
     )
 
-    val service = new FFIDMetadataService(metadataRepository, matchesRepository, fileRepository,
-      allowedPuidsRepositoryMock, disallowedPuidsRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      metadataRepository,
+      matchesRepository,
+      fileRepository,
+      allowedPuidsRepositoryMock,
+      disallowedPuidsRepositoryMock,
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
 
     val thrownException = intercept[Exception] {
       service.addFFIDMetadata(inputWithNoMatches)
@@ -226,8 +289,15 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentIdCaptor.capture(), selectedFileIdsCaptor.capture())).thenReturn(Future(Seq()))
 
-    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], mock[AllowedPuidsRepository], mock[DisallowedPuidsRepository], FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      ffidMetadataRepositoryMock,
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      mock[AllowedPuidsRepository],
+      mock[DisallowedPuidsRepository],
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
     service.getFFIDMetadata(consignmentId)
 
     consignmentIdCaptor.getValue should equal(consignmentId)
@@ -265,13 +335,24 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val matchesRowTwoMatchOne = FfidmetadatamatchesRow(UUID.randomUUID(), Option("extensionRow2Match1"), "basisRow2Match1", Option("puidRow2Match1"))
 
     when(ffidMetadataRepositoryMock.getFFIDMetadata(any[UUID], any[Option[Set[UUID]]])).thenReturn(
-      Future(Seq(
-        (metadataRowOne, matchesRowOneMatchOne), (metadataRowOne, matchesRowOneMatchTwo), (metadataRowTwo, matchesRowTwoMatchOne)
-      ))
+      Future(
+        Seq(
+          (metadataRowOne, matchesRowOneMatchOne),
+          (metadataRowOne, matchesRowOneMatchTwo),
+          (metadataRowTwo, matchesRowTwoMatchOne)
+        )
+      )
     )
 
-    val service = new FFIDMetadataService(ffidMetadataRepositoryMock, mock[FFIDMetadataMatchesRepository],
-      mock[FileRepository], mock[AllowedPuidsRepository], mock[DisallowedPuidsRepository], FixedTimeSource, new FixedUUIDSource())
+    val service = new FFIDMetadataService(
+      ffidMetadataRepositoryMock,
+      mock[FFIDMetadataMatchesRepository],
+      mock[FileRepository],
+      mock[AllowedPuidsRepository],
+      mock[DisallowedPuidsRepository],
+      FixedTimeSource,
+      new FixedUUIDSource()
+    )
     val response = service.getFFIDMetadata(consignmentId).futureValue
 
     val ffidMetadataRowOne = response.find(_.fileId == fileIdOne).get
@@ -318,11 +399,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FfidmetadataRow(ffidMetadataId, fixedFileUuid, "software", "softwareVersion", dummyTimestamp, "binaryVersion", "containerVersion", "method")
   }
 
-  private def getMockConsignmentRow(
-                                     consignmentId: UUID,
-                                     userId: UUID,
-                                     consignmentType: String = "standard",
-                                     bodyId: UUID): ConsignmentRow = {
+  private def getMockConsignmentRow(consignmentId: UUID, userId: UUID, consignmentType: String = "standard", bodyId: UUID): ConsignmentRow = {
     ConsignmentRow(
       consignmentId,
       userid = userId,
@@ -330,20 +407,20 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       consignmentsequence = 1L,
       consignmentreference = "consignmentRef",
       consignmenttype = consignmentType,
-      bodyid = bodyId)
+      bodyid = bodyId
+    )
   }
 
   def mockAllowedPuidResponse(puid: String, existInAllowedPuid: Boolean = false): AllowedPuidsRepository = {
-    val allowedPuidsRepository : AllowedPuidsRepository = mock[AllowedPuidsRepository]
+    val allowedPuidsRepository: AllowedPuidsRepository = mock[AllowedPuidsRepository]
     val mockAllowedPuidsResponse = Future(existInAllowedPuid)
     when(allowedPuidsRepository.checkAllowedPuidExists(puid)).thenReturn(mockAllowedPuidsResponse)
     allowedPuidsRepository
   }
 
   def mockDisallowedPuidResponse(puid: String, disallowedReason: String = "Success", active: Boolean = true): DisallowedPuidsRepository = {
-    val disallowedPuidsRepository : DisallowedPuidsRepository = mock[DisallowedPuidsRepository]
-    val mockDisallowedPuidsResponse = DisallowedpuidsRow(
-      puid, s"description for $puid", Timestamp.from(FixedTimeSource.now), None, disallowedReason, active)
+    val disallowedPuidsRepository: DisallowedPuidsRepository = mock[DisallowedPuidsRepository]
+    val mockDisallowedPuidsResponse = DisallowedpuidsRow(puid, s"description for $puid", Timestamp.from(FixedTimeSource.now), None, disallowedReason, active)
     when(disallowedPuidsRepository.getDisallowedPuid(puid)).thenReturn(Future(Some(mockDisallowedPuidsResponse)))
     disallowedPuidsRepository
   }

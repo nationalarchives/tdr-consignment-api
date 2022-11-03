@@ -38,9 +38,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val bodyName: String = "Mock department"
   val bodyCode: String = "Mock department"
   val bodyDescription: Option[String] = Option("Body description")
-  //scalastyle:off magic.number
+  // scalastyle:off magic.number
   val consignmentSequence: Long = 400L
-  //scalastyle:on magic.number
+  // scalastyle:on magic.number
   val consignmentReference = "TDR-2020-VB"
   val mockConsignment: ConsignmentRow = ConsignmentRow(
     consignmentId,
@@ -60,7 +60,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
   val mockResponse: Future[ConsignmentRow] = Future.successful(mockConsignment)
-  val consignmentService = new ConsignmentService(consignmentRepoMock,
+  val consignmentService = new ConsignmentService(
+    consignmentRepoMock,
     consignmentStatusRepoMock,
     fileMetadataRepositoryMock,
     fileRepositoryMock,
@@ -68,7 +69,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     transferringBodyServiceMock,
     FixedTimeSource,
     fixedUuidSource,
-    ConfigFactory.load())
+    ConfigFactory.load()
+  )
 
   "addConsignment" should "create a consignment given correct arguments" in {
     val mockConsignmentSeq = 5L
@@ -207,7 +209,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
 
-    val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+    val service: ConsignmentService = new ConsignmentService(
+      consignmentRepoMock,
       consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
@@ -215,7 +218,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
-      ConfigFactory.load())
+      ConfigFactory.load()
+    )
 
     val fixedZonedDatetime = ZonedDateTime.ofInstant(FixedTimeSource.now, ZoneOffset.UTC)
     val consignmentId = UUID.fromString("d8383f9f-c277-49dc-b082-f6e266a39618")
@@ -236,7 +240,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val fixedUuidSource = new FixedUUIDSource()
     val consignmentStatusCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
 
-    val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+    val service: ConsignmentService = new ConsignmentService(
+      consignmentRepoMock,
       consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
@@ -244,7 +249,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
-      ConfigFactory.load())
+      ConfigFactory.load()
+    )
 
     val consignmentId = UUID.fromString("d8383f9f-c277-49dc-b082-f6e266a39618")
     val userId = UUID.randomUUID()
@@ -282,7 +288,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
 
-    val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+    val service: ConsignmentService = new ConsignmentService(
+      consignmentRepoMock,
       consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
@@ -290,7 +297,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
-      ConfigFactory.load())
+      ConfigFactory.load()
+    )
 
     val input = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     when(consignmentRepoMock.updateSeriesIdOfConsignment(input)).thenReturn(Future(1))
@@ -328,20 +336,20 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
-    response.lastCursor should be (Some("consignment-ref3"))
+    response.lastCursor should be(Some("consignment-ref3"))
     response.consignmentEdges should have size 2
     val edges = response.consignmentEdges
     val cursors: List[String] = edges.map(e => e.cursor).toList
-    cursors should contain ("consignment-ref2")
-    cursors should contain ("consignment-ref3")
+    cursors should contain("consignment-ref2")
+    cursors should contain("consignment-ref3")
 
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
-    consignmentRefs should contain (consignmentId2)
-    consignmentRefs should contain (consignmentId3)
+    consignmentRefs should contain(consignmentId2)
+    consignmentRefs should contain(consignmentId3)
 
     val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
-    exportLocations should contain (exportLocation2)
-    exportLocations should contain (exportLocation3)
+    exportLocations should contain(exportLocation2)
+    exportLocations should contain(exportLocation3)
   }
 
   "getConsignments" should "return all the consignments after the cursor to the maximum limit where the requested limit is greater than the maximum" in {
@@ -364,20 +372,20 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
-    response.lastCursor should be (Some("consignment-ref3"))
+    response.lastCursor should be(Some("consignment-ref3"))
     response.consignmentEdges should have size 2
     val edges = response.consignmentEdges
     val cursors: List[String] = edges.map(e => e.cursor).toList
-    cursors should contain ("consignment-ref2")
-    cursors should contain ("consignment-ref3")
+    cursors should contain("consignment-ref2")
+    cursors should contain("consignment-ref3")
 
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
-    consignmentRefs should contain (consignmentId2)
-    consignmentRefs should contain (consignmentId3)
+    consignmentRefs should contain(consignmentId2)
+    consignmentRefs should contain(consignmentId3)
 
     val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
-    exportLocations should contain (exportLocation2)
-    exportLocations should contain (exportLocation3)
+    exportLocations should contain(exportLocation2)
+    exportLocations should contain(exportLocation3)
   }
 
   "getConsignments" should "return all the consignments up to the limit where no cursor provided" in {
@@ -400,20 +408,20 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, None).futureValue
 
-    response.lastCursor should be (Some("consignment-ref2"))
+    response.lastCursor should be(Some("consignment-ref2"))
     response.consignmentEdges should have size 2
     val edges = response.consignmentEdges
     val cursors: List[String] = edges.map(e => e.cursor).toList
-    cursors should contain ("consignment-ref1")
-    cursors should contain ("consignment-ref2")
+    cursors should contain("consignment-ref1")
+    cursors should contain("consignment-ref2")
 
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
-    consignmentRefs should contain (consignmentId1)
-    consignmentRefs should contain (consignmentId2)
+    consignmentRefs should contain(consignmentId1)
+    consignmentRefs should contain(consignmentId2)
 
     val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
-    exportLocations should contain (exportLocation1)
-    exportLocations should contain (exportLocation2)
+    exportLocations should contain(exportLocation1)
+    exportLocations should contain(exportLocation2)
   }
 
   "getConsignments" should "return all the consignments up to the limit where empty cursor provided" in {
@@ -427,7 +435,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       (consignmentId2, "consignment-ref2", 3L, exportLocation2)
     )
 
-
     val consignmentRows: List[ConsignmentRow] = consignmentRowParams.map(p => createConsignmentRow(p._1, p._2, p._3, p._4))
 
     val limit = 2
@@ -437,20 +444,20 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("")).futureValue
 
-    response.lastCursor should be (Some("consignment-ref2"))
+    response.lastCursor should be(Some("consignment-ref2"))
     response.consignmentEdges should have size 2
     val edges = response.consignmentEdges
     val cursors: List[String] = edges.map(e => e.cursor).toList
-    cursors should contain ("consignment-ref1")
-    cursors should contain ("consignment-ref2")
+    cursors should contain("consignment-ref1")
+    cursors should contain("consignment-ref2")
 
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
-    consignmentRefs should contain (consignmentId1)
-    consignmentRefs should contain (consignmentId2)
+    consignmentRefs should contain(consignmentId1)
+    consignmentRefs should contain(consignmentId2)
 
     val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
-    exportLocations should contain (exportLocation1)
-    exportLocations should contain (exportLocation2)
+    exportLocations should contain(exportLocation1)
+    exportLocations should contain(exportLocation2)
   }
 
   "getConsignments" should "return filtered consignments when consignment filter is passed" in {
@@ -473,20 +480,20 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some).futureValue
 
-    response.lastCursor should be (Some("consignment-ref3"))
+    response.lastCursor should be(Some("consignment-ref3"))
     response.consignmentEdges should have size 2
     val edges = response.consignmentEdges
     val cursors: List[String] = edges.map(e => e.cursor).toList
-    cursors should contain ("consignment-ref2")
-    cursors should contain ("consignment-ref3")
+    cursors should contain("consignment-ref2")
+    cursors should contain("consignment-ref3")
 
     val consignmentRefs: List[UUID] = edges.map(e => e.node.consignmentid).toList
-    consignmentRefs should contain (consignmentId2)
-    consignmentRefs should contain (consignmentId3)
+    consignmentRefs should contain(consignmentId2)
+    consignmentRefs should contain(consignmentId3)
 
     val exportLocations: List[Option[String]] = edges.map(e => e.node.exportLocation).toList
-    exportLocations should contain (exportLocation2)
-    exportLocations should contain (exportLocation3)
+    exportLocations should contain(exportLocation2)
+    exportLocations should contain(exportLocation3)
   }
 
   "getConsignments" should "return empty list and no cursor if no consignments" in {
@@ -496,7 +503,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
-    response.lastCursor should be (None)
+    response.lastCursor should be(None)
     response.consignmentEdges should have size 0
   }
 
@@ -507,7 +514,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
-    response.lastCursor should be (None)
+    response.lastCursor should be(None)
     response.consignmentEdges should have size 0
   }
 
@@ -518,17 +525,16 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val parentFolder = "parentFolder"
 
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
-    when(consignmentRepoMock.addParentFolder
-    (consignmentIdCaptor.capture(), parentFolderCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext]))
+    when(consignmentRepoMock.addParentFolder(consignmentIdCaptor.capture(), parentFolderCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext]))
       .thenReturn(Future.successful(parentFolder))
     consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
 
     val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == "Upload").get
-    statusRow.consignmentid should be (consignmentId)
-    statusRow.statustype should be ("Upload")
-    statusRow.value should be ("InProgress")
-    consignmentIdCaptor.getValue should be (consignmentId)
-    parentFolderCaptor.getValue should be (parentFolder)
+    statusRow.consignmentid should be(consignmentId)
+    statusRow.statustype should be("Upload")
+    statusRow.value should be("InProgress")
+    consignmentIdCaptor.getValue should be(consignmentId)
+    parentFolderCaptor.getValue should be(parentFolder)
   }
 
   "startUpload" should "create a ClientChecks in progress status" in {
@@ -536,8 +542,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val parentFolder = "parentFolder"
 
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
-    when(consignmentRepoMock.addParentFolder
-    (any[UUID], any[String], consignmentStatusCaptor.capture())(any[ExecutionContext]))
+    when(consignmentRepoMock.addParentFolder(any[UUID], any[String], consignmentStatusCaptor.capture())(any[ExecutionContext]))
       .thenReturn(Future.successful(parentFolder))
     consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
 
@@ -566,7 +571,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val statusValue = "Complete"
     val createdTimestamp = Timestamp.from(now)
 
-    val service: ConsignmentService = new ConsignmentService(consignmentRepoMock,
+    val service: ConsignmentService = new ConsignmentService(
+      consignmentRepoMock,
       consignmentStatusRepoMock,
       fileMetadataRepositoryMock,
       fileRepositoryMock,
@@ -574,7 +580,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
-      ConfigFactory.load())
+      ConfigFactory.load()
+    )
 
     val mockResponse = Future.successful(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp))
     when(consignmentStatusRepoMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockResponse)

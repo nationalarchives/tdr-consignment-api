@@ -12,25 +12,14 @@ import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 
 object TransferAgreementFields {
-  case class TransferAgreementPrivateBeta(consignmentId: UUID,
-                                          allPublicRecords: Boolean,
-                                          allCrownCopyright: Boolean,
-                                          allEnglish: Boolean)
+  case class TransferAgreementPrivateBeta(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Boolean)
 
-  case class TransferAgreementCompliance(consignmentId: UUID,
-                                         appraisalSelectionSignedOff: Boolean,
-                                         initialOpenRecords: Boolean,
-                                         sensitivityReviewSignedOff: Boolean)
+  case class TransferAgreementCompliance(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Boolean, sensitivityReviewSignedOff: Boolean)
 
-  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID,
-                                                  allPublicRecords: Boolean,
-                                                  allCrownCopyright: Boolean,
-                                                  allEnglish: Boolean) extends UserOwnsConsignment
+  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Boolean) extends UserOwnsConsignment
 
-  case class AddTransferAgreementComplianceInput(consignmentId: UUID,
-                                                 appraisalSelectionSignedOff: Boolean,
-                                                 initialOpenRecords: Boolean,
-                                                 sensitivityReviewSignedOff: Boolean) extends UserOwnsConsignment
+  case class AddTransferAgreementComplianceInput(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Boolean, sensitivityReviewSignedOff: Boolean)
+      extends UserOwnsConsignment
 
   val TransferAgreementPrivateBetaType: ObjectType[Unit, TransferAgreementPrivateBeta] = deriveObjectType[Unit, TransferAgreementPrivateBeta]()
   val TransferAgreementComplianceType: ObjectType[Unit, TransferAgreementCompliance] = deriveObjectType[Unit, TransferAgreementCompliance]()
@@ -48,17 +37,19 @@ object TransferAgreementFields {
     Argument("addTransferAgreementComplianceInput", AddTransferAgreementComplianceInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field("addTransferAgreementPrivateBeta", TransferAgreementPrivateBetaType,
-      arguments=TransferAgreementPrivateBetaInputArg :: Nil,
-      resolve = ctx =>
-        ctx.ctx.transferAgreementService.addTransferAgreementPrivateBeta(ctx.arg(TransferAgreementPrivateBetaInputArg), ctx.ctx.accessToken.userId),
-      tags=List(ValidateUserHasAccessToConsignment(TransferAgreementPrivateBetaInputArg))
+    Field(
+      "addTransferAgreementPrivateBeta",
+      TransferAgreementPrivateBetaType,
+      arguments = TransferAgreementPrivateBetaInputArg :: Nil,
+      resolve = ctx => ctx.ctx.transferAgreementService.addTransferAgreementPrivateBeta(ctx.arg(TransferAgreementPrivateBetaInputArg), ctx.ctx.accessToken.userId),
+      tags = List(ValidateUserHasAccessToConsignment(TransferAgreementPrivateBetaInputArg))
     ),
-    Field("addTransferAgreementCompliance", TransferAgreementComplianceType,
-      arguments=TransferAgreementComplianceInputArg :: Nil,
-      resolve = ctx =>
-        ctx.ctx.transferAgreementService.addTransferAgreementCompliance(ctx.arg(TransferAgreementComplianceInputArg), ctx.ctx.accessToken.userId),
-      tags=List(ValidateUserHasAccessToConsignment(TransferAgreementComplianceInputArg))
+    Field(
+      "addTransferAgreementCompliance",
+      TransferAgreementComplianceType,
+      arguments = TransferAgreementComplianceInputArg :: Nil,
+      resolve = ctx => ctx.ctx.transferAgreementService.addTransferAgreementCompliance(ctx.arg(TransferAgreementComplianceInputArg), ctx.ctx.accessToken.userId),
+      tags = List(ValidateUserHasAccessToConsignment(TransferAgreementComplianceInputArg))
     )
   )
 }

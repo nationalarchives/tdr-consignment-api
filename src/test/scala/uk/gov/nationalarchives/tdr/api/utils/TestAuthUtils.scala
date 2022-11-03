@@ -18,58 +18,73 @@ object TestAuthUtils {
   private val testMock: KeycloakMock = createServer("test", testPort)
 
   def validUserToken(userId: UUID = userId, body: String = "Code", standardUser: String = "true"): OAuth2BearerToken =
-    OAuth2BearerToken(tdrMock.getAccessToken(
-      aTokenConfig()
-        .withResourceRole("tdr", "tdr_user")
-        .withClaim("body", body)
-        .withClaim("user_id", userId)
-        .withClaim("standard_user", standardUser)
-        .build)
+    OAuth2BearerToken(
+      tdrMock.getAccessToken(
+        aTokenConfig()
+          .withResourceRole("tdr", "tdr_user")
+          .withClaim("body", body)
+          .withClaim("user_id", userId)
+          .withClaim("standard_user", standardUser)
+          .build
+      )
     )
 
   def validJudgmentUserToken(userId: UUID = userId, body: String = "Code", judgmentUser: String = "true"): OAuth2BearerToken =
-    OAuth2BearerToken(tdrMock.getAccessToken(
+    OAuth2BearerToken(
+      tdrMock.getAccessToken(
+        aTokenConfig()
+          .withResourceRole("tdr", "tdr_user")
+          .withClaim("body", body)
+          .withClaim("user_id", userId)
+          .withClaim("judgment_user", judgmentUser)
+          .build
+      )
+    )
+
+  def validUserTokenNoBody: OAuth2BearerToken = OAuth2BearerToken(
+    tdrMock.getAccessToken(
       aTokenConfig()
         .withResourceRole("tdr", "tdr_user")
-        .withClaim("body", body)
         .withClaim("user_id", userId)
-        .withClaim("judgment_user", judgmentUser)
         .build
-    ))
-
-  def validUserTokenNoBody: OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr", "tdr_user")
-      .withClaim("user_id", userId)
-      .build)
+    )
   )
 
-  def validBackendChecksToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr-backend-checks", role)
-      .withClaim("user_id", backendChecksUser)
-      .build
-  ))
+  def validBackendChecksToken(role: String): OAuth2BearerToken = OAuth2BearerToken(
+    tdrMock.getAccessToken(
+      aTokenConfig()
+        .withResourceRole("tdr-backend-checks", role)
+        .withClaim("user_id", backendChecksUser)
+        .build
+    )
+  )
 
-  def invalidBackendChecksToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withClaim("user_id", backendChecksUser)
-      .withResourceRole("tdr-backend-checks", "some_role").build
-  ))
+  def invalidBackendChecksToken(): OAuth2BearerToken = OAuth2BearerToken(
+    tdrMock.getAccessToken(
+      aTokenConfig()
+        .withClaim("user_id", backendChecksUser)
+        .withResourceRole("tdr-backend-checks", "some_role")
+        .build
+    )
+  )
 
-  def validReportingToken(role: String): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withResourceRole("tdr-reporting", role)
-      .withClaim("user_id", reportingUser)
-      .build
-  ))
+  def validReportingToken(role: String): OAuth2BearerToken = OAuth2BearerToken(
+    tdrMock.getAccessToken(
+      aTokenConfig()
+        .withResourceRole("tdr-reporting", role)
+        .withClaim("user_id", reportingUser)
+        .build
+    )
+  )
 
-  def invalidReportingToken(): OAuth2BearerToken = OAuth2BearerToken(tdrMock.getAccessToken(
-    aTokenConfig()
-      .withClaim("user_id", reportingUser)
-      .withResourceRole("tdr-reporting", "some_role")
-      .build
-  ))
+  def invalidReportingToken(): OAuth2BearerToken = OAuth2BearerToken(
+    tdrMock.getAccessToken(
+      aTokenConfig()
+        .withClaim("user_id", reportingUser)
+        .withResourceRole("tdr-reporting", "some_role")
+        .build
+    )
+  )
 
   def invalidToken: OAuth2BearerToken = OAuth2BearerToken(testMock.getAccessToken(aTokenConfig().build))
 
