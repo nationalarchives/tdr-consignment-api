@@ -30,8 +30,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value",
-        Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
     )
     val fixedUUIDSource = new FixedUUIDSource()
     val metadataId: UUID = fixedUUIDSource.uuid
@@ -81,12 +80,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val timestamp = Timestamp.from(FixedTimeSource.now)
-    val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch",
-      timestamp, fixedUserId, SHA256ClientSideChecksum)
+    val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
     val mockClientChecksumResponse = Future(Seq(mockClientChecksumRow))
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value",
-        Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
     )
     val fixedUUIDSource = new FixedUUIDSource()
     fixedUUIDSource.reset
@@ -114,12 +111,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value",
-        Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
     )
     val timestamp = Timestamp.from(FixedTimeSource.now)
-    val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch",
-      timestamp, fixedUserId, SHA256ClientSideChecksum)
+    val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
     val mockClientChecksumResponse = Future(Seq(mockClientChecksumRow))
 
     val fixedUUIDSource = new FixedUUIDSource()
@@ -149,14 +144,12 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value",
-        Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
     )
     val propertyName = SHA256ServerSideChecksum
     val fixedUUIDSource = new FixedUUIDSource()
     val timestamp = Timestamp.from(FixedTimeSource.now)
-    val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch",
-      timestamp, fixedUserId, SHA256ClientSideChecksum)
+    val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
     val mockClientChecksumResponse = Future(Seq(mockClientChecksumRow))
 
     when(metadataRepositoryMock.addChecksumMetadata(any[FilemetadataRow], any[Seq[FilestatusRow]])).thenReturn(mockMetadataResponse)
@@ -186,12 +179,20 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val testSetUp = new UpdateBulkMetadataTestSetUp()
     testSetUp.stubRepoResponses()
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
     val duplicateInputFileIds = testSetUp.inputFileIds ++ testSetUp.inputFileIds
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, duplicateInputFileIds, testSetUp.metadataPropertiesWithNewValues), testSetUp.userId
-    ).futureValue
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(testSetUp.consignmentId, duplicateInputFileIds, testSetUp.metadataPropertiesWithNewValues),
+        testSetUp.userId
+      )
+      .futureValue
 
     val getDescendentsFileIdsArgument: Seq[UUID] = testSetUp.getDescendentsFileIdsCaptor.getValue
     getDescendentsFileIdsArgument should equal(testSetUp.inputFileIds)
@@ -206,11 +207,19 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRow)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues), testSetUp.userId
-    ).futureValue
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
+        testSetUp.userId
+      )
+      .futureValue
 
     val fileIdsArgument: Option[Set[UUID]] = testSetUp.getFileMetadataIds.getValue
     val fileIdsPassedIn: Set[UUID] = (testSetUp.inputFileIds.drop(1) ++ testSetUp.folderAndItsFiles.drop(1)).toSet
@@ -227,11 +236,19 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRow)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues), testSetUp.userId
-    ).futureValue
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
+        testSetUp.userId
+      )
+      .futureValue
 
     val consignmentIdArgument: UUID = testSetUp.consignmentIdCaptor.getValue
     val propertyNameArguments: Option[Set[String]] = testSetUp.getFileMetadataPropertyNames.getValue
@@ -260,77 +277,95 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
     )
 
-    testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0,  mockAddFileMetadataResponse, Seq(existingFileMetadataRows.length))
+    testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0, mockAddFileMetadataResponse, Seq(existingFileMetadataRows.length))
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
-      testSetUp.userId
-    ).futureValue
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
+        testSetUp.userId
+      )
+      .futureValue
 
     val addFileMetadataArgument = testSetUp.addFileMetadataCaptor.getValue
     val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
-    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap {
-      case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap { case (_, fileMetadataUpdate) =>
+      fileMetadataUpdate.metadataIds
     }
 
     addFileMetadataArgument.nonEmpty should equal(true)
     addFileMetadataArgument.map(_.fileid).sorted should equal(mockAddFileMetadataResponse.map(_.fileid).toVector.sorted)
-    addFileMetadataArgument.forall {
-      metadataRow => metadataRow.value.startsWith("newValue") && metadataRow.propertyname.last == metadataRow.value.last
+    addFileMetadataArgument.forall { metadataRow =>
+      metadataRow.value.startsWith("newValue") && metadataRow.propertyname.last == metadataRow.value.last
     } should equal(true)
 
     // metadata Ids that go into updateFileMetadata should be the same as the ones that were taken from the getFileMetadata
     updateFileMetadataIdsArgument.nonEmpty should equal(true)
-    updateFileMetadataArgument.forall {
-      case (propertyName, metadataRow) => metadataRow.value.startsWith("newValue") && propertyName.last == metadataRow.value.last
+    updateFileMetadataArgument.forall { case (propertyName, metadataRow) =>
+      metadataRow.value.startsWith("newValue") && propertyName.last == metadataRow.value.last
     } should equal(true)
     updateFileMetadataIdsArgument.sorted should equal(existingFileMetadataRows.map(_.metadataid).sorted)
   }
 
   "updateBulkFileMetadata" should "pass into 'updateFileMetadata', only the metadataIds where the " +
     "'value' (of its FileMetadata row) differs from the value the user is trying to set" in {
-    val testSetUp = new UpdateBulkMetadataTestSetUp()
+      val testSetUp = new UpdateBulkMetadataTestSetUp()
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
-    val existingFileMetadataRows =
-      Seq(
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-        FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
+      val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndItsFiles, testSetUp.userId)
+      val existingFileMetadataRows =
+        Seq(
+          FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+          FilemetadataRow(UUID.randomUUID(), testSetUp.fileInFolderId3, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+          FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+          FilemetadataRow(UUID.randomUUID(), testSetUp.fileId2, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
+        )
+
+      // leave out propertyName1 because it would not have been updated
+      val numberOfRowsWithPropertyName = Seq("propertyName2").map(propertyName => existingFileMetadataRows.count(_.propertyname == propertyName))
+
+      testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0, Seq(), numberOfRowsWithPropertyName)
+
+      val service = new FileMetadataService(
+        testSetUp.metadataRepositoryMock,
+        testSetUp.fileRepositoryMock,
+        testSetUp.customMetadataPropertiesRepositoryMock,
+        FixedTimeSource,
+        testSetUp.fixedUUIDSource
       )
+      val newMetadataPropertiesWithOneOldValue = Seq(
+        UpdateFileMetadataInput(
+          filePropertyIsMultiValue = false,
+          "propertyName1",
+          "value1"
+        ), // this value already exists on propertyName1, therefore, there is no need to update it
+        UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName2", "newValue2")
+      )
+      service
+        .updateBulkFileMetadata(
+          UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, newMetadataPropertiesWithOneOldValue),
+          testSetUp.userId
+        )
+        .futureValue
 
-    // leave out propertyName1 because it would not have been updated
-    val numberOfRowsWithPropertyName = Seq("propertyName2").map(propertyName => existingFileMetadataRows.count(_.propertyname == propertyName))
+      val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
 
-    testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0, Seq(), numberOfRowsWithPropertyName)
+      val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap { case (_, fileMetadataUpdate) =>
+        fileMetadataUpdate.metadataIds
+      }
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    val newMetadataPropertiesWithOneOldValue = Seq(
-      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName1", "value1"), // this value already exists on propertyName1, therefore, there is no need to update it
-      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName2", "newValue2")
-    )
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, newMetadataPropertiesWithOneOldValue),
-      testSetUp.userId
-    ).futureValue
+      val metadataIdsWithoutOldValue: Seq[UUID] = existingFileMetadataRows.collect {
+        case fileMetadataRow if fileMetadataRow.value != "value1" => fileMetadataRow.metadataid
+      }
 
-    val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
-
-    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap {
-      case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
+      updateFileMetadataIdsArgument.nonEmpty should equal(true)
+      updateFileMetadataIdsArgument.sorted should equal(metadataIdsWithoutOldValue.sorted)
     }
-
-    val metadataIdsWithoutOldValue: Seq[UUID] = existingFileMetadataRows.collect {
-      case fileMetadataRow if fileMetadataRow.value != "value1" => fileMetadataRow.metadataid
-    }
-
-    updateFileMetadataIdsArgument.nonEmpty should equal(true)
-    updateFileMetadataIdsArgument.sorted should equal(metadataIdsWithoutOldValue.sorted)
-  }
 
   "updateBulkFileMetadata" should "only add metadata rows, but not update any, if the non-multiValue property names passed in don't exist for the file ids passed in" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
@@ -352,12 +387,19 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, Seq(), 0, mockAddFileMetadataResponse)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
-      testSetUp.userId
-    ).futureValue
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
+        testSetUp.userId
+      )
+      .futureValue
 
     val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
 
@@ -366,8 +408,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     addFileMetadataArgument.nonEmpty should equal(true)
     addFileMetadataArgument.length should equal(10)
-    addFileMetadataArgument.forall {
-      metadataRow => metadataRow.value.startsWith("newValue") && metadataRow.propertyname.last == metadataRow.value.last
+    addFileMetadataArgument.forall { metadataRow =>
+      metadataRow.value.startsWith("newValue") && metadataRow.propertyname.last == metadataRow.value.last
     } should equal(true)
   }
 
@@ -390,17 +432,24 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0, Seq(), Seq(existingFileMetadataRows.length))
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
-      testSetUp.userId
-    ).futureValue
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.metadataPropertiesWithNewValues),
+        testSetUp.userId
+      )
+      .futureValue
 
     val updateFileMetadataArgument: Map[String, FileMetadataUpdate] = testSetUp.updateFileMetadataPropsArgCaptor.getValue
 
-    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap {
-      case (_, fileMetadataUpdate) => fileMetadataUpdate.metadataIds
+    val updateFileMetadataIdsArgument: Seq[UUID] = updateFileMetadataArgument.toSeq.flatMap { case (_, fileMetadataUpdate) =>
+      fileMetadataUpdate.metadataIds
     }
 
     verify(testSetUp.metadataRepositoryMock, times(1)).addFileMetadata(any[Seq[FilemetadataRow]])
@@ -408,8 +457,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     updateFileMetadataIdsArgument.nonEmpty should equal(true)
     updateFileMetadataIdsArgument.sorted should equal(existingFileMetadataRows.map(_.metadataid).sorted)
-    updateFileMetadataArgument.forall {
-      case (propertyName, metadataRow) => metadataRow.value.startsWith("newValue") && propertyName.last == metadataRow.value.last
+    updateFileMetadataArgument.forall { case (propertyName, metadataRow) =>
+      metadataRow.value.startsWith("newValue") && propertyName.last == metadataRow.value.last
     } should equal(true)
   }
 
@@ -438,13 +487,23 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0, Seq(), Seq())
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds,
-        testSetUp.metadataPropertiesWithNewValues :+ UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName3", "newValue1")),
-      testSetUp.userId
-    ).futureValue
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(
+          testSetUp.consignmentId,
+          testSetUp.inputFileIds,
+          testSetUp.metadataPropertiesWithNewValues :+ UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName3", "newValue1")
+        ),
+        testSetUp.userId
+      )
+      .futureValue
 
     testSetUp.addFileMetadataCaptor.getValue should equal(Seq())
     testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
@@ -476,16 +535,22 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "newValue3")
     )
 
-    testSetUp.stubRepoResponses(
-      existingFileRows, existingFileMetadataRows, existingFileMetadataRows.length, mockAddFileMetadataResponse)
+    testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, existingFileMetadataRows.length, mockAddFileMetadataResponse)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.fileRepositoryMock,
+      testSetUp.customMetadataPropertiesRepositoryMock,
+      FixedTimeSource,
+      testSetUp.fixedUUIDSource
+    )
 
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, newMetadataProperties),
-      testSetUp.userId
-    ).futureValue
+    service
+      .updateBulkFileMetadata(
+        UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, newMetadataProperties),
+        testSetUp.userId
+      )
+      .futureValue
 
     testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
     testSetUp.fileIdDeleteFileMetadataCaptor.getValue should equal(Set())
@@ -494,9 +559,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
 
     addFileMetadataArgument.length should equal(6)
-    val propertyAndValuesAdded = addFileMetadataArgument.map(addFileMetadataArgument =>
-      (addFileMetadataArgument.fileid, addFileMetadataArgument.propertyname, addFileMetadataArgument.value)
-    )
+    val propertyAndValuesAdded =
+      addFileMetadataArgument.map(addFileMetadataArgument => (addFileMetadataArgument.fileid, addFileMetadataArgument.propertyname, addFileMetadataArgument.value))
     propertyAndValuesAdded.sorted should equal(
       Seq(
         (fileInFolderId1, "propertyName2", "newValue1"),
@@ -511,105 +575,117 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
   "updateBulkFileMetadata" should "delete all existing metadata rows for a multiValue property, if ANY of the values differ from submitted ones, " +
     " and add then add the submitted ones" in {
-    val testSetUp = new UpdateBulkMetadataTestSetUp()
-    val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
-    val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
-    val fileId1 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
+      val testSetUp = new UpdateBulkMetadataTestSetUp()
+      val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
+      val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
+      val fileId1 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId, fileId1), Seq(folderId, fileInFolderId1), testSetUp.userId)
-    val existingFileMetadataRows = Seq(
-      FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-      FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
-    )
+      val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId, fileId1), Seq(folderId, fileInFolderId1), testSetUp.userId)
+      val existingFileMetadataRows = Seq(
+        FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+        FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
+      )
 
-    val mockAddFileMetadataResponse = Seq(
-      FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-      FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-      FilemetadataRow(UUID.randomUUID(), fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-      FilemetadataRow(UUID.randomUUID(), fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-      FilemetadataRow(UUID.randomUUID(), fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
-    )
-    val newMetadataProperties = Seq(
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName1", "newValue1"),
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName1", "newValue1"), // duplicates should be removed before repo call
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName1", "newValue2"),
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "newValue1"),
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "newValue2")
-    )
+      val mockAddFileMetadataResponse = Seq(
+        FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+        FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+        FilemetadataRow(UUID.randomUUID(), fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
+        FilemetadataRow(UUID.randomUUID(), fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+        FilemetadataRow(UUID.randomUUID(), fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
+      )
+      val newMetadataProperties = Seq(
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName1", "newValue1"),
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName1", "newValue1"), // duplicates should be removed before repo call
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName1", "newValue2"),
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "newValue1"),
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "newValue2")
+      )
 
-    testSetUp.stubRepoResponses(
-      existingFileRows, existingFileMetadataRows, existingFileMetadataRows.length, mockAddFileMetadataResponse)
+      testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, existingFileMetadataRows.length, mockAddFileMetadataResponse)
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
+      val service = new FileMetadataService(
+        testSetUp.metadataRepositoryMock,
+        testSetUp.fileRepositoryMock,
+        testSetUp.customMetadataPropertiesRepositoryMock,
+        FixedTimeSource,
+        testSetUp.fixedUUIDSource
+      )
 
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, newMetadataProperties),
-      testSetUp.userId
-    ).futureValue
+      service
+        .updateBulkFileMetadata(
+          UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, newMetadataProperties),
+          testSetUp.userId
+        )
+        .futureValue
 
-    testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
-    testSetUp.fileIdDeleteFileMetadataCaptor.getValue should equal(Set(fileInFolderId1))
-    testSetUp.propertyNameDeleteFileMetadataCaptor.getValue should equal(Set("propertyName1", "propertyName2"))
+      testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
+      testSetUp.fileIdDeleteFileMetadataCaptor.getValue should equal(Set(fileInFolderId1))
+      testSetUp.propertyNameDeleteFileMetadataCaptor.getValue should equal(Set("propertyName1", "propertyName2"))
 
-    val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
+      val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
 
-    addFileMetadataArgument.length should equal(8)
-    val propertyAndValuesAdded = addFileMetadataArgument.map(addFileMetadataArgument =>
-      (addFileMetadataArgument.fileid, addFileMetadataArgument.propertyname, addFileMetadataArgument.value)
-    )
-    propertyAndValuesAdded.sorted should equal(
-      Seq(
-      (fileInFolderId1, "propertyName1", "newValue1"),
-      (fileInFolderId1, "propertyName1", "newValue2"),
-      (fileInFolderId1, "propertyName2", "newValue1"),
-      (fileInFolderId1, "propertyName2", "newValue2"),
-      (fileId1, "propertyName1", "newValue1"),
-      (fileId1, "propertyName1", "newValue2"),
-      (fileId1, "propertyName2", "newValue1"),
-      (fileId1, "propertyName2", "newValue2")
-      ).sorted
-    )
-  }
+      addFileMetadataArgument.length should equal(8)
+      val propertyAndValuesAdded =
+        addFileMetadataArgument.map(addFileMetadataArgument => (addFileMetadataArgument.fileid, addFileMetadataArgument.propertyname, addFileMetadataArgument.value))
+      propertyAndValuesAdded.sorted should equal(
+        Seq(
+          (fileInFolderId1, "propertyName1", "newValue1"),
+          (fileInFolderId1, "propertyName1", "newValue2"),
+          (fileInFolderId1, "propertyName2", "newValue1"),
+          (fileInFolderId1, "propertyName2", "newValue2"),
+          (fileId1, "propertyName1", "newValue1"),
+          (fileId1, "propertyName1", "newValue2"),
+          (fileId1, "propertyName2", "newValue1"),
+          (fileId1, "propertyName2", "newValue2")
+        ).sorted
+      )
+    }
 
   "updateBulkFileMetadata" should "retain all existing metadata rows for a multiValue property, if NONE of the values differ from submitted ones, " +
     " and do nothing with the submitted ones (no add, update nor delete)" in {
-    val testSetUp = new UpdateBulkMetadataTestSetUp()
-    val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
-    val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
+      val testSetUp = new UpdateBulkMetadataTestSetUp()
+      val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
+      val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1), testSetUp.userId)
+      val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1), testSetUp.userId)
 
-    val existingFileMetadataRows = Seq(
-      FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-      FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-      FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "value3", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
-    )
+      val existingFileMetadataRows = Seq(
+        FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "value1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+        FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "value2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
+        FilemetadataRow(UUID.randomUUID(), fileInFolderId1, "value3", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
+      )
 
-    val metadataPropertiesWithNoNewValues = Seq(
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "value1"),
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "value2"),
-      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "value3")
-    )
+      val metadataPropertiesWithNoNewValues = Seq(
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "value1"),
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "value2"),
+        UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName2", "value3")
+      )
 
-    testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0, Seq(), Seq())
+      testSetUp.stubRepoResponses(existingFileRows, existingFileMetadataRows, 0, Seq(), Seq())
 
-    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, testSetUp.fileRepositoryMock, testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource, testSetUp.fixedUUIDSource)
-    service.updateBulkFileMetadata(
-      UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, metadataPropertiesWithNoNewValues),
-      testSetUp.userId
-    ).futureValue
+      val service = new FileMetadataService(
+        testSetUp.metadataRepositoryMock,
+        testSetUp.fileRepositoryMock,
+        testSetUp.customMetadataPropertiesRepositoryMock,
+        FixedTimeSource,
+        testSetUp.fixedUUIDSource
+      )
+      service
+        .updateBulkFileMetadata(
+          UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, metadataPropertiesWithNoNewValues),
+          testSetUp.userId
+        )
+        .futureValue
 
-    testSetUp.addFileMetadataCaptor.getValue should equal(Seq())
-    testSetUp.fileIdDeleteFileMetadataCaptor.getValue should equal(Set())
-    testSetUp.propertyNameDeleteFileMetadataCaptor.getValue should equal(Set())
-    testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
+      testSetUp.addFileMetadataCaptor.getValue should equal(Seq())
+      testSetUp.fileIdDeleteFileMetadataCaptor.getValue should equal(Set())
+      testSetUp.propertyNameDeleteFileMetadataCaptor.getValue should equal(Set())
+      testSetUp.updateFileMetadataPropsArgCaptor.getValue should equal(Map())
 
-    verify(testSetUp.metadataRepositoryMock, times(1)).deleteFileMetadata(any[Set[UUID]], any[Set[String]])
-    verify(testSetUp.metadataRepositoryMock, times(1)).addFileMetadata(any[Seq[FilemetadataRow]])
-    verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Map[String, FileMetadataUpdate]])
-  }
+      verify(testSetUp.metadataRepositoryMock, times(1)).deleteFileMetadata(any[Set[UUID]], any[Set[String]])
+      verify(testSetUp.metadataRepositoryMock, times(1)).addFileMetadata(any[Seq[FilemetadataRow]])
+      verify(testSetUp.metadataRepositoryMock, times(1)).updateFileMetadataProperties(any[Map[String, FileMetadataUpdate]])
+    }
 
   "getFileMetadata" should "call the repository with the correct arguments" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
@@ -620,9 +696,13 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentId = UUID.randomUUID()
     val mockResponse = Future(Seq())
 
-    when(fileMetadataRepositoryMock.getFileMetadata(
-      consignmentIdCaptor.capture(), selectedFileIdsCaptor.capture(), any[Option[Set[String]]]
-    )).thenReturn(mockResponse)
+    when(
+      fileMetadataRepositoryMock.getFileMetadata(
+        consignmentIdCaptor.capture(),
+        selectedFileIdsCaptor.capture(),
+        any[Option[Set[String]]]
+      )
+    ).thenReturn(mockResponse)
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
     service.getFileMetadata(consignmentId).futureValue
@@ -639,16 +719,17 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileIdTwo = UUID.randomUUID()
     val closureStartDate = Timestamp.from(Instant.parse("2020-01-01T09:00:00Z"))
     val foiExemptionAsserted = Timestamp.from(Instant.parse("2020-01-01T09:00:00Z"))
-    val mockResponse = Future(Seq(
-      FilemetadataRow(UUID.randomUUID(), fileIdOne, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), "ClientSideFileSize"),
-      FilemetadataRow(UUID.randomUUID(), fileIdTwo, "valueTwo", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), "FoiExemptionCode"),
-      FilemetadataRow(UUID.randomUUID(), fileIdTwo, closureStartDate.toString, Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosureStartDate),
-      FilemetadataRow(UUID.randomUUID(), fileIdTwo, foiExemptionAsserted.toString, Timestamp.from(FixedTimeSource.now),
-        UUID.randomUUID(), FoiExemptionAsserted),
-      FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), TitleClosed),
-      FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), DescriptionClosed),
-      FilemetadataRow(UUID.randomUUID(), fileIdTwo, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosurePeriod)
-    ))
+    val mockResponse = Future(
+      Seq(
+        FilemetadataRow(UUID.randomUUID(), fileIdOne, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), "ClientSideFileSize"),
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, "valueTwo", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), "FoiExemptionCode"),
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, closureStartDate.toString, Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosureStartDate),
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, foiExemptionAsserted.toString, Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), FoiExemptionAsserted),
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), TitleClosed),
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), DescriptionClosed),
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosurePeriod)
+      )
+    )
 
     when(fileMetadataRepositoryMock.getFileMetadata(any[UUID], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(mockResponse)
 
@@ -690,19 +771,23 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
 
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
-      FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
-      FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
-      FilepropertyvaluesRow("TitleClosed", "false", Some(true), Some(1), None, None),
-      FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "ClosurePeriod", None),
-      FilepropertydependenciesRow(3, "ClosureStartDate", None),
-      FilepropertydependenciesRow(3, "TitleClosed", None),
-      FilepropertydependenciesRow(2, "Property1", None)
-    ))
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
+        FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
+        FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
+        FilepropertyvaluesRow("TitleClosed", "false", Some(true), Some(1), None, None),
+        FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None),
+        FilepropertydependenciesRow(3, "ClosureStartDate", None),
+        FilepropertydependenciesRow(3, "TitleClosed", None),
+        FilepropertydependenciesRow(2, "Property1", None)
+      )
+    )
 
     val fileMetadataUpdateCaptor: ArgumentCaptor[Map[String, FileMetadataUpdate]] = ArgumentCaptor.forClass(classOf[Map[String, FileMetadataUpdate]])
     val expectedPropertyNamesToDelete = Set("ClosurePeriod", "ClosureStartDate")
@@ -746,17 +831,21 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
 
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
-      FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
-      FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
-      FilepropertyvaluesRow("TitleClosed", "false", Some(true), Some(1), None, None),
-      FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None)
-    ))
-    val mockPropertyDependenciesResponse = Future(Seq(
-      FilepropertydependenciesRow(3, "TitleClosed", None),
-      FilepropertydependenciesRow(2, "Property1", None)
-    ))
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
+        FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
+        FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
+        FilepropertyvaluesRow("TitleClosed", "false", Some(true), Some(1), None, None),
+        FilepropertyvaluesRow("Property1", "33", None, Some(1), None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "TitleClosed", None),
+        FilepropertydependenciesRow(2, "Property1", None)
+      )
+    )
 
     val fileMetadataUpdateCaptor: ArgumentCaptor[Map[String, FileMetadataUpdate]] = ArgumentCaptor.forClass(classOf[Map[String, FileMetadataUpdate]])
     val expectedPropertyNamesToDelete: Set[String] = Set()
@@ -792,10 +881,12 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
 
-    val mockPropertyValuesResponse = Future(Seq(
-      FilepropertyvaluesRow("ClosureType", "Open", None, Some(1), None, None),
-      FilepropertyvaluesRow("TitlePublic", "ABC", None, Some(1), None, None)
-    ))
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("ClosureType", "Open", None, Some(1), None, None),
+        FilepropertyvaluesRow("TitlePublic", "ABC", None, Some(1), None, None)
+      )
+    )
     when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
     when(fileRepositoryMock.getAllDescendants(ArgumentMatchers.eq(Seq(folderId)))).thenReturn(Future(existingFileRows))
 
@@ -818,23 +909,46 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val folderFileRow = Seq(
       FileRow(
-        fileUuids.head, consignmentId, fixedUserId, timestamp, Some(true), Some(directoryTypeIdentifier), Some("folderName")
+        fileUuids.head,
+        consignmentId,
+        fixedUserId,
+        timestamp,
+        Some(true),
+        Some(directoryTypeIdentifier),
+        Some("folderName")
       )
     )
 
-    val fileRowsForFilesInFolder: Seq[FileRow] = filesInFolderFixedFileUuids.drop(1).map(fileUuid =>
-      FileRow(
-        fileUuid, consignmentId, fixedUserId, timestamp, Some(true), Some(fileTypeIdentifier), Some("fileName"), Some(fileUuids.head)
+    val fileRowsForFilesInFolder: Seq[FileRow] = filesInFolderFixedFileUuids
+      .drop(1)
+      .map(fileUuid =>
+        FileRow(
+          fileUuid,
+          consignmentId,
+          fixedUserId,
+          timestamp,
+          Some(true),
+          Some(fileTypeIdentifier),
+          Some("fileName"),
+          Some(fileUuids.head)
+        )
       )
-    )
 
     val folderAndFileRows = folderFileRow ++ fileRowsForFilesInFolder
 
-    val fileRowsExceptFirst: Seq[FileRow] = fileUuids.drop(1).map(fileUuid =>
-      FileRow(
-        fileUuid, consignmentId, fixedUserId, timestamp, Some(true), Some(fileTypeIdentifier), Some("fileName")
+    val fileRowsExceptFirst: Seq[FileRow] = fileUuids
+      .drop(1)
+      .map(fileUuid =>
+        FileRow(
+          fileUuid,
+          consignmentId,
+          fixedUserId,
+          timestamp,
+          Some(true),
+          Some(fileTypeIdentifier),
+          Some("fileName")
+        )
       )
-    )
 
     folderAndFileRows ++ fileRowsExceptFirst
   }
@@ -874,14 +988,17 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val addFileMetadataCaptor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
     val updateFileMetadataPropsArgCaptor: ArgumentCaptor[Map[String, FileMetadataUpdate]] = ArgumentCaptor.forClass(classOf[Map[String, FileMetadataUpdate]])
 
-    def stubRepoResponses(getAllDescendantsResponse: Seq[FileRow] = Seq(), getFileMetadataResponse: Seq[FilemetadataRow] = Seq(),
-                          deleteFileMetadataResponse: Int = 0, addFileMetadataResponse: Seq[FilemetadataRow] = Seq(),
-                          updateFileMetadataPropertiesResponse: Seq[Int] = Seq()): Unit = {
+    def stubRepoResponses(
+        getAllDescendantsResponse: Seq[FileRow] = Seq(),
+        getFileMetadataResponse: Seq[FilemetadataRow] = Seq(),
+        deleteFileMetadataResponse: Int = 0,
+        addFileMetadataResponse: Seq[FilemetadataRow] = Seq(),
+        updateFileMetadataPropertiesResponse: Seq[Int] = Seq()
+    ): Unit = {
 
       when(fileRepositoryMock.getAllDescendants(getDescendentsFileIdsCaptor.capture())).thenReturn(Future(getAllDescendantsResponse))
-      when(metadataRepositoryMock.getFileMetadata(
-        consignmentIdCaptor.capture(), getFileMetadataIds.capture(), getFileMetadataPropertyNames.capture())
-      ).thenReturn(Future(getFileMetadataResponse))
+      when(metadataRepositoryMock.getFileMetadata(consignmentIdCaptor.capture(), getFileMetadataIds.capture(), getFileMetadataPropertyNames.capture()))
+        .thenReturn(Future(getFileMetadataResponse))
       when(metadataRepositoryMock.deleteFileMetadata(fileIdDeleteFileMetadataCaptor.capture(), propertyNameDeleteFileMetadataCaptor.capture()))
         .thenReturn(Future(deleteFileMetadataResponse))
       when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
