@@ -270,6 +270,7 @@ object FileMetadataService {
   val ClosureStartDate = "ClosureStartDate"
   val FoiExemptionAsserted = "FoiExemptionAsserted"
   val TitleClosed = "TitleClosed"
+  val DescriptionClosed = "DescriptionPublic"
   val ClosureType = "ClosureType"
 
   /** Save default values for these properties because TDR currently only supports records which are Open, in English, etc. Users agree to these conditions at a consignment level,
@@ -300,7 +301,8 @@ object FileMetadataService {
       propertyNameMap.get(ClosurePeriod).map(_.toInt),
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
-      propertyNameMap.get(TitleClosed).map(_.toBoolean)
+      propertyNameMap.get(TitleClosed).map(_.toBoolean),
+      propertyNameMap.get(DescriptionClosed).map(_.toBoolean)
     )
   }
 
@@ -334,7 +336,8 @@ object FileMetadataService {
       closurePeriod: Option[Int],
       closureStartDate: Option[LocalDateTime],
       foiExemptionAsserted: Option[LocalDateTime],
-      titleClosed: Option[Boolean]
+      titleClosed: Option[Boolean],
+      descriptionClosed: Option[Boolean]
   )
 
   case class PropertyAction(updateActionType: String, propertyName: String, propertyValue: String, fileId: UUID, metadataId: UUID)
