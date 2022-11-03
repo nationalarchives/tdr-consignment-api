@@ -607,32 +607,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     statusValueCaptor.getValue should equal(expectedStatusValue)
   }
 
-//  "updateConsignmentStatus" should s"throw an InputDataException for an Upload statusType with no statusValue, where no consignment files have an Upload status" in {
-//    val fixedUUIDSource = new FixedUUIDSource()
-//    val expectedConsignmentId = fixedUUIDSource.uuid
-//    val expectedStatusType = "Upload"
-//
-//    val fileStatusMockRepoResponse: Future[Seq[FilestatusRow]] = Future.successful(Seq())
-//
-//    when(
-//      fileStatusRepositoryMock.getFileStatus(
-//        expectedConsignmentId,
-//        Set(expectedStatusType)
-//      )
-//    ).thenReturn(fileStatusMockRepoResponse)
-//
-//    val updateConsignmentStatusInput = ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, None)
-//
-//    val thrownException = intercept[Exception] {
-//      consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
-//    }
-//
-//    thrownException.getMessage should equal(
-//      "The future returned an exception of type: uk.gov.nationalarchives.tdr.api.graphql.DataExceptions$InputDataException, " +
-//        s"with message: Error: There are no Upload statuses for any files from consignment $expectedConsignmentId."
-//    )
-//  }
-
   private def generateConsignmentStatusRow(consignmentId: UUID,
                                            statusType: String,
                                            statusValue: String,
