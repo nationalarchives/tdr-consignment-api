@@ -1,8 +1,6 @@
 import rocks.muki.graphql.quietError
 import sbt.Keys.libraryDependencies
 
-
-
 name := "tdr-consignment-api"
 version := "0.1.0-SNAPSHOT"
 
@@ -16,11 +14,13 @@ scalacOptions ++= Seq("-deprecation", "-feature")
 graphqlSchemas += GraphQLSchema(
   "consignmentApi",
   "API schema from the schema.graphql file in the repository root",
-  Def.task(
-    GraphQLSchemaLoader
-      .fromFile(baseDirectory.value.toPath.resolve("schema.graphql").toFile)
-      .loadSchema()
-  ).taskValue
+  Def
+    .task(
+      GraphQLSchemaLoader
+        .fromFile(baseDirectory.value.toPath.resolve("schema.graphql").toFile)
+        .loadSchema()
+    )
+    .taskValue
 )
 
 val graphqlValidateSchemaTask = Def.inputTask[Unit] {
@@ -48,13 +48,11 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "3.0.0",
-
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-xml"        % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream"          % "2.6.20",
-
+  "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-stream" % "2.6.20",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.14.1",
@@ -78,7 +76,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.12.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.93",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.94",
   "io.github.hakky54" % "logcaptor" % "2.7.10" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
@@ -95,9 +93,9 @@ dependencyOverrides ++= Seq(
 
 (assembly / assemblyMergeStrategy) := {
   case PathList("META-INF", x, xs @ _*) if x.toLowerCase == "services" => MergeStrategy.filterDistinctLines
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case PathList("reference.conf") => MergeStrategy.concat
-  case _ => MergeStrategy.first
+  case PathList("META-INF", xs @ _*)                                   => MergeStrategy.discard
+  case PathList("reference.conf")                                      => MergeStrategy.concat
+  case _                                                               => MergeStrategy.first
 }
 
 (assembly / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
