@@ -1,8 +1,6 @@
 import rocks.muki.graphql.quietError
 import sbt.Keys.libraryDependencies
 
-
-
 name := "tdr-consignment-api"
 version := "0.1.0-SNAPSHOT"
 
@@ -16,11 +14,13 @@ scalacOptions ++= Seq("-deprecation", "-feature")
 graphqlSchemas += GraphQLSchema(
   "consignmentApi",
   "API schema from the schema.graphql file in the repository root",
-  Def.task(
-    GraphQLSchemaLoader
-      .fromFile(baseDirectory.value.toPath.resolve("schema.graphql").toFile)
-      .loadSchema()
-  ).taskValue
+  Def
+    .task(
+      GraphQLSchemaLoader
+        .fromFile(baseDirectory.value.toPath.resolve("schema.graphql").toFile)
+        .loadSchema()
+    )
+    .taskValue
 )
 
 val graphqlValidateSchemaTask = Def.inputTask[Unit] {
@@ -48,13 +48,11 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "3.0.0",
-
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-xml"        % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream"          % "2.6.20",
-
+  "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-stream" % "2.6.20",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.14.1",
@@ -68,8 +66,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.4.4",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
-  "software.amazon.awssdk" % "rds" % "2.18.7",
-  "software.amazon.awssdk" % "sts" % "2.18.7",
+  "software.amazon.awssdk" % "rds" % "2.18.10",
+  "software.amazon.awssdk" % "sts" % "2.18.10",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.14" % Test,
@@ -95,9 +93,9 @@ dependencyOverrides ++= Seq(
 
 (assembly / assemblyMergeStrategy) := {
   case PathList("META-INF", x, xs @ _*) if x.toLowerCase == "services" => MergeStrategy.filterDistinctLines
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case PathList("reference.conf") => MergeStrategy.concat
-  case _ => MergeStrategy.first
+  case PathList("META-INF", xs @ _*)                                   => MergeStrategy.discard
+  case PathList("reference.conf")                                      => MergeStrategy.concat
+  case _                                                               => MergeStrategy.first
 }
 
 (assembly / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
