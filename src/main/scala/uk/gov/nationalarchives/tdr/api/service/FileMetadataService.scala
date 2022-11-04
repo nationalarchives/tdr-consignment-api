@@ -302,7 +302,10 @@ object FileMetadataService {
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(TitleClosed).map(_.toBoolean),
-      propertyNameMap.get(DescriptionClosed).map(_.toBoolean)
+      (propertyNameMap.get(DescriptionClosed) match {
+        case Some(value) => Some(value)
+        case None => propertyNameMap.get("DescriptionClosed")
+      }).map(_.toBoolean)
     )
   }
 

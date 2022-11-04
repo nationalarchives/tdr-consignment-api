@@ -256,7 +256,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (fileRow, Some(fileMetadataRow(fileId, "ClosureStartDate", closureStartDate.toString))),
       (fileRow, Some(fileMetadataRow(fileId, "FoiExemptionAsserted", foiExemptionAsserted.toString))),
       (fileRow, Some(fileMetadataRow(fileId, "TitleClosed", "true"))),
-      (fileRow, Some(fileMetadataRow(fileId, "DescriptionPublic", "true")))
+      (fileRow, Some(fileMetadataRow(fileId, DescriptionClosed, "true")))
     )
 
     val mockAvMetadataResponse = Future(
