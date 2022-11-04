@@ -304,7 +304,7 @@ object FileMetadataService {
       propertyNameMap.get(TitleClosed).map(_.toBoolean),
       (propertyNameMap.get(DescriptionClosed) match {
         case Some(value) => Some(value)
-        case None => propertyNameMap.get("DescriptionClosed")
+        case None        => propertyNameMap.get("DescriptionClosed")
       }).map(_.toBoolean)
     )
   }
