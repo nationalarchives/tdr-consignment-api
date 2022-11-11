@@ -8,7 +8,6 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Failed, Mismatch, Success}
@@ -179,16 +178,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val testSetUp = new UpdateBulkMetadataTestSetUp()
     val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndChildrenIds, testSetUp.userId)
 
-    val mockAddFileMetadataResponse = Seq(
-      FilemetadataRow(UUID.randomUUID(), testSetUp.childFileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-      FilemetadataRow(UUID.randomUUID(), testSetUp.fileId1, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-      FilemetadataRow(UUID.randomUUID(), testSetUp.childFileId2, "newValue1", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName1"),
-      FilemetadataRow(UUID.randomUUID(), testSetUp.childFileId2, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2"),
-      FilemetadataRow(UUID.randomUUID(), testSetUp.childFileId3, "newValue2", Timestamp.from(FixedTimeSource.now), testSetUp.userId, "propertyName2")
-    )
-
-    testSetUp.stubRepoResponses(existingFileRows, 0, mockAddFileMetadataResponse)
+    testSetUp.stubRepoResponses(existingFileRows)
 
     val service = new FileMetadataService(
       testSetUp.metadataRepositoryMock,
@@ -205,23 +195,26 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
     val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
 
-    val expectedDeleteFileIds: Set[UUID] = (testSetUp.inputFileIds.drop(1) ++ testSetUp.folderAndChildrenIds.drop(1)).toSet
-    val expectedDeletedPropertiesArg: Set[String] = Set("propertyName1", "propertyName2")
+    val expectedUpdatedIds: Set[UUID] = Set(
+      testSetUp.fileId1, testSetUp.childFileId1, testSetUp.childFileId2)
+    val expectedUpdatedPropertyNames: Set[String] = Set("propertyName1", "propertyName2")
+    val expectedUpdatedPropertyValues: Set[String] = Set("newValue1", "newValue2")
 
-    deleteFileMetadataIdsArg should equal(expectedDeleteFileIds)
-    deleteFileMetadataPropertiesArg should equal(expectedDeletedPropertiesArg)
-    addFileMetadataArgument.size should equal(10)
+    deleteFileMetadataIdsArg should equal(expectedUpdatedIds)
+    deleteFileMetadataPropertiesArg should equal(expectedUpdatedPropertyNames)
+
+    addFileMetadataArgument.size should equal(6)
     val addedFileIds = addFileMetadataArgument.map(_.fileid).toSet
     addedFileIds.size should equal(deleteFileMetadataIdsArg.size)
-    addedFileIds.subsetOf(expectedDeleteFileIds) should equal(true)
+    addedFileIds.subsetOf(expectedUpdatedIds) should equal(true)
 
     val addedPropertyValues = addFileMetadataArgument.map(_.value).toSet
     addedPropertyValues.size should equal(2)
-    addedPropertyValues.subsetOf(Set("newValue1", "newValue2")) should equal(true)
+    addedPropertyValues.subsetOf(expectedUpdatedPropertyValues) should equal(true)
 
     val addedProperties = addFileMetadataArgument.map(_.propertyname).toSet
     addedProperties.size should equal(2)
-    addedProperties.subsetOf(Set("propertyName1", "propertyName2")) should equal(true)
+    addedProperties.subsetOf(expectedUpdatedPropertyNames) should equal(true)
   }
 
   "updateBulkFileMetadata" should "pass the correct number of ids into getAllDescendants if there are duplicates present in input argument" in {
@@ -241,30 +234,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val getDescendentsFileIdsArgument: Seq[UUID] = testSetUp.getAllDescendentIdsCaptor.getValue
     getDescendentsFileIdsArgument should equal(testSetUp.inputFileIds)
-  }
-
-  "updateBulkFileMetadata" should "only delete children file Ids if a folder Id was passed as in as input" in {
-    val testSetUp = new UpdateBulkMetadataTestSetUp()
-
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndChildrenIds, testSetUp.userId)
-
-    testSetUp.stubRepoResponses(existingFileRows)
-
-    val service = new FileMetadataService(
-      testSetUp.metadataRepositoryMock,
-      testSetUp.fileRepositoryMock,
-      testSetUp.customMetadataPropertiesRepositoryMock,
-      FixedTimeSource,
-      testSetUp.fixedUUIDSource
-    )
-    val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.newMetadataProperties)
-
-    service.updateBulkFileMetadata(input, testSetUp.userId).futureValue
-
-    val fileIdsArgument: Set[UUID] = testSetUp.deleteFileMetadataIdsArgCaptor.getValue
-    val fileIdsPassedIn: Set[UUID] = (testSetUp.inputFileIds.drop(1) ++ testSetUp.folderAndChildrenIds.drop(1)).toSet
-
-    fileIdsArgument should equal(fileIdsPassedIn)
   }
 
   "getFileMetadata" should "call the repository with the correct arguments" in {
@@ -538,18 +507,14 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentId: UUID = UUID.randomUUID()
     val folderId: UUID = UUID.fromString("f89da9b9-4c3b-4a17-a903-61c36b822c17")
     val fileId1: UUID = UUID.randomUUID()
-    val fileId2: UUID = UUID.randomUUID()
     val childFileId1: UUID = UUID.randomUUID()
     val childFileId2: UUID = UUID.randomUUID()
-    val childFileId3: UUID = UUID.randomUUID()
 
-    val folderAndChildrenIds: Seq[UUID] = Seq(folderId, childFileId1, childFileId2, childFileId3)
-    val inputFileIds: Seq[UUID] = Seq(folderId, fileId1, fileId2)
-
-    val propertyName1: String = "propertyName1"
+    val folderAndChildrenIds: Seq[UUID] = Seq(folderId, childFileId1, childFileId2)
+    val inputFileIds: Seq[UUID] = Seq(folderId, fileId1)
 
     val newMetadataProperties: Seq[UpdateFileMetadataInput] = Seq(
-      UpdateFileMetadataInput(filePropertyIsMultiValue = false, propertyName1, "newValue1"),
+      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName1", "newValue1"),
       UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName2", "newValue2")
     )
 
