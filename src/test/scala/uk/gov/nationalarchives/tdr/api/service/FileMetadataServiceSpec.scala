@@ -195,8 +195,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
     val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
 
-    val expectedUpdatedIds: Set[UUID] = Set(
-      testSetUp.fileId1, testSetUp.childFileId1, testSetUp.childFileId2)
+    val expectedUpdatedIds: Set[UUID] = Set(testSetUp.fileId1, testSetUp.childFileId1, testSetUp.childFileId2)
     val expectedUpdatedPropertyNames: Set[String] = Set("propertyName1", "propertyName2")
     val expectedUpdatedPropertyValues: Set[String] = Set("newValue1", "newValue2")
 
