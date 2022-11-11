@@ -165,49 +165,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     checkNoValidationResultExists(defaultFileId, utils)
   }
 
-  "updateBulkFileMetadata" should "return all fileIds and the properties that were passed in " +
-    "where corresponding existing metadata rows have different values" in withContainers { case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
-
-      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
-      utils.addFileProperty("property1")
-      utils.addFileProperty("property2")
-      utils.addFileProperty("property3")
-
-      // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
-      utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-      // fileOneId will NOT be passed into updateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
-      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
-      utils.createFile(fileTwoId, consignmentId)
-      utils.createFile(fileThreeId, consignmentId)
-      utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "property3", "value3")
-      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property1", "oldvalue1")
-
-      val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData = expectedUpdateBulkFileMetadataMutationResponse("data_all")
-      val expectedResponseFileIds = expectedResponse.data.get.updateBulkFileMetadata.fileIds
-      val expectedResponseFileMetadata = expectedResponse.data.get.updateBulkFileMetadata.metadataProperties
-      val response: GraphqlUpdateBulkFileMetadataMutationData = runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
-      val responseFileIds: Seq[UUID] = response.data.get.updateBulkFileMetadata.fileIds
-      val responseFileMetadataProperties = response.data.get.updateBulkFileMetadata.metadataProperties
-      val parentIdOfFileOneId: UUID = UUID.fromString(getParentId(fileOneId, utils))
-
-      responseFileIds.contains(folderOneId) should equal(false)
-      responseFileIds.contains(fileOneId) should equal(true)
-      parentIdOfFileOneId should equal(folderOneId)
-
-      val correctPropertiesWerePassedIn: Boolean = responseFileMetadataProperties.forall(fileMetadata => expectedResponseFileMetadata.contains(fileMetadata))
-
-      correctPropertiesWerePassedIn should equal(true)
-      responseFileIds.sorted should equal(expectedResponseFileIds.sorted)
-      responseFileIds.foreach(fileId => responseFileMetadataProperties.foreach(fileMetadata => checkFileMetadataExists(fileId, utils, fileMetadata.filePropertyName)))
-    }
-
-  "updateBulkFileMetadata" should "return only fileIds and the properties that were added " +
-    "where existing corresponding metadata rows have different values" in withContainers { case container: PostgreSQLContainer =>
+  "updateBulkFileMetadata" should "update all file metadata based on input" in withContainers { case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
 
@@ -230,11 +188,11 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "property3", "value3")
 
       val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData =
-        expectedUpdateBulkFileMetadataMutationResponse("data_values_already_exist_on_file")
+        expectedUpdateBulkFileMetadataMutationResponse("data_all")
       val expectedResponseFileIds = expectedResponse.data.get.updateBulkFileMetadata.fileIds
       val expectedResponseFileMetadata = expectedResponse.data.get.updateBulkFileMetadata.metadataProperties
       val response: GraphqlUpdateBulkFileMetadataMutationData =
-        runUpdateBulkFileMetadataTestMutation("mutation_valuesalreadyexistonfile", validUserToken())
+        runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
       val responseFileIds: Seq[UUID] = response.data.get.updateBulkFileMetadata.fileIds
       val responseFileMetadataProperties = response.data.get.updateBulkFileMetadata.metadataProperties
       val parentIdOfFileOneId: UUID = UUID.fromString(getParentId(fileOneId, utils))
