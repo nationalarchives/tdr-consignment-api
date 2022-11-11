@@ -58,8 +58,13 @@ class FileService(
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
         val fileId = treeNode.id
         val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
-        val commonMetadataRows = row(fileId, path, ClientSideOriginalFilepath) ::
-          filePropertyValue.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
+
+        val commonMetadataRows = List(
+          row(fileId, path, ClientSideOriginalFilepath),
+          row(fileId, treeNode.treeNodeType, FileType),
+          row(fileId, treeNode.name, Filename)
+        ) ++ filePropertyValue.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
+
         if (treeNode.treeNodeType.isFileType) {
           val input = addFileAndMetadataInput.metadataInput
             .filter(m => {

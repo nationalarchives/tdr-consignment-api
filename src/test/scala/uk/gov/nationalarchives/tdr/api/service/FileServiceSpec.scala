@@ -628,7 +628,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         row.consignmentid should equal(consignmentId)
         row.userid should equal(userId)
       })
-      val expectedSize = 36
+      val expectedSize = 46
       metadataRows.size should equal(expectedSize)
       staticMetadataProperties.foreach(prop => {
         metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(5)
@@ -637,8 +637,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       clientSideProperties.foreach(prop => {
         val count = metadataRows.count(r => r.propertyname == prop)
         prop match {
-          case ClientSideOriginalFilepath => count should equal(5) // Directories have this set
-          case _                          => count should equal(2)
+          case ClientSideOriginalFilepath | Filename | FileType => count should equal(5) // Directories have this set
+          case _                                                => count should equal(2)
         }
       })
       val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList
@@ -725,7 +725,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         row.consignmentid should equal(consignmentId)
         row.userid should equal(userId)
       })
-      val expectedSize = 24
+      val expectedSize = 30
       metadataRows.size should equal(expectedSize)
       staticMetadataProperties.foreach(prop => {
         metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(3)
@@ -734,8 +734,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       clientSideProperties.foreach(prop => {
         val count = metadataRows.count(r => r.propertyname == prop)
         prop match {
-          case ClientSideOriginalFilepath => count should equal(3) // Directories have this set
-          case _                          => count should equal(2)
+          case ClientSideOriginalFilepath | Filename | FileType => count should equal(3) // Directories have this set
+          case _                                                => count should equal(2)
         }
       })
       val rows = fileStatusRowCaptor.getAllValues.asScala.flatten.toList

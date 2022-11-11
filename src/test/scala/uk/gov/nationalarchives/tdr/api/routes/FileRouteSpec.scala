@@ -6,7 +6,7 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.clientSideProperties
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{FileType, Filename, clientSideProperties}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecks, InProgress}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -58,7 +58,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
-    val expectedCount = (staticMetadataProperties.size * distinctDirectoryCount) +
+    val expectedCount = ((Filename :: FileType :: staticMetadataProperties).size * distinctDirectoryCount) +
       (staticMetadataProperties.size * fileCount) +
       (clientSideProperties.size * fileCount) +
       distinctDirectoryCount
