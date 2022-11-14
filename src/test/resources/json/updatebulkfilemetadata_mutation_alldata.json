@@ -19,11 +19,6 @@
           "filePropertyIsMultiValue": false,
           "filePropertyName": "property2",
           "value": "value2"
-        },
-        {
-          "filePropertyIsMultiValue": true,
-          "filePropertyName": "property3",
-          "value": "value4"
         }
       ]
     }
