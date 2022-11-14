@@ -196,23 +196,23 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
 
     val expectedUpdatedIds: Set[UUID] = Set(testSetUp.fileId1, testSetUp.childFileId1, testSetUp.childFileId2)
-    val expectedUpdatedPropertyNames: Set[String] = Set("propertyName1", "propertyName2")
-    val expectedUpdatedPropertyValues: Set[String] = Set("newValue1", "newValue2")
+    val expectedUpdatedPropertyNames: Set[String] = Set("propertyName1", "propertyName2", "propertyName3")
+    val expectedUpdatedPropertyValues: Set[String] = Set("newValue1", "newValue2", "newValue3", "newValue4")
 
     deleteFileMetadataIdsArg should equal(expectedUpdatedIds)
     deleteFileMetadataPropertiesArg should equal(expectedUpdatedPropertyNames)
 
-    addFileMetadataArgument.size should equal(6)
+    addFileMetadataArgument.size should equal(12)
     val addedFileIds = addFileMetadataArgument.map(_.fileid).toSet
     addedFileIds.size should equal(deleteFileMetadataIdsArg.size)
     addedFileIds.subsetOf(expectedUpdatedIds) should equal(true)
 
     val addedPropertyValues = addFileMetadataArgument.map(_.value).toSet
-    addedPropertyValues.size should equal(2)
+    addedPropertyValues.size should equal(4)
     addedPropertyValues.subsetOf(expectedUpdatedPropertyValues) should equal(true)
 
     val addedProperties = addFileMetadataArgument.map(_.propertyname).toSet
-    addedProperties.size should equal(2)
+    addedProperties.size should equal(3)
     addedProperties.subsetOf(expectedUpdatedPropertyNames) should equal(true)
   }
 
@@ -514,7 +514,9 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val newMetadataProperties: Seq[UpdateFileMetadataInput] = Seq(
       UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName1", "newValue1"),
-      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName2", "newValue2")
+      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "propertyName2", "newValue2"),
+      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName3", "newValue3"),
+      UpdateFileMetadataInput(filePropertyIsMultiValue = true, "propertyName3", "newValue4")
     )
 
     val fixedUUIDSource = new FixedUUIDSource()
