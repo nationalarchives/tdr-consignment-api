@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -21,6 +21,7 @@ class FileMetadataService(
     fileMetadataRepository: FileMetadataRepository,
     fileRepository: FileRepository,
     customMetadataPropertiesRepository: CustomMetadataPropertiesRepository,
+    fileStatusRepository: FileStatusRepository,
     timeSource: TimeSource,
     uuidSource: UUIDSource
 )(implicit val ec: ExecutionContext) {
@@ -76,6 +77,28 @@ class FileMetadataService(
       fileIdsUpdated: Set[UUID] = updatePropertyActions.map(_.fileId)
       metadataProperties = input.metadataProperties.map(metadataProperty => FileMetadata(metadataProperty.filePropertyName, metadataProperty.value))
     } yield BulkFileMetadata((fileIdsAdded ++ fileIdsUpdated).toSeq, metadataProperties)
+  }
+
+  def validateMetadata(fileIds: Set[UUID], propertyNames: Set[String], consignmentId: UUID): Future[Unit] = {
+
+    for {
+      metadataValues: Seq[FilepropertyvaluesRow] <- customMetadataPropertiesRepository.getCustomMetadataValues
+      dependencies: Seq[FilepropertydependenciesRow] <- customMetadataPropertiesRepository.getCustomMetadataDependencies
+      existingFileProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(propertyNames))
+    } yield {
+      fileStatusRepository.deleteFileStatus(fileIds, Set("ClosureMetadata"))
+      val allDependencies: Set[String] = propertyNames.flatMap(pn => {
+          val groupId = metadataValues.find(p => p.propertyname == pn).map(_.dependencies).getOrElse(throw new Exception())
+          dependencies.filter(dependency => groupId.contains(dependency.groupid)).map(_.propertyname)
+        })
+      val fileStatuses: List[FilestatusRow] = fileIds.map(id => {
+          val existingProperties = existingFileProperties.filter(_.fileid == id).map(_.propertyname).toSet
+          val statusValue = if (allDependencies.subsetOf(existingProperties)) "Complete" else "InComplete"
+          FilestatusRow(UUID.randomUUID(), id, "ClosureMetadata", statusValue, Timestamp.from(timeSource.now))
+        }).toList
+
+       fileStatusRepository.addFileStatuses(fileStatuses)
+    }
   }
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
