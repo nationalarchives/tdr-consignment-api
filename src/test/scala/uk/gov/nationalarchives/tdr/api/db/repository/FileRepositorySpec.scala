@@ -439,11 +439,17 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
   val redactedFilesTable: TableFor2[String, String] = Table(
     ("redactedFileName", "originalFileName"),
     ("Redacted_R.txt", "Redacted.txt"),
+    ("Redacted_R.txt", "Redacted.doc"),
     ("Redacted_R200.txt", "Redacted.txt"),
+    ("Redacted_R200.txt", "Redacted.xlsx"),
     ("Anothe_RRedacted_R1.txt", "Anothe_RRedacted.txt"),
+    ("Anothe_RRedacted_R1.txt", "Anothe_RRedacted.docx"),
     ("Anothe_R13_R14edacted_R15.txt", "Anothe_R13_R14edacted.txt"),
+    ("Anothe_R13_R14edacted_R15.txt", "Anothe_R13_R14edacted.ppt"),
     ("Anothe_Redacted_R.txt", "Anothe_Redacted.txt"),
-    ("MyDocument.updated_R.doc", "MyDocument.updated.doc")
+    ("Anothe_Redacted_R.txt", "Anothe_Redacted.pdf"),
+    ("MyDocument.updated_R.doc", "MyDocument.updated.doc"),
+    ("MyDocument.updated_R.doc", "MyDocument.updated.pdf")
   )
 
   forAll(redactedFilesTable) { (redactedFileName, originalFileName) =>
@@ -567,7 +573,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
     utils.createFile(fileId, consignmentId, fileName = "OriginalFile.txt", parentId = Option(parentId))
     utils.createFile(redactedFileIdOne, consignmentId, fileName = "OriginalFile_R1.txt", parentId = Option(parentId))
-    utils.createFile(redactedFileIdTwo, consignmentId, fileName = "OriginalFile_R2.txt", parentId = Option(parentId))
+    utils.createFile(redactedFileIdTwo, consignmentId, fileName = "OriginalFile_R2.doc", parentId = Option(parentId))
     val fileRepository = new FileRepository(db)
 
     val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
