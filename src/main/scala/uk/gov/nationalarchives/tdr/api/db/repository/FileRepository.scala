@@ -181,10 +181,12 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
 
 case class FileMetadataFilters(closureMetadata: Boolean = false, descriptiveMetadata: Boolean = false)
 
-case class FileFilters(fileTypeIdentifier: Option[String] = None,
-                       selectedFileIds: Option[List[UUID]] = None,
-                       parentId: Option[UUID] = None,
-                       metadataFilters: Option[FileMetadataFilters] = None)
+case class FileFilters(
+    fileTypeIdentifier: Option[String] = None,
+    selectedFileIds: Option[List[UUID]] = None,
+    parentId: Option[UUID] = None,
+    metadataFilters: Option[FileMetadataFilters] = None
+)
 
 object FileRepository {
   case class RedactedFiles(redactedFileId: UUID, redactedFileName: String, fileId: Option[UUID], fileName: Option[String])

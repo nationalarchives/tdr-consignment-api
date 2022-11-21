@@ -9,7 +9,17 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor3}
-import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilepropertyRow, FilepropertyvaluesRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{
+  AvmetadataRow,
+  ConsignmentRow,
+  FfidmetadataRow,
+  FfidmetadatamatchesRow,
+  FileRow,
+  FilemetadataRow,
+  FilepropertyRow,
+  FilepropertyvaluesRow,
+  FilestatusRow
+}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.RedactedFiles
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
@@ -226,7 +236,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   )
 
   forAll(filterMetadata) { metadataType =>
-    "getFileMetadata" should s"return filtered fileMetadata when fileMetadatFilter $metadataType is/are passed"in {
+    "getFileMetadata" should s"return filtered fileMetadata when fileMetadatFilter $metadataType is/are passed" in {
       val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
       val fileRepositoryMock = mock[FileRepository]
       val antivirusRepositoryMock = mock[AntivirusMetadataRepository]
@@ -253,22 +263,55 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       )
       val mockPropertyResponse = Future(
         Seq(
-          FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("MandatoryClosure")),
-          FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("OptionalClosure")),
-          FilepropertyRow("Property1", None, Some("PropertyName1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("MandatoryMetadata")),
+          FilepropertyRow(
+            "ClosureType",
+            None,
+            Some("Closure Type"),
+            Timestamp.from(Instant.now()),
+            None,
+            Some("Defined"),
+            Some("text"),
+            Some(true),
+            None,
+            Some("MandatoryClosure")
+          ),
+          FilepropertyRow(
+            "ClosurePeriod",
+            None,
+            Some("Closure Period"),
+            Timestamp.from(Instant.now()),
+            None,
+            Some("Defined"),
+            Some("text"),
+            Some(true),
+            None,
+            Some("OptionalClosure")
+          ),
+          FilepropertyRow(
+            "Property1",
+            None,
+            Some("PropertyName1"),
+            Timestamp.from(Instant.now()),
+            None,
+            Some("Defined"),
+            Some("text"),
+            Some(true),
+            None,
+            Some("MandatoryMetadata")
+          ),
           FilepropertyRow("Property2", None, Some("PropertyName2"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("OptionalMetadata"))
         )
       )
       val metadataFilters = Map(
-        "closureMetadata"-> FileMetadataFilters(closureMetadata = true).some,
-        "descriptiveMetadata"-> FileMetadataFilters(descriptiveMetadata = true).some,
-        "closureMetadata & descriptiveMetadata"-> FileMetadataFilters(closureMetadata = true, descriptiveMetadata = true).some
+        "closureMetadata" -> FileMetadataFilters(closureMetadata = true).some,
+        "descriptiveMetadata" -> FileMetadataFilters(descriptiveMetadata = true).some,
+        "closureMetadata & descriptiveMetadata" -> FileMetadataFilters(closureMetadata = true, descriptiveMetadata = true).some
       )
 
       val expectedMetadata = Map(
-        "closureMetadata"-> (List("ClosureType", "ClosurePeriod"), List("Open", "12")),
-        "descriptiveMetadata"-> (List("Property1", "Property2"), List("Property1Value", "Property2Value")),
-        "closureMetadata & descriptiveMetadata"-> (List("ClosureType", "ClosurePeriod", "Property1", "Property2"), List("Open", "12", "Property1Value", "Property2Value"))
+        "closureMetadata" -> (List("ClosureType", "ClosurePeriod"), List("Open", "12")),
+        "descriptiveMetadata" -> (List("Property1", "Property2"), List("Property1Value", "Property2Value")),
+        "closureMetadata & descriptiveMetadata" -> (List("ClosureType", "ClosurePeriod", "Property1", "Property2"), List("Open", "12", "Property1Value", "Property2Value"))
       )
 
       val fileFilters = FileFilters(metadataFilters = metadataFilters(metadataType))

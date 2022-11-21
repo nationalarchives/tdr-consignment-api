@@ -248,11 +248,11 @@ object FileService {
     }
 
     def toFiles(
-                 avMetadata: List[AntivirusMetadata],
-                 ffidMetadata: List[FFIDMetadata],
-                 ffidStatus: Map[UUID, String],
-                 redactedFiles: Seq[RedactedFiles],
-                 metadataPropertyNames: Seq[String]
+        avMetadata: List[AntivirusMetadata],
+        ffidMetadata: List[FFIDMetadata],
+        ffidStatus: Map[UUID, String],
+        redactedFiles: Seq[RedactedFiles],
+        metadataPropertyNames: Seq[String]
     ): Seq[File] = {
       response
         .groupBy(_._1)
