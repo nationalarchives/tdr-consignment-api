@@ -49,6 +49,22 @@ class FileMetadataService(
     def dependencyFields: Seq[CustomMetadataField] = {
       fields.flatMap(_.values.flatMap(_.dependencies))
     }
+
+    def closurePropertyNames: Set[String] = {
+      fields.closureFields.toPropertyNames
+    }
+
+    def descriptivePropertyNames: Set[String] = {
+      fields.descriptiveFields.toPropertyNames
+    }
+
+    def closureDependencies: Set[String] = {
+      fields.closureFields.dependencyFields.toPropertyNames
+    }
+
+    def descriptiveDependencies: Set[String] = {
+      fields.descriptiveFields.dependencyFields.toPropertyNames
+    }
   }
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
@@ -87,50 +103,46 @@ class FileMetadataService(
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
       // call the validate metadata after the metadata has been added to DB
-      // _ <- validateMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
+      _ <- validateMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
 
-  def generateMetadataStatuses(fileIds: Set[UUID], existingFileProperties: Seq[FilemetadataRow], dependencies: Set[String], statusType: String): List[FilestatusRow] = {
+  private def generateMetadataStatuses(fileIds: Set[UUID], existingProperties: Seq[FilemetadataRow], dependencies: Set[String], statusType: String): List[FilestatusRow] = {
+
     fileIds
       .map(id => {
-        val existingProperties = existingFileProperties.filter(_.fileid == id).map(_.propertyname).toSet
-        // if all the dependencies exist as an existing property for the file then metadata is complete
-        val statusValue = if (dependencies.subsetOf(existingProperties)) "Complete" else "InComplete"
+        val existingPropertyNames = existingProperties.filter(_.fileid == id).map(_.propertyname).toSet
+        // if all the dependencies are existing properties for the file then metadata is complete
+        val statusValue = if (dependencies.subsetOf(existingPropertyNames)) Completed else Incomplete
         FilestatusRow(UUID.randomUUID(), id, statusType, statusValue, Timestamp.from(timeSource.now))
       })
       .toList
   }
 
   def validateMetadata(fileIds: Set[UUID], consignmentId: UUID, updatedProperties: Set[String]): Future[List[FilestatusRow]] = {
+
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
-      existingFileProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(customMetadataFields.toPropertyNames))
+      existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(customMetadataFields.toPropertyNames))
     } yield {
-      val closureProperties: Set[String] = customMetadataFields.closureFields.toPropertyNames
-      val descriptiveProperties: Set[String] = customMetadataFields.descriptiveFields.toPropertyNames
+      val containsClosureUpdate: Boolean = updatedProperties.exists(customMetadataFields.closurePropertyNames.contains)
+      val containsDescriptiveUpdate: Boolean = updatedProperties.exists(customMetadataFields.descriptivePropertyNames.contains)
 
-      val containsClosure: Boolean = updatedProperties.exists(closureProperties.contains)
-      val containsDescriptive: Boolean = updatedProperties.exists(descriptiveProperties.contains)
-
-      val allClosureDependencies = customMetadataFields.closureFields.dependencyFields.toPropertyNames
-      val allDescriptiveDependencies = customMetadataFields.descriptiveFields.dependencyFields.toPropertyNames
-
-      val closureFileStatuses: List[FilestatusRow] = if (containsClosure) {
-        generateMetadataStatuses(fileIds, existingFileProperties, allClosureDependencies, "ClosureMetadata")
+      val closureFileStatuses: List[FilestatusRow] = if (containsClosureUpdate) {
+        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.closureDependencies, ClosureMetadata)
       } else List()
 
-      val descriptiveFileStatuses: List[FilestatusRow] = if (containsDescriptive) {
-        generateMetadataStatuses(fileIds, existingFileProperties, allDescriptiveDependencies, "DescriptiveMetadata")
+      val descriptiveFileStatuses: List[FilestatusRow] = if (containsDescriptiveUpdate) {
+        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.descriptiveDependencies, DescriptiveMetadata)
       } else List()
 
       val allFileStatuses: List[FilestatusRow] = closureFileStatuses ++ descriptiveFileStatuses
 
       // Only reset statuses if closure or descriptive properties are being updated
       if (allFileStatuses.nonEmpty) {
-        val deletions: Set[String] = allFileStatuses.map(_.statustype).toSet
-        fileStatusRepository.deleteFileStatus(fileIds, deletions)
+        val statusesToDelete: Set[String] = allFileStatuses.map(_.statustype).toSet
+        fileStatusRepository.deleteFileStatus(fileIds, statusesToDelete)
         fileStatusRepository.addFileStatuses(allFileStatuses)
       }
 
