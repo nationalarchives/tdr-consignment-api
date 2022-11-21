@@ -30,6 +30,7 @@ class FileService(
     fileRepository: FileRepository,
     fileStatusRepository: FileStatusRepository,
     consignmentRepository: ConsignmentRepository,
+    customMetadataPropertiesRepository: CustomMetadataPropertiesRepository,
     consignmentStatusService: ConsignmentStatusService,
     ffidMetadataService: FFIDMetadataService,
     avMetadataService: AntivirusMetadataService,
@@ -162,7 +163,8 @@ class FileService(
       avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
       ffidStatus <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatus(consignmentId) else Future(Map.empty[UUID, String])
       redactedFilePairs <- if (queriedFileFields.originalFilePath) fileRepository.getRedactedFilePairs(consignmentId, fileAndMetadataList.map(_._1.fileid)) else Future(Seq())
-    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs).toList
+      propertyNames <- getPropertyNames(filters.metadataFilters)
+    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs, propertyNames).toList
   }
 
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]): Future[TDRConnection[File]] = {
@@ -206,6 +208,20 @@ class FileService(
       rows <- fileRepository.getConsignmentParentFolder(consignmentId)
     } yield rows.map(_.fileid).headOption
   }
+
+  private def getPropertyNames(fileMetadataFilters: Option[FileMetadataFilters]): Future[Seq[String]] = {
+    val closureType = List("MandatoryClosure", "OptionalClosure")
+    val descriptiveType = List("MandatoryMetadata", "OptionalMetadata")
+    fileMetadataFilters match {
+      case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata)) =>
+        for {
+          metadataProperties <- customMetadataPropertiesRepository.getCustomMetadataProperty
+          closureMetadataPropertyNames = if (closureMetadata) metadataProperties.filter(_.propertygroup.exists(closureType.contains(_))).map(_.name) else Nil
+          descriptiveMetadataPropertyNames = if (descriptiveMetadata) metadataProperties.filter(_.propertygroup.exists(descriptiveType.contains(_))).map(_.name) else Nil
+        } yield closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames
+      case None => Future(Nil)
+    }
+  }
 }
 
 object FileService {
@@ -222,7 +238,22 @@ object FileService {
       getFileMetadataValues(rows)
     }
 
-    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String], redactedFiles: Seq[RedactedFiles]): Seq[File] = {
+    private def filterMetadataRows(rows: Seq[FilemetadataRow], metadataPropertyName: Seq[String]): Seq[FileMetadataValue] = {
+
+      if (metadataPropertyName.isEmpty) {
+        rows.map(row => FileMetadataValue(row.propertyname, row.value))
+      } else {
+        rows.collect { case row if metadataPropertyName.contains(row.propertyname) => FileMetadataValue(row.propertyname, row.value) }
+      }
+    }
+
+    def toFiles(
+                 avMetadata: List[AntivirusMetadata],
+                 ffidMetadata: List[FFIDMetadata],
+                 ffidStatus: Map[UUID, String],
+                 redactedFiles: Seq[RedactedFiles],
+                 metadataPropertyNames: Seq[String]
+    ): Seq[File] = {
       response
         .groupBy(_._1)
         .map { case (fr, fmr) =>
@@ -243,7 +274,7 @@ object FileService {
             ffidMetadata.find(_.fileId == fileId),
             avMetadata.find(_.fileId == fileId),
             redactedOriginalFilePath,
-            metadataRows.map(row => FileMetadataValue(row.propertyname, row.value)).toList
+            filterMetadataRows(metadataRows, metadataPropertyNames).toList
           )
         }
         .toSeq
