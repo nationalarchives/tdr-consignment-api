@@ -1016,16 +1016,20 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val customField3: CustomMetadataField =
       CustomMetadataField("Description", Some("Description"), None, Defined, Some("OptionalMetadata"), Text, true, false, None, List(), 2147483647, false, None)
 
-
     Seq(customField1, customField2, customField3)
   }
 
   private def mockMetadataRows(fileIds: Set[UUID], userId: UUID, propertyNames: Set[String]): Seq[FilemetadataRow] = {
 
-    fileIds.map(id => {
-      propertyNames.map(name => {
-        FilemetadataRow(UUID.randomUUID(), id, s"${name}_value", Timestamp.from(FixedTimeSource.now), userId, name)
-      }).toSeq
-    }).toSeq.flatten
+    fileIds
+      .map(id => {
+        propertyNames
+          .map(name => {
+            FilemetadataRow(UUID.randomUUID(), id, s"${name}_value", Timestamp.from(FixedTimeSource.now), userId, name)
+          })
+          .toSeq
+      })
+      .toSeq
+      .flatten
   }
 }

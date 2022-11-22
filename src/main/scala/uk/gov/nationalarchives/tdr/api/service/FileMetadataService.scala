@@ -101,10 +101,11 @@ class FileMetadataService(
   }
 
   private def generateMetadataStatuses(
-                                        fileIds: Set[UUID],
-                                        existingProperties: Seq[FilemetadataRow],
-                                        customFields: Seq[CustomMetadataField],
-                                        statusType: String): List[FilestatusRow] = {
+      fileIds: Set[UUID],
+      existingProperties: Seq[FilemetadataRow],
+      customFields: Seq[CustomMetadataField],
+      statusType: String
+  ): List[FilestatusRow] = {
 
     val dependencies: Set[String] = customFields.dependencyFields.toPropertyNames
     val allCustomProperties: Set[String] = customFields.toPropertyNames
@@ -114,7 +115,8 @@ class FileMetadataService(
         val existingPropertyNames = existingProperties.filter(_.fileid == id).map(_.propertyname).toSet
         // if no custom metadata properties exists for file then metadata is not entered
         // if all the dependencies are existing properties for the file then metadata is complete
-        val statusValue = if (!existingPropertyNames.exists(allCustomProperties.contains)) NotEntered else if (dependencies.subsetOf(existingPropertyNames)) Completed else Incomplete
+        val statusValue =
+          if (!existingPropertyNames.exists(allCustomProperties.contains)) NotEntered else if (dependencies.subsetOf(existingPropertyNames)) Completed else Incomplete
         FilestatusRow(UUID.randomUUID(), id, statusType, statusValue, Timestamp.from(timeSource.now))
       })
       .toList
