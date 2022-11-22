@@ -57,14 +57,6 @@ class FileMetadataService(
     def descriptivePropertyNames: Set[String] = {
       fields.descriptiveFields.toPropertyNames
     }
-
-    def closureDependencies: Set[String] = {
-      fields.closureFields.dependencyFields.toPropertyNames
-    }
-
-    def descriptiveDependencies: Set[String] = {
-      fields.descriptiveFields.dependencyFields.toPropertyNames
-    }
   }
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
@@ -108,33 +100,42 @@ class FileMetadataService(
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
 
-  private def generateMetadataStatuses(fileIds: Set[UUID], existingProperties: Seq[FilemetadataRow], dependencies: Set[String], statusType: String): List[FilestatusRow] = {
+  private def generateMetadataStatuses(
+                                        fileIds: Set[UUID],
+                                        existingProperties: Seq[FilemetadataRow],
+                                        customFields: Seq[CustomMetadataField],
+                                        statusType: String): List[FilestatusRow] = {
+
+    val dependencies: Set[String] = customFields.dependencyFields.toPropertyNames
+    val allCustomProperties: Set[String] = customFields.toPropertyNames
 
     fileIds
       .map(id => {
         val existingPropertyNames = existingProperties.filter(_.fileid == id).map(_.propertyname).toSet
+        // if no custom metadata properties exists for file then metadata is not entered
         // if all the dependencies are existing properties for the file then metadata is complete
-        val statusValue = if (dependencies.subsetOf(existingPropertyNames)) Completed else Incomplete
+        val statusValue = if (!existingPropertyNames.exists(allCustomProperties.contains)) NotEntered else if (dependencies.subsetOf(existingPropertyNames)) Completed else Incomplete
         FilestatusRow(UUID.randomUUID(), id, statusType, statusValue, Timestamp.from(timeSource.now))
       })
       .toList
   }
 
   def validateMetadata(fileIds: Set[UUID], consignmentId: UUID, updatedProperties: Set[String]): Future[List[FilestatusRow]] = {
-
+    Future(List())
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(customMetadataFields.toPropertyNames))
     } yield {
+
       val containsClosureUpdate: Boolean = updatedProperties.exists(customMetadataFields.closurePropertyNames.contains)
       val containsDescriptiveUpdate: Boolean = updatedProperties.exists(customMetadataFields.descriptivePropertyNames.contains)
 
       val closureFileStatuses: List[FilestatusRow] = if (containsClosureUpdate) {
-        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.closureDependencies, ClosureMetadata)
+        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.closureFields, ClosureMetadata)
       } else List()
 
       val descriptiveFileStatuses: List[FilestatusRow] = if (containsDescriptiveUpdate) {
-        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.descriptiveDependencies, DescriptiveMetadata)
+        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.descriptiveFields, DescriptiveMetadata)
       } else List()
 
       val allFileStatuses: List[FilestatusRow] = closureFileStatuses ++ descriptiveFileStatuses
@@ -166,6 +167,7 @@ class FileMetadataService(
       (fileMetadataToUpdate, fileMetadataToDelete) = getFileMetadataToUpdateAndDelete(metadataValues, propertyNames, userId)
       _ <- fileMetadataRepository.updateFileMetadataProperties(fileIds, fileMetadataToUpdate)
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, fileMetadataToDelete.toSet)
+      _ <- validateMetadata(fileIds, existingFileRows.map(_.consignmentid).head, (fileMetadataToDelete ++ fileMetadataToUpdate.keys).toSet)
     } yield DeleteFileMetadata(fileIds.toSeq, propertyNames)
   }
 
