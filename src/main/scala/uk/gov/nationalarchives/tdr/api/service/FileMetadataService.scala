@@ -38,6 +38,10 @@ class FileMetadataService(
   implicit class CustomMetadataFieldsHelper(fields: Seq[CustomMetadataField]) {
     def toPropertyNames: Set[String] = fields.map(_.name).toSet
 
+    def toGroups: Map[String, Seq[CustomMetadataField]] = {
+      Map(ClosureMetadata -> fields.closureFields, DescriptiveMetadata -> descriptiveFields)
+    }
+
     def closureFields: Seq[CustomMetadataField] = {
       fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
     }
@@ -48,14 +52,6 @@ class FileMetadataService(
 
     def dependencyFields: Seq[CustomMetadataField] = {
       fields.flatMap(_.values.flatMap(_.dependencies))
-    }
-
-    def closurePropertyNames: Set[String] = {
-      fields.closureFields.toPropertyNames
-    }
-
-    def descriptivePropertyNames: Set[String] = {
-      fields.descriptiveFields.toPropertyNames
     }
   }
 
@@ -95,54 +91,33 @@ class FileMetadataService(
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
       // call the validate metadata after the metadata has been added to DB
-      _ <- validateMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
+      _ <- updateMetadataStatuses(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
 
-  private def generateMetadataStatuses(
-      fileIds: Set[UUID],
-      existingProperties: Seq[FilemetadataRow],
-      customFields: Seq[CustomMetadataField],
-      statusType: String
-  ): List[FilestatusRow] = {
-
-    val dependencies: Set[String] = customFields.dependencyFields.toPropertyNames
-    val allCustomProperties: Set[String] = customFields.toPropertyNames
-
-    fileIds
-      .map(id => {
-        val existingPropertyNames = existingProperties.filter(_.fileid == id).map(_.propertyname).toSet
-        // if no custom metadata properties exists for file then metadata is not entered
-        // if all the dependencies are existing properties for the file then metadata is complete
-        val statusValue =
-          if (!existingPropertyNames.exists(allCustomProperties.contains)) NotEntered else if (dependencies.subsetOf(existingPropertyNames)) Completed else Incomplete
-        FilestatusRow(UUID.randomUUID(), id, statusType, statusValue, Timestamp.from(timeSource.now))
-      })
-      .toList
-  }
-
-  def validateMetadata(fileIds: Set[UUID], consignmentId: UUID, updatedProperties: Set[String]): Future[List[FilestatusRow]] = {
-    Future(List())
+  def updateMetadataStatuses(fileIds: Set[UUID], consignmentId: UUID, updatedProperties: Set[String]): Future[List[FilestatusRow]] = {
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(customMetadataFields.toPropertyNames))
     } yield {
+      val allFileStatuses: List[FilestatusRow] = customMetadataFields.toGroups
+        .flatMap(group => {
+          val groupFields: Seq[CustomMetadataField] = group._2
+          if (updatedProperties.exists(groupFields.toPropertyNames.contains)) {
+            val groupProperties: Set[String] = groupFields.toPropertyNames
+            val groupDependencies: Set[String] = groupFields.dependencyFields.toPropertyNames
+            fileIds.map(id => {
+              val existingPropertyNames = existingMetadataProperties.filter(_.fileid == id).map(_.propertyname).toSet
+              val statusType = group._1
+              val statusValue =
+                if (!existingPropertyNames.exists(groupProperties.contains)) NotEntered else if (groupDependencies.subsetOf(existingPropertyNames)) Completed else Incomplete
+              FilestatusRow(UUID.randomUUID(), id, statusType, statusValue, Timestamp.from(timeSource.now))
+            })
+          } else List()
+        })
+        .toList
 
-      val containsClosureUpdate: Boolean = updatedProperties.exists(customMetadataFields.closurePropertyNames.contains)
-      val containsDescriptiveUpdate: Boolean = updatedProperties.exists(customMetadataFields.descriptivePropertyNames.contains)
-
-      val closureFileStatuses: List[FilestatusRow] = if (containsClosureUpdate) {
-        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.closureFields, ClosureMetadata)
-      } else List()
-
-      val descriptiveFileStatuses: List[FilestatusRow] = if (containsDescriptiveUpdate) {
-        generateMetadataStatuses(fileIds, existingMetadataProperties, customMetadataFields.descriptiveFields, DescriptiveMetadata)
-      } else List()
-
-      val allFileStatuses: List[FilestatusRow] = closureFileStatuses ++ descriptiveFileStatuses
-
-      // Only reset statuses if closure or descriptive properties are being updated
       if (allFileStatuses.nonEmpty) {
         val statusesToDelete: Set[String] = allFileStatuses.map(_.statustype).toSet
         fileStatusRepository.deleteFileStatus(fileIds, statusesToDelete)
@@ -154,7 +129,7 @@ class FileMetadataService(
   }
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
-    // Need to update the closure metadata status to "NotEntered" here aswell
+
     for {
       existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
@@ -169,7 +144,7 @@ class FileMetadataService(
       (fileMetadataToUpdate, fileMetadataToDelete) = getFileMetadataToUpdateAndDelete(metadataValues, propertyNames, userId)
       _ <- fileMetadataRepository.updateFileMetadataProperties(fileIds, fileMetadataToUpdate)
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, fileMetadataToDelete.toSet)
-      _ <- validateMetadata(fileIds, existingFileRows.map(_.consignmentid).head, (fileMetadataToDelete ++ fileMetadataToUpdate.keys).toSet)
+      _ <- updateMetadataStatuses(fileIds, existingFileRows.map(_.consignmentid).head, (fileMetadataToDelete ++ fileMetadataToUpdate.keys).toSet)
     } yield DeleteFileMetadata(fileIds.toSeq, propertyNames)
   }
 

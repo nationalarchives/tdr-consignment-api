@@ -309,7 +309,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     getDescendentsFileIdsArgument should equal(testSetUp.inputFileIds)
   }
 
-  "validateMetadata" should "reset a status type with dependencies to correct value for multiple files where one file is missing a dependant property" in {
+  "updateMetadataStatuses" should "reset a status type with dependencies to correct value for multiple files where one file is missing a dependant property" in {
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
@@ -341,7 +341,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1, fileId2), consignmentId, Set("ClosureType")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1, fileId2), consignmentId, Set("ClosureType")).futureValue
     verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("ClosureMetadata"))
     verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
@@ -355,7 +355,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     file2Status.value should equal("Incomplete")
   }
 
-  "validateMetadata" should "reset 'ClosureMetadata' and 'DescriptiveMetadata' status types to 'Complete' where both are updated and all dependant properties are present" in {
+  "updateMetadataStatuses" should "reset 'ClosureMetadata' and 'DescriptiveMetadata' status types to 'Complete' where both are updated and all dependant properties are present" in {
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
@@ -383,7 +383,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1), consignmentId, Set("ClosurePeriod", "Description")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1), consignmentId, Set("ClosurePeriod", "Description")).futureValue
     verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("DescriptiveMetadata", "ClosureMetadata"))
     verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
@@ -397,7 +397,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     descriptiveStatus.value should equal("Completed")
   }
 
-  "validateMetadata" should "reset status type to 'Incomplete' for file where dependant properties are missing" in {
+  "updateMetadataStatuses" should "reset status type to 'Incomplete' for file where dependant properties are missing" in {
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
@@ -425,7 +425,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1), consignmentId, Set("ClosureType")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1), consignmentId, Set("ClosureType")).futureValue
     verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("ClosureMetadata"))
     verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
@@ -435,7 +435,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     closureStatus.value should equal("Incomplete")
   }
 
-  "validateMetadata" should "reset 'ClosureMetadata' status type to 'NotEntered' for file where no closure metadata properties are present" in {
+  "updateMetadataStatuses" should "reset 'ClosureMetadata' status type to 'NotEntered' for file where no closure metadata properties are present" in {
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
 
@@ -461,7 +461,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1), consignmentId, Set("ClosureType")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1), consignmentId, Set("ClosureType")).futureValue
     verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("ClosureMetadata"))
     verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
@@ -471,7 +471,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     closureStatus.value should equal("NotEntered")
   }
 
-  "validateMetadata" should "reset 'DescriptiveMetadata' status type to 'NotEntered' for file where no descriptive metadata properties are present" in {
+  "updateMetadataStatuses" should "reset 'DescriptiveMetadata' status type to 'NotEntered' for file where no descriptive metadata properties are present" in {
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
 
@@ -497,7 +497,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1), consignmentId, Set("Description")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1), consignmentId, Set("Description")).futureValue
     verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("DescriptiveMetadata"))
     verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
@@ -507,7 +507,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     closureStatus.value should equal("NotEntered")
   }
 
-  "validateMetadata" should "reset 'ClosureMetadata' status type and not 'DescriptiveMetadata' for files where closure properties are updated only" in {
+  "updateMetadataStatuses" should "reset 'ClosureMetadata' status type and not 'DescriptiveMetadata' for files where closure properties are updated only" in {
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
@@ -535,7 +535,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1), consignmentId, Set("ClosurePeriod")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1), consignmentId, Set("ClosurePeriod")).futureValue
     verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("ClosureMetadata"))
     verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
@@ -545,7 +545,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     closureStatus.value should equal("Completed")
   }
 
-  "validateMetadata" should "reset 'DescriptiveMetadata' status type and not 'ClosureMetadata' for files where closure properties are updated only" in {
+  "updateMetadataStatuses" should "reset 'DescriptiveMetadata' status type and not 'ClosureMetadata' for files where closure properties are updated only" in {
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
@@ -573,7 +573,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1), consignmentId, Set("Description")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1), consignmentId, Set("Description")).futureValue
     verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("DescriptiveMetadata"))
     verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
@@ -584,7 +584,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     descriptiveStatus.value should equal("Completed")
   }
 
-  "validateMetadata" should "not reset 'ClosureMetadata' or 'DescriptiveMetadata' status types where neither are being updated" in {
+  "updateMetadataStatuses" should "not reset 'ClosureMetadata' or 'DescriptiveMetadata' status types where neither are being updated" in {
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileId1 = UUID.randomUUID()
@@ -612,7 +612,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    val response = service.validateMetadata(Set(fileId1), consignmentId, Set("SomeProperty1", "SomeProperty2")).futureValue
+    val response = service.updateMetadataStatuses(Set(fileId1), consignmentId, Set("SomeProperty1", "SomeProperty2")).futureValue
     verify(mockFileStatusRepository, times(0)).deleteFileStatus(any[Set[UUID]], any[Set[String]])
     verify(mockFileStatusRepository, times(0)).addFileStatuses(any[List[FilestatusRow]])
 

@@ -365,6 +365,13 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.ServerChecksum should equal("ServerChecksum")
   }
 
+  "'status groups'" should "contain the correct status types" in {
+    val metadataGroup = FileStatusService.metadataStatusGroup
+    metadataGroup.size should equal(2)
+    metadataGroup.contains("ClosureMetadata") shouldBe true
+    metadataGroup.contains("DescriptiveMetadata") shouldBe true
+  }
+
   "'status values'" should "have the correct values assigned" in {
     FileStatusService.Completed should equal("Completed")
     FileStatusService.CompletedWithIssues should equal("CompletedWithIssues")
