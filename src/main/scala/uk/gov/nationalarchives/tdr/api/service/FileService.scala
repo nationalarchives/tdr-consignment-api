@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata, RedactedFiles}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -210,15 +210,13 @@ class FileService(
   }
 
   private def getPropertyNames(fileMetadataFilters: Option[FileMetadataFilters]): Future[Seq[String]] = {
-    val closureType = List("MandatoryClosure", "OptionalClosure")
-    val descriptiveType = List("MandatoryMetadata", "OptionalMetadata")
     fileMetadataFilters match {
       case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata)) =>
         for {
           metadataProperties <- customMetadataPropertiesRepository.getCustomMetadataProperty
-          closureMetadataPropertyNames = if (closureMetadata) metadataProperties.filter(_.propertygroup.exists(closureType.contains(_))).map(_.name) else Nil
-          descriptiveMetadataPropertyNames = if (descriptiveMetadata) metadataProperties.filter(_.propertygroup.exists(descriptiveType.contains(_))).map(_.name) else Nil
-        } yield closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames
+          closureMetadataPropertyNames = if (closureMetadata) metadataProperties.closureFields.toPropertyNames else Nil
+          descriptiveMetadataPropertyNames = if (descriptiveMetadata) metadataProperties.descriptiveFields.toPropertyNames else Nil
+        } yield (closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames)
       case None => Future(Nil)
     }
   }
@@ -303,6 +301,18 @@ object FileService {
           avMetadata.find(_.fileId == id)
         )
       })
+    }
+  }
+
+  implicit class CustomMetadataFieldsHelper(fields: Seq[FilepropertyRow]) {
+    def toPropertyNames: Seq[String] = fields.map(_.name)
+
+    def closureFields: Seq[FilepropertyRow] = {
+      fields.filter(f => f.propertygroup.contains("MandatoryClosure") || f.propertygroup.contains("OptionalClosure"))
+    }
+
+    def descriptiveFields: Seq[FilepropertyRow] = {
+      fields.filter(f => f.propertygroup.contains("MandatoryMetadata") || f.propertygroup.contains("OptionalMetadata"))
     }
   }
 
