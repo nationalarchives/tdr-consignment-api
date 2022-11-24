@@ -326,9 +326,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val metadataRow3: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId2, "value3", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1, fileId2)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(Seq(metadataRow1, metadataRow2, metadataRow3))
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1, fileId2)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(Seq(metadataRow1, metadataRow2, metadataRow3))
+      )
 
     val service =
       new FileMetadataService(
@@ -368,9 +369,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockRows = mockMetadataRows(Set(fileId1), userId, Set("ClosurePeriod", "ClosureType", "Description"))
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(mockRows)
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(mockRows)
+      )
 
     val service =
       new FileMetadataService(
@@ -410,9 +412,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockRows = mockMetadataRows(Set(fileId1), userId, Set("ClosureType"))
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(mockRows)
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(mockRows)
+      )
 
     val service =
       new FileMetadataService(
@@ -446,9 +449,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockFields = mockCustomMetadataFields()
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(Seq())
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(Seq())
+      )
 
     val service =
       new FileMetadataService(
@@ -482,9 +486,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockFields = mockCustomMetadataFields()
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(Seq())
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(Seq())
+      )
 
     val service =
       new FileMetadataService(
@@ -520,9 +525,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockRows = mockMetadataRows(Set(fileId1), userId, Set("ClosurePeriod", "ClosureType"))
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(mockRows)
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(mockRows)
+      )
 
     val service =
       new FileMetadataService(
@@ -558,9 +564,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockRows = mockMetadataRows(Set(fileId1), userId, Set("ClosurePeriod", "ClosureType", "Description"))
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(mockRows)
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(mockRows)
+      )
 
     val service =
       new FileMetadataService(
@@ -597,9 +604,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockRows = mockMetadataRows(Set(fileId1), userId, Set("ClosurePeriod", "ClosureType"))
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription")))).thenReturn(
-      Future(mockRows)
-    )
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(mockRows)
+      )
 
     val service =
       new FileMetadataService(
@@ -1017,7 +1025,21 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       CustomMetadataField("Description", Some("Description"), None, Defined, Some("OptionalMetadata"), Text, true, false, None, List(), 2147483647, false, None)
     val customValues1: CustomMetadataValues = CustomMetadataValues(List(customField3), "DescriptionClosed", 2147483647)
     val customField4: CustomMetadataField =
-      CustomMetadataField("AlternativeDescription", Some("Alternative Description"), None, Defined, Some("OptionalClosure"), Text, true, false, None, List(customValues1), 2147483647, false, None)
+      CustomMetadataField(
+        "AlternativeDescription",
+        Some("Alternative Description"),
+        None,
+        Defined,
+        Some("OptionalClosure"),
+        Text,
+        true,
+        false,
+        None,
+        List(customValues1),
+        2147483647,
+        false,
+        None
+      )
 
     Seq(customField1, customField2, customField3, customField4)
   }
