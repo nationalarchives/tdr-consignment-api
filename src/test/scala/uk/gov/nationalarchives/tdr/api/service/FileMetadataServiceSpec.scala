@@ -309,6 +309,46 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     getDescendentsFileIdsArgument should equal(testSetUp.inputFileIds)
   }
 
+  "updateCustomMetadataStatuses" should "update 'ClosureMetadata' status to 'Complete' where property type value has no dependencies" in {
+    val userId = UUID.randomUUID()
+    val consignmentId = UUID.randomUUID()
+    val fileId1 = UUID.randomUUID()
+
+    val mockCustomMetadataService: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
+    val mockFileMetadataRepository: FileMetadataRepository = mock[FileMetadataRepository]
+    val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
+
+    val mockFields = mockCustomMetadataFields()
+
+    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "Open", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
+
+    when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
+    when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
+      .thenReturn(
+        Future(Seq(metadataRow2))
+      )
+
+    val service =
+      new FileMetadataService(
+        mockFileMetadataRepository,
+        mock[FileRepository],
+        mock[CustomMetadataPropertiesRepository],
+        mockFileStatusRepository,
+        mockCustomMetadataService,
+        FixedTimeSource,
+        new FixedUUIDSource()
+      )
+
+    val response = service.updateCustomMetadataStatuses(Set(fileId1), consignmentId, Set("ClosureType")).futureValue
+    verify(mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("ClosureMetadata"))
+    verify(mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
+
+    response.size shouldBe 1
+    val file1Status = response.find(_.fileid == fileId1).get
+    file1Status.fileid should equal(fileId1)
+    file1Status.value should equal("Completed")
+  }
+
   "updateCustomMetadataStatuses" should "reset a status type with dependencies to correct value for multiple files where one file is missing a dependant property" in {
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
@@ -322,8 +362,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockFields = mockCustomMetadataFields()
 
     val metadataRow1: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "value1", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
-    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "value2", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
-    val metadataRow3: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId2, "value3", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
+    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
+    val metadataRow3: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId2, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
     when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1, fileId2)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
@@ -366,7 +406,12 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val mockFields = mockCustomMetadataFields()
-    val mockRows = mockMetadataRows(Set(fileId1), userId, Set("ClosurePeriod", "ClosureType", "Description"))
+
+    val metadataRow1: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "value1", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
+    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
+    val metadataRow3: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "value2", Timestamp.from(FixedTimeSource.now), userId, "Description")
+
+    val mockRows = Seq(metadataRow1, metadataRow2, metadataRow3)
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
     when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
@@ -409,7 +454,9 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val mockFields = mockCustomMetadataFields()
-    val mockRows = mockMetadataRows(Set(fileId1), userId, Set("ClosureType"))
+    val metadataRow: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
+
+    val mockRows = Seq(metadataRow)
 
     when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
     when(mockFileMetadataRepository.getFileMetadata(consignmentId, Some(Set(fileId1)), Some(Set("ClosurePeriod", "ClosureType", "Description", "AlternativeDescription"))))
@@ -1018,12 +1065,29 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   private def mockCustomMetadataFields(): Seq[CustomMetadataField] = {
     val customField1: CustomMetadataField =
       CustomMetadataField("ClosurePeriod", Some("Closure Period"), None, Defined, Some("MandatoryClosure"), Text, true, false, None, List(), 2147483647, false, None)
-    val customValues: CustomMetadataValues = CustomMetadataValues(List(customField1), "Closed", 2147483647)
+//    val madeUpField: CustomMetadataField =
+//      CustomMetadataField("MadeUpField1", Some("Made Up Field 1"), None, Defined, Some("MandatoryClosure"), Text, true, false, None, List(), 2147483647, false, None)
+    val customValues1: CustomMetadataValues = CustomMetadataValues(List(customField1), "Closed", 2147483647)
+    val customValues2: CustomMetadataValues = CustomMetadataValues(List(), "Open", 2147483647)
     val customField2: CustomMetadataField =
-      CustomMetadataField("ClosureType", Some("Closure Type"), None, Defined, Some("MandatoryClosure"), Text, true, false, None, List(customValues), 2147483647, false, None)
+      CustomMetadataField(
+        "ClosureType",
+        Some("Closure Type"),
+        None,
+        Defined,
+        Some("MandatoryClosure"),
+        Text,
+        true,
+        false,
+        None,
+        List(customValues1, customValues2),
+        2147483647,
+        false,
+        None
+      )
     val customField3: CustomMetadataField =
       CustomMetadataField("Description", Some("Description"), None, Defined, Some("OptionalMetadata"), Text, true, false, None, List(), 2147483647, false, None)
-    val customValues1: CustomMetadataValues = CustomMetadataValues(List(customField3), "DescriptionClosed", 2147483647)
+    val customValues3: CustomMetadataValues = CustomMetadataValues(List(customField3), "DescriptionClosed", 2147483647)
     val customField4: CustomMetadataField =
       CustomMetadataField(
         "AlternativeDescription",
@@ -1035,7 +1099,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         true,
         false,
         None,
-        List(customValues1),
+        List(customValues3),
         2147483647,
         false,
         None

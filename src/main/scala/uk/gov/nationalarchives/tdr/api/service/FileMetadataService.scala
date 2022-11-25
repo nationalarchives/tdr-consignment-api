@@ -6,7 +6,7 @@ import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilepropertyvaluesRow, F
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.CustomMetadataField
+import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
@@ -17,6 +17,7 @@ import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
+import scala.annotation.unused
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(
@@ -38,10 +39,6 @@ class FileMetadataService(
   implicit class CustomMetadataFieldsHelper(fields: Seq[CustomMetadataField]) {
     def toPropertyNames: Set[String] = fields.map(_.name).toSet
 
-    def toGroups: Map[String, Seq[CustomMetadataField]] = {
-      Map(ClosureMetadata -> fields.closureFields, DescriptiveMetadata -> descriptiveFields)
-    }
-
     def toGroupPropertyNames: Map[String, Set[String]] = {
       Map(ClosureMetadata -> closureFields.toPropertyNames, DescriptiveMetadata -> descriptiveFields.toPropertyNames)
     }
@@ -54,8 +51,15 @@ class FileMetadataService(
       fields.filter(f => f.propertyGroup.contains("MandatoryMetadata") || f.propertyGroup.contains("OptionalMetadata"))
     }
 
-    def dependencyFields: Seq[CustomMetadataField] = {
-      fields.flatMap(_.values.flatMap(_.dependencies))
+    def valueToDependencies: Map[String, List[CustomMetadataField]] = {
+      fields
+        .flatMap(f => {
+          val values: List[CustomMetadataValues] = f.values
+          values.map(v => {
+            v.value -> v.dependencies
+          })
+        })
+        .toMap
     }
   }
 
@@ -100,18 +104,28 @@ class FileMetadataService(
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
 
-  case class FilePropertyState(fileId: UUID, propertyName: String, valid: Boolean)
+  case class FilePropertyState(fileId: UUID, propertyName: String, propertyValue: Option[String], valid: Boolean)
 
-  private def validateFileProperty(
-      fileIds: Set[UUID],
-      propertyToValidate: String,
-      propertyDependencies: Set[String],
-      existingProperties: Seq[FilemetadataRow]
-  ): Set[FilePropertyState] = {
-    fileIds.map(id => {
-      val existingPropertyNames: Set[String] = existingProperties.filter(_.fileid == id).map(_.propertyname).toSet
-      val state: Boolean = propertyDependencies.subsetOf(existingPropertyNames)
-      FilePropertyState(id, propertyToValidate, state)
+  private def validateFileProperty(fileIds: Set[UUID], fieldToValidate: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Set[FilePropertyState] = {
+    val propertyToValidateName: String = fieldToValidate.name
+    val valueToDependencies: Map[String, List[CustomMetadataField]] = Seq(fieldToValidate).valueToDependencies
+
+    fileIds.flatMap(id => {
+      val allExistingFileProperties = existingProperties.filter(_.fileid == id)
+      val existingFilePropertiesToValidate: Seq[FilemetadataRow] = allExistingFileProperties.filter(_.propertyname == propertyToValidateName)
+
+      if (existingFilePropertiesToValidate.isEmpty) {
+        Set(FilePropertyState(id, propertyToValidateName, None, valid = true))
+      } else {
+        existingFilePropertiesToValidate.map(existingProperty => {
+          val valueDependencies: Option[List[CustomMetadataField]] = valueToDependencies.get(existingProperty.value)
+          val valid: Boolean = valueDependencies match {
+            case Some(dependencies) => dependencies.toPropertyNames.subsetOf(allExistingFileProperties.map(_.propertyname).toSet)
+            case None               => true
+          }
+          FilePropertyState(id, propertyToValidateName, Some(existingProperty.value), valid)
+        })
+      }
     })
   }
 
@@ -121,22 +135,25 @@ class FileMetadataService(
       existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(customMetadataFields.toPropertyNames))
     } yield {
       val propertyStates: List[FilePropertyState] = updatedProperties
-        .flatMap(p => {
-          val propertyDependencies: Set[String] = customMetadataFields.filter(_.name == p).flatMap(_.values.flatMap(_.dependencies.map(_.name))).toSet
-          validateFileProperty(fileIds, p, propertyDependencies, existingMetadataProperties)
+        .flatMap(propertyName => {
+          val propertyToValidate: Option[CustomMetadataField] = customMetadataFields.find(_.name == propertyName)
+          propertyToValidate match {
+            case Some(field) => validateFileProperty(fileIds, field, existingMetadataProperties)
+            case _           => Set()
+          }
         })
         .toList
 
-      val existingProperties: Set[String] = existingMetadataProperties.map(_.propertyname).toSet
-
       val allFileStatuses = customMetadataFields.toGroupPropertyNames
         .flatMap(group => {
+          val groupName = group._1
           val groupProperties = group._2
-          groupProperties.flatMap(p => {
-            val pStates = propertyStates.filter(_.propertyName == p)
-            pStates.map(s => {
-              val status: String = if (!existingProperties.exists(groupProperties.contains)) NotEntered else if (s.valid) Completed else Incomplete
-              FilestatusRow(UUID.randomUUID(), s.fileId, group._1, status, Timestamp.from(timeSource.now))
+          groupProperties.flatMap(groupProperty => {
+            // how to handle multiple value properties, eg if allow for multiple dates for multiple FOI codes?
+            val states: List[FilePropertyState] = propertyStates.filter(_.propertyName == groupProperty)
+            states.map(state => {
+              val status: String = if (state.propertyValue.isEmpty) NotEntered else if (state.valid) Completed else Incomplete
+              FilestatusRow(UUID.randomUUID(), state.fileId, groupName, status, Timestamp.from(timeSource.now))
             })
           })
         })
