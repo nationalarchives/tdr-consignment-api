@@ -304,7 +304,7 @@ object FileService {
     }
   }
 
-  implicit class CustomMetadataFieldsHelper(fields: Seq[FilepropertyRow]) {
+  implicit class FilePropertyRowsHelper(fields: Seq[FilepropertyRow]) {
     def toPropertyNames: Seq[String] = fields.map(_.name)
 
     def closureFields: Seq[FilepropertyRow] = {
