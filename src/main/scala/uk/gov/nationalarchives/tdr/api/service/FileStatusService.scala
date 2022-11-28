@@ -54,8 +54,10 @@ class FileStatusService(fileRepository: FileRepository, fileStatusRepository: Fi
       failedFFIDStatuses <- disallowedPuidsRepository.activeReasons()
       failedRedactedFiles <- fileRepository.getRedactedFilePairs(consignmentId, onlyNullValues = true)
     } yield {
-      failedRedactedFiles.isEmpty && checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
-      (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter(failedFFIDStatuses.contains(_))).isEmpty
+      val c = failedRedactedFiles.isEmpty && checksumMatchStatus.nonEmpty && avStatus.nonEmpty && ffidStatuses.nonEmpty &&
+        (checksumMatchStatus.filter(_.value != Success) ++ avStatus.filter(_.value != Success) ++ ffidStatuses.filter(failedFFIDStatuses.contains(_))).isEmpty
+      print(ffidStatuses)
+      c
     }
   }
 }
