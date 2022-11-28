@@ -608,6 +608,22 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     response.head.fileId.get should equal(fileId)
   }
 
+  "getRedactedFilePairs" should "return no results if the last character before the file extension is an R" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val consignmentId = UUID.randomUUID()
+    val parentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    utils.createConsignment(consignmentId)
+    utils.createFile(parentId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+    utils.createFile(fileId, consignmentId, fileName = "UnrelatedFileR.txt", parentId = Option(parentId))
+    val fileRepository = new FileRepository(db)
+
+    val response = fileRepository.getRedactedFilePairs(consignmentId).futureValue
+
+    response.size should equal(0)
+  }
+
   "getRedactedFilePairs" should "return only the failed row if onlyNullValues is true" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)

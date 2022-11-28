@@ -47,7 +47,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     }
     val idString = consignmentId.toString
     val regexp = "(_R\\d*$)"
-    val similarTo = "%_R\\d*"
+    val similarTo = "%\\_R\\d*"
     val sql = sql"""SELECT "RedactedFileId", "RedactedFileName", "FileId", "FileName" FROM "File" RIGHT JOIN
         (
         select "ConsignmentId"::text AS "RedactedConsignmentId",
