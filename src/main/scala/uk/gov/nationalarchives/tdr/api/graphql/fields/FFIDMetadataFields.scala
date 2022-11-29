@@ -3,7 +3,6 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 import java.util.UUID
 import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, fields}
 import sangria.macros.derive._
-import FieldTypes._
 import sangria.marshalling.circe._
 import io.circe.generic.auto._
 import uk.gov.nationalarchives.tdr.api.auth.ValidateHasFFIDMetadataAccess
@@ -43,11 +42,19 @@ object FFIDMetadataFields {
   implicit val AddFFFIDMetadataInputValuesType: InputObjectType[FFIDMetadataInputValues] = deriveInputObjectType[FFIDMetadataInputValues]()
   implicit val FFIDMetadataType: ObjectType[Unit, FFIDMetadata] = deriveObjectType[Unit, FFIDMetadata]()
 
-  val FileFormatMetadataInputArg = Argument("addFFIDMetadataInput", AddFFFIDMetadataInputType)
+  val FileFormatMetadataInputArg: Argument[FFIDMetadataInput] = Argument("addBulkFFIDMetadataInput", AddFFFIDMetadataInputType)
+  val FileFormatMetadataValuesInputArg: Argument[FFIDMetadataInputValues] = Argument("addFFIDMetadataInput", AddFFFIDMetadataInputValuesType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
       "addFFIDMetadata",
+      FFIDMetadataType,
+      arguments = FileFormatMetadataValuesInputArg :: Nil,
+      resolve = ctx => ctx.ctx.ffidMetadataService.addFFIDMetadata(ctx.arg(FileFormatMetadataValuesInputArg)),
+      tags = List(ValidateHasFFIDMetadataAccess)
+    ),
+    Field(
+      "addBulkFFIDMetadata",
       ListType(FFIDMetadataType),
       arguments = FileFormatMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.ffidMetadataService.addFFIDMetadata(ctx.arg(FileFormatMetadataInputArg)),

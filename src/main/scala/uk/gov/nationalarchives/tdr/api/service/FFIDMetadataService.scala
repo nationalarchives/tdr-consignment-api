@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -11,7 +10,7 @@ import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
-import java.sql.{SQLException, Timestamp}
+import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,6 +25,11 @@ class FFIDMetadataService(
 )(implicit val executionContext: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FFIDMetadataService"))
+
+  @deprecated("Use addFFIDMetadata(ffidMetadataInput: FFIDMetadataInput)")
+  def addFFIDMetadata(ffidMetadataInputValues: FFIDMetadataInputValues): Future[FFIDMetadata] = {
+    addFFIDMetadata(FFIDMetadataInput(ffidMetadataInputValues :: Nil)).map(_.head)
+  }
 
   def addFFIDMetadata(ffidMetadataInput: FFIDMetadataInput): Future[List[FFIDMetadata]] = {
     val (metadataRows, matchRows) = ffidMetadataInput.metadataInputValues
