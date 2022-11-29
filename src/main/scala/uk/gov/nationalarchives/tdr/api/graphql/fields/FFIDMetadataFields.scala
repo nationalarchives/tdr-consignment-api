@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.graphql.fields
 import java.util.UUID
 import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, fields}
 import sangria.macros.derive._
+import FieldTypes._
 import sangria.marshalling.circe._
 import io.circe.generic.auto._
 import uk.gov.nationalarchives.tdr.api.auth.ValidateHasFFIDMetadataAccess
