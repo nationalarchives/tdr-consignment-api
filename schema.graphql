@@ -287,6 +287,7 @@ input FileFilters {
   fileTypeIdentifier: String
   selectedFileIds: [UUID!]
   parentId: UUID
+  metadataFilters: FileMetadataFilters
 }
 
 type FileMatches {
@@ -297,6 +298,11 @@ type FileMatches {
 type FileMetadata {
   filePropertyName: String!
   value: String!
+}
+
+input FileMetadataFilters {
+  closureMetadata: Boolean = false
+  descriptiveMetadata: Boolean = false
 }
 
 type FileMetadataValue {

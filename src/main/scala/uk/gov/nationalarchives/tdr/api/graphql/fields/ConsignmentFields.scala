@@ -8,7 +8,7 @@ import sangria.relay._
 import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, Projector, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
-import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataFilters}
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
@@ -83,6 +83,7 @@ object ConsignmentFields {
     deriveObjectType[Unit, CurrentStatus]()
 
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
+  implicit val FileMetadataFiltersInputType: InputObjectType[FileMetadataFilters] = deriveInputObjectType[FileMetadataFilters]()
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
   implicit val ConsignmentFiltersInputType: InputObjectType[ConsignmentFilters] = deriveInputObjectType[ConsignmentFilters]()
 
