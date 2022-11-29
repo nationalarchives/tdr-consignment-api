@@ -6,14 +6,13 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Success, VirusDetected}
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
-import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
-import java.sql.{PreparedStatement, ResultSet}
+import java.sql.ResultSet
 import java.util.UUID
 
 class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
@@ -35,7 +34,7 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
       datetime: Long
   )
 
-  case class AddAntivirusMetadata(addAntivirusMetadata: AntivirusMetadata) extends TestRequest
+  case class AddAntivirusMetadata(addBulkAntivirusMetadata: List[AntivirusMetadata]) extends TestRequest
 
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData =
     runTestRequest[GraphqlMutationData](addAVMetadataJsonFilePrefix)
@@ -50,9 +49,9 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
     utils.createFile(UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313"), consignmentId)
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
-    response.data.get.addAntivirusMetadata should equal(expectedResponse.data.get.addAntivirusMetadata)
+    response.data.get.addBulkAntivirusMetadata.head should equal(expectedResponse.data.get.addBulkAntivirusMetadata.head)
 
-    checkAntivirusMetadataExists(response.data.get.addAntivirusMetadata.fileId, utils)
+    checkAntivirusMetadataExists(response.data.get.addBulkAntivirusMetadata.head.fileId, utils)
   }
 
   "addAntivirusMetadata" should "return the expected data from inserted antivirus metadata object" in withContainers { case container: PostgreSQLContainer =>
@@ -61,9 +60,9 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
     utils.createFile(UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313"), consignmentId)
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_some")
     val response: GraphqlMutationData = runTestMutation("mutation_somedata", validBackendChecksToken("antivirus"))
-    response.data.get.addAntivirusMetadata should equal(expectedResponse.data.get.addAntivirusMetadata)
+    response.data.get.addBulkAntivirusMetadata.head should equal(expectedResponse.data.get.addBulkAntivirusMetadata.head)
 
-    checkAntivirusMetadataExists(response.data.get.addAntivirusMetadata.fileId, utils)
+    checkAntivirusMetadataExists(response.data.get.addBulkAntivirusMetadata.head.fileId, utils)
   }
 
   "addAntivirusMetadata" should "not allow updating of antivirus metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
