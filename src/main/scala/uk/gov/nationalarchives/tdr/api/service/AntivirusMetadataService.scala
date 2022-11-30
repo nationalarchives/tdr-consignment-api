@@ -29,7 +29,6 @@ class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRep
         }
         val fileStatusRow = FilestatusRow(uuidSource.uuid, values.fileId, Antivirus, fileStatusValue, Timestamp.from(timeSource.now))
         (inputRow, fileStatusRow)
-
       })
       .unzip
     antivirusMetadataRepository.addAntivirusMetadata(inputRows, fileStatusRows).map(rowsToAntivirusMetadata)
