@@ -151,10 +151,21 @@ class FileMetadataService(
           groupProperties.flatMap(groupProperty => {
             // how to handle multiple value properties, eg if allow for multiple dates for multiple FOI codes?
             val states: List[FilePropertyState] = propertyStates.filter(_.propertyName == groupProperty)
-            states.map(state => {
-              val status: String = if (state.propertyValue.isEmpty) NotEntered else if (state.valid) Completed else Incomplete
-              FilestatusRow(UUID.randomUUID(), state.fileId, groupName, status, Timestamp.from(timeSource.now))
-            })
+            val propertyNameToState: Map[String, List[FilePropertyState]] = states.groupBy(_.propertyName)
+            propertyNameToState.map(entry => {
+              val states = entry._2
+              val fileId = states.map(_.fileId).head
+              val notEntered = states.forall(_.propertyValue.isEmpty)
+              val completed = states.forall(_.valid == true)
+              val status = if (notEntered) NotEntered else if (completed) Completed else Incomplete
+              FilestatusRow(UUID.randomUUID(), fileId, groupName, status, Timestamp.from(timeSource.now))
+            }).toList
+
+
+            //            states.map(state => {
+            //              val status: String = if (state.propertyValue.isEmpty) NotEntered else if (state.valid) Completed else Incomplete
+            //              FilestatusRow(UUID.randomUUID(), state.fileId, groupName, status, Timestamp.from(timeSource.now))
+            //            })
           })
         })
         .toList
