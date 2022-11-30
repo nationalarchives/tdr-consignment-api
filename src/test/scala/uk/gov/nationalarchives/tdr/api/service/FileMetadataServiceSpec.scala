@@ -7,7 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Failed, Mismatch, Success}
@@ -18,7 +18,6 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-//scalastyle:off file.size.limit
 class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
@@ -29,14 +28,14 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
     val fixedUUIDSource = new FixedUUIDSource()
     val metadataId: UUID = fixedUUIDSource.uuid
     fixedUUIDSource.reset
 
-    val addChecksumCaptor: ArgumentCaptor[FilemetadataRow] = ArgumentCaptor.forClass(classOf[FilemetadataRow])
-    val getFileMetadataFileCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+    val addChecksumCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
+    val getFileMetadataFileCaptor: ArgumentCaptor[List[UUID]] = ArgumentCaptor.forClass(classOf[List[UUID]])
     val getFileMetadataPropertyNameCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val mockFileMetadataResponse =
       Seq(FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ClientSideChecksum))
@@ -46,14 +45,18 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(metadataRepositoryMock.getFileMetadataByProperty(getFileMetadataFileCaptor.capture(), getFileMetadataPropertyNameCaptor.capture()))
       .thenReturn(Future(mockFileMetadataResponse))
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
-    service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, "value"), fixedUserId).futureValue
+    service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, "value"), fixedUserId).futureValue
 
-    val row = addChecksumCaptor.getValue
+    val row = addChecksumCaptor.getValue.head
     row.propertyname should equal(SHA256ServerSideChecksum)
     row.fileid should equal(fixedFileUuid)
     row.userid should equal(fixedUserId)
     row.datetime should equal(Timestamp.from(FixedTimeSource.now))
     row.metadataid.shouldBe(metadataId)
+  }
+
+  def createInput(propertyName: String, fileId: UUID, value: String): AddFileMetadataWithFileIdInput = {
+    AddFileMetadataWithFileIdInput(AddFileMetadataWithFileIdInputValues(propertyName, fileId, value) :: Nil)
   }
 
   "addFileMetadata" should "call throw an error if the client side checksum is missing" in {
@@ -62,14 +65,14 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val fileId = UUID.randomUUID()
 
-    when(metadataRepositoryMock.getFileMetadataByProperty(fileId, SHA256ClientSideChecksum))
+    when(metadataRepositoryMock.getFileMetadataByProperty(fileId :: Nil, SHA256ClientSideChecksum))
       .thenReturn(Future(Seq()))
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
 
     val err =
-      service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fileId, "value"), UUID.randomUUID()).failed.futureValue
+      service.addFileMetadata(createInput(SHA256ServerSideChecksum, fileId, "value"), UUID.randomUUID()).failed.futureValue
 
-    err.getMessage should equal(s"Could not find metadata for file $fileId")
+    err.getMessage should equal(s"Cannot find client side checksum for file $fileId")
   }
 
   "addFileMetadata" should "call the metadata repository with the correct arguments if the checksum matches" in {
@@ -82,18 +85,18 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
     val mockClientChecksumResponse = Future(Seq(mockClientChecksumRow))
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
     val fixedUUIDSource = new FixedUUIDSource()
     fixedUUIDSource.reset
 
     val fileStatusCaptor: ArgumentCaptor[Seq[FilestatusRow]] = ArgumentCaptor.forClass(classOf[Seq[FilestatusRow]])
-    when(metadataRepositoryMock.addChecksumMetadata(any[FilemetadataRow], fileStatusCaptor.capture()))
+    when(metadataRepositoryMock.addChecksumMetadata(any[List[FilemetadataRow]], fileStatusCaptor.capture()))
       .thenReturn(mockMetadataResponse)
 
-    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
+    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
-    service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, "ChecksumMatch"), fixedUserId).futureValue
+    service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, "ChecksumMatch"), fixedUserId).futureValue
     fileStatusCaptor.getValue.size should equal(2)
     fileStatusCaptor.getValue.head.fileid should equal(fixedFileUuid)
     fileStatusCaptor.getValue.head.statustype should equal("ChecksumMatch")
@@ -110,7 +113,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
     val timestamp = Timestamp.from(FixedTimeSource.now)
     val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
@@ -120,12 +123,12 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     fixedUUIDSource.reset
 
     val fileStatusCaptor: ArgumentCaptor[Seq[FilestatusRow]] = ArgumentCaptor.forClass(classOf[Seq[FilestatusRow]])
-    when(metadataRepositoryMock.addChecksumMetadata(any[FilemetadataRow], fileStatusCaptor.capture()))
+    when(metadataRepositoryMock.addChecksumMetadata(any[List[FilemetadataRow]], fileStatusCaptor.capture()))
       .thenReturn(mockMetadataResponse)
-    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
+    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
 
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
-    service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, ""), fixedUserId).futureValue
+    service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, ""), fixedUserId).futureValue
     fileStatusCaptor.getValue.size should equal(2)
     fileStatusCaptor.getValue.head.fileid should equal(fixedFileUuid)
     fileStatusCaptor.getValue.head.statustype should equal("ChecksumMatch")
@@ -143,7 +146,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val mockMetadataResponse = Future.successful(
-      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum)
+      FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
     val propertyName = SHA256ServerSideChecksum
     val fixedUUIDSource = new FixedUUIDSource()
@@ -151,27 +154,16 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
     val mockClientChecksumResponse = Future(Seq(mockClientChecksumRow))
 
-    when(metadataRepositoryMock.addChecksumMetadata(any[FilemetadataRow], any[Seq[FilestatusRow]])).thenReturn(mockMetadataResponse)
-    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
+    when(metadataRepositoryMock.addChecksumMetadata(any[List[FilemetadataRow]], any[Seq[FilestatusRow]])).thenReturn(mockMetadataResponse)
+    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
 
     val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
     val result: FileMetadataWithFileId =
-      service.addFileMetadata(AddFileMetadataWithFileIdInput(propertyName, fixedFileUuid, "value"), fixedUserId).futureValue
+      service.addFileMetadata(createInput(propertyName, fixedFileUuid, "value"), fixedUserId).futureValue.head
 
     result.fileId should equal(fixedFileUuid)
     result.filePropertyName should equal(propertyName)
     result.value should equal(value)
-  }
-
-  "addFileMetadata" should "fail if the update is not for a checksum" in {
-    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-    val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
-    val fileId = UUID.randomUUID()
-
-    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-    val err = service.addFileMetadata(AddFileMetadataWithFileIdInput("SomethingElse", fileId, "ChecksumMatch"), UUID.randomUUID()).failed.futureValue
-    err.getMessage should equal("SomethingElse found. We are only expecting checksum updates for now")
   }
 
   "updateBulkFileMetadata" should "delete existing metadata rows and add new metadata rows based on the input" in {

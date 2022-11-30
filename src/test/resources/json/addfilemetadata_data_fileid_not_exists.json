@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Could not find metadata for file 28f78f42-0f77-4384-bcdb-04d85100171e",
+      "message": "Cannot find client side checksum for file 28f78f42-0f77-4384-bcdb-04d85100171e",
       "locations": [
         {
           "column": 47,
