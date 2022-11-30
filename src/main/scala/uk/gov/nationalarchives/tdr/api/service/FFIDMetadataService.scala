@@ -60,6 +60,9 @@ class FFIDMetadataService(
       ffidMetadata <- ffidMetadataRepository.addFFIDMetadata(metadataRows, statuses.flatten)
       matches <- matchesRepository.addFFIDMetadataMatches(matchRows.flatten)
     } yield {
+      statuses.flatten.groupBy(_.fileid).foreach {
+        case (fileId, statuses) => loggingUtils.logFileFormatStatus("FFID", fileId, statuses.map(_.value).mkString(","))
+      }
       val matchesMap = matches.groupBy(_.ffidmetadataid)
       ffidMetadata.map(ffid => rowToFFIDMetadata(ffid, matchesMap(ffid.ffidmetadataid)))
     }
