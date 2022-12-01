@@ -2,16 +2,15 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
 import uk.gov.nationalarchives
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataInputValues, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
-import java.sql.{SQLException, Timestamp}
+import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,37 +26,45 @@ class FFIDMetadataService(
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FFIDMetadataService"))
 
-  def addFFIDMetadata(ffidMetadata: FFIDMetadataInput): Future[FFIDMetadata] = {
+  @deprecated("Use addFFIDMetadata(ffidMetadataInput: FFIDMetadataInput)")
+  def addFFIDMetadata(ffidMetadataInputValues: FFIDMetadataInputValues): Future[FFIDMetadata] = {
+    addFFIDMetadata(FFIDMetadataInput(ffidMetadataInputValues :: Nil)).map(_.head)
+  }
 
-    if (ffidMetadata.matches.isEmpty) {
-      throw InputDataException(s"No ffid matches for file ${ffidMetadata.fileId}")
-    }
+  def addFFIDMetadata(ffidMetadataInput: FFIDMetadataInput): Future[List[FFIDMetadata]] = {
+    val (metadataRows, matchRows) = ffidMetadataInput.metadataInputValues
+      .map(ffidMetadata => {
+        if (ffidMetadata.matches.isEmpty) {
+          throw InputDataException(s"No ffid matches for file ${ffidMetadata.fileId}")
+        }
 
-    val metadataRow = FfidmetadataRow(
-      uuidSource.uuid,
-      ffidMetadata.fileId,
-      ffidMetadata.software,
-      ffidMetadata.softwareVersion,
-      Timestamp.from(timeSource.now),
-      ffidMetadata.binarySignatureFileVersion,
-      ffidMetadata.containerSignatureFileVersion,
-      ffidMetadata.method
-    )
+        val metadataRow = FfidmetadataRow(
+          uuidSource.uuid,
+          ffidMetadata.fileId,
+          ffidMetadata.software,
+          ffidMetadata.softwareVersion,
+          Timestamp.from(timeSource.now),
+          ffidMetadata.binarySignatureFileVersion,
+          ffidMetadata.containerSignatureFileVersion,
+          ffidMetadata.method
+        )
 
-    def addFFIDMetadataMatches(ffidmetadataid: UUID): Future[Seq[Tables.FfidmetadatamatchesRow]] = {
-      val matchRows = ffidMetadata.matches.map(m => FfidmetadatamatchesRow(ffidmetadataid, m.extension, m.identificationBasis, m.puid))
-      matchesRepository.addFFIDMetadataMatches(matchRows)
-    }
+        val matchRows = ffidMetadata.matches.map(m => FfidmetadatamatchesRow(metadataRow.ffidmetadataid, m.extension, m.identificationBasis, m.puid))
 
-    (for {
-      fileStatusRows <- generateFileStatusRows(ffidMetadata)
-      _ = loggingUtils.logFileFormatStatus("FFID", ffidMetadata.fileId, fileStatusRows.map(_.value).mkString(","))
-      ffidMetadataRow <- ffidMetadataRepository.addFFIDMetadata(metadataRow, fileStatusRows)
-      ffidMetadataMatchesRow <- addFFIDMetadataMatches(ffidMetadataRow.ffidmetadataid)
+        (metadataRow, matchRows)
+      })
+      .unzip
+
+    for {
+      statuses <- Future.sequence(ffidMetadataInput.metadataInputValues.map(generateFileStatusRows))
+      ffidMetadata <- ffidMetadataRepository.addFFIDMetadata(metadataRows, statuses.flatten)
+      matches <- matchesRepository.addFFIDMetadataMatches(matchRows.flatten)
     } yield {
-      rowToFFIDMetadata(ffidMetadataRow, ffidMetadataMatchesRow)
-    }).recover { case e: SQLException =>
-      throw InputDataException(e.getLocalizedMessage)
+      statuses.flatten.groupBy(_.fileid).foreach { case (fileId, statuses) =>
+        loggingUtils.logFileFormatStatus("FFID", fileId, statuses.map(_.value).mkString(","))
+      }
+      val matchesMap = matches.groupBy(_.ffidmetadataid)
+      ffidMetadata.map(ffid => rowToFFIDMetadata(ffid, matchesMap(ffid.ffidmetadataid)))
     }
   }
 
@@ -72,7 +79,7 @@ class FFIDMetadataService(
     }
   }
 
-  private def generateFileStatusRows(ffidMetadata: FFIDMetadataInput): Future[List[FilestatusRow]] = {
+  private def generateFileStatusRows(ffidMetadata: FFIDMetadataInputValues): Future[List[FilestatusRow]] = {
     val fileId = ffidMetadata.fileId
     val timestamp = Timestamp.from(timeSource.now)
 
