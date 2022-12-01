@@ -10,7 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.AntivirusMetadataRepository
-import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AddAntivirusMetadataInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.{AddAntivirusMetadataInput, AddAntivirusMetadataInputValues, AddAntivirusMetadataInputValuesType}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Success, VirusDetected}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -25,10 +25,10 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val avRepositoryMock = mock[AntivirusMetadataRepository]
     val mockResponse = mockAvResponse(fixedFileUuid, "result")
 
-    when(avRepositoryMock.addAntivirusMetadata(any[AvmetadataRow], any[FilestatusRow])).thenReturn(mockResponse)
+    when(avRepositoryMock.addAntivirusMetadata(any[List[AvmetadataRow]], any[List[FilestatusRow]])).thenReturn(mockResponse)
 
     val service: AntivirusMetadataService = new AntivirusMetadataService(avRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
-    val result = service.addAntivirusMetadata(avServiceInput(fixedFileUuid, "result")).futureValue
+    val result = service.addAntivirusMetadata(avServiceInput(fixedFileUuid, "result")).futureValue.head
 
     result.fileId shouldBe fixedFileUuid
     result.software shouldBe "software"
@@ -43,17 +43,17 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val avRepositoryMock = mock[AntivirusMetadataRepository]
     val mockResponse = mockAvResponse(fixedFileUuid, "")
 
-    val fileStatusCaptor: ArgumentCaptor[FilestatusRow] = ArgumentCaptor.forClass(classOf[FilestatusRow])
+    val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
 
-    when(avRepositoryMock.addAntivirusMetadata(any[AvmetadataRow], fileStatusCaptor.capture())).thenReturn(mockResponse)
+    when(avRepositoryMock.addAntivirusMetadata(any[List[AvmetadataRow]], fileStatusCaptor.capture())).thenReturn(mockResponse)
 
     val service: AntivirusMetadataService = new AntivirusMetadataService(avRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
     val result = ""
     service.addAntivirusMetadata(avServiceInput(fixedFileUuid, result)).futureValue
 
     val fileStatusRow = fileStatusCaptor.getValue
-    fileStatusRow.statustype should equal(Antivirus)
-    fileStatusRow.value should equal(Success)
+    fileStatusRow.head.statustype should equal(Antivirus)
+    fileStatusRow.head.value should equal(Success)
   }
 
   "addAntivirusMetadata" should "update the file status table with virus found when a virus is found" in {
@@ -62,16 +62,16 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val avRepositoryMock = mock[AntivirusMetadataRepository]
     val mockResponse = mockAvResponse(fixedFileUuid, "result")
 
-    val fileStatusCaptor: ArgumentCaptor[FilestatusRow] = ArgumentCaptor.forClass(classOf[FilestatusRow])
+    val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
 
-    when(avRepositoryMock.addAntivirusMetadata(any[AvmetadataRow], fileStatusCaptor.capture())).thenReturn(mockResponse)
+    when(avRepositoryMock.addAntivirusMetadata(any[List[AvmetadataRow]], fileStatusCaptor.capture())).thenReturn(mockResponse)
 
     val service: AntivirusMetadataService = new AntivirusMetadataService(avRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
     service.addAntivirusMetadata(avServiceInput(fixedFileUuid, "result")).futureValue
 
     val fileStatusRow = fileStatusCaptor.getValue
-    fileStatusRow.statustype should equal(Antivirus)
-    fileStatusRow.value should equal(VirusDetected)
+    fileStatusRow.head.statustype should equal(Antivirus)
+    fileStatusRow.head.value should equal(VirusDetected)
   }
 
   "getAntivirusMetadata" should "call the repository with the correct arguments" in {
@@ -114,7 +114,7 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     antivirus.datetime should equal(dummyTimestamp.getTime)
   }
 
-  private def mockAvResponse(fixedFileUuid: UUID, result: String): Future[AvmetadataRow] = {
+  private def mockAvResponse(fixedFileUuid: UUID, result: String): Future[List[AvmetadataRow]] = {
     Future.successful(
       AvmetadataRow(
         fixedFileUuid,
@@ -123,18 +123,21 @@ class AntivirusMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
         "database version",
         result,
         Timestamp.from(FixedTimeSource.now)
-      )
+      ) :: Nil
     )
   }
 
   private def avServiceInput(fixedFileUuid: UUID, result: String): AddAntivirusMetadataInput = {
     AddAntivirusMetadataInput(
-      fixedFileUuid,
-      "software",
-      "software version",
-      "database version",
-      result,
-      Timestamp.from(FixedTimeSource.now).getTime
+      AddAntivirusMetadataInputValues(
+        fixedFileUuid,
+        "software",
+        "software version",
+        "database version",
+        result,
+        Timestamp.from(FixedTimeSource.now).getTime
+      ) :: Nil
     )
+
   }
 }

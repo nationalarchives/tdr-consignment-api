@@ -1,4 +1,8 @@
 input AddAntivirusMetadataInput {
+  antivirusMetadata: [AddAntivirusMetadataInputValues!]!
+}
+
+input AddAntivirusMetadataInputValues {
   fileId: UUID!
   software: String!
   softwareVersion: String!
@@ -370,7 +374,8 @@ type Mutation {
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput!): ConsignmentStatus!
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
-  addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
+  addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInputValues!): AntivirusMetadata!
+  addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
   updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
   deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
