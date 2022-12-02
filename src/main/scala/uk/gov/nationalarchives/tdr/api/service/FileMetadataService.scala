@@ -104,9 +104,9 @@ class FileMetadataService(
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
 
-  case class FilePropertyState(fileId: UUID, propertyName: String, propertyValues: Seq[String], valid: Boolean, stateId: UUID = UUID.randomUUID())
+  case class FilePropertyState(fileId: UUID, propertyName: String, valid: Boolean, stateless: Boolean)
 
-  def validateProperty(fileIds: Set[UUID], fieldToValidate: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
+  private def validateProperty(fileIds: Set[UUID], fieldToValidate: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
     val propertyToValidateName: String = fieldToValidate.name
     val dependencyPropertyNames: Set[String] = fieldToValidate.values.flatMap(_.dependencies.map(_.name)).toSet
     val valueToDependencies: Map[String, List[CustomMetadataField]] = Seq(fieldToValidate).valueToDependencies
@@ -114,13 +114,13 @@ class FileMetadataService(
     fileIds
       .map(id => {
         val allExistingFileProperties: Seq[FilemetadataRow] = existingProperties.filter(_.fileid == id)
-        val existingDependencies: Seq[FilemetadataRow] = allExistingFileProperties.filter(pn => { dependencyPropertyNames.exists(dn => pn.propertyname.contains(dn)) })
 
+        val existingDependencies: Seq[FilemetadataRow] = allExistingFileProperties.filter(pn => { dependencyPropertyNames.exists(dn => pn.propertyname.contains(dn)) })
         val expectedNumberOfDependencies: Int = allExistingFileProperties.flatMap(p => valueToDependencies.get(p.value)).flatten.size
 
         val valid: Boolean = expectedNumberOfDependencies == existingDependencies.size
-        val values: Seq[String] = allExistingFileProperties.filter(_.propertyname == propertyToValidateName).map(_.value)
-        FilePropertyState(id, propertyToValidateName, values, valid)
+        val stateless: Boolean = !allExistingFileProperties.exists(_.propertyname == propertyToValidateName)
+        FilePropertyState(id, propertyToValidateName, valid, stateless)
       })
       .toSeq
   }
@@ -151,7 +151,7 @@ class FileMetadataService(
               entry._2
                 .groupBy(_.fileId)
                 .map(fileStates => {
-                  val allNotEntered = fileStates._2.forall(_.propertyValues.isEmpty)
+                  val allNotEntered = fileStates._2.forall(_.stateless)
                   val allCompleted = fileStates._2.forall(_.valid == true)
                   val status = if (allNotEntered) NotEntered else if (allCompleted) Completed else Incomplete
                   FilestatusRow(UUID.randomUUID(), fileStates._1, groupName, status, Timestamp.from(timeSource.now))
