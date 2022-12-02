@@ -47,7 +47,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     }
     val idString = consignmentId.toString
     val regexp = "(_R\\d*$)"
-    val similarTo = "%_R\\d*"
+    val similarTo = "%\\_R\\d*"
     val sql = sql"""SELECT "RedactedFileId", "RedactedFileName", "FileId", "FileName" FROM "File" RIGHT JOIN
         (
         select "ConsignmentId"::text AS "RedactedConsignmentId",
@@ -179,7 +179,14 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 }
 
-case class FileFilters(fileTypeIdentifier: Option[String] = None, selectedFileIds: Option[List[UUID]] = None, parentId: Option[UUID] = None)
+case class FileMetadataFilters(closureMetadata: Boolean = false, descriptiveMetadata: Boolean = false)
+
+case class FileFilters(
+    fileTypeIdentifier: Option[String] = None,
+    selectedFileIds: Option[List[UUID]] = None,
+    parentId: Option[UUID] = None,
+    metadataFilters: Option[FileMetadataFilters] = None
+)
 
 object FileRepository {
   case class RedactedFiles(redactedFileId: UUID, redactedFileName: String, fileId: Option[UUID], fileName: Option[String])

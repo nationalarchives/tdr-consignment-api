@@ -25,7 +25,7 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   case class GraphqlMutationData(data: Option[AddFFIDMetadata], errors: List[GraphqlError] = Nil)
 
-  case class AddFFIDMetadata(addFFIDMetadata: FFIDMetadata)
+  case class AddFFIDMetadata(addBulkFFIDMetadata: List[FFIDMetadata])
 
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData =
     runTestRequest[GraphqlMutationData](addFfidMetadataJsonFilePrefix)
@@ -39,8 +39,8 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
-    val metadata: FFIDMetadata = response.data.get.addFFIDMetadata
-    val expectedMetadata = expectedResponse.data.get.addFFIDMetadata
+    val metadata: FFIDMetadata = response.data.get.addBulkFFIDMetadata.head
+    val expectedMetadata = expectedResponse.data.get.addBulkFFIDMetadata.head
 
     metadata.fileId should equal(expectedMetadata.fileId)
     metadata.software should equal(expectedMetadata.software)
@@ -56,7 +56,7 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     matches.identificationBasis should equal(expectedMatches.identificationBasis)
     matches.puid should equal(expectedMatches.puid)
 
-    checkFFIDMetadataExists(response.data.get.addFFIDMetadata.fileId, utils)
+    checkFFIDMetadataExists(response.data.get.addBulkFFIDMetadata.head.fileId, utils)
   }
 
   "addFFIDMetadata" should "set a single file status to 'Success' when a success match only is found for 'standard' consignment type" in withContainers {

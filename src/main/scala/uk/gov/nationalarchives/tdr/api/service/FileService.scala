@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata, RedactedFiles}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -31,6 +31,7 @@ class FileService(
     fileRepository: FileRepository,
     fileStatusRepository: FileStatusRepository,
     consignmentRepository: ConsignmentRepository,
+    customMetadataPropertiesRepository: CustomMetadataPropertiesRepository,
     consignmentStatusService: ConsignmentStatusService,
     ffidMetadataService: FFIDMetadataService,
     avMetadataService: AntivirusMetadataService,
@@ -177,7 +178,8 @@ class FileService(
       avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
       ffidStatus <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatus(consignmentId) else Future(Map.empty[UUID, String])
       redactedFilePairs <- if (queriedFileFields.originalFilePath) fileRepository.getRedactedFilePairs(consignmentId, fileAndMetadataList.map(_._1.fileid)) else Future(Seq())
-    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs).toList
+      propertyNames <- getPropertyNames(filters.metadataFilters)
+    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, redactedFilePairs, propertyNames).toList
   }
 
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]): Future[TDRConnection[File]] = {
@@ -221,6 +223,18 @@ class FileService(
       rows <- fileRepository.getConsignmentParentFolder(consignmentId)
     } yield rows.map(_.fileid).headOption
   }
+
+  private def getPropertyNames(fileMetadataFilters: Option[FileMetadataFilters]): Future[Seq[String]] = {
+    fileMetadataFilters match {
+      case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata)) =>
+        for {
+          metadataProperties <- customMetadataPropertiesRepository.getCustomMetadataProperty
+          closureMetadataPropertyNames = if (closureMetadata) metadataProperties.closureFields.toPropertyNames else Nil
+          descriptiveMetadataPropertyNames = if (descriptiveMetadata) metadataProperties.descriptiveFields.toPropertyNames else Nil
+        } yield (closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames)
+      case None => Future(Nil)
+    }
+  }
 }
 
 object FileService {
@@ -237,7 +251,22 @@ object FileService {
       getFileMetadataValues(rows)
     }
 
-    def toFiles(avMetadata: List[AntivirusMetadata], ffidMetadata: List[FFIDMetadata], ffidStatus: Map[UUID, String], redactedFiles: Seq[RedactedFiles]): Seq[File] = {
+    private def filterMetadataRows(rows: Seq[FilemetadataRow], metadataPropertyName: Seq[String]): Seq[FileMetadataValue] = {
+
+      if (metadataPropertyName.isEmpty) {
+        rows.map(row => FileMetadataValue(row.propertyname, row.value))
+      } else {
+        rows.collect { case row if metadataPropertyName.contains(row.propertyname) => FileMetadataValue(row.propertyname, row.value) }
+      }
+    }
+
+    def toFiles(
+        avMetadata: List[AntivirusMetadata],
+        ffidMetadata: List[FFIDMetadata],
+        ffidStatus: Map[UUID, String],
+        redactedFiles: Seq[RedactedFiles],
+        metadataPropertyNames: Seq[String]
+    ): Seq[File] = {
       response
         .groupBy(_._1)
         .map { case (fr, fmr) =>
@@ -258,7 +287,7 @@ object FileService {
             ffidMetadata.find(_.fileId == fileId),
             avMetadata.find(_.fileId == fileId),
             redactedOriginalFilePath,
-            metadataRows.map(row => FileMetadataValue(row.propertyname, row.value)).toList
+            filterMetadataRows(metadataRows, metadataPropertyNames).toList
           )
         }
         .toSeq
@@ -287,6 +316,18 @@ object FileService {
           avMetadata.find(_.fileId == id)
         )
       })
+    }
+  }
+
+  implicit class FilePropertyRowsHelper(fields: Seq[FilepropertyRow]) {
+    def toPropertyNames: Seq[String] = fields.map(_.name)
+
+    def closureFields: Seq[FilepropertyRow] = {
+      fields.filter(f => f.propertygroup.contains("MandatoryClosure") || f.propertygroup.contains("OptionalClosure"))
+    }
+
+    def descriptiveFields: Seq[FilepropertyRow] = {
+      fields.filter(f => f.propertygroup.contains("MandatoryMetadata") || f.propertygroup.contains("OptionalMetadata"))
     }
   }
 

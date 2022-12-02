@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import cats.implicits.catsSyntaxOptionId
 import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
 import org.mockito.stubbing.ScalaOngoingStubbing
@@ -7,14 +8,24 @@ import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor3}
-import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor3}
+import uk.gov.nationalarchives.Tables.{
+  AvmetadataRow,
+  ConsignmentRow,
+  FfidmetadataRow,
+  FfidmetadatamatchesRow,
+  FileRow,
+  FilemetadataRow,
+  FilepropertyRow,
+  FilepropertyvaluesRow,
+  FilestatusRow
+}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.RedactedFiles
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatusInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
@@ -26,7 +37,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestUtils.staticMetadataProperties
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
-import java.time.{Instant, ZonedDateTime}
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -121,6 +132,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
@@ -201,6 +213,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
@@ -232,6 +245,138 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     fileThree.fileName.get shouldBe "fileThreeName"
     fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
     fileThree.originalFilePath.isDefined should be(false)
+  }
+
+  val filterMetadata: TableFor1[String] = Table(
+    ("MetadataType"),
+    ("closureMetadata"),
+    ("descriptiveMetadata"),
+    ("closureMetadata & descriptiveMetadata")
+  )
+
+  forAll(filterMetadata) { metadataType =>
+    "getFileMetadata" should s"return filtered fileMetadata when fileMetadatFilter $metadataType is/are passed" in {
+      val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
+      val fileRepositoryMock = mock[FileRepository]
+      val antivirusRepositoryMock = mock[AntivirusMetadataRepository]
+      val allowedPuidsRepositoryMock = mock[AllowedPuidsRepository]
+      val disallowedPuidsRepositoryMock = mock[DisallowedPuidsRepository]
+      val fixedUuidSource = new FixedUUIDSource()
+
+      val timestamp = Timestamp.from(FixedTimeSource.now)
+      val consignmentId = UUID.randomUUID()
+      val parentFolderId = UUID.randomUUID()
+      val fileIdOne = UUID.randomUUID()
+      val parentFolderRow = FileRow(parentFolderId, consignmentId, userId, timestamp, Some(true), Some(NodeType.directoryTypeIdentifier), Some("folderName"))
+      val fileOneRow = FileRow(fileIdOne, consignmentId, userId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileOneName"), Some(parentFolderId))
+
+      val fileAndMetadataRows: Seq[(FileRow, Option[FilemetadataRow])] = Seq(
+        (fileOneRow, Some(fileMetadataRow(fileIdOne, "ClosureType", "Open"))),
+        (fileOneRow, Some(fileMetadataRow(fileIdOne, "ClosurePeriod", "12"))),
+        (fileOneRow, Some(fileMetadataRow(fileIdOne, "Property1", "Property1Value"))),
+        (fileOneRow, Some(fileMetadataRow(fileIdOne, "Property2", "Property2Value"))),
+        (parentFolderRow, None)
+      )
+      val mockFileStatusResponse = Future(
+        Seq(FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), "FFID", "Success", timestamp))
+      )
+      val mockPropertyResponse = Future(
+        Seq(
+          FilepropertyRow(
+            "ClosureType",
+            None,
+            Some("Closure Type"),
+            Timestamp.from(Instant.now()),
+            None,
+            Some("Defined"),
+            Some("text"),
+            Some(true),
+            None,
+            Some("MandatoryClosure")
+          ),
+          FilepropertyRow(
+            "ClosurePeriod",
+            None,
+            Some("Closure Period"),
+            Timestamp.from(Instant.now()),
+            None,
+            Some("Defined"),
+            Some("text"),
+            Some(true),
+            None,
+            Some("OptionalClosure")
+          ),
+          FilepropertyRow(
+            "Property1",
+            None,
+            Some("PropertyName1"),
+            Timestamp.from(Instant.now()),
+            None,
+            Some("Defined"),
+            Some("text"),
+            Some(true),
+            None,
+            Some("MandatoryMetadata")
+          ),
+          FilepropertyRow("Property2", None, Some("PropertyName2"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("OptionalMetadata"))
+        )
+      )
+      val metadataFilters = Map(
+        "closureMetadata" -> FileMetadataFilters(closureMetadata = true).some,
+        "descriptiveMetadata" -> FileMetadataFilters(descriptiveMetadata = true).some,
+        "closureMetadata & descriptiveMetadata" -> FileMetadataFilters(closureMetadata = true, descriptiveMetadata = true).some
+      )
+
+      val expectedMetadata = Map(
+        "closureMetadata" -> (List("ClosureType", "ClosurePeriod"), List("Open", "12")),
+        "descriptiveMetadata" -> (List("Property1", "Property2"), List("Property1Value", "Property2Value")),
+        "closureMetadata & descriptiveMetadata" -> (List("ClosureType", "ClosurePeriod", "Property1", "Property2"), List("Open", "12", "Property1Value", "Property2Value"))
+      )
+
+      val fileFilters = FileFilters(metadataFilters = metadataFilters(metadataType))
+
+      when(fileRepositoryMock.getFiles(consignmentId, fileFilters))
+        .thenReturn(Future(fileAndMetadataRows))
+      when(fileRepositoryMock.getRedactedFilePairs(consignmentId)).thenReturn(Future(Seq()))
+      when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(List()))
+      when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
+      when(fileStatusRepositoryMock.getFileStatus(consignmentId, Set(FFID))).thenReturn(mockFileStatusResponse)
+      when(customMetadataPropertiesRepositoryMock.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
+
+      val ffidMetadataService = new FFIDMetadataService(
+        ffidMetadataRepositoryMock,
+        mock[FFIDMetadataMatchesRepository],
+        fileRepositoryMock,
+        allowedPuidsRepositoryMock,
+        disallowedPuidsRepositoryMock,
+        FixedTimeSource,
+        fixedUuidSource
+      )
+      val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
+      val fileStatusService =
+        new FileStatusService(fileRepositoryMock, fileStatusRepositoryMock, disallowedPuidsRepositoryMock, fixedUuidSource)
+
+      val service = new FileService(
+        fileRepositoryMock,
+        fileStatusRepositoryMock,
+        consignmentRepositoryMock,
+        customMetadataPropertiesRepositoryMock,
+        consignmentStatusService,
+        ffidMetadataService,
+        antivirusMetadataService,
+        fileStatusService,
+        fileMetadataService,
+        FixedTimeSource,
+        fixedUuidSource,
+        ConfigFactory.load()
+      )
+
+      val files = service.getFileMetadata(consignmentId, fileFilters.some, queriedFileFieldsWithoutOriginalPath).futureValue
+      val file = files.find(_.fileId == fileIdOne).get
+      file.fileMetadata.size should equal(expectedMetadata(metadataType)._1.size)
+      file.fileMetadata.map(_.name) should equal(expectedMetadata(metadataType)._1)
+      file.fileMetadata.map(_.value) should equal(expectedMetadata(metadataType)._2)
+    }
   }
 
   "getFileMetadata" should "return the correct metadata" in {
@@ -319,6 +464,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
@@ -438,6 +584,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
@@ -540,6 +687,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
@@ -611,6 +759,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
@@ -666,6 +815,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         fileRepositoryMock,
         fileStatusRepositoryMock,
         consignmentRepositoryMock,
+        customMetadataPropertiesRepositoryMock,
         consignmentStatusService,
         ffidMetadataService,
         antivirusMetadataService,
@@ -774,6 +924,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         fileRepositoryMock,
         fileStatusRepositoryMock,
         consignmentRepositoryMock,
+        customMetadataPropertiesRepositoryMock,
         consignmentStatusService,
         ffidMetadataService,
         antivirusMetadataService,
@@ -865,6 +1016,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
@@ -914,6 +1066,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         fileRepositoryMock,
         fileStatusRepositoryMock,
         consignmentRepositoryMock,
+        customMetadataPropertiesRepositoryMock,
         consignmentStatusService,
         mock[FFIDMetadataService],
         mock[AntivirusMetadataService],
@@ -1331,6 +1484,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileRepositoryMock,
       fileStatusRepositoryMock,
       consignmentRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,

@@ -123,6 +123,7 @@ class GraphQLServer(slickSession: SlickSession) {
       fileRepository,
       fileStatusRepository,
       consignmentRepository,
+      customMetadataPropertiesRepository,
       consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
