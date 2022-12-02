@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "IncorrectProperty found. We are only expecting checksum updates for now",
+      "message": "ERROR: insert or update on table \"FileMetadata\" violates foreign key constraint \"FileMetadata_PropertyName\"\n  Detail: Key (PropertyName)=(IncorrectProperty) is not present in table \"FileProperty\".",
       "locations": [
         {
           "column": 47,

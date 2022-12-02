@@ -165,7 +165,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.createFile(fileId, consignmentId)
     utils.addFileProperty("FileProperty")
     utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
-    val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty")
+    val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty") :: Nil
     val statusInput = FilestatusRow(UUID.randomUUID(), fileId, "Status Type", "Value", Timestamp.from(Instant.now()))
     fileMetadataRepository.addChecksumMetadata(input, Seq(statusInput)).futureValue
     getFileStatusValue(fileId, utils) should equal("Value")
@@ -181,7 +181,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.createFile(fileId, consignmentId)
     utils.addFileProperty("FileProperty")
     utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
-    val response = fileMetadataRepository.getFileMetadataByProperty(fileId, "FileProperty").futureValue.head
+    val response = fileMetadataRepository.getFileMetadataByProperty(fileId :: Nil, "FileProperty").futureValue.head
     response.value should equal("Result of FileMetadata processing")
     response.propertyname should equal("FileProperty")
     response.fileid should equal(fileId)
@@ -324,7 +324,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
       checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates)
 
-      val fileMetadata = fileMetadataRepository.getFileMetadataByProperty(fileIdFour, "FilePropertyOne").futureValue
+      val fileMetadata = fileMetadataRepository.getFileMetadataByProperty(fileIdFour :: Nil, "FilePropertyOne").futureValue
       fileMetadata.head.value should equal("test value")
   }
 

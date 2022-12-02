@@ -23,6 +23,10 @@ input AddFileAndMetadataInput {
 }
 
 input AddFileMetadataWithFileIdInput {
+  metadataInputValues: [AddFileMetadataWithFileIdInputValues!]!
+}
+
+input AddFileMetadataWithFileIdInputValues {
   filePropertyName: String!
   fileId: UUID!
   value: String!
@@ -376,7 +380,8 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInputValues!): AntivirusMetadata!
   addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
-  addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
+  addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInputValues!): FileMetadataWithFileId!
+  addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
   updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
   deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
   addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInputValues!): FFIDMetadata!

@@ -4,7 +4,7 @@ import java.util.UUID
 import io.circe.generic.auto._
 import sangria.macros.derive.{deriveInputObjectType, deriveObjectType}
 import sangria.marshalling.circe._
-import sangria.schema.{Argument, Field, InputObjectType, ObjectType, fields}
+import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasChecksumMetadataAccess, ValidateUserOwnsFiles}
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import FieldTypes._
@@ -24,7 +24,9 @@ object FileMetadataFields {
 
   case class BulkFileMetadata(fileIds: Seq[UUID], metadataProperties: Seq[FileMetadata])
 
-  case class AddFileMetadataWithFileIdInput(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
+  case class AddFileMetadataWithFileIdInput(metadataInputValues: List[AddFileMetadataWithFileIdInputValues])
+
+  case class AddFileMetadataWithFileIdInputValues(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
 
   case class UpdateBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[UpdateFileMetadataInput])
 
@@ -36,6 +38,7 @@ object FileMetadataFields {
   implicit val InputFileMetadataType: InputObjectType[UpdateFileMetadataInput] = deriveInputObjectType[UpdateFileMetadataInput]()
 
   implicit val FileMetadataWithFileIdType: ObjectType[Unit, FileMetadataWithFileId] = deriveObjectType[Unit, FileMetadataWithFileId]()
+  implicit val AddFileMetadataInputValuesType: InputObjectType[AddFileMetadataWithFileIdInputValues] = deriveInputObjectType[AddFileMetadataWithFileIdInputValues]()
   implicit val AddFileMetadataInputType: InputObjectType[AddFileMetadataWithFileIdInput] = deriveInputObjectType[AddFileMetadataWithFileIdInput]()
 
   implicit val DeleteFileMetadataType: ObjectType[Unit, DeleteFileMetadata] = deriveObjectType[Unit, DeleteFileMetadata]()
@@ -44,7 +47,8 @@ object FileMetadataFields {
   val BulkFileMetadataType: ObjectType[Unit, BulkFileMetadata] = deriveObjectType[Unit, BulkFileMetadata]()
   val UpdateBulkFileMetadataInputType: InputObjectType[UpdateBulkFileMetadataInput] = deriveInputObjectType[UpdateBulkFileMetadataInput]()
 
-  implicit val FileMetadataWithFileIdInputArg: Argument[AddFileMetadataWithFileIdInput] = Argument("addFileMetadataWithFileIdInput", AddFileMetadataInputType)
+  implicit val FileMetadataWithFileIdInputValuesArg: Argument[AddFileMetadataWithFileIdInputValues] = Argument("addFileMetadataWithFileIdInput", AddFileMetadataInputValuesType)
+  implicit val FileMetadataWithFileIdInputArg: Argument[AddFileMetadataWithFileIdInput] = Argument("addMultipleFileMetadataInput", AddFileMetadataInputType)
   implicit val BulkFileMetadataInputArg: Argument[UpdateBulkFileMetadataInput] =
     Argument("updateBulkFileMetadataInput", UpdateBulkFileMetadataInputType)
   implicit val DeleteFileMetadataInputArg: Argument[DeleteFileMetadataInput] = Argument("deleteFileMetadataInput", DeleteFileMetadataInputType)
@@ -53,6 +57,13 @@ object FileMetadataFields {
     Field(
       "addFileMetadata",
       FileMetadataWithFileIdType,
+      arguments = FileMetadataWithFileIdInputValuesArg :: Nil,
+      resolve = ctx => ctx.ctx.fileMetadataService.addFileMetadata(ctx.arg(FileMetadataWithFileIdInputValuesArg), ctx.ctx.accessToken.userId),
+      tags = List(ValidateHasChecksumMetadataAccess)
+    ),
+    Field(
+      "addMultipleFileMetadata",
+      ListType(FileMetadataWithFileIdType),
       arguments = FileMetadataWithFileIdInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.addFileMetadata(ctx.arg(FileMetadataWithFileIdInputArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateHasChecksumMetadataAccess)

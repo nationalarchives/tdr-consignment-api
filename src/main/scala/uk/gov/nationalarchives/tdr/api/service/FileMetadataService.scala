@@ -16,6 +16,7 @@ import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
+import scala.collection.MapView
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(
@@ -38,23 +39,33 @@ class FileMetadataService(
 
   def getCustomMetadataValuesWithDefault: Future[Seq[FilepropertyvaluesRow]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault
 
-  def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInput, userId: UUID): Future[FileMetadataWithFileId] = {
-    val fileMetadataRow =
-      FilemetadataRow(uuidSource.uuid, addFileMetadataInput.fileId, addFileMetadataInput.value, Timestamp.from(timeSource.now), userId, addFileMetadataInput.filePropertyName)
+  @deprecated("Use addFileMetadata(input: AddFileMetadataWithFileIdInput): Future[List[FileMetadataWithFileId]]")
+  def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInputValues, userId: UUID): Future[FileMetadataWithFileId] =
+    addFileMetadata(AddFileMetadataWithFileIdInput(addFileMetadataInput :: Nil), userId).map(_.head)
 
-    fileMetadataRow.propertyname match {
-      case SHA256ServerSideChecksum =>
-        {
-          for {
-            cfm <- fileMetadataRepository.getFileMetadataByProperty(fileMetadataRow.fileid, SHA256ClientSideChecksum)
-            fileStatusRows = Seq(getFileStatusRowForChecksumMatch(cfm.headOption, fileMetadataRow), getFileStatusRowForServerChecksum(fileMetadataRow))
-            row <- fileMetadataRepository.addChecksumMetadata(fileMetadataRow, fileStatusRows)
-          } yield FileMetadataWithFileId(fileMetadataRow.propertyname, row.fileid, row.value)
-        } recover { case e: Throwable =>
-          throw InputDataException(s"Could not find metadata for file ${fileMetadataRow.fileid}", Some(e))
-        }
-      case _ => Future.failed(InputDataException(s"${fileMetadataRow.propertyname} found. We are only expecting checksum updates for now"))
-    }
+  def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID) = {
+    fileMetadataRepository
+      .getFileMetadataByProperty(input.metadataInputValues.map(_.fileId), SHA256ClientSideChecksum)
+      .flatMap(metadataRows => {
+        val existingMetadataMap: Map[UUID, Option[FilemetadataRow]] = metadataRows.groupBy(_.fileid).view.mapValues(_.headOption).toMap
+        val (metadataRow, statusRows) = input.metadataInputValues
+          .map(addFileMetadataInput => {
+            val fileId = addFileMetadataInput.fileId
+            val fileMetadataRow =
+              FilemetadataRow(uuidSource.uuid, fileId, addFileMetadataInput.value, Timestamp.from(timeSource.now), userId, addFileMetadataInput.filePropertyName)
+            val statusRows = fileMetadataRow.propertyname match {
+              case SHA256ServerSideChecksum =>
+                Seq(getFileStatusRowForChecksumMatch(existingMetadataMap.get(fileId).flatten, fileMetadataRow), getFileStatusRowForServerChecksum(fileMetadataRow))
+              case _ => Nil
+            }
+            (fileMetadataRow, statusRows)
+          })
+          .unzip
+        fileMetadataRepository
+          .addChecksumMetadata(metadataRow, statusRows.flatten)
+          .map(_.map(row => FileMetadataWithFileId(row.propertyname, row.fileid, row.value)).toList)
+      })
+      .recover(err => throw InputDataException(err.getMessage))
   }
 
   def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {

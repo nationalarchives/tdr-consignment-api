@@ -34,7 +34,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   case class GraphqlDeleteFileMetadataMutationData(data: Option[DeletedFileMetadata], errors: List[GraphqlError] = Nil)
 
-  case class AddFileMetadata(addFileMetadata: FileMetadataWithFileId)
+  case class AddFileMetadata(addMultipleFileMetadata: List[FileMetadataWithFileId])
 
   case class UpdateBulkFileMetadata(updateBulkFileMetadata: BulkFileMetadata)
 
@@ -64,9 +64,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     utils.addFileProperty(SHA256ServerSideChecksum)
     val expectedResponse: GraphqlAddFileMetadataMutationData = expectedAddFileMetadataMutationResponse("data_all")
     val response: GraphqlAddFileMetadataMutationData = runAddFileMetadataTestMutation("mutation_alldata", validBackendChecksToken("checksum"))
-    response.data.get.addFileMetadata should equal(expectedResponse.data.get.addFileMetadata)
+    response.data.get.addMultipleFileMetadata.head should equal(expectedResponse.data.get.addMultipleFileMetadata.head)
 
-    checkFileMetadataExists(response.data.get.addFileMetadata.fileId, utils)
+    checkFileMetadataExists(response.data.get.addMultipleFileMetadata.head.fileId, utils)
   }
 
   "addFileMetadata" should "not allow updating of file metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
