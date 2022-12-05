@@ -11,7 +11,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Cust
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Failed, Mismatch, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Failed, Mismatch, Success}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -57,7 +57,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         FixedTimeSource,
         fixedUUIDSource
       )
-    service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, "value"), fixedUserId).futureValue
+    service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, "value"), fixedUserId).futureValue
 
     val row = addChecksumCaptor.getValue.head
     row.propertyname should equal(SHA256ServerSideChecksum)
@@ -120,7 +120,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(metadataRepositoryMock.addChecksumMetadata(any[List[FilemetadataRow]], fileStatusCaptor.capture()))
       .thenReturn(mockMetadataResponse)
 
-    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
+    when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
     val service =
       new FileMetadataService(
         metadataRepositoryMock,
@@ -131,7 +131,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         FixedTimeSource,
         fixedUUIDSource
       )
-    service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, "ChecksumMatch"), fixedUserId).futureValue
+    service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, "ChecksumMatch"), fixedUserId).futureValue
     fileStatusCaptor.getValue.size should equal(2)
     fileStatusCaptor.getValue.head.fileid should equal(fixedFileUuid)
     fileStatusCaptor.getValue.head.statustype should equal("ChecksumMatch")
@@ -174,7 +174,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         FixedTimeSource,
         fixedUUIDSource
       )
-    service.addFileMetadata(AddFileMetadataWithFileIdInput(SHA256ServerSideChecksum, fixedFileUuid, ""), fixedUserId).futureValue
+    service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, ""), fixedUserId).futureValue
     fileStatusCaptor.getValue.size should equal(2)
     fileStatusCaptor.getValue.head.fileid should equal(fixedFileUuid)
     fileStatusCaptor.getValue.head.statustype should equal("ChecksumMatch")
@@ -290,44 +290,65 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     getDescendentsFileIdsArgument should equal(testSetUp.inputFileIds)
   }
 
-  "updateCustomMetadataStatuses" should "update 'ClosureMetadata' status to 'Complete' where property type value has no dependencies" in {
+  "updateCustomMetadataStatuses" should "update 'ClosureMetadata' status to 'Complete' for multiple files where property type value has no dependencies" in {
     val testSetUp = new UpdateCustomMetadataStatusesSetUp()
-    val fileId = testSetUp.fileId1
-    val metadataRow: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "Open", Timestamp.from(FixedTimeSource.now), fileId, "ClosureType")
-    testSetUp.stubMockResponses(Set(fileId), List(metadataRow))
+    val userId = testSetUp.userId
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
+
+    val metadataRows: List[FilemetadataRow] = List(
+      FilemetadataRow(UUID.randomUUID(), fileId1, "Open", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "Open", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
+    )
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), metadataRows)
 
     val service = testSetUp.service
 
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("ClosureType")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId), Set("ClosureMetadata"))
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("ClosureType")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("ClosureMetadata"))
     verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
-    response.size shouldBe 1
-    val fileStatus = response.head
-    fileStatus.fileid should equal(fileId)
-    fileStatus.value should equal("Completed")
+    response.size shouldBe 2
+    val file1Status = response.find(_.fileid == fileId1).get
+    file1Status.fileid should equal(fileId1)
+    file1Status.value should equal("Completed")
+
+    val file2Status = response.find(_.fileid == fileId2).get
+    file2Status.fileid should equal(fileId2)
+    file2Status.value should equal("Completed")
   }
 
-  "updateCustomMetadataStatuses" should "update 'ClosureMetadata' status to correct value where property type is multi-value" in {
+  "updateCustomMetadataStatuses" should "update 'ClosureMetadata' status to correct value for multiple files where property type is multi-value" in {
     val testSetUp = new UpdateCustomMetadataStatusesSetUp()
-    val fileId = testSetUp.fileId1
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
     val userId = testSetUp.userId
 
-    val metadataRow1: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
-    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "40", Timestamp.from(FixedTimeSource.now), userId, "FOIExemptionCode")
-    val metadataRow3: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "30", Timestamp.from(FixedTimeSource.now), userId, "FOIExemptionCode")
-    testSetUp.stubMockResponses(Set(fileId), List(metadataRow1, metadataRow2, metadataRow3))
+    val metadataRows: List[FilemetadataRow] = List(
+      FilemetadataRow(UUID.randomUUID(), fileId1, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "40", Timestamp.from(FixedTimeSource.now), userId, "FOIExemptionCode"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "30", Timestamp.from(FixedTimeSource.now), userId, "FOIExemptionCode"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "44", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "40", Timestamp.from(FixedTimeSource.now), userId, "FOIExemptionCode"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "30", Timestamp.from(FixedTimeSource.now), userId, "FOIExemptionCode")
+    )
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), metadataRows)
 
     val service = testSetUp.service
 
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("FOIExemptionCode")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId), Set("ClosureMetadata"))
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("FOIExemptionCode")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("ClosureMetadata"))
     verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
-    response.size shouldBe 1
-    val file1Status = response.head
-    file1Status.fileid should equal(fileId)
+    response.size shouldBe 2
+    val file1Status = response.find(_.fileid == fileId1).get
+    file1Status.fileid should equal(fileId1)
     file1Status.value should equal("Incomplete")
+
+    val file2Status = response.find(_.fileid == fileId2).get
+    file2Status.fileid should equal(fileId2)
+    file2Status.value should equal("Completed")
   }
 
   "updateCustomMetadataStatuses" should "reset a 'ClosureMetadata' status to correct status for multiple files where one file is missing a dependant property" in {
@@ -361,139 +382,189 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateCustomMetadataStatuses" should "reset 'ClosureMetadata' and 'DescriptiveMetadata' status types to 'Complete' where both are updated and all dependant properties are present" in {
     val testSetUp = new UpdateCustomMetadataStatusesSetUp()
     val userId = testSetUp.userId
-    val fileId = testSetUp.fileId1
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
 
-    val metadataRow1: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "value1", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
-    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
-    val metadataRow3: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "value2", Timestamp.from(FixedTimeSource.now), userId, "Description")
-    testSetUp.stubMockResponses(Set(fileId), List(metadataRow1, metadataRow2, metadataRow3))
-
-    val service = testSetUp.service
-
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("ClosurePeriod", "Description")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId), Set("DescriptiveMetadata", "ClosureMetadata"))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
-
-    response.size shouldBe 2
-    val closureStatus = response.find(_.statustype == "ClosureMetadata").get
-    closureStatus.fileid should equal(fileId)
-    closureStatus.value should equal("Completed")
-
-    val descriptiveStatus = response.find(_.statustype == "DescriptiveMetadata").get
-    descriptiveStatus.fileid should equal(fileId)
-    descriptiveStatus.value should equal("Completed")
-  }
-
-  "updateCustomMetadataStatuses" should "reset 'ClosureMetadata' status type to 'Incomplete' for file where dependant properties are missing" in {
-    val testSetUp = new UpdateCustomMetadataStatusesSetUp()
-    val userId = testSetUp.userId
-    val fileId = testSetUp.fileId1
-
-    val metadataRow: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
-    testSetUp.stubMockResponses(Set(fileId), List(metadataRow))
+    val metadataRows: List[FilemetadataRow] = List(
+      FilemetadataRow(UUID.randomUUID(), fileId1, "value1", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "value2", Timestamp.from(FixedTimeSource.now), userId, "Description"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "value1", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "value2", Timestamp.from(FixedTimeSource.now), userId, "Description")
+    )
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), metadataRows)
 
     val service = testSetUp.service
 
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("ClosureType")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId), Set("ClosureMetadata"))
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("ClosurePeriod", "Description")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("DescriptiveMetadata", "ClosureMetadata"))
     verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
-    response.size shouldBe 1
-    val closureStatus = response.find(_.statustype == "ClosureMetadata").get
-    closureStatus.fileid should equal(fileId)
-    closureStatus.value should equal("Incomplete")
+    response.size shouldBe 4
+    val file1Statuses = response.filter(_.fileid == fileId1)
+    file1Statuses.size shouldBe 2
+    val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
+    file1ClosureStatus.fileid should equal(fileId1)
+    file1ClosureStatus.value should equal("Completed")
+    val file1DescriptiveStatus = file1Statuses.find(_.statustype == "DescriptiveMetadata").get
+    file1DescriptiveStatus.fileid should equal(fileId1)
+    file1DescriptiveStatus.value should equal("Completed")
+
+    val file2Statuses = response.filter(_.fileid == fileId2)
+    file2Statuses.size shouldBe 2
+    val file2ClosureStatus = file2Statuses.find(_.statustype == ClosureMetadata).get
+    file2ClosureStatus.fileid should equal(fileId2)
+    file2ClosureStatus.value should equal("Completed")
+    val file2DescriptiveStatus = file2Statuses.find(_.statustype == "DescriptiveMetadata").get
+    file2DescriptiveStatus.fileid should equal(fileId2)
+    file2DescriptiveStatus.value should equal("Completed")
   }
 
-  "updateCustomMetadataStatuses" should "reset 'ClosureMetadata' status type to 'NotEntered' for file where no closure metadata properties are present" in {
-    val testSetUp = new UpdateCustomMetadataStatusesSetUp()
-    val fileId = testSetUp.fileId1
-
-    testSetUp.stubMockResponses(Set(fileId), List())
-
-    val service = testSetUp.service
-
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("ClosureType")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId), Set("ClosureMetadata"))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
-
-    response.size shouldBe 1
-    val closureStatus = response.head
-    closureStatus.fileid should equal(fileId)
-    closureStatus.value should equal("NotEntered")
-  }
-
-  "updateCustomMetadataStatuses" should "reset 'DescriptiveMetadata' status type to 'NotEntered' for file where no descriptive metadata properties are present" in {
-    val testSetUp = new UpdateCustomMetadataStatusesSetUp()
-    val fileId = testSetUp.fileId1
-    testSetUp.stubMockResponses(Set(fileId), List())
-
-    val service = testSetUp.service
-
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("Description")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId), Set("DescriptiveMetadata"))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
-
-    response.size shouldBe 1
-    val closureStatus = response.head
-    closureStatus.fileid should equal(fileId)
-    closureStatus.value should equal("NotEntered")
-  }
-
-  "updateCustomMetadataStatuses" should "reset 'ClosureMetadata' status type and not 'DescriptiveMetadata' for files where closure properties are updated only" in {
+  "updateCustomMetadataStatuses" should "reset 'ClosureMetadata' status type to 'Incomplete' for multiple files where dependant properties are missing" in {
     val testSetUp = new UpdateCustomMetadataStatusesSetUp()
     val userId = testSetUp.userId
     val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
 
-    val metadataRow1: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
-    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId1, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
-    testSetUp.stubMockResponses(Set(fileId1), List(metadataRow1, metadataRow2))
+    val metadataRows: List[FilemetadataRow] = List(
+      FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
+    )
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), metadataRows)
 
     val service = testSetUp.service
 
-    val response = service.updateCustomMetadataStatuses(Set(fileId1), testSetUp.consignmentId, Set("ClosurePeriod")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1), Set("ClosureMetadata"))
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("ClosureType")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("ClosureMetadata"))
     verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
-    response.size shouldBe 1
-    val closureStatus = response.head
-    closureStatus.fileid should equal(fileId1)
-    closureStatus.value should equal("Completed")
+    response.size shouldBe 2
+    val closureStatus1 = response.find(_.fileid == fileId1).get
+    closureStatus1.fileid should equal(fileId1)
+    closureStatus1.value should equal("Incomplete")
+
+    val closureStatus2 = response.find(_.fileid == fileId2).get
+    closureStatus2.fileid should equal(fileId2)
+    closureStatus2.value should equal("Incomplete")
   }
 
-  "updateCustomMetadataStatuses" should "reset 'DescriptiveMetadata' status type and not 'ClosureMetadata' for files where descriptive properties are updated only" in {
+  "updateCustomMetadataStatuses" should "reset 'ClosureMetadata' status type to 'NotEntered' for multiple files where no closure metadata properties are present" in {
     val testSetUp = new UpdateCustomMetadataStatusesSetUp()
-    val userId = testSetUp.userId
-    val fileId = testSetUp.fileId1
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
 
-    val metadataRow1: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
-    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
-    val metadataRow3: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "Some description", Timestamp.from(FixedTimeSource.now), userId, "Description")
-    testSetUp.stubMockResponses(Set(fileId), List(metadataRow1, metadataRow2, metadataRow3))
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), List())
 
     val service = testSetUp.service
 
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("Description")).futureValue
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId), Set("DescriptiveMetadata"))
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("ClosureType")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("ClosureMetadata"))
     verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
 
-    response.size shouldBe 1
-    val descriptiveStatus = response.head
-    descriptiveStatus.fileid should equal(fileId)
-    descriptiveStatus.value should equal("Completed")
+    response.size shouldBe 2
+    val closureStatus1 = response.find(_.fileid == fileId1).get
+    closureStatus1.fileid should equal(fileId1)
+    closureStatus1.value should equal("NotEntered")
+
+    val closureStatus2 = response.find(_.fileid == fileId2).get
+    closureStatus2.fileid should equal(fileId2)
+    closureStatus2.value should equal("NotEntered")
   }
 
-  "updateCustomMetadataStatuses" should "not reset 'ClosureMetadata' or 'DescriptiveMetadata' status types where neither are being updated" in {
+  "updateCustomMetadataStatuses" should "reset 'DescriptiveMetadata' status type to 'NotEntered' for multiple files where no descriptive metadata properties are present" in {
     val testSetUp = new UpdateCustomMetadataStatusesSetUp()
-    val userId = testSetUp.userId
-    val fileId = testSetUp.fileId1
-
-    val metadataRow1: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType")
-    val metadataRow2: FilemetadataRow = FilemetadataRow(UUID.randomUUID(), fileId, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
-    testSetUp.stubMockResponses(Set(fileId), List(metadataRow1, metadataRow2))
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), List())
 
     val service = testSetUp.service
 
-    val response = service.updateCustomMetadataStatuses(Set(fileId), testSetUp.consignmentId, Set("SomeProperty1", "SomeProperty2")).futureValue
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("Description")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("DescriptiveMetadata"))
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
+
+    response.size shouldBe 2
+    val closureStatus1 = response.find(_.fileid == fileId1).get
+    closureStatus1.fileid should equal(fileId1)
+    closureStatus1.value should equal("NotEntered")
+
+    val closureStatus2 = response.find(_.fileid == fileId2).get
+    closureStatus2.fileid should equal(fileId2)
+    closureStatus2.value should equal("NotEntered")
+  }
+
+  "updateCustomMetadataStatuses" should "reset 'ClosureMetadata' status type and not 'DescriptiveMetadata' for multiple files where closure properties are updated only" in {
+    val testSetUp = new UpdateCustomMetadataStatusesSetUp()
+    val userId = testSetUp.userId
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
+
+    val metadataRows: List[FilemetadataRow] = List(
+      FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod")
+    )
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), metadataRows)
+
+    val service = testSetUp.service
+
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("ClosurePeriod")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("ClosureMetadata"))
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
+
+    response.size shouldBe 2
+    val closureStatus1 = response.find(_.fileid == fileId1).get
+    closureStatus1.fileid should equal(fileId1)
+    closureStatus1.value should equal("Completed")
+
+    val closureStatus2 = response.find(_.fileid == fileId2).get
+    closureStatus2.fileid should equal(fileId2)
+    closureStatus2.value should equal("Completed")
+  }
+
+  "updateCustomMetadataStatuses" should "reset 'DescriptiveMetadata' status type and not 'ClosureMetadata' for multiple files where descriptive properties are updated only" in {
+    val testSetUp = new UpdateCustomMetadataStatusesSetUp()
+    val userId = testSetUp.userId
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
+
+    val metadataRows: List[FilemetadataRow] = List(
+      FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "22", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "Some description", Timestamp.from(FixedTimeSource.now), userId, "Description"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "Some description", Timestamp.from(FixedTimeSource.now), userId, "Description")
+    )
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), metadataRows)
+
+    val service = testSetUp.service
+
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("Description")).futureValue
+    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(Set(fileId1, fileId2), Set("DescriptiveMetadata"))
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[FilestatusRow]])
+
+    response.size shouldBe 2
+    val descriptiveStatus1 = response.find(_.fileid == fileId1).get
+    descriptiveStatus1.fileid should equal(fileId1)
+    descriptiveStatus1.value should equal("Completed")
+
+    val descriptiveStatus2 = response.find(_.fileid == fileId2).get
+    descriptiveStatus2.fileid should equal(fileId2)
+    descriptiveStatus2.value should equal("Completed")
+  }
+
+  "updateCustomMetadataStatuses" should "not reset 'ClosureMetadata' or 'DescriptiveMetadata' status types where neither are being updated for multiple files" in {
+    val testSetUp = new UpdateCustomMetadataStatusesSetUp()
+    val userId = testSetUp.userId
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
+
+    testSetUp.stubMockResponses(Set(fileId1, fileId2), List())
+
+    val service = testSetUp.service
+
+    val response = service.updateCustomMetadataStatuses(Set(fileId1, fileId2), testSetUp.consignmentId, Set("SomeProperty1", "SomeProperty2")).futureValue
     verify(testSetUp.mockFileStatusRepository, times(0)).deleteFileStatus(any[Set[UUID]], any[Set[String]])
     verify(testSetUp.mockFileStatusRepository, times(0)).addFileStatuses(any[List[FilestatusRow]])
 
