@@ -10,7 +10,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Cust
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{ClosurePeriod, DescriptionClosed, FoiExemptionAsserted, _}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Completed, _}
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
@@ -37,6 +37,21 @@ class FileMetadataService(
   }
 
   implicit class CustomMetadataFieldsHelper(fields: Seq[CustomMetadataField]) {
+
+    private val closureFieldNames: Set[String] = Set(
+      ClosureType,
+      ClosureStartDate,
+      ClosurePeriod,
+      FoiExemptionCode.name,
+      FoiExemptionAsserted,
+      TitleClosed,
+      TitleAlternate,
+      DescriptionAlternate,
+      DescriptionClosed,
+    )
+    private val descriptiveFieldNames: Set[String] = Set(
+      description,
+      Language.name)
     case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
 
     def toPropertyNames: Set[String] = fields.map(_.name).toSet
@@ -46,11 +61,11 @@ class FileMetadataService(
     }
 
     def closureFields: Seq[CustomMetadataField] = {
-      fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
+      fields.filter(f => closureFieldNames.contains(f.name))
     }
 
     def descriptiveFields: Seq[CustomMetadataField] = {
-      fields.filter(f => f.propertyGroup.contains("MandatoryMetadata") || f.propertyGroup.contains("OptionalMetadata"))
+      fields.filter(f => descriptiveFieldNames.contains(f.name))
     }
 
     def toValueDependenciesGroups: Seq[FieldGroup] = {
@@ -117,6 +132,7 @@ class FileMetadataService(
   private def validateProperty(fileIds: Set[UUID], fieldToValidate: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
     val propertyToValidateName: String = fieldToValidate.name
     val valueDependenciesGroups = Seq(fieldToValidate).toValueDependenciesGroups
+    val fieldDefaultValue: Option[String] = fieldToValidate.defaultValue
 
     fileIds
       .flatMap(id => {
@@ -126,12 +142,15 @@ class FileMetadataService(
           None
         } else {
           existingPropertiesToValidate.map(existingProperty => {
-            val valueDependencies = valueDependenciesGroups.filter(_.groupName == existingProperty.value).toSet
+            val existingPropertyValue: String = existingProperty.value
+            val valueDependencies = valueDependenciesGroups.filter(_.groupName == existingPropertyValue).toSet
+
             // Validity test will need to change if multiple value fields require a set of dependencies for each value, eg
             // FOIExemptionCode 1 requires ClosurePeriod 1
             // FOIExemptionCode 2 requires ClosurePeriod 2 etc
             val valid: Boolean = valueDependencies.flatMap(_.fields.toPropertyNames).subsetOf(allExistingFileProperties.map(_.propertyname).toSet)
-            FilePropertyState(id, propertyToValidateName, valid)
+            val defaultValueUpdated: Boolean = fieldDefaultValue.isEmpty || fieldDefaultValue.get != existingPropertyValue
+            FilePropertyState(id, propertyToValidateName, valid, defaultValueUpdated)
           })
         }
       })
@@ -162,7 +181,11 @@ class FileMetadataService(
             val statuses = states
               .groupBy(_.fileId)
               .map(s => {
-                val status: String = if (s._2.forall(_.valid == true)) Completed else Incomplete
+                val status: String = s match {
+                  case s if s._2.forall(_.valid == true) && s._2.exists(_.defaultValueUpdated == true) => Completed
+                  case s if s._2.forall(_.defaultValueUpdated == false) => NotEntered
+                  case _ => Incomplete
+                }
                 FilestatusRow(UUID.randomUUID(), s._1, group.groupName, status, Timestamp.from(timeSource.now))
               })
 
@@ -271,6 +294,9 @@ object FileMetadataService {
   val TitleClosed = "TitleClosed"
   val DescriptionClosed = "DescriptionClosed"
   val ClosureType = "ClosureType"
+  val TitleAlternate = "TitleAlternate"
+  val DescriptionAlternate = "DescriptionAlternate"
+  val description = "description"
 
   /** Save default values for these properties because TDR currently only supports records which are Open, in English, etc. Users agree to these conditions at a consignment level,
     * so it's OK to save these as defaults for every file. They need to be saved so they can be included in the export package. The defaults may be removed in future once we let
@@ -339,5 +365,5 @@ object FileMetadataService {
       descriptionClosed: Option[Boolean]
   )
 
-  case class FilePropertyState(fileId: UUID, propertyName: String, valid: Boolean)
+  private case class FilePropertyState(fileId: UUID, propertyName: String, valid: Boolean, defaultValueUpdated: Boolean)
 }
