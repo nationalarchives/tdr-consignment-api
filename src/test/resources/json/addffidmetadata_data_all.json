@@ -1,20 +1,22 @@
 {
   "data": {
-    "addFFIDMetadata": {
-      "fileId": "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
-      "method": "pronom",
-      "softwareVersion": "1.8.0",
-      "datetime": 1593507071091,
-      "software": "pronom",
-      "matches": [
-        {
-          "puid": "x-fmt/111",
-          "identificationBasis": "Some basis",
-          "extension": "txt"
-        }
-      ],
-      "containerSignatureFileVersion": "container-signature-20200121.xml",
-      "binarySignatureFileVersion": "DROID_SignatureFile_V96.xml"
-    }
+    "addBulkFFIDMetadata": [
+      {
+        "fileId": "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
+        "method": "pronom",
+        "softwareVersion": "1.8.0",
+        "datetime": 1593507071091,
+        "software": "pronom",
+        "matches": [
+          {
+            "puid": "x-fmt/111",
+            "identificationBasis": "Some basis",
+            "extension": "txt"
+          }
+        ],
+        "containerSignatureFileVersion": "container-signature-20200121.xml",
+        "binarySignatureFileVersion": "DROID_SignatureFile_V96.xml"
+      }
+    ]
   }
 }

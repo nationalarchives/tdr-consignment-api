@@ -1,4 +1,8 @@
 input AddAntivirusMetadataInput {
+  antivirusMetadata: [AddAntivirusMetadataInputValues!]!
+}
+
+input AddAntivirusMetadataInputValues {
   fileId: UUID!
   software: String!
   softwareVersion: String!
@@ -19,6 +23,10 @@ input AddFileAndMetadataInput {
 }
 
 input AddFileMetadataWithFileIdInput {
+  metadataInputValues: [AddFileMetadataWithFileIdInputValues!]!
+}
+
+input AddFileMetadataWithFileIdInputValues {
   filePropertyName: String!
   fileId: UUID!
   value: String!
@@ -220,6 +228,16 @@ type FFIDMetadata {
 }
 
 input FFIDMetadataInput {
+  metadataInputValues: [FFIDMetadataInputValues!]!
+}
+
+input FFIDMetadataInputMatches {
+  extension: String
+  identificationBasis: String!
+  puid: String
+}
+
+input FFIDMetadataInputValues {
   fileId: UUID!
   software: String!
   softwareVersion: String!
@@ -227,12 +245,6 @@ input FFIDMetadataInput {
   containerSignatureFileVersion: String!
   method: String!
   matches: [FFIDMetadataInputMatches!]!
-}
-
-input FFIDMetadataInputMatches {
-  extension: String
-  identificationBasis: String!
-  puid: String
 }
 
 type FFIDMetadataMatches {
@@ -288,6 +300,7 @@ input FileFilters {
   fileTypeIdentifier: String
   selectedFileIds: [UUID!]
   parentId: UUID
+  metadataFilters: FileMetadataFilters
 }
 
 type FileMatches {
@@ -298,6 +311,11 @@ type FileMatches {
 type FileMetadata {
   filePropertyName: String!
   value: String!
+}
+
+input FileMetadataFilters {
+  closureMetadata: Boolean = false
+  descriptiveMetadata: Boolean = false
 }
 
 input FileMetadataToDelete {
@@ -366,11 +384,14 @@ type Mutation {
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput!): ConsignmentStatus!
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
-  addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInput!): AntivirusMetadata!
-  addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInput!): FileMetadataWithFileId!
+  addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInputValues!): AntivirusMetadata!
+  addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
+  addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInputValues!): FileMetadataWithFileId!
+  addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
   updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
   deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
-  addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInput!): FFIDMetadata!
+  addFFIDMetadata(addFFIDMetadataInput: FFIDMetadataInputValues!): FFIDMetadata!
+  addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
   addFileStatus(addFileStatusInput: AddFileStatusInput!): FileStatus!

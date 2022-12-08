@@ -13,8 +13,8 @@ class AntivirusMetadataRepository(db: Database)(implicit val executionContext: E
   private val insertFileStatusQuery = Filestatus returning Filestatus.map(_.filestatusid) into
     ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
-  def addAntivirusMetadata(antivirusMetadataRow: AvmetadataRow, fileStatusRow: FilestatusRow): Future[AvmetadataRow] = {
-    val allUpdates = DBIO.seq(insertAvMetadataQuery += antivirusMetadataRow, insertFileStatusQuery += fileStatusRow).transactionally
+  def addAntivirusMetadata(antivirusMetadataRow: List[AvmetadataRow], fileStatusRow: List[FilestatusRow]): Future[List[AvmetadataRow]] = {
+    val allUpdates = DBIO.seq(insertAvMetadataQuery ++= antivirusMetadataRow, insertFileStatusQuery ++= fileStatusRow).transactionally
     db.run(allUpdates).map(_ => antivirusMetadataRow)
   }
 

@@ -1,10 +1,12 @@
 {
   "data": {
-    "addAntivirusMetadata": {
-      "fileId": "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
-      "software": "yara",
-      "softwareVersion": "0.1",
-      "datetime": 1584599020000
-    }
+    "addBulkAntivirusMetadata": [
+      {
+        "fileId": "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
+        "software": "yara",
+        "softwareVersion": "0.1",
+        "datetime": 1584599020000
+      }
+    ]
   }
 }
