@@ -15,7 +15,6 @@ import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-import scala.collection.MapView
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(
@@ -42,7 +41,7 @@ class FileMetadataService(
   def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInputValues, userId: UUID): Future[FileMetadataWithFileId] =
     addFileMetadata(AddFileMetadataWithFileIdInput(addFileMetadataInput :: Nil), userId).map(_.head)
 
-  def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID) = {
+  def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     fileMetadataRepository
       .getFileMetadataByProperty(input.metadataInputValues.map(_.fileId), SHA256ClientSideChecksum)
       .flatMap(metadataRows => {
