@@ -90,7 +90,7 @@ class FileMetadataService(
       existingFileRows <- getAllDescendants
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
       allMetadataProperties <- getCustomMetadataProperty
-      metadataValues <- getCustomMetadataValues
+      allValuesForMetadataProperties <- getCustomMetadataValues
       allDependencies <- getCustomMetadataDependencies
       propertiesToDelAndDefaultToAddBack: Map[String, Option[FileMetadataUpdate]] =
         input.propertyNamesAndValues.flatMap { propertyNamesAndValue =>
@@ -98,7 +98,7 @@ class FileMetadataService(
           val propertyNameToDelete: String = propertyNamesAndValue.filePropertyName
 
           val valuesBelongingToProperty: Seq[FilepropertyvaluesRow] =
-            metadataValues.filter(metadataValue => metadataValue.propertyname == propertyNameToDelete)
+            allValuesForMetadataProperties.filter(propertyValue => propertyValue.propertyname == propertyNameToDelete)
 
           val filePropertyValueRowsToDelete: Seq[FilepropertyvaluesRow] =
             if (valueToDelete.nonEmpty) {
@@ -120,7 +120,7 @@ class FileMetadataService(
           getFileMetadataToDeleteAndReset(
             userId,
             allMetadataProperties,
-            metadataValues,
+            allValuesForMetadataProperties,
             allDependencies,
             propertyNameToDelete,
             valuesBelongingToProperty,
@@ -150,7 +150,7 @@ class FileMetadataService(
   private def getFileMetadataToDeleteAndReset(
       userId: UUID,
       allMetadataProperties: Seq[FilepropertyRow],
-      metadataValues: Seq[FilepropertyvaluesRow],
+      allValuesForMetadataProperties: Seq[FilepropertyvaluesRow],
       allDependencies: Seq[FilepropertydependenciesRow],
       propertyNameToDelete: String,
       valuesBelongingToProperty: Seq[FilepropertyvaluesRow],
@@ -173,11 +173,11 @@ class FileMetadataService(
     val dependenciesToDelete: Seq[String] = allDependencies.collect { case dependency if groupIds.contains(dependency.groupid) => dependency.propertyname }
 
     val dependencyNameAndValuesToDeleteOrSetAsDefault: Seq[(String, Option[FileMetadataUpdate])] = dependenciesToDelete.flatMap { dependencyToDelete =>
-      val valuesBelongingToProperty: Seq[FilepropertyvaluesRow] = metadataValues.filter(metadataValue => metadataValue.propertyname == dependencyToDelete)
+      val valuesBelongingToProperty: Seq[FilepropertyvaluesRow] = allValuesForMetadataProperties.filter(metadataValue => metadataValue.propertyname == dependencyToDelete)
       getFileMetadataToDeleteAndReset(
         userId,
         allMetadataProperties,
-        metadataValues,
+        allValuesForMetadataProperties,
         allDependencies,
         dependencyToDelete,
         valuesBelongingToProperty,
