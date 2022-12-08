@@ -47,11 +47,9 @@ class FileMetadataService(
       TitleClosed,
       TitleAlternate,
       DescriptionAlternate,
-      DescriptionClosed,
+      DescriptionClosed
     )
-    private val descriptiveFieldNames: Set[String] = Set(
-      description,
-      Language.name)
+    private val descriptiveFieldNames: Set[String] = Set(description, Language.name)
     case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
 
     def toPropertyNames: Set[String] = fields.map(_.name).toSet
@@ -183,8 +181,8 @@ class FileMetadataService(
               .map(s => {
                 val status: String = s match {
                   case s if s._2.forall(_.valid == true) && s._2.exists(_.defaultValueUpdated == true) => Completed
-                  case s if s._2.forall(_.defaultValueUpdated == false) => NotEntered
-                  case _ => Incomplete
+                  case s if s._2.forall(_.defaultValueUpdated == false)                                => NotEntered
+                  case _                                                                               => Incomplete
                 }
                 FilestatusRow(UUID.randomUUID(), s._1, group.groupName, status, Timestamp.from(timeSource.now))
               })
