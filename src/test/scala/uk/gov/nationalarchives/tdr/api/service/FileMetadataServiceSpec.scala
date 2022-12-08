@@ -363,8 +363,30 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
         FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("TitleClosedGroup")),
         FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Property1Group")),
-        FilepropertyRow("TopLevelProperty1", None, Some("Top Level Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("PropertyGroup1")),
-        FilepropertyRow("TopLevelProperty2", None, Some("Top Level Property 2"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("PropertyGroup2"))
+        FilepropertyRow(
+          "TopLevelProperty1",
+          None,
+          Some("Top Level Property 1"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("PropertyGroup1")
+        ),
+        FilepropertyRow(
+          "TopLevelProperty2",
+          None,
+          Some("Top Level Property 2"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("PropertyGroup2")
+        )
       )
     )
     val mockPropertyValuesResponse = Future(
@@ -398,16 +420,18 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(fileMetadataRepositoryMock.deleteFileMetadata(ArgumentMatchers.eq(fileIds.toSet), fileMetadataDeleteCaptor.capture())).thenReturn(Future(2))
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-    val response = service.deleteFileMetadata(
-      DeleteFileMetadataInput(
-        Seq(folderId),
-        Seq(
-          FileMetadataToDelete(ClosureType, Some("Closed")),
-          FileMetadataToDelete("TopLevelProperty1", None)
-        )
-      ),
-      userId
-    ).futureValue
+    val response = service
+      .deleteFileMetadata(
+        DeleteFileMetadataInput(
+          Seq(folderId),
+          Seq(
+            FileMetadataToDelete(ClosureType, Some("Closed")),
+            FileMetadataToDelete("TopLevelProperty1", None)
+          )
+        ),
+        userId
+      )
+      .futureValue
 
     response.fileIds should equal(fileIds)
     response.filePropertyNames should equal(expectedPropertyNamesToDelete)
@@ -434,7 +458,18 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       Seq(
         FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
         FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-        FilepropertyRow("ClosureStartDate", None, Some("Closure Start Date"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow(
+          "ClosureStartDate",
+          None,
+          Some("Closure Start Date"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("Closure")
+        ),
         FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
         FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Property1Group"))
       )
@@ -480,7 +515,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val expectedPropertyNames = List(TitleClosed, ClosureType)
     val expectedPropertyValues = List("false", "Open")
-    addFileMetadata.foreach{ metadata =>
+    addFileMetadata.foreach { metadata =>
       expectedPropertyNames.contains(metadata.propertyname) shouldBe true
       expectedPropertyValues.contains(metadata.value) shouldBe true
       metadata.datetime != null shouldBe true
@@ -502,7 +537,18 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       Seq(
         FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
         FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-        FilepropertyRow("ClosureStartDate", None, Some("Closure Start Date"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow(
+          "ClosureStartDate",
+          None,
+          Some("Closure Start Date"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("Closure")
+        ),
         FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
         FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Property1Group"))
       )
