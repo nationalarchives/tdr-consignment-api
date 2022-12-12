@@ -14,5 +14,19 @@ object DisplayPropertiesFields extends DataTypeFields {
 
   case class DisplayAttribute(attribute: String, value: String, `type`: DataType)
 
-  case class DisplayProperty(propertyName: String, attributes: Set[DisplayAttribute])
+  case class DisplayPropertyField(propertyName: String, attributes: Seq[DisplayAttribute])
+
+  implicit val DisplayPropertyFieldType: ObjectType[Unit, DisplayPropertyField] = deriveObjectType[Unit, DisplayPropertyField]()
+  implicit val DisplayAttributeType: ObjectType[Unit, DisplayAttribute] = deriveObjectType[Unit, DisplayAttribute]()
+  val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
+
+  val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
+    Field(
+      "displayProperties",
+      ListType(DisplayPropertyFieldType),
+      arguments = ConsignmentIdArg :: Nil,
+      resolve = ctx => ctx.ctx.displayPropertiesService.getDisplayProperties,
+      tags = List(ValidateUserHasAccessToConsignment(ConsignmentIdArg))
+    )
+  )
 }

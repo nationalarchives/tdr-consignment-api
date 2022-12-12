@@ -11,6 +11,7 @@ object GraphQlTypes {
       ConsignmentFields.queryFields ++
       ClientFileMetadataFields.queryFields ++
       CustomMetadataFields.queryFields ++
+      DisplayPropertiesFields.queryFields ++
       FileFields.queryFields
   )
   private val MutationType = ObjectType(

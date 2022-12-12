@@ -10,18 +10,26 @@ import scala.concurrent.{ExecutionContext, Future}
 class DisplayPropertiesService(displayPropertiesRepository: DisplayPropertiesRepository)(implicit val ec: ExecutionContext) {
 
   implicit class DisplayPropertyRowHelper(properties: Seq[Tables.DisplaypropertiesRow]) {
-    def toDisplayProperty: Seq[DisplayProperty] = {
-      properties.groupBy(_.propertyname).map(r => {
-        val name = r._1.get
-        val attributes = r._2.map(a => {
-          DisplayAttribute(a.attribute.getOrElse(""), a.value.getOrElse(""), DisplayPropertiesFields.toDataType(a.attributetype))
-        }).toSet
-        DisplayProperty(name, attributes)
-      }).toSeq
+    def toDisplayProperty: Seq[DisplayPropertyField] = {
+      properties
+        .groupBy(_.propertyname)
+        .map(r => {
+          val name = r._1.get
+          val attributes = r._2.map(a => {
+            val attribute: String = a.attribute.getOrElse(
+              throw new Exception(
+                s"Error: Property name '$name' has empty attribute name"
+              )
+            )
+            DisplayAttribute(attribute, a.value.getOrElse(""), DisplayPropertiesFields.toDataType(a.attributetype))
+          })
+          DisplayPropertyField(name, attributes)
+        })
+        .toSeq
     }
   }
 
-  def getDisplayProperties: Future[Seq[DisplayProperty]] = {
+  def getDisplayProperties: Future[Seq[DisplayPropertyField]] = {
     for {
       displayProperties <- displayPropertiesRepository.getDisplayProperties
     } yield {
