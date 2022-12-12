@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Variable '$consignmentId' expected value of type 'UUID!' but value is undefined. Reason: Expected non-null value, found null. (line 1, column 25):\nquery displayProperties($consignmentId:UUID!){displayProperties(consignmentid:$consignmentId){propertyName, attributes {attribute, value, type}}}\n                        ^",
+      "locations": [
+        {
+          "column": 22,
+          "line": 1
+        }
+      ]
+    }
+  ]
+}

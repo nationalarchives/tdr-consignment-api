@@ -34,19 +34,19 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val property1 = response.find(_.propertyName == "propertyName1").get
     property1.attributes.size should equal(2)
     val property1Attribute1 = property1.attributes.find(_.attribute == "attribute1").get
-    property1Attribute1.value should equal("attribute1Value1")
+    property1Attribute1.value should equal(Some("attribute1Value1"))
     property1Attribute1.`type` should equal(Text)
     val property1Attribute2 = property1.attributes.find(_.attribute == "attribute2").get
-    property1Attribute2.value should equal("attribute2Value2")
+    property1Attribute2.value should equal(Some("attribute2Value2"))
     property1Attribute2.`type` should equal(Integer)
 
     val property2 = response.find(_.propertyName == "propertyName2").get
     property2.attributes.size should equal(2)
     val property2Attribute1 = property2.attributes.find(_.attribute == "attribute1").get
-    property2Attribute1.value should equal("attribute1Value3")
+    property2Attribute1.value should equal(Some("attribute1Value3"))
     property2Attribute1.`type` should equal(Boolean)
     val property2Attribute2 = property2.attributes.find(_.attribute == "attribute2").get
-    property2Attribute2.value should equal("attribute2Value4")
+    property2Attribute2.value should equal(Some("attribute2Value4"))
     property2Attribute2.`type` should equal(Text)
   }
 

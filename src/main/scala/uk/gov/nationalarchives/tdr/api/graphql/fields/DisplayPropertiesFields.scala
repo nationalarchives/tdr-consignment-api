@@ -12,7 +12,7 @@ import java.util.UUID
 
 object DisplayPropertiesFields extends DataTypeFields {
 
-  case class DisplayAttribute(attribute: String, value: String, `type`: DataType)
+  case class DisplayAttribute(attribute: String, value: Option[String], `type`: DataType)
 
   case class DisplayPropertyField(propertyName: String, attributes: Seq[DisplayAttribute])
 

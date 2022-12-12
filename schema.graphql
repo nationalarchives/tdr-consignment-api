@@ -199,11 +199,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Integer
   DateTime
+  Integer
   Boolean
-  Text
   Decimal
+  Text
 }
 
 type DeleteFileMetadata {
@@ -217,7 +217,7 @@ input DeleteFileMetadataInput {
 
 type DisplayAttribute {
   attribute: String!
-  value: String!
+  value: String
   type: DataType!
 }
 

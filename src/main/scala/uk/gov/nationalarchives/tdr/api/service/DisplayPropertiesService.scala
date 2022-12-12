@@ -21,7 +21,7 @@ class DisplayPropertiesService(displayPropertiesRepository: DisplayPropertiesRep
                 s"Error: Property name '$name' has empty attribute name"
               )
             )
-            DisplayAttribute(attribute, a.value.getOrElse(""), DisplayPropertiesFields.toDataType(a.attributetype))
+            DisplayAttribute(attribute, a.value, DisplayPropertiesFields.toDataType(a.attributetype))
           })
           DisplayPropertyField(name, attributes)
         })
