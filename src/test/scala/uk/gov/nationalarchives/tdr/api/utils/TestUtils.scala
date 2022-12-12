@@ -37,7 +37,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     connection.prepareStatement("""DELETE FROM "Consignment";""").execute()
     connection.prepareStatement("""DELETE FROM "DisallowedPuids";""").execute()
     connection.prepareStatement("""DELETE FROM "AllowedPuids";""").execute()
-    connection.prepareStatement("""DELETE FROM "Displayproperties";""").execute()
     connection.prepareStatement("""ALTER SEQUENCE consignment_sequence_id RESTART WITH 1;""").execute()
   }
 
