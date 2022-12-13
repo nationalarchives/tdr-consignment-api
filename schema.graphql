@@ -49,7 +49,7 @@ input AddFinalTransferConfirmationInput {
   legalCustodyTransferConfirmed: Boolean!
 }
 
-input AddMultipleFileStatusInput {
+input AddMultipleFileStatusesInput {
   statuses: [AddFileStatusInput!]!
 }
 
@@ -393,7 +393,7 @@ type Mutation {
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
   addFileStatus(addFileStatusInput: AddFileStatusInput!): FileStatus!
-  addMultipleFileStatus(addMultipleFileStatusInput: AddMultipleFileStatusInput!): [FileStatus!]!
+  addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
 }
 
 "Information about pagination in a connection."

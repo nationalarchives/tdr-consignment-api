@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Success}
 
 import java.sql.Timestamp
@@ -14,8 +14,8 @@ class FileStatusService(fileRepository: FileRepository, fileStatusRepository: Fi
     implicit val executionContext: ExecutionContext
 ) {
 
-  def addFileStatuses(addMultipleFileStatusInput: AddMultipleFileStatusInput): Future[List[FileStatus]] = {
-    val rows = addMultipleFileStatusInput.statuses.map(addFileStatusInput => {
+  def addFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput): Future[List[FileStatus]] = {
+    val rows = addMultipleFileStatusesInput.statuses.map(addFileStatusInput => {
       FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now()))
     })
     fileStatusRepository.addFileStatuses(rows).map(_.map(row => FileStatus(row.fileid, row.statustype, row.value)).toList)
@@ -23,7 +23,7 @@ class FileStatusService(fileRepository: FileRepository, fileStatusRepository: Fi
 
   @deprecated("Use addFileStatuses(addMultipleFileStatuses: List[AddFileStatusInput])")
   def addFileStatus(addFileStatusInput: AddFileStatusInput): Future[FileStatus] = {
-    addFileStatuses(AddMultipleFileStatusInput(addFileStatusInput :: Nil)).map(_.head)
+    addFileStatuses(AddMultipleFileStatusesInput(addFileStatusInput :: Nil)).map(_.head)
   }
 
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {

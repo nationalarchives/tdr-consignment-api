@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.RedactedFiles
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.FixedUUIDSource
 
@@ -55,7 +55,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     val repositoryReturnValue = Future(Seq(FilestatusRow(UUID.randomUUID(), addFileStatusInput.fileId, "Upload", "Success", Timestamp.from(Instant.now()))))
     when(fileStatusRepositoryMock.addFileStatuses(fileStatusCaptor.capture())).thenReturn(repositoryReturnValue)
 
-    val response = createFileStatusService().addFileStatuses(AddMultipleFileStatusInput(addFileStatusInput :: Nil)).futureValue.head
+    val response = createFileStatusService().addFileStatuses(AddMultipleFileStatusesInput(addFileStatusInput :: Nil)).futureValue.head
 
     val fileStatusRowActual = fileStatusCaptor.getValue.head
     fileStatusRowActual.statustype should equal(addFileStatusInput.statusType)

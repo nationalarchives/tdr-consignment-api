@@ -18,7 +18,7 @@ import java.util.UUID
 class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  private val addFileStatusPrefix: String = "json/addFileStatus_"
+  private val addFileStatusPrefix: String = "json/addFileStatuses_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -26,7 +26,7 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
 
   case class GraphqlAddFileStatusMutationData(data: Option[AddMultipleFileStatus], errors: List[GraphqlError] = Nil)
 
-  case class AddMultipleFileStatus(addMultipleFileStatus: List[FileStatus])
+  case class AddMultipleFileStatus(addMultipleFileStatuses: List[FileStatus])
 
   val runAddFileStatusTestMutation: (String, OAuth2BearerToken) => GraphqlAddFileStatusMutationData =
     runTestRequest[GraphqlAddFileStatusMutationData](addFileStatusPrefix)
@@ -46,8 +46,8 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
     val expectedResponse: GraphqlAddFileStatusMutationData = expectedAddFileStatusMutationResponse("data_all")
     val response: GraphqlAddFileStatusMutationData = runAddFileStatusTestMutation("mutation_alldata", token)
     print(response)
-    response.data.get.addMultipleFileStatus.head should equal(expectedResponse.data.get.addMultipleFileStatus.head)
-    checkFileStatusExists(defaultFileId, utils, expectedResponse.data.get.addMultipleFileStatus.head)
+    response.data.get.addMultipleFileStatuses.head should equal(expectedResponse.data.get.addMultipleFileStatuses.head)
+    checkFileStatusExists(defaultFileId, utils, expectedResponse.data.get.addMultipleFileStatuses.head)
   }
 
   "addFileStatus" should "not allow a user to add a file status of a File that they did not upload" in withContainers { case container: PostgreSQLContainer =>

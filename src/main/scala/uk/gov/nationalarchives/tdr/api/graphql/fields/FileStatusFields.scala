@@ -15,14 +15,14 @@ object FileStatusFields {
   case class FileStatus(fileId: UUID, statusType: String, statusValue: String)
 
   case class AddFileStatusInput(fileId: UUID, statusType: String, statusValue: String)
-  case class AddMultipleFileStatusInput(statuses: List[AddFileStatusInput])
+  case class AddMultipleFileStatusesInput(statuses: List[AddFileStatusInput])
 
   implicit val FileStatusType: ObjectType[Unit, FileStatus] = deriveObjectType[Unit, FileStatus]()
   implicit val AddFileStatusInputType: InputObjectType[AddFileStatusInput] = deriveInputObjectType[AddFileStatusInput]()
-  implicit val AddMultipleFileStatusInputType: InputObjectType[AddMultipleFileStatusInput] = deriveInputObjectType[AddMultipleFileStatusInput]()
+  implicit val AddMultipleFileStatusesInputType: InputObjectType[AddMultipleFileStatusesInput] = deriveInputObjectType[AddMultipleFileStatusesInput]()
 
   implicit val FileStatusInputArg: Argument[AddFileStatusInput] = Argument("addFileStatusInput", AddFileStatusInputType)
-  implicit val MultipleFileStatusInputArg: Argument[AddMultipleFileStatusInput] = Argument("addMultipleFileStatusInput", AddMultipleFileStatusInputType)
+  implicit val MultipleFileStatusesInputArg: Argument[AddMultipleFileStatusesInput] = Argument("addMultipleFileStatusesInput", AddMultipleFileStatusesInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
@@ -33,11 +33,11 @@ object FileStatusFields {
       tags = List(ValidateUserOwnsFiles(FileStatusInputArg))
     ),
     Field(
-      "addMultipleFileStatus",
+      "addMultipleFileStatuses",
       ListType(FileStatusType),
-      arguments = MultipleFileStatusInputArg :: Nil,
-      resolve = ctx => ctx.ctx.fileStatusService.addFileStatuses(ctx.arg(MultipleFileStatusInputArg)),
-      tags = List(ValidateUserOwnsFiles(MultipleFileStatusInputArg))
+      arguments = MultipleFileStatusesInputArg :: Nil,
+      resolve = ctx => ctx.ctx.fileStatusService.addFileStatuses(ctx.arg(MultipleFileStatusesInputArg)),
+      tags = List(ValidateUserOwnsFiles(MultipleFileStatusesInputArg))
     )
   )
 }

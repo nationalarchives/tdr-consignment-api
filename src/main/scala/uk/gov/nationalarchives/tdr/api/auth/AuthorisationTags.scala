@@ -5,7 +5,7 @@ import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
@@ -173,7 +173,7 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       case input: DeleteFileMetadataInput     => input.fileIds
       case input: UpdateBulkFileMetadataInput => input.fileIds
       case input: AddFileStatusInput          => Seq(input.fileId)
-      case input: AddMultipleFileStatusInput  => input.statuses.map(_.fileId)
+      case input: AddMultipleFileStatusesInput  => input.statuses.map(_.fileId)
     }
 
     val userId = ctx.ctx.accessToken.userId
