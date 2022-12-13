@@ -170,10 +170,10 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
     val fileIds: Seq[UUID] = arg match {
-      case input: DeleteFileMetadataInput     => input.fileIds
-      case input: UpdateBulkFileMetadataInput => input.fileIds
-      case input: AddFileStatusInput          => Seq(input.fileId)
-      case input: AddMultipleFileStatusesInput  => input.statuses.map(_.fileId)
+      case input: DeleteFileMetadataInput      => input.fileIds
+      case input: UpdateBulkFileMetadataInput  => input.fileIds
+      case input: AddFileStatusInput           => Seq(input.fileId)
+      case input: AddMultipleFileStatusesInput => input.statuses.map(_.fileId)
     }
 
     val userId = ctx.ctx.accessToken.userId
