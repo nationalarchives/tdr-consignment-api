@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import org.mockito.ArgumentMatchers.any
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.BeforeAndAfterEach
@@ -10,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.RedactedFiles
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.FixedUUIDSource
 
@@ -52,10 +51,11 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
     val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
 
-    when(fileStatusRepositoryMock.addFileStatuses(fileStatusCaptor.capture())).thenReturn(Future(Seq()))
-
     val addFileStatusInput = AddFileStatusInput(UUID.randomUUID(), "Upload", "Success")
-    val response = createFileStatusService().addFileStatus(addFileStatusInput).futureValue
+    val repositoryReturnValue = Future(Seq(FilestatusRow(UUID.randomUUID(), addFileStatusInput.fileId, "Upload", "Success", Timestamp.from(Instant.now()))))
+    when(fileStatusRepositoryMock.addFileStatuses(fileStatusCaptor.capture())).thenReturn(repositoryReturnValue)
+
+    val response = createFileStatusService().addFileStatuses(AddMultipleFileStatusInput(addFileStatusInput :: Nil)).futureValue.head
 
     val fileStatusRowActual = fileStatusCaptor.getValue.head
     fileStatusRowActual.statustype should equal(addFileStatusInput.statusType)
@@ -65,42 +65,6 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     response.fileId should equal(addFileStatusInput.fileId)
     response.statusValue should equal(addFileStatusInput.statusValue)
     response.statusType should equal(addFileStatusInput.statusType)
-  }
-
-  "addFileStatus" should "not add a file status row if status type is invalid" in {
-
-    val addFileStatusInput = AddFileStatusInput(UUID.randomUUID(), "Download", "Success")
-
-    val thrownException = intercept[Exception] {
-      createFileStatusService().addFileStatus(addFileStatusInput).futureValue
-    }
-
-    verify(fileStatusRepositoryMock, times(0)).addFileStatuses(any())
-    thrownException.getMessage should include("Invalid FileStatus input: either 'Download' or 'Success'")
-  }
-
-  "addFileStatus" should "not add a file status row if status value is invalid" in {
-
-    val addFileStatusInput = AddFileStatusInput(UUID.randomUUID(), "Upload", "Passed")
-
-    val thrownException = intercept[Exception] {
-      createFileStatusService().addFileStatus(addFileStatusInput).futureValue
-    }
-
-    verify(fileStatusRepositoryMock, times(0)).addFileStatuses(any())
-    thrownException.getMessage should include("Invalid FileStatus input: either 'Upload' or 'Passed'")
-  }
-
-  "addFileStatus" should "not add a file status row if status type and status value are invalid" in {
-
-    val addFileStatusInput = AddFileStatusInput(UUID.randomUUID(), "Download", "Passed")
-
-    val thrownException = intercept[Exception] {
-      createFileStatusService().addFileStatus(addFileStatusInput).futureValue
-    }
-
-    verify(fileStatusRepositoryMock, times(0)).addFileStatuses(any())
-    thrownException.getMessage should include("Invalid FileStatus input: either 'Download' or 'Passed'")
   }
 
   "allChecksSucceeded" should "return true if the checksum match, antivirus and ffid statuses are 'Success'" in {

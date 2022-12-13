@@ -1,10 +1,14 @@
 {
-  "query": "mutation addFileStatus($addFileStatusInput: AddFileStatusInput!){addFileStatus(addFileStatusInput: $addFileStatusInput){fileId,statusType,statusValue}}",
+  "query": "mutation addMultipleFileStatus($addMultipleFileStatusInput: AddMultipleFileStatusInput!){addMultipleFileStatus(addMultipleFileStatusInput: $addMultipleFileStatusInput) {fileId,statusType,statusValue}}",
   "variables": {
-    "addFileStatusInput": {
-      "fileId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2",
-      "statusType": "Upload",
-      "statusValue": "Success"
+    "addMultipleFileStatusInput": {
+      "statuses": [
+        {
+          "fileId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2",
+          "statusType": "Upload",
+          "statusValue": "Success"
+        }
+      ]
     }
   }
 }
