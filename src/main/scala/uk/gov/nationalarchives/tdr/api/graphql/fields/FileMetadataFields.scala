@@ -21,7 +21,6 @@ object FileMetadataFields {
   case class FileMetadata(filePropertyName: String, value: String) extends FileMetadataBase
   case class UpdateFileMetadataInput(filePropertyIsMultiValue: Boolean, filePropertyName: String, value: String) extends FileMetadataBase
   // Option[String] instead of String in case you want to delete all values of property or in case value does not have properties
-  case class FileMetadataToDelete(filePropertyName: String, valueToDelete: Option[String])
 
   case class FileMetadataWithFileId(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
 
@@ -37,12 +36,11 @@ object FileMetadataFields {
 
   case class DeleteFileMetadataInput(
       fileIds: Seq[UUID],
-      propertyNamesAndValues: Seq[FileMetadataToDelete] = Seq(FileMetadataToDelete(ClosureType, Some("Closed"))) // temporary until we can update it
+      propertyNames: Seq[String] = Seq(ClosureType) // temporary until we can update it
   )
 
   implicit val FileMetadataType: ObjectType[Unit, FileMetadata] = deriveObjectType[Unit, FileMetadata]()
   implicit val InputFileMetadataType: InputObjectType[UpdateFileMetadataInput] = deriveInputObjectType[UpdateFileMetadataInput]()
-  implicit val FileMetadataToDeleteType: InputObjectType[FileMetadataToDelete] = deriveInputObjectType[FileMetadataToDelete]()
 
   implicit val FileMetadataWithFileIdType: ObjectType[Unit, FileMetadataWithFileId] = deriveObjectType[Unit, FileMetadataWithFileId]()
   implicit val AddFileMetadataInputValuesType: InputObjectType[AddFileMetadataWithFileIdInputValues] = deriveInputObjectType[AddFileMetadataWithFileIdInputValues]()

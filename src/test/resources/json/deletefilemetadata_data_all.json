@@ -8,6 +8,7 @@
       "filePropertyNames": [
         "TestDependency1",
         "TestDependency2",
+        "TestDependency4",
         "ClosureType"
       ]
     }

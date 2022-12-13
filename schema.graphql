@@ -199,11 +199,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Boolean
-  DateTime
   Text
+  DateTime
   Decimal
   Integer
+  Boolean
 }
 
 type DeleteFileMetadata {
@@ -213,7 +213,7 @@ type DeleteFileMetadata {
 
 input DeleteFileMetadataInput {
   fileIds: [UUID!]!
-  propertyNamesAndValues: [FileMetadataToDelete!] = [{filePropertyName: "ClosureType", valueToDelete: "Closed"}]
+  propertyNames: [String!] = ["ClosureType"]
 }
 
 type FFIDMetadata {
@@ -316,11 +316,6 @@ type FileMetadata {
 input FileMetadataFilters {
   closureMetadata: Boolean = false
   descriptiveMetadata: Boolean = false
-}
-
-input FileMetadataToDelete {
-  filePropertyName: String!
-  valueToDelete: String
 }
 
 type FileMetadataValue {

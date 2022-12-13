@@ -8,9 +8,9 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, Success}
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
-import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
 import java.sql.{PreparedStatement, ResultSet, Types}
@@ -326,11 +326,12 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
     responseFileIds.sorted should equal(expectedResponseFileIds.sorted)
 
-    expectedResponseFileIds.foreach(id => {
+    responseFileIds.foreach { id =>
       checkFileMetadataDoesNotExist(id, utils, "TestDependency2")
+      checkFileMetadataDoesNotExist(id, utils, "TestDependency4")
       checkFileMetadataValue(id, utils, "TestDependency1", "test")
       checkFileMetadataValue(id, utils, "ClosureType", "Open")
-    })
+    }
   }
 
   "deleteFileMetadata" should "throw an error if the field fileIds is not provided" in withContainers { case container: PostgreSQLContainer =>

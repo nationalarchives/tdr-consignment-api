@@ -6,17 +6,10 @@
         "7076f399-b596-4161-a95d-e686c6435710",
         "d74650ff-21b1-402d-8c59-b114698a8341"
       ],
-      "propertyNamesAndValues": [
-        {
-          "filePropertyName": "TestDependency1"
-        },
-        {
-          "filePropertyName": "TestDependency2"
-        },
-        {
-          "filePropertyName": "ClosureType",
-          "valueToDelete": "Closed"
-        }
+      "propertyNames": [
+        "TestDependency1",
+        "TestDependency2",
+        "ClosureType"
       ]
     }
   }
