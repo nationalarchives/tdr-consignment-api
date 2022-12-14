@@ -30,6 +30,7 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
   "getCustomMetadataValues" should "return the correct closure metadata values" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
+    TestUtils(db).createFileProperty("LegalStatus", "descr", "Defined", "text", editable = true, multivalue = false, "Mandatory", "Legal Status")
     TestUtils(db).createFilePropertyValues("LegalStatus", "English", default = true, 0, 1)
     val response = customMetadataPropertiesRepository.getCustomMetadataValues.futureValue.head
     response.propertyname should equal("LegalStatus")
@@ -42,6 +43,9 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
   "getCustomMetadataValuesWithDefault" should "return closure metadata values that have default set to 'true'" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
+    TestUtils(db).createFileProperty("LegalStatus", "descr", "Defined", "text", editable = true, multivalue = false, "Mandatory", "Legal Status")
+    TestUtils(db).createFileProperty("Language", "descr", "Defined", "text", editable = true, multivalue = false, "Mandatory", "Language")
+
     TestUtils(db).createFilePropertyValues("LegalStatus", "Public Record", default = true, 0, 1)
     TestUtils(db).createFilePropertyValues("Language", "English", default = false, 0, 1)
     val response = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.futureValue
@@ -52,6 +56,7 @@ class CustomMetadataPropertiesRepositorySpec extends TestContainerUtils with Sca
   "getCustomMetadataDependencies" should "return the correct closure metadata dependencies" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
+    TestUtils(db).createFileProperty("test", "descr", "Defined", "text", editable = true, multivalue = false, "Mandatory", "test")
     TestUtils(db).createFilePropertyDependencies(1, "test", "test2")
     val response = customMetadataPropertiesRepository.getCustomMetadataDependencies.futureValue.head
     response.groupid should equal(1)
