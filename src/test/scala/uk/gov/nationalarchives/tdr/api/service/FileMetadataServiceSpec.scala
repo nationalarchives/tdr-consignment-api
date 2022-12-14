@@ -350,7 +350,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     thrownException.getMessage should include("Can't find metadata property 'Non-ExistentProperty' in the db.")
   }
 
-  "deleteFileMetadata" should "be able to handle requests to delete and/or reset multiple top-level properties (whether they have dependencies or not)" in {
+  "deleteFileMetadata" should "delete and/or reset multiple properties including any dependencies" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
