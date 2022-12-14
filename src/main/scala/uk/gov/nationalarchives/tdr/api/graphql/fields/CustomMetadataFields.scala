@@ -7,16 +7,11 @@ import sangria.schema.{Argument, EnumType, Field, ListType, ObjectType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.ValidateUserHasAccessToConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.UuidType
+import uk.gov.nationalarchives.tdr.api.graphql.fields.DataTypeFields
 
 import java.util.UUID
 
-object CustomMetadataFields {
-  sealed trait DataType
-  case object Text extends DataType
-  case object Integer extends DataType
-  case object DateTime extends DataType
-  case object Decimal extends DataType
-  case object Boolean extends DataType
+object CustomMetadataFields extends DataTypeFields {
 
   sealed trait PropertyType
   case object System extends PropertyType
@@ -40,7 +35,6 @@ object CustomMetadataFields {
       exportOrdinal: Option[Int] = None
   )
 
-  implicit val DataTypeType: EnumType[DataType] = deriveEnumType[DataType]()
   implicit val PropertyTypeType: EnumType[PropertyType] = deriveEnumType[PropertyType]()
   implicit val MetadataFieldsType: ObjectType[Unit, CustomMetadataField] = deriveObjectType[Unit, CustomMetadataField]()
   implicit val MetadataValuesType: ObjectType[Unit, CustomMetadataValues] = deriveObjectType[Unit, CustomMetadataValues]()

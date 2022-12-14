@@ -216,6 +216,17 @@ input DeleteFileMetadataInput {
   propertyNames: [String!] = ["ClosureType"]
 }
 
+type DisplayAttribute {
+  attribute: String!
+  value: String
+  type: DataType!
+}
+
+type DisplayPropertyField {
+  propertyName: String!
+  attributes: [DisplayAttribute!]!
+}
+
 type FFIDMetadata {
   fileId: UUID!
   software: String!
@@ -426,6 +437,7 @@ type Query {
   consignments(limit: Int!, currentCursor: String, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+  displayProperties(consignmentid: UUID!): [DisplayPropertyField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
 }
 

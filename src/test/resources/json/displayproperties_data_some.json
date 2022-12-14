@@ -1,0 +1,32 @@
+{
+  "data": {
+    "displayProperties": [
+      {
+        "propertyName": "testProperty2",
+        "attributes": [
+          {
+            "attribute": "attribute1",
+            "type": "Text"
+          },
+          {
+            "attribute": "attribute2",
+            "type": "Boolean"
+          }
+        ]
+      },
+      {
+        "propertyName": "testProperty1",
+        "attributes": [
+          {
+            "attribute": "attribute1",
+            "type": "Text"
+          },
+          {
+            "attribute": "attribute2",
+            "type": "Boolean"
+          }
+        ]
+      }
+    ]
+  }
+}

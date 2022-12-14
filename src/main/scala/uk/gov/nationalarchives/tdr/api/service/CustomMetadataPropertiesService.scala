@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.{FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
+import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -80,7 +81,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
       fp.description,
       getPropertyType(fp.propertytype),
       fp.propertygroup,
-      getDataType(fp.datatype),
+      CustomMetadataFields.toDataType(fp.datatype),
       fp.editable.getOrElse(false),
       fp.multivalue.getOrElse(false),
       defaultValueOption,
@@ -96,14 +97,5 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
     case Some("Defined")  => Defined
     case Some("Supplied") => Supplied
     case _                => throw new Exception(s"Invalid property type $propertyType")
-  }
-
-  private def getDataType(dataType: Option[String]): DataType = dataType match {
-    case Some("text")     => Text
-    case Some("datetime") => DateTime
-    case Some("integer")  => Integer
-    case Some("decimal")  => Decimal
-    case Some("boolean")  => Boolean
-    case _                => throw new Exception(s"Invalid data type $dataType")
   }
 }
