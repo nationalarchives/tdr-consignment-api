@@ -14,10 +14,6 @@ import java.util.UUID
 
 class DisplayPropertiesRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   sealed trait DataType
-  case object Text extends DataType
-  case object Integer extends DataType
-  case object DateTime extends DataType
-  case object Decimal extends DataType
 
   val consignmentId: UUID = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
   val userId: UUID = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
