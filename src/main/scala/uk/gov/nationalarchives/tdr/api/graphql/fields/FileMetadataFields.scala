@@ -8,6 +8,7 @@ import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, f
 import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasChecksumMetadataAccess, ValidateUserOwnsFiles}
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import FieldTypes._
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClosureType
 
 object FileMetadataFields {
   trait FileMetadataBase {
@@ -19,6 +20,7 @@ object FileMetadataFields {
 
   case class FileMetadata(filePropertyName: String, value: String) extends FileMetadataBase
   case class UpdateFileMetadataInput(filePropertyIsMultiValue: Boolean, filePropertyName: String, value: String) extends FileMetadataBase
+  // Option[String] instead of String in case you want to delete all values of property or in case value does not have properties
 
   case class FileMetadataWithFileId(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
 
@@ -32,7 +34,10 @@ object FileMetadataFields {
 
   case class DeleteFileMetadata(fileIds: Seq[UUID], filePropertyNames: Seq[String])
 
-  case class DeleteFileMetadataInput(fileIds: Seq[UUID])
+  case class DeleteFileMetadataInput(
+      fileIds: Seq[UUID],
+      propertyNames: Seq[String] = Seq(ClosureType) // temporary until we can update it
+  )
 
   implicit val FileMetadataType: ObjectType[Unit, FileMetadata] = deriveObjectType[Unit, FileMetadata]()
   implicit val InputFileMetadataType: InputObjectType[UpdateFileMetadataInput] = deriveInputObjectType[UpdateFileMetadataInput]()

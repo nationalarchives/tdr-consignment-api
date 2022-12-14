@@ -5,8 +5,8 @@ import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -300,7 +300,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     verify(fileMetadataRepository, times(1)).getSumOfFileSizes(consignmentId)
   }
 
-  "deleteFileMetadata" should "delete and update fileMetadata properties with a default value for the selected files" in {
+  "deleteFileMetadata" should "throw an exception if property name does not exist" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
@@ -310,7 +310,172 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileInFolderId2 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
 
     val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure"))
+      )
+    )
 
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("ClosureType", "Open", None, Some(2), None, None),
+        FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None)
+      )
+    )
+
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(3, "TitleClosed", None),
+        FilepropertydependenciesRow(2, "Property1", None)
+      )
+    )
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
+    when(fileRepositoryMock.getAllDescendants(ArgumentMatchers.eq(Seq(folderId)))).thenReturn(Future(existingFileRows))
+
+    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+
+    val thrownException = intercept[Exception] {
+      service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId), Seq("Non-ExistentProperty")), UUID.randomUUID()).futureValue
+    }
+
+    verify(fileMetadataRepositoryMock, times(0)).addFileMetadata(any[Seq[FilemetadataRow]])
+    verify(fileMetadataRepositoryMock, times(0)).deleteFileMetadata(any[Set[UUID]], any[Set[String]])
+    verify(customMetadataPropertiesRepositoryMock, times(1)).getCustomMetadataDependencies
+
+    thrownException.getMessage should include("Can't find metadata property 'Non-ExistentProperty' in the db.")
+  }
+
+  "deleteFileMetadata" should "delete and/or reset multiple properties including any dependencies" in {
+    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
+    val fileRepositoryMock = mock[FileRepository]
+    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val userId = UUID.randomUUID()
+    val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
+    val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
+    val fileInFolderId2 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
+
+    val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("TitleClosedGroup")),
+        FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Property1Group")),
+        FilepropertyRow(
+          "TopLevelProperty1",
+          None,
+          Some("Top Level Property 1"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("PropertyGroup1")
+        ),
+        FilepropertyRow(
+          "AlternativeTitle",
+          None,
+          Some("Alternative Title"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("Closure")
+        )
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
+        FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
+        FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
+        FilepropertyvaluesRow("TitleClosed", "false", Some(true), None, None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(1, "Property1", None),
+        FilepropertydependenciesRow(2, "AlternativeTitle", None),
+        FilepropertydependenciesRow(3, "TitleClosed", None)
+      )
+    )
+
+    val addFileMetadataCaptor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
+    val fileMetadataDeleteCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
+    val expectedPropertyNamesToDelete: Seq[String] = Seq("TitleClosed", "Property1", "ClosureType", "TopLevelProperty1")
+
+    val fileIds = Seq(fileInFolderId1, fileInFolderId2)
+    when(fileRepositoryMock.getAllDescendants(ArgumentMatchers.eq(Seq(folderId)))).thenReturn(Future(existingFileRows))
+
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
+
+    when(fileMetadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture())).thenReturn(Future(Nil))
+    when(fileMetadataRepositoryMock.deleteFileMetadata(ArgumentMatchers.eq(fileIds.toSet), fileMetadataDeleteCaptor.capture())).thenReturn(Future(2))
+
+    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val response = service
+      .deleteFileMetadata(
+        DeleteFileMetadataInput(
+          Seq(folderId),
+          Seq(
+            ClosureType,
+            "TopLevelProperty1"
+          )
+        ),
+        userId
+      )
+      .futureValue
+
+    response.fileIds should equal(fileIds)
+    response.filePropertyNames should equal(expectedPropertyNamesToDelete)
+    val addFileMetadata = addFileMetadataCaptor.getValue
+    val fileMetadataDelete = fileMetadataDeleteCaptor.getValue
+
+    addFileMetadata.size should equal(4)
+    fileMetadataDelete.size should equal(4)
+
+    fileMetadataDelete should equal(Set(ClosureType, TitleClosed, "Property1", "TopLevelProperty1"))
+  }
+
+  "deleteFileMetadata" should "delete and reset fileMetadata properties with a default value for the selected files" in {
+    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
+    val fileRepositoryMock = mock[FileRepository]
+    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val userId = UUID.randomUUID()
+    val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
+    val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
+    val fileInFolderId2 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
+
+    val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow(
+          "ClosureStartDate",
+          None,
+          Some("Closure Start Date"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("Closure")
+        ),
+        FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Property1Group"))
+      )
+    )
     val mockPropertyValuesResponse = Future(
       Seq(
         FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
@@ -329,38 +494,38 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       )
     )
 
-    val fileMetadataUpdateCaptor: ArgumentCaptor[Map[String, FileMetadataUpdate]] = ArgumentCaptor.forClass(classOf[Map[String, FileMetadataUpdate]])
-    val expectedPropertyNamesToDelete = Set("ClosurePeriod", "ClosureStartDate")
+    val addFileMetadataCaptor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
+    val expectedPropertyNamesToDelete = Set("ClosurePeriod", "ClosureStartDate", "TitleClosed", "ClosureType")
 
     val fileIds = Seq(fileInFolderId1, fileInFolderId2)
     when(fileRepositoryMock.getAllDescendants(ArgumentMatchers.eq(Seq(folderId)))).thenReturn(Future(existingFileRows))
 
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
     when(customMetadataPropertiesRepositoryMock.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
     when(fileMetadataRepositoryMock.deleteFileMetadata(ArgumentMatchers.eq(fileIds.toSet), ArgumentMatchers.eq(expectedPropertyNamesToDelete))).thenReturn(Future(2))
-    when(fileMetadataRepositoryMock.updateFileMetadataProperties(ArgumentMatchers.eq(fileIds.toSet), fileMetadataUpdateCaptor.capture())).thenReturn(Future(Nil))
+    when(fileMetadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture())).thenReturn(Future(Nil))
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId)), userId).futureValue
+    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId), Seq(ClosureType)), userId).futureValue
 
     response.fileIds should equal(fileIds)
-    response.filePropertyNames should equal(expectedPropertyNamesToDelete.toSeq ++ Seq("TitleClosed"))
-    val fileMetadataUpdate = fileMetadataUpdateCaptor.getValue
-    fileMetadataUpdate.size should equal(2)
-    fileMetadataUpdate.head._1 should equal(TitleClosed)
-    fileMetadataUpdate.head._2.value should equal("false")
-    fileMetadataUpdate.head._2.filePropertyName should equal(TitleClosed)
-    fileMetadataUpdate.head._2.userId should equal(userId)
-    fileMetadataUpdate.head._2.dateTime != null shouldBe true
-    fileMetadataUpdate.last._1 should equal(ClosureType)
-    fileMetadataUpdate.last._2.value should equal("Open")
-    fileMetadataUpdate.last._2.filePropertyName should equal(ClosureType)
-    fileMetadataUpdate.last._2.userId should equal(userId)
-    fileMetadataUpdate.last._2.dateTime != null shouldBe true
+    response.filePropertyNames should equal(expectedPropertyNamesToDelete.toSeq)
+    val addFileMetadata = addFileMetadataCaptor.getValue
+    addFileMetadata.size should equal(4)
+
+    val expectedPropertyNames = List(TitleClosed, ClosureType)
+    val expectedPropertyValues = List("false", "Open")
+    addFileMetadata.foreach { metadata =>
+      expectedPropertyNames.contains(metadata.propertyname) shouldBe true
+      expectedPropertyValues.contains(metadata.value) shouldBe true
+      metadata.datetime != null shouldBe true
+      metadata.userid should equal(userId)
+    }
   }
 
-  "deleteFileMetadata" should "update fileMetadata properties only if all of the properties have a default value" in {
+  "deleteFileMetadata" should "delete and reset all the dependencies of the property passed in, even if no value was given" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
@@ -370,7 +535,26 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileInFolderId2 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
 
     val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
-
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow(
+          "ClosureStartDate",
+          None,
+          Some("Closure Start Date"),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("Closure")
+        ),
+        FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
+        FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Property1Group"))
+      )
+    )
     val mockPropertyValuesResponse = Future(
       Seq(
         FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
@@ -382,65 +566,48 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     )
     val mockPropertyDependenciesResponse = Future(
       Seq(
+        FilepropertydependenciesRow(3, "ClosurePeriod", None),
+        FilepropertydependenciesRow(3, "ClosureStartDate", None),
         FilepropertydependenciesRow(3, "TitleClosed", None),
         FilepropertydependenciesRow(2, "Property1", None)
       )
     )
 
-    val fileMetadataUpdateCaptor: ArgumentCaptor[Map[String, FileMetadataUpdate]] = ArgumentCaptor.forClass(classOf[Map[String, FileMetadataUpdate]])
-    val expectedPropertyNamesToDelete: Set[String] = Set()
+    val addFileMetadataCaptor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
+    val fileMetadataDeleteCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
+    val expectedPropertyNamesToDelete = List("ClosurePeriod", "ClosureStartDate", "TitleClosed", "ClosureType")
 
     val fileIds = Seq(fileInFolderId1, fileInFolderId2)
     when(fileRepositoryMock.getAllDescendants(ArgumentMatchers.eq(Seq(folderId)))).thenReturn(Future(existingFileRows))
 
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
     when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
     when(customMetadataPropertiesRepositoryMock.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
 
-    when(fileMetadataRepositoryMock.updateFileMetadataProperties(ArgumentMatchers.eq(fileIds.toSet), fileMetadataUpdateCaptor.capture())).thenReturn(Future(Nil))
-    when(fileMetadataRepositoryMock.deleteFileMetadata(ArgumentMatchers.eq(fileIds.toSet), ArgumentMatchers.eq(Set()))).thenReturn(Future(2))
+    when(fileMetadataRepositoryMock.deleteFileMetadata(ArgumentMatchers.eq(fileIds.toSet), fileMetadataDeleteCaptor.capture())).thenReturn(Future(2))
+    when(fileMetadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture())).thenReturn(Future(Nil))
 
     val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId)), userId).futureValue
+    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId), Seq(ClosureType)), userId).futureValue
 
     response.fileIds should equal(fileIds)
-    response.filePropertyNames should equal(expectedPropertyNamesToDelete.toSeq ++ Seq("TitleClosed"))
-    val fileMetadataUpdate = fileMetadataUpdateCaptor.getValue
-    fileMetadataUpdate.size should equal(2)
-    fileMetadataUpdate.head._1 should equal(TitleClosed)
-    fileMetadataUpdate.last._1 should equal(ClosureType)
-  }
+    response.filePropertyNames should equal(expectedPropertyNamesToDelete)
+    val addfileMetadata: Seq[FilemetadataRow] = addFileMetadataCaptor.getValue
+    val fileMetadataDelete = fileMetadataDeleteCaptor.getValue
 
-  "deleteFileMetadata" should "throw an exception if a CustomMetadata property is missing in the db" in {
-    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-    val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
-    val userId = UUID.randomUUID()
-    val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
-    val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
-    val fileInFolderId2 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
+    addfileMetadata.size should equal(4)
+    val expectedPropertyNames = List(TitleClosed, ClosureType)
+    val expectedPropertyValues = List("false", "Open")
 
-    val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
-
-    val mockPropertyValuesResponse = Future(
-      Seq(
-        FilepropertyvaluesRow("ClosureType", "Open", None, Some(1), None, None),
-        FilepropertyvaluesRow("TitlePublic", "ABC", None, Some(1), None, None)
-      )
-    )
-    when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
-    when(fileRepositoryMock.getAllDescendants(ArgumentMatchers.eq(Seq(folderId)))).thenReturn(Future(existingFileRows))
-
-    verify(fileMetadataRepositoryMock, times(0)).updateFileMetadataProperties(any[Set[UUID]], any[Map[String, FileMetadataUpdate]])
-    verify(fileMetadataRepositoryMock, times(0)).deleteFileMetadata(any[Set[UUID]], any[Set[String]])
-    verify(customMetadataPropertiesRepositoryMock, times(0)).getCustomMetadataDependencies
-
-    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
-
-    val thrownException = intercept[Exception] {
-      service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId)), UUID.randomUUID()).futureValue
+    addfileMetadata.foreach { metadata =>
+      expectedPropertyNames.contains(metadata.propertyname) shouldBe true
+      expectedPropertyValues.contains(metadata.value) shouldBe true
+      metadata.datetime != null shouldBe true
+      metadata.userid should equal(userId)
     }
 
-    thrownException.getMessage should include("Can't find metadata property 'ClosureType' with value 'Closed' in the db.")
+    fileMetadataDelete.size should equal(4)
+    fileMetadataDelete should equal(Set("ClosurePeriod", "ClosureStartDate", TitleClosed, ClosureType))
   }
 
   private def generateFileRows(fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID], fixedUserId: UUID): Seq[FileRow] = {

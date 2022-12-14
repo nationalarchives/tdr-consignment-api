@@ -1,8 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
-import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -16,7 +15,6 @@ import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
-import scala.collection.MapView
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(
@@ -27,7 +25,7 @@ class FileMetadataService(
     uuidSource: UUIDSource
 )(implicit val ec: ExecutionContext) {
 
-  implicit class FileRowsHelper(fileRows: Seq[Tables.FileRow]) {
+  implicit class FileRowsHelper(fileRows: Seq[FileRow]) {
     def toFileTypeIds: Set[UUID] = {
       fileRows.collect { case fileRow if fileRow.filetype.get == NodeType.fileTypeIdentifier => fileRow.fileid }.toSet
     }
@@ -43,7 +41,7 @@ class FileMetadataService(
   def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInputValues, userId: UUID): Future[FileMetadataWithFileId] =
     addFileMetadata(AddFileMetadataWithFileIdInput(addFileMetadataInput :: Nil), userId).map(_.head)
 
-  def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID) = {
+  def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     fileMetadataRepository
       .getFileMetadataByProperty(input.metadataInputValues.map(_.fileId), SHA256ClientSideChecksum)
       .flatMap(metadataRows => {
@@ -83,43 +81,39 @@ class FileMetadataService(
   }
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
-
+    val customMetadataService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
     for {
       existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
-      metadataValues <- customMetadataPropertiesRepository.getCustomMetadataValues
-      groupId = metadataValues
-        .find(property => property.propertyname == ClosureType && property.propertyvalue == "Closed")
-        .map(_.dependencies)
-        .getOrElse(throw new IllegalStateException("Can't find metadata property 'ClosureType' with value 'Closed' in the db"))
-      dependencies <- customMetadataPropertiesRepository.getCustomMetadataDependencies
-      propertyNames = dependencies.filter(dependency => groupId.contains(dependency.groupid)).map(_.propertyname)
+      customMetadataProperties <- customMetadataService.getCustomMetadata
+      namesOfAllPropertiesToDelete: Set[String] = customMetadataProperties
+        .collect {
+          case customMetadataProperty if input.propertyNames.contains(customMetadataProperty.name) =>
+            val namesOfDependenciesToDelete: List[String] = customMetadataProperty.values.flatMap(_.dependencies.map(_.name))
+            namesOfDependenciesToDelete :+ customMetadataProperty.name
+        }
+        .flatten
+        .toSet
 
-      (fileMetadataToUpdate, fileMetadataToDelete) = getFileMetadataToUpdateAndDelete(metadataValues, propertyNames, userId)
-      _ <- fileMetadataRepository.updateFileMetadataProperties(fileIds, fileMetadataToUpdate)
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, fileMetadataToDelete.toSet)
-    } yield DeleteFileMetadata(fileIds.toSeq, propertyNames)
-  }
+      _ = if (namesOfAllPropertiesToDelete.isEmpty) {
+        throw new IllegalStateException(
+          s"Can't find metadata property '${input.propertyNames.mkString(" or ")}' in the db"
+        )
+      }
 
-  private def getFileMetadataToUpdateAndDelete(
-      metadataValues: Seq[FilepropertyvaluesRow],
-      propertyNames: Seq[String],
-      userId: UUID
-  ): (Map[String, FileMetadataUpdate], Seq[String]) = {
-    val metadataValuesWithDefault = metadataValues.filter(_.default.contains(true))
-    val (fileMetadataToUpdate, fileMetadataToDelete) = propertyNames.partition(name => metadataValuesWithDefault.exists(_.propertyname == name))
+      propertyDefaults: Seq[(String, String)] = customMetadataProperties.collect {
+        case customMetadataProperty if namesOfAllPropertiesToDelete.contains(customMetadataProperty.name) && customMetadataProperty.defaultValue.nonEmpty =>
+          (customMetadataProperty.name, customMetadataProperty.defaultValue.get)
+      }
 
-    val update: (String, String) => FileMetadataUpdate = FileMetadataUpdate(Nil, _, _, Timestamp.from(timeSource.now), userId)
-
-    val fileMetadataUpdates =
-      fileMetadataToUpdate.map(propertyName => propertyName -> update(propertyName, metadataValuesWithDefault.find(_.propertyname == propertyName).head.propertyvalue)).toMap
-
-    val additionalFileMetadataUpdate = metadataValuesWithDefault
-      .find(_.propertyname == ClosureType)
-      .map(property => property.propertyname -> update(property.propertyname, property.propertyvalue))
-      .head
-
-    (fileMetadataUpdates + additionalFileMetadataUpdate, fileMetadataToDelete)
+      metadataToReset: Seq[FilemetadataRow] = fileIds.flatMap { id =>
+        propertyDefaults.map { case (propertyName, defaultValue) =>
+          FilemetadataRow(uuidSource.uuid, id, defaultValue, Timestamp.from(timeSource.now), userId, propertyName)
+        }
+      }.toSeq
+      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, namesOfAllPropertiesToDelete)
+      _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
+    } yield DeleteFileMetadata(fileIds.toSeq, namesOfAllPropertiesToDelete.toSeq)
   }
 
   private def generateFileMetadataRows(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[FilemetadataRow] = {
