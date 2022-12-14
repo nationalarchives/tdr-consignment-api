@@ -116,47 +116,6 @@ class FileMetadataService(
     } yield DeleteFileMetadata(fileIds.toSeq, namesOfAllPropertiesToDelete.toSeq)
   }
 
-  private def getFileMetadataToDeleteAndReset(
-      userId: UUID,
-      allMetadataProperties: Seq[FilepropertyRow],
-      allValuesForMetadataProperties: Seq[FilepropertyvaluesRow],
-      allDependencies: Seq[FilepropertydependenciesRow],
-      propertyNameToDelete: String,
-      valuesBelongingToProperty: Seq[FilepropertyvaluesRow],
-      filePropertyValueRowOfValueToDel: Seq[FilepropertyvaluesRow]
-  ): Seq[(String, Option[FileMetadataUpdate])] = {
-    val propertyExists: Boolean = allMetadataProperties.exists(property => property.name == propertyNameToDelete)
-    if (!propertyExists) { throw new IllegalArgumentException(s"'$propertyNameToDelete' is not an existing property.") }
-
-    val potentialFileMetadataRowToSetAsDefault: Option[FilepropertyvaluesRow] = valuesBelongingToProperty.find(_.default.contains(true))
-    val propertyNameAndValuesToDeleteOrSetAsDefault: Seq[(String, Option[FileMetadataUpdate])] = potentialFileMetadataRowToSetAsDefault match {
-      case Some(fileMetadataRowToSetAsDefault) =>
-        val defaultFileMetadataToAddToProperty: FileMetadataUpdate =
-          FileMetadataUpdate(Nil, fileMetadataRowToSetAsDefault.propertyname, fileMetadataRowToSetAsDefault.propertyvalue, Timestamp.from(timeSource.now), userId)
-        Seq(propertyNameToDelete -> Some(defaultFileMetadataToAddToProperty))
-      case None =>
-        Seq(propertyNameToDelete -> None)
-    }
-
-    val groupIds: Seq[Int] = filePropertyValueRowOfValueToDel.flatMap(_.dependencies)
-    val dependenciesToDelete: Seq[String] = allDependencies.collect { case dependency if groupIds.contains(dependency.groupid) => dependency.propertyname }
-
-    val dependencyNameAndValuesToDeleteOrSetAsDefault: Seq[(String, Option[FileMetadataUpdate])] = dependenciesToDelete.flatMap { dependencyToDelete =>
-      val valuesBelongingToProperty: Seq[FilepropertyvaluesRow] = allValuesForMetadataProperties.filter(metadataValue => metadataValue.propertyname == dependencyToDelete)
-      getFileMetadataToDeleteAndReset(
-        userId,
-        allMetadataProperties,
-        allValuesForMetadataProperties,
-        allDependencies,
-        dependencyToDelete,
-        valuesBelongingToProperty,
-        valuesBelongingToProperty
-      )
-    }
-
-    propertyNameAndValuesToDeleteOrSetAsDefault ++ dependencyNameAndValuesToDeleteOrSetAsDefault
-  }
-
   private def generateFileMetadataRows(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[FilemetadataRow] = {
     fileIds
       .flatMap(id =>
@@ -279,8 +238,6 @@ object FileMetadataService {
   case class PropertyAction(updateActionType: String, propertyName: String, propertyValue: String, fileId: UUID, metadataId: UUID)
 
   case class FileMetadataDelete(fileIds: Set[UUID], propertyNamesToDelete: Set[String])
-
-  case class FileMetadataValueDeletions(valuesToReset: Seq[FileMetadataUpdate], valuesToDelete: Seq[String])
 
   case class PropertyUpdates(metadataToDelete: FileMetadataDelete, rowsToAdd: Seq[FilemetadataRow] = Seq(), rowsToUpdate: Map[String, FileMetadataUpdate] = Map())
 }
