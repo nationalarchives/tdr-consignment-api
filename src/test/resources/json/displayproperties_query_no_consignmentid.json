@@ -1,0 +1,3 @@
+{
+  "query": "query displayProperties($consignmentId:UUID!){displayProperties(consignmentid:$consignmentId){propertyName, attributes {attribute, value, type}}}"
+}
