@@ -82,14 +82,14 @@ class FileMetadataService(
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
     val customMetadataService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val updatedPropertiesToDelete = descriptionDeletionHandler(input.propertyNames)
+    val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
     for {
       existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
       customMetadataProperties <- customMetadataService.getCustomMetadata
       allPropertiesToDelete: Set[String] = customMetadataProperties
         .collect {
-          case customMetadataProperty if updatedPropertiesToDelete.contains(customMetadataProperty.name) =>
+          case customMetadataProperty if propertiesToDelete.contains(customMetadataProperty.name) =>
             val namesOfDependenciesToDelete: List[String] = customMetadataProperty.values.flatMap(_.dependencies.map(_.name))
             namesOfDependenciesToDelete :+ customMetadataProperty.name
         }
@@ -117,8 +117,7 @@ class FileMetadataService(
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
 
-  @deprecated("Temporary function until 'description' made dependency of 'AlternateDescription' in 'FilePropertyDependencies' table")
-  def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
+  private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
     // Ensure that the file metadata is returned to the correct state if the 'description' property is deleted
     // Cannot have a 'DescriptionAlternate' property without a 'description' property
     // 'DescriptionAlternate' property is a dependency of 'DescriptionClosed' property
@@ -248,10 +247,4 @@ object FileMetadataService {
       titleClosed: Option[Boolean],
       descriptionClosed: Option[Boolean]
   )
-
-  case class PropertyAction(updateActionType: String, propertyName: String, propertyValue: String, fileId: UUID, metadataId: UUID)
-
-  case class FileMetadataDelete(fileIds: Set[UUID], propertyNamesToDelete: Set[String])
-
-  case class PropertyUpdates(metadataToDelete: FileMetadataDelete, rowsToAdd: Seq[FilemetadataRow] = Seq(), rowsToUpdate: Map[String, FileMetadataUpdate] = Map())
 }

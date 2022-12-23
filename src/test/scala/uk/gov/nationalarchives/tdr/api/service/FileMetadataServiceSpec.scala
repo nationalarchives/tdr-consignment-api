@@ -525,6 +525,90 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     }
   }
 
+  "deleteFileMetadata" should "handle deleting 'description' property correctly" in {
+    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
+    val fileRepositoryMock = mock[FileRepository]
+    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val userId = UUID.randomUUID()
+    val folderId = UUID.fromString("e3fce276-2615-4a3a-aa4e-67f9a65798cf")
+    val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
+    val fileInFolderId2 = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
+
+    val existingFileRows: Seq[FileRow] = generateFileRows(Seq(folderId), Seq(folderId, fileInFolderId1, fileInFolderId2), userId)
+    val mockPropertyResponse = Future(
+      Seq(
+        FilepropertyRow(Description, None, Some(Description), Timestamp.from(Instant.now()), None, Some("Supplied"), Some("text"), Some(true), None, Some("Descriptive")),
+        FilepropertyRow(
+          DescriptionClosed,
+          None,
+          Some(DescriptionClosed),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Defined"),
+          Some("boolean"),
+          Some(false),
+          None,
+          Some("Closure")
+        ),
+        FilepropertyRow(
+          DescriptionAlternate,
+          None,
+          Some(DescriptionAlternate),
+          Timestamp.from(Instant.now()),
+          None,
+          Some("Supplied"),
+          Some("text"),
+          Some(true),
+          None,
+          Some("Closure")
+        )
+      )
+    )
+    val mockPropertyValuesResponse = Future(
+      Seq(
+        FilepropertyvaluesRow(DescriptionClosed, "true", None, Some(1), None, None),
+        FilepropertyvaluesRow(DescriptionClosed, "false", Some(true), None, None, None)
+      )
+    )
+    val mockPropertyDependenciesResponse = Future(
+      Seq(
+        FilepropertydependenciesRow(1, DescriptionAlternate, None),
+        FilepropertydependenciesRow(3, DescriptionClosed, None),
+        FilepropertydependenciesRow(4, DescriptionClosed, None)
+      )
+    )
+
+    val addFileMetadataCaptor: ArgumentCaptor[Seq[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[FilemetadataRow]])
+    val expectedPropertyNamesToDelete = Set("description", "DescriptionAlternate", "DescriptionClosed")
+
+    val fileIds = Seq(fileInFolderId1, fileInFolderId2)
+    when(fileRepositoryMock.getAllDescendants(ArgumentMatchers.eq(Seq(folderId)))).thenReturn(Future(existingFileRows))
+
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
+    when(customMetadataPropertiesRepositoryMock.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
+
+    when(fileMetadataRepositoryMock.deleteFileMetadata(ArgumentMatchers.eq(fileIds.toSet), ArgumentMatchers.eq(expectedPropertyNamesToDelete))).thenReturn(Future(2))
+    when(fileMetadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture())).thenReturn(Future(Nil))
+
+    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId), Seq("description")), userId).futureValue
+
+    response.fileIds should equal(fileIds)
+    response.filePropertyNames should equal(expectedPropertyNamesToDelete.toSeq)
+    val addFileMetadata = addFileMetadataCaptor.getValue
+    addFileMetadata.size should equal(2)
+
+    val expectedPropertyNames = List(DescriptionClosed)
+    val expectedPropertyValues = List("false")
+    addFileMetadata.foreach { metadata =>
+      expectedPropertyNames.contains(metadata.propertyname) shouldBe true
+      expectedPropertyValues.contains(metadata.value) shouldBe true
+      metadata.datetime != null shouldBe true
+      metadata.userid should equal(userId)
+    }
+  }
+
   "deleteFileMetadata" should "delete and reset all the dependencies of the property passed in, even if no value was given" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
