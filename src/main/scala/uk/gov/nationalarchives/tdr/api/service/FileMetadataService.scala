@@ -82,27 +82,28 @@ class FileMetadataService(
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
     val customMetadataService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
+    val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
     for {
       existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
       customMetadataProperties <- customMetadataService.getCustomMetadata
-      namesOfAllPropertiesToDelete: Set[String] = customMetadataProperties
+      allPropertiesToDelete: Set[String] = customMetadataProperties
         .collect {
-          case customMetadataProperty if input.propertyNames.contains(customMetadataProperty.name) =>
+          case customMetadataProperty if propertiesToDelete.contains(customMetadataProperty.name) =>
             val namesOfDependenciesToDelete: List[String] = customMetadataProperty.values.flatMap(_.dependencies.map(_.name))
             namesOfDependenciesToDelete :+ customMetadataProperty.name
         }
         .flatten
         .toSet
 
-      _ = if (namesOfAllPropertiesToDelete.isEmpty) {
+      _ = if (allPropertiesToDelete.isEmpty) {
         throw new IllegalStateException(
           s"Can't find metadata property '${input.propertyNames.mkString(" or ")}' in the db"
         )
       }
 
       propertyDefaults: Seq[(String, String)] = customMetadataProperties.collect {
-        case customMetadataProperty if namesOfAllPropertiesToDelete.contains(customMetadataProperty.name) && customMetadataProperty.defaultValue.nonEmpty =>
+        case customMetadataProperty if allPropertiesToDelete.contains(customMetadataProperty.name) && customMetadataProperty.defaultValue.nonEmpty =>
           (customMetadataProperty.name, customMetadataProperty.defaultValue.get)
       }
 
@@ -111,9 +112,19 @@ class FileMetadataService(
           FilemetadataRow(uuidSource.uuid, id, defaultValue, Timestamp.from(timeSource.now), userId, propertyName)
         }
       }.toSeq
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, namesOfAllPropertiesToDelete)
+      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-    } yield DeleteFileMetadata(fileIds.toSeq, namesOfAllPropertiesToDelete.toSeq)
+    } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
+  }
+
+  private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
+    // Ensure that the file metadata is returned to the correct state if the 'description' property is deleted
+    // Cannot have a 'DescriptionAlternate' property without a 'description' property
+    // 'DescriptionAlternate' property is a dependency of 'DescriptionClosed' property
+    // If 'description' is deleted then 'DescriptionClosed' property to be set back to default of 'false' and 'DescriptionAlternate' to be deleted
+    if (originalPropertyNames.contains(Description)) {
+      originalPropertyNames ++ Set(DescriptionClosed)
+    } else originalPropertyNames
   }
 
   private def generateFileMetadataRows(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[FilemetadataRow] = {
@@ -167,6 +178,8 @@ object FileMetadataService {
   val TitleClosed = "TitleClosed"
   val DescriptionClosed = "DescriptionClosed"
   val ClosureType = "ClosureType"
+  val Description = "description"
+  val DescriptionAlternate = "DescriptionAlternate"
 
   /** Save default values for these properties because TDR currently only supports records which are Open, in English, etc. Users agree to these conditions at a consignment level,
     * so it's OK to save these as defaults for every file. They need to be saved so they can be included in the export package. The defaults may be removed in future once we let
@@ -234,10 +247,4 @@ object FileMetadataService {
       titleClosed: Option[Boolean],
       descriptionClosed: Option[Boolean]
   )
-
-  case class PropertyAction(updateActionType: String, propertyName: String, propertyValue: String, fileId: UUID, metadataId: UUID)
-
-  case class FileMetadataDelete(fileIds: Set[UUID], propertyNamesToDelete: Set[String])
-
-  case class PropertyUpdates(metadataToDelete: FileMetadataDelete, rowsToAdd: Seq[FilemetadataRow] = Seq(), rowsToUpdate: Map[String, FileMetadataUpdate] = Map())
 }
