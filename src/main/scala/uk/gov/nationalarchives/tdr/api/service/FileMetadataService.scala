@@ -123,36 +123,6 @@ class FileMetadataService(
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
 
-//  def propertyUpdateHandler(input: MetadataInput, userId: UUID): Unit = {
-//    val baseFileIds = input.fileIds.distinct
-//
-//    input match {
-//      case update: UpdateBulkFileMetadataInput => {
-//        val updates: (Seq[UpdateFileMetadataInput], Seq[UpdateFileMetadataInput]) = update.metadataProperties.partition(_.value.isEmpty)
-//        val emptyProperties = updates._1.map(_.filePropertyName)
-//        val nonEmptyProperties = updates._2.map(_.filePropertyName)
-//        val deleteEmptyPropertiesInput = DeleteFileMetadataInput(baseFileIds, emptyProperties)
-//        val distinctMetadataProperties: Set[UpdateFileMetadataInput] = update.metadataProperties.toSet
-//
-//        for {
-//          existingFileRows <- fileRepository.getAllDescendants(baseFileIds)
-//          fileIds: Set[UUID] = existingFileRows.toFileTypeIds
-//          deleteEmptyPropertiesInput = DeleteFileMetadataInput(fileIds.toSeq, emptyProperties)
-//          _ <- fileMetadataRepository.deleteFileMetadata(fileIds, nonEmptyProperties.toSet)
-//          _ <- deleteFileMetadata(deleteEmptyPropertiesInput, userId)
-//          addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
-//          metadataPropertiesAdded = addedRows.map(r => {
-//            FileMetadata(r.propertyname, r.value)
-//          }).toSet
-//        } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
-//
-//        deleteFileMetadata(deleteEmptyPropertiesInput, userId)
-//      }
-//      case deletion: DeleteFileMetadataInput =>
-//      case _ => throw InputDataException(s"Not a recognised update input type")
-//    }
-//  }
-
   private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
     // Ensure that the file metadata is returned to the correct state if the 'description' property is deleted
     // Cannot have a 'DescriptionAlternate' property without a 'description' property
