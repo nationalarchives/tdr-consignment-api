@@ -3,6 +3,11 @@
   "variables": {
     "deleteFileMetadataInput" : {
       "fileIds": [
+      ],
+      "propertyNames": [
+        "TestDependency1",
+        "TestDependency2",
+        "ClosureType"
       ]
     }
   }
