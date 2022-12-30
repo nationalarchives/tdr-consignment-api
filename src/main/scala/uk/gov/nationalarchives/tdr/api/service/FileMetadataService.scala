@@ -67,21 +67,21 @@ class FileMetadataService(
   }
 
   def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val emptyNonEmptyProperties = input.metadataProperties.partition(_.value.isEmpty)
-    val emptyPropertiesNames = emptyNonEmptyProperties._1.map(_.filePropertyName)
-    val distinctNonEmptyProperties = emptyNonEmptyProperties._2.toSet
+    val emptyNonEmptyPropertyUpdates = input.metadataProperties.partition(_.value.isEmpty)
+    val emptyPropertyValueUpdatesNames = emptyNonEmptyPropertyUpdates._1.map(_.filePropertyName)
+    val distinctNonEmptyPropertyValueUpdates = emptyNonEmptyPropertyUpdates._2.toSet
     val uniqueFileIds: Seq[UUID] = input.fileIds.distinct
 
     for {
       existingFileRows <- fileRepository.getAllDescendants(uniqueFileIds)
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctNonEmptyProperties.map(_.filePropertyName))
+      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctNonEmptyPropertyValueUpdates.map(_.filePropertyName))
       _ <-
-        if (emptyPropertiesNames.nonEmpty) {
-          val deleteEmptyPropertiesInput = DeleteFileMetadataInput(fileIds.toSeq, emptyPropertiesNames)
+        if (emptyPropertyValueUpdatesNames.nonEmpty) {
+          val deleteEmptyPropertiesInput = DeleteFileMetadataInput(fileIds.toSeq, emptyPropertyValueUpdatesNames)
           deleteFileMetadata(deleteEmptyPropertiesInput, userId)
         } else { Future(DeleteFileMetadata) }
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctNonEmptyProperties, userId))
+      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctNonEmptyPropertyValueUpdates, userId))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
