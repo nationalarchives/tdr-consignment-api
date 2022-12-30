@@ -16,6 +16,10 @@ object FileMetadataFields {
     val value: String
   }
 
+  trait MetadataUpdateBase {
+    val fileIds: Seq[UUID]
+  }
+
   val SHA256ServerSideChecksum = "SHA256ServerSideChecksum"
 
   case class FileMetadata(filePropertyName: String, value: String) extends FileMetadataBase
@@ -24,20 +28,20 @@ object FileMetadataFields {
 
   case class FileMetadataWithFileId(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
 
-  case class BulkFileMetadata(fileIds: Seq[UUID], metadataProperties: Seq[FileMetadata])
+  case class BulkFileMetadata(fileIds: Seq[UUID], metadataProperties: Seq[FileMetadata]) extends MetadataUpdateBase
 
   case class AddFileMetadataWithFileIdInput(metadataInputValues: List[AddFileMetadataWithFileIdInputValues])
 
   case class AddFileMetadataWithFileIdInputValues(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
 
-  case class UpdateBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[UpdateFileMetadataInput])
+  case class UpdateBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[UpdateFileMetadataInput]) extends MetadataUpdateBase
 
-  case class DeleteFileMetadata(fileIds: Seq[UUID], filePropertyNames: Seq[String])
+  case class DeleteFileMetadata(fileIds: Seq[UUID], filePropertyNames: Seq[String]) extends MetadataUpdateBase
 
   case class DeleteFileMetadataInput(
       fileIds: Seq[UUID],
       propertyNames: Seq[String] = Seq(ClosureType) // temporary until we can update it
-  )
+  ) extends MetadataUpdateBase
 
   implicit val FileMetadataType: ObjectType[Unit, FileMetadata] = deriveObjectType[Unit, FileMetadata]()
   implicit val InputFileMetadataType: InputObjectType[UpdateFileMetadataInput] = deriveInputObjectType[UpdateFileMetadataInput]()
