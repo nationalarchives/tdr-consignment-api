@@ -327,6 +327,7 @@ type FileMetadata {
 input FileMetadataFilters {
   closureMetadata: Boolean = false
   descriptiveMetadata: Boolean = false
+  additionalProperties: [String!]
 }
 
 type FileMetadataValue {

@@ -211,12 +211,13 @@ class FileService(
 
   private def getPropertyNames(fileMetadataFilters: Option[FileMetadataFilters]): Future[Seq[String]] = {
     fileMetadataFilters match {
-      case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata)) =>
+      case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata, additionalProperties)) =>
         for {
           metadataProperties <- customMetadataPropertiesRepository.getCustomMetadataProperty
           closureMetadataPropertyNames = if (closureMetadata) metadataProperties.closureFields.toPropertyNames else Nil
           descriptiveMetadataPropertyNames = if (descriptiveMetadata) metadataProperties.descriptiveFields.toPropertyNames else Nil
-        } yield (closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames)
+          additionalPropertyNames = if (additionalProperties.nonEmpty) metadataProperties.additionalFields(additionalProperties).toPropertyNames else Nil
+        } yield closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames ++ additionalPropertyNames
       case None => Future(Nil)
     }
   }
@@ -314,6 +315,9 @@ object FileService {
     def descriptiveFields: Seq[FilepropertyRow] = {
       fields.filter(f => f.propertygroup.contains("MandatoryMetadata") || f.propertygroup.contains("OptionalMetadata"))
     }
+
+    def additionalFields(additionalProperties: Option[List[String]]): Seq[FilepropertyRow] =
+      additionalProperties.map(properties => fields.filter(f => properties.contains(f.name))).getOrElse(Nil)
   }
 
   trait Rows {
