@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileMetadataUpdate, FileRepository}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -67,21 +67,21 @@ class FileMetadataService(
   }
 
   def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val emptyNonEmptyPropertyUpdates = input.metadataProperties.partition(_.value.isEmpty)
-    val emptyPropertyValueUpdatesNames = emptyNonEmptyPropertyUpdates._1.map(_.filePropertyName)
-    val distinctNonEmptyPropertyValueUpdates = emptyNonEmptyPropertyUpdates._2.toSet
+    val emptyPropertyValues: Seq[String] = input.metadataProperties.filter(_.value.isEmpty).map(_.filePropertyName)
+
+    if (emptyPropertyValues.nonEmpty) {
+      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
+    }
+
+    val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
+    val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
     val uniqueFileIds: Seq[UUID] = input.fileIds.distinct
 
     for {
       existingFileRows <- fileRepository.getAllDescendants(uniqueFileIds)
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctNonEmptyPropertyValueUpdates.map(_.filePropertyName))
-      _ <-
-        if (emptyPropertyValueUpdatesNames.nonEmpty) {
-          val deleteEmptyPropertiesInput = DeleteFileMetadataInput(fileIds.toSeq, emptyPropertyValueUpdatesNames)
-          deleteFileMetadata(deleteEmptyPropertiesInput, userId)
-        } else { Future(DeleteFileMetadata) }
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctNonEmptyPropertyValueUpdates, userId))
+      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
+      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }

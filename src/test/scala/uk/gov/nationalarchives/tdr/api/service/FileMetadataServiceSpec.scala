@@ -210,7 +210,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     addedProperties.subsetOf(expectedUpdatedPropertyNames) should equal(true)
   }
 
-  "updateBulkFileMetadata" should "delete property and its dependencies and not update if value is empty" in {
+  "updateBulkFileMetadata" should "not update properties, and throw an error if input contains an empty property value" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
     val customMetadataSetUp = new CustomMetadataTestSetUp()
     val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndChildrenIds, testSetUp.userId)
@@ -226,24 +226,21 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.fixedUUIDSource
     )
 
-    val newEmptyMetadataProperty: Seq[UpdateFileMetadataInput] = Seq(
-      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "Property1", "")
+    val emptyMetadataProperties: Seq[UpdateFileMetadataInput] = Seq(
+      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "Property1", ""),
+      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "Property2", "some value"),
+      UpdateFileMetadataInput(filePropertyIsMultiValue = false, "Property3", "")
     )
 
-    val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, newEmptyMetadataProperty)
+    val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, emptyMetadataProperties)
 
-    service.updateBulkFileMetadata(input, testSetUp.userId).futureValue
-    val deleteFileMetadataIdsArg: Set[UUID] = testSetUp.deleteFileMetadataIdsArgCaptor.getValue
-    val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
-    val addFileMetadataArgument: Seq[FilemetadataRow] = testSetUp.addFileMetadataCaptor.getValue
+    val thrownException = intercept[Exception] {
+      service.updateBulkFileMetadata(input, testSetUp.userId).futureValue
+    }
 
-    val expectedUpdatedIds: Set[UUID] = Set(testSetUp.fileId1, testSetUp.childFileId1, testSetUp.childFileId2)
-    val expectedUpdatedPropertyNames: Set[String] = Set("Property1Dependency", "Property1")
+    verify(testSetUp.fileRepositoryMock, times(0))
 
-    deleteFileMetadataIdsArg should equal(expectedUpdatedIds)
-    deleteFileMetadataPropertiesArg should equal(expectedUpdatedPropertyNames)
-
-    addFileMetadataArgument.size should equal(0)
+    thrownException.getMessage should equal("Cannot update properties with empty value: Property1, Property3")
   }
 
   "updateBulkFileMetadata" should "pass the correct number of ids into getAllDescendants if there are duplicates present in input argument" in {
