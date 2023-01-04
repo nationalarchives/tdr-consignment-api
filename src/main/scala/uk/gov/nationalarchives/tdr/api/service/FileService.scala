@@ -211,13 +211,13 @@ class FileService(
 
   private def getPropertyNames(fileMetadataFilters: Option[FileMetadataFilters]): Future[Seq[String]] = {
     fileMetadataFilters match {
-      case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata, additionalProperties)) =>
+      case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata, properties)) =>
         for {
           metadataProperties <- customMetadataPropertiesRepository.getCustomMetadataProperty
           closureMetadataPropertyNames = if (closureMetadata) metadataProperties.closureFields.toPropertyNames else Nil
           descriptiveMetadataPropertyNames = if (descriptiveMetadata) metadataProperties.descriptiveFields.toPropertyNames else Nil
-          additionalPropertyNames = if (additionalProperties.nonEmpty) metadataProperties.additionalFields(additionalProperties).toPropertyNames else Nil
-        } yield closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames ++ additionalPropertyNames
+          propertyNames = if (properties.nonEmpty) metadataProperties.additionalFields(properties).toPropertyNames else Nil
+        } yield closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames ++ propertyNames
       case None => Future(Nil)
     }
   }
@@ -316,8 +316,8 @@ object FileService {
       fields.filter(f => f.propertygroup.contains("MandatoryMetadata") || f.propertygroup.contains("OptionalMetadata"))
     }
 
-    def additionalFields(additionalProperties: Option[List[String]]): Seq[FilepropertyRow] =
-      additionalProperties.map(properties => fields.filter(f => properties.contains(f.name))).getOrElse(Nil)
+    def additionalFields(properties: Option[List[String]]): Seq[FilepropertyRow] =
+      properties.map(properties => fields.filter(f => properties.contains(f.name))).getOrElse(Nil)
   }
 
   trait Rows {
