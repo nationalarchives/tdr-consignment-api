@@ -1,4 +1,4 @@
 {
-  "query": "mutation {addFinalTransferConfirmation(addFinalTransferConfirmationInput: {consignmentId: \"f67d1337-cbd0-4fd1-9eac-611489e7113f\", finalOpenRecordsConfirmed: true, legalCustodyTransferConfirmed: true}) {consignmentId, finalOpenRecordsConfirmed, legalCustodyTransferConfirmed}}"
+  "query": "mutation {addFinalTransferConfirmation(addFinalTransferConfirmationInput: {consignmentId: \"f67d1337-cbd0-4fd1-9eac-611489e7113f\", legalCustodyTransferConfirmed: true}) {consignmentId, legalCustodyTransferConfirmed}}"
 }
 

@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.Tables.{ConsignmentmetadataRow, ConsignmentstatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FinalTransferConfirmationFields._
-import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.{FinalOpenRecordsConfirmed, LegalCustodyTransferConfirmed}
+import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.LegalCustodyTransferConfirmed
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,7 +40,6 @@ class FinalTransferConfirmationService(
     inputs match {
       case standard: AddFinalTransferConfirmationInput =>
         Seq(
-          ConsignmentmetadataRow(uuidSource.uuid, standard.consignmentId, FinalOpenRecordsConfirmed, standard.finalOpenRecordsConfirmed.toString, time, userId),
           ConsignmentmetadataRow(uuidSource.uuid, standard.consignmentId, LegalCustodyTransferConfirmed, standard.legalCustodyTransferConfirmed.toString, time, userId)
         )
       case judgment: AddFinalJudgmentTransferConfirmationInput =>
@@ -52,7 +51,7 @@ class FinalTransferConfirmationService(
 
   private def convertDbRowsToFinalTransferConfirmation(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): FinalTransferConfirmation = {
     val propertyNameToValue = rows.map(row => row.propertyname -> row.value.toBoolean).toMap
-    FinalTransferConfirmation(consignmentId, propertyNameToValue(FinalOpenRecordsConfirmed), propertyNameToValue(LegalCustodyTransferConfirmed))
+    FinalTransferConfirmation(consignmentId, propertyNameToValue(LegalCustodyTransferConfirmed))
   }
 
   private def convertDbRowsToFinalJudgmentTransferConfirmation(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): FinalJudgmentTransferConfirmation = {
@@ -63,11 +62,9 @@ class FinalTransferConfirmationService(
 }
 
 object FinalTransferConfirmationService {
-  val FinalOpenRecordsConfirmed = "FinalOpenRecordsConfirmed"
   val LegalCustodyTransferConfirmed = "LegalCustodyTransferConfirmed"
 
   val finalTransferConfirmationProperties = List(
-    FinalOpenRecordsConfirmed,
     LegalCustodyTransferConfirmed
   )
 

@@ -45,7 +45,6 @@ input AddFinalJudgmentTransferConfirmationInput {
 
 input AddFinalTransferConfirmationInput {
   consignmentId: UUID!
-  finalOpenRecordsConfirmed: Boolean!
   legalCustodyTransferConfirmed: Boolean!
 }
 
@@ -371,7 +370,6 @@ type FinalJudgmentTransferConfirmation {
 
 type FinalTransferConfirmation {
   consignmentId: UUID!
-  finalOpenRecordsConfirmed: Boolean!
   legalCustodyTransferConfirmed: Boolean!
 }
 
