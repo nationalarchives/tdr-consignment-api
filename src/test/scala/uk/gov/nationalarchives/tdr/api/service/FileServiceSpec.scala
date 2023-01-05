@@ -236,7 +236,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   )
 
   forAll(filterMetadata) { metadataType =>
-    "getFileMetadata" should s"return filtered fileMetadata when fileMetadatFilter $metadataType is/are passed" in {
+    "getFileMetadata" should s"return filtered fileMetadata when fileMetadatFilter $metadataType and properties are passed" in {
       val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
       val fileRepositoryMock = mock[FileRepository]
       val antivirusRepositoryMock = mock[AntivirusMetadataRepository]
@@ -303,13 +303,13 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         )
       )
       val metadataFilters = Map(
-        "closureMetadata" -> FileMetadataFilters(closureMetadata = true).some,
+        "closureMetadata" -> FileMetadataFilters(closureMetadata = true, properties = List("Property1").some).some,
         "descriptiveMetadata" -> FileMetadataFilters(descriptiveMetadata = true).some,
         "closureMetadata & descriptiveMetadata" -> FileMetadataFilters(closureMetadata = true, descriptiveMetadata = true).some
       )
 
       val expectedMetadata = Map(
-        "closureMetadata" -> (List("ClosureType", "ClosurePeriod"), List("Open", "12")),
+        "closureMetadata" -> (List("ClosureType", "ClosurePeriod", "Property1"), List("Open", "12", "Property1Value")),
         "descriptiveMetadata" -> (List("Property1", "Property2"), List("Property1Value", "Property2Value")),
         "closureMetadata & descriptiveMetadata" -> (List("ClosureType", "ClosurePeriod", "Property1", "Property2"), List("Open", "12", "Property1Value", "Property2Value"))
       )
