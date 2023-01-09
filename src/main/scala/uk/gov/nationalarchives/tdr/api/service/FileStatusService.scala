@@ -2,9 +2,8 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{DisallowedPuidsRepository, FileRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, FileStatus}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Failed, Success, Upload}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, FFID, Success}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -15,25 +14,16 @@ class FileStatusService(fileRepository: FileRepository, fileStatusRepository: Fi
     implicit val executionContext: ExecutionContext
 ) {
 
-  def addFileStatus(addFileStatusInput: AddFileStatusInput): Future[FileStatus] = {
-
-    for {
-      _ <- validateStatusTypeAndValue(addFileStatusInput)
-      _ <- fileStatusRepository.addFileStatuses(
-        List(FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now())))
-      )
-    } yield FileStatus(addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue)
+  def addFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput): Future[List[FileStatus]] = {
+    val rows = addMultipleFileStatusesInput.statuses.map(addFileStatusInput => {
+      FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now()))
+    })
+    fileStatusRepository.addFileStatuses(rows).map(_.map(row => FileStatus(row.fileid, row.statustype, row.value)).toList)
   }
 
-  private def validateStatusTypeAndValue(addFileStatusInput: AddFileStatusInput): Future[Boolean] = {
-    val statusType: String = addFileStatusInput.statusType
-    val statusValue: String = addFileStatusInput.statusValue
-
-    if (Upload == statusType && List(Success, Failed).contains(statusValue)) {
-      Future(true)
-    } else {
-      Future.failed(InputDataException(s"Invalid FileStatus input: either '$statusType' or '$statusValue'"))
-    }
+  @deprecated("Use addFileStatuses(addMultipleFileStatuses: List[AddFileStatusInput])")
+  def addFileStatus(addFileStatusInput: AddFileStatusInput): Future[FileStatus] = {
+    addFileStatuses(AddMultipleFileStatusesInput(addFileStatusInput :: Nil)).map(_.head)
   }
 
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {

@@ -49,6 +49,10 @@ input AddFinalTransferConfirmationInput {
   legalCustodyTransferConfirmed: Boolean!
 }
 
+input AddMultipleFileStatusesInput {
+  statuses: [AddFileStatusInput!]!
+}
+
 input AddTransferAgreementComplianceInput {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
@@ -402,6 +406,7 @@ type Mutation {
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
   addFileStatus(addFileStatusInput: AddFileStatusInput!): FileStatus!
+  addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
 }
 
 "Information about pagination in a connection."
