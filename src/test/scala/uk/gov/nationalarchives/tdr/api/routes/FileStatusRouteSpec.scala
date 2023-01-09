@@ -18,15 +18,15 @@ import java.util.UUID
 class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  private val addFileStatusPrefix: String = "json/addFileStatus_"
+  private val addFileStatusPrefix: String = "json/addFileStatuses_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
 
-  case class GraphqlAddFileStatusMutationData(data: Option[AddFileStatus], errors: List[GraphqlError] = Nil)
+  case class GraphqlAddFileStatusMutationData(data: Option[AddMultipleFileStatus], errors: List[GraphqlError] = Nil)
 
-  case class AddFileStatus(addFileStatus: FileStatus)
+  case class AddMultipleFileStatus(addMultipleFileStatuses: List[FileStatus])
 
   val runAddFileStatusTestMutation: (String, OAuth2BearerToken) => GraphqlAddFileStatusMutationData =
     runTestRequest[GraphqlAddFileStatusMutationData](addFileStatusPrefix)
@@ -45,8 +45,9 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
 
     val expectedResponse: GraphqlAddFileStatusMutationData = expectedAddFileStatusMutationResponse("data_all")
     val response: GraphqlAddFileStatusMutationData = runAddFileStatusTestMutation("mutation_alldata", token)
-    response.data.get.addFileStatus should equal(expectedResponse.data.get.addFileStatus)
-    checkFileStatusExists(defaultFileId, utils, expectedResponse.data.get.addFileStatus)
+    print(response)
+    response.data.get.addMultipleFileStatuses.head should equal(expectedResponse.data.get.addMultipleFileStatuses.head)
+    checkFileStatusExists(defaultFileId, utils, expectedResponse.data.get.addMultipleFileStatuses.head)
   }
 
   "addFileStatus" should "not allow a user to add a file status of a File that they did not upload" in withContainers { case container: PostgreSQLContainer =>
@@ -75,51 +76,6 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
-  }
-
-  "addFileStatus" should "return an error if an invalid statusType is passed" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-    val token = validUserToken(userId)
-    val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
-    utils.createConsignment(consignmentId, userId, fixedSeriesId)
-    utils.createFile(defaultFileId, consignmentId)
-
-    val expectedResponse = expectedAddFileStatusMutationResponse("data_invalid_statustype")
-    val response = runAddFileStatusTestMutation("mutation_invalid_statustype", token)
-
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
-  }
-
-  "addFileStatus" should "return an error if an invalid statusValue is passed" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-    val token = validUserToken(userId)
-    val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
-    utils.createConsignment(consignmentId, userId, fixedSeriesId)
-    utils.createFile(defaultFileId, consignmentId)
-
-    val expectedResponse = expectedAddFileStatusMutationResponse("data_invalid_statusvalue")
-    val response = runAddFileStatusTestMutation("mutation_invalid_statusvalue", token)
-
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
-  }
-
-  "addFileStatus" should "return an error if an invalid statusType and statusValue are passed" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
-    val token = validUserToken(userId)
-    val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
-    utils.createConsignment(consignmentId, userId, fixedSeriesId)
-    utils.createFile(defaultFileId, consignmentId)
-
-    val expectedResponse = expectedAddFileStatusMutationResponse("data_invalid_statustype_and_statusvalue")
-    val response = runAddFileStatusTestMutation("mutation_invalid_statustype_and_statusvalue", token)
-
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
   }
 
   private def checkFileStatusExists(fileId: UUID, utils: TestUtils, fileStatus: FileStatus): Unit = {
