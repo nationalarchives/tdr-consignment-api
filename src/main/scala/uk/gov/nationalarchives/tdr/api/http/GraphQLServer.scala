@@ -86,6 +86,7 @@ class GraphQLServer(slickSession: SlickSession) {
     val disallowedPuidsRepository = new DisallowedPuidsRepository(db)
     val allowedPuidsRepository = new AllowedPuidsRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
+    val displayPropertiesRepository = new DisplayPropertiesRepository(db)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
     val consignmentService = new ConsignmentService(
       consignmentRepository,
@@ -109,6 +110,7 @@ class GraphQLServer(slickSession: SlickSession) {
       new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository, allowedPuidsRepository, disallowedPuidsRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileRepository, fileStatusRepository, disallowedPuidsRepository, uuidSource)
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
+    val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
     val fileService = new FileService(
       fileRepository,
       fileStatusRepository,
@@ -139,7 +141,8 @@ class GraphQLServer(slickSession: SlickSession) {
       transferringBodyService,
       consignmentStatusService,
       fileStatusService,
-      customMetadataPropertiesService
+      customMetadataPropertiesService,
+      displayPropertiesService
     )
   }
   // scalastyle:on method.length

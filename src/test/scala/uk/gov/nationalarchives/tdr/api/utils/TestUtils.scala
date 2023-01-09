@@ -485,6 +485,16 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.executeUpdate()
   }
+
+  def createDisplayProperty(propertyName: String, attribute: String, value: String, attributeType: String): Unit = {
+    val sql = s"""INSERT INTO "DisplayProperties" ("PropertyName", "Attribute", "Value", "AttributeType") VALUES (?, ?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, propertyName)
+    ps.setString(2, attribute)
+    ps.setString(3, value)
+    ps.setString(4, attributeType)
+    ps.executeUpdate()
+  }
 }
 
 object TestUtils {

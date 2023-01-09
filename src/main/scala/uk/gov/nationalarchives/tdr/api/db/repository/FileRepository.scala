@@ -179,7 +179,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 }
 
-case class FileMetadataFilters(closureMetadata: Boolean = false, descriptiveMetadata: Boolean = false)
+case class FileMetadataFilters(closureMetadata: Boolean = false, descriptiveMetadata: Boolean = false, properties: Option[List[String]] = None)
 
 case class FileFilters(
     fileTypeIdentifier: Option[String] = None,

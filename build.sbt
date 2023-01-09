@@ -40,7 +40,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 
 lazy val akkaHttpVersion = "10.2.10"
 lazy val circeVersion = "0.14.3"
-lazy val testContainersVersion = "0.40.11"
+lazy val testContainersVersion = "0.40.12"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "3.4.1",
@@ -58,7 +58,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-optics" % "0.14.1",
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.3",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.22",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.26",
   "org.postgresql" % "postgresql" % "42.5.1",
   "com.typesafe.slick" %% "slick" % "3.4.0",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
@@ -66,8 +66,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.4.5",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
-  "software.amazon.awssdk" % "rds" % "2.18.11",
-  "software.amazon.awssdk" % "sts" % "2.18.11",
+  "software.amazon.awssdk" % "rds" % "2.19.9",
+  "software.amazon.awssdk" % "sts" % "2.19.9",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.2.0",
   "org.scalatest" %% "scalatest" % "3.2.14" % Test,
@@ -76,7 +76,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.12.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.100",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.103",
   "io.github.hakky54" % "logcaptor" % "2.7.10" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test

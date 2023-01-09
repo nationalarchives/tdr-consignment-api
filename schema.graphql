@@ -203,11 +203,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  Boolean
   Text
-  Integer
   DateTime
+  Decimal
+  Integer
+  Boolean
 }
 
 type DeleteFileMetadata {
@@ -217,6 +217,18 @@ type DeleteFileMetadata {
 
 input DeleteFileMetadataInput {
   fileIds: [UUID!]!
+  propertyNames: [String!] = ["ClosureType"]
+}
+
+type DisplayAttribute {
+  attribute: String!
+  value: String
+  type: DataType!
+}
+
+type DisplayPropertyField {
+  propertyName: String!
+  attributes: [DisplayAttribute!]!
 }
 
 type FFIDMetadata {
@@ -319,6 +331,7 @@ type FileMetadata {
 input FileMetadataFilters {
   closureMetadata: Boolean = false
   descriptiveMetadata: Boolean = false
+  properties: [String!]
 }
 
 type FileMetadataValue {
@@ -430,6 +443,7 @@ type Query {
   consignments(limit: Int!, currentCursor: String, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+  displayProperties(consignmentid: UUID!): [DisplayPropertyField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
 }
 
