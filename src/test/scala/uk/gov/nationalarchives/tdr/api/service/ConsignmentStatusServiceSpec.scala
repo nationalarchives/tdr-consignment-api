@@ -12,6 +12,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentS
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
+import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -618,6 +619,16 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
 
     statusValueCaptor.getValue should equal(expectedStatusValue)
+  }
+
+  "validStatusTypes" should "contain the correct values" in {
+    val expectedValues = List("ClientChecks", "ConfirmTransfer", "Export", "Series", "ServerAntivirus", "ServerChecksum", "ServerFFID", "TransferAgreement", "Upload")
+    validStatusTypes.toList.sorted should equal(expectedValues)
+  }
+
+  "validStatusValues" should "contain the correct values" in {
+    val expectedValues = List("Completed", "CompletedWithIssues", "Failed", "InProgress")
+    validStatusValues.toList.sorted should equal(expectedValues)
   }
 
   private def generateConsignmentStatusRow(
