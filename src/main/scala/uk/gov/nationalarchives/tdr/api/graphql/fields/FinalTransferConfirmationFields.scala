@@ -13,9 +13,9 @@ import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 
 object FinalTransferConfirmationFields {
 
-  case class FinalTransferConfirmation(consignmentId: UUID, finalOpenRecordsConfirmed: Boolean, legalCustodyTransferConfirmed: Boolean)
+  case class FinalTransferConfirmation(consignmentId: UUID, legalCustodyTransferConfirmed: Boolean)
 
-  case class AddFinalTransferConfirmationInput(consignmentId: UUID, finalOpenRecordsConfirmed: Boolean, legalCustodyTransferConfirmed: Boolean) extends UserOwnsConsignment
+  case class AddFinalTransferConfirmationInput(consignmentId: UUID, legalCustodyTransferConfirmed: Boolean) extends UserOwnsConsignment
 
   case class FinalJudgmentTransferConfirmation(consignmentId: UUID, legalCustodyTransferConfirmed: Boolean)
 

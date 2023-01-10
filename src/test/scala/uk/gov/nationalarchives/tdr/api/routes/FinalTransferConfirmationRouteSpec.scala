@@ -27,7 +27,6 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
 
   case class FinalTransferConfirmation(
       consignmentId: Option[UUID] = None,
-      finalOpenRecordsConfirmed: Option[Boolean] = None,
       legalCustodyTransferConfirmed: Option[Boolean] = None
   )
   case class AddFinalTransferConfirmation(addFinalTransferConfirmation: FinalTransferConfirmation)
@@ -164,12 +163,10 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
   private def checkFinalTransferConfirmationExists(consignmentId: UUID, utils: TestUtils): Unit = {
     val sql =
       """SELECT * FROM "ConsignmentMetadata"
-                 WHERE "ConsignmentId" = ? AND "PropertyName" in ('FinalOpenRecordsConfirmed', 'LegalCustodyTransferConfirmed');"""
+                 WHERE "ConsignmentId" = ? AND "PropertyName" in ('LegalCustodyTransferConfirmed');"""
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
-    rs.next()
-    rs.getString("Value") should equal("true")
     rs.next()
     rs.getString("Value") should equal("true")
   }
