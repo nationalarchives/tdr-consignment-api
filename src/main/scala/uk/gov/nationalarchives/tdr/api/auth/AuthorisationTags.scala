@@ -175,7 +175,7 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       case input: AddFileStatusInput           => Seq(input.fileId)
       case input: AddMultipleFileStatusesInput => input.statuses.map(_.fileId)
     }
-
+    val exportAccess: Boolean = ctx.ctx.accessToken.backendChecksRoles.contains(exportRole)
     val userId = ctx.ctx.accessToken.userId
 
     if (fileIds.isEmpty) {
@@ -191,7 +191,7 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       allFilesBelongToAConsignment = filesThatDoNotBelongToAConsignment.isEmpty
       allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
       result =
-        if (allFilesBelongToAConsignment && allFilesBelongToTheUser) {
+        if ((allFilesBelongToAConsignment && allFilesBelongToTheUser) || exportAccess) {
           continue
         } else {
           val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
