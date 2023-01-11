@@ -195,7 +195,8 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
           continue
         } else {
           val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
-          throw AuthorisationException(s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")}")
+          val message = s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")} or does not have export access"
+          throw AuthorisationException(message)
         }
     } yield result
   }
