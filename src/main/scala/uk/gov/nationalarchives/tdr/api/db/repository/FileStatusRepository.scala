@@ -25,4 +25,13 @@ class FileStatusRepository(db: Database) {
       .map(_._1)
     db.run(query.result)
   }
+
+  def deleteFileStatus(selectedFileIds: Set[UUID], statusType: Set[String]): Future[Int] = {
+    val query = Filestatus
+      .filter(_.fileid inSetBind selectedFileIds)
+      .filter(_.statustype inSetBind statusType)
+      .delete
+
+    db.run(query)
+  }
 }
