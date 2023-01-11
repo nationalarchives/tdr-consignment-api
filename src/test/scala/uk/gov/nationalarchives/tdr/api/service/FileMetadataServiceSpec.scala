@@ -540,7 +540,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FixedTimeSource,
       new FixedUUIDSource()
     )
-    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId)), userId).futureValue
+    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId), Seq(ClosureType)), userId).futureValue
 
     response.fileIds should equal(fileIds)
     response.filePropertyNames should equal(expectedPropertyNamesToDelete)
