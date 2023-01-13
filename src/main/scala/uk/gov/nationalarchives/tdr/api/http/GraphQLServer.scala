@@ -105,7 +105,8 @@ class GraphQLServer(slickSession: SlickSession) {
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
-    val fileMetadataService = new FileMetadataService(fileMetadataRepository, fileRepository, customMetadataPropertiesRepository, timeSource, uuidSource)
+    val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
+    val fileMetadataService = new FileMetadataService(fileMetadataRepository, fileRepository, customMetadataPropertiesService, timeSource, uuidSource)
     val ffidMetadataService =
       new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository, allowedPuidsRepository, disallowedPuidsRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileRepository, fileStatusRepository, disallowedPuidsRepository, uuidSource)
@@ -125,7 +126,6 @@ class GraphQLServer(slickSession: SlickSession) {
       uuidSource,
       config
     )
-    val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
 
     ConsignmentApiContext(
       accessToken,

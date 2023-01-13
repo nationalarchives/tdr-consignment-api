@@ -54,7 +54,7 @@ class FileService(
     val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
-    val rows: Future[List[Rows]] = fileMetadataService.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
+    val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
       ((allEmptyDirectoryNodes ++ allFileNodes) map { case (path, treeNode) =>
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
         val fileId = treeNode.id
