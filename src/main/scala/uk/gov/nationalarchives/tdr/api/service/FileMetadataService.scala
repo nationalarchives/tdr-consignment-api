@@ -85,7 +85,6 @@ class FileMetadataService(
   }
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
-    // val customMetadataService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
     val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
     for {
       existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
