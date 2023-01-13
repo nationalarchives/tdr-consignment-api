@@ -658,22 +658,24 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   }
 
   private class CustomMetadataTestSetUp {
-    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
+    val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
+
+    private val closurePropertyGroup: Option[String] = Some("Closure")
 
     private val alternativeDescriptionField: CustomMetadataField =
-      CustomMetadataField(DescriptionAlternate, Some(DescriptionAlternate), None, Supplied, Some("Closure"), Text, true, false, None, List(), 2147483647, false, None)
+      CustomMetadataField(DescriptionAlternate, Some(DescriptionAlternate), None, Supplied, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
 
     private val closurePeriodField: CustomMetadataField =
-      CustomMetadataField("ClosurePeriod", Some("Closure Period"), None, Defined, Some("Closure"), Text, true, false, None, List(), 2147483647, false, None)
+      CustomMetadataField("ClosurePeriod", Some("Closure Period"), None, Defined, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
 
     private val closureStartDateField: CustomMetadataField =
-      CustomMetadataField("ClosureStartDate", Some("Closure Start date"), None, Defined, Some("Closure"), Text, true, false, None, List(), 2147483647, false, None)
+      CustomMetadataField("ClosureStartDate", Some("Closure Start date"), None, Defined, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
 
     private val descriptionField: CustomMetadataField =
       CustomMetadataField(Description, Some(Description), None, Defined, Some("OptionalMetadata"), Text, true, false, None, List(), 2147483647, false, None)
 
     private val titleClosedField: CustomMetadataField =
-      CustomMetadataField("TitleClosed", Some("Title Closed"), None, Defined, Some("Closure"), Text, true, false, None, List(), 2147483647, false, None)
+      CustomMetadataField("TitleClosed", Some("Title Closed"), None, Defined, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
 
     private val topLevelDependencyField: CustomMetadataField =
       CustomMetadataField("TopLevelProperty1", Some("Top Level Property 1"), None, Defined, Some("PropertyGroup1"), Text, true, false, None, List(), 2147483647, false, None)
@@ -687,7 +689,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         Some(ClosureType),
         None,
         Defined,
-        Some("Closure"),
+        closurePropertyGroup,
         Text,
         true,
         false,
@@ -706,7 +708,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         Some(DescriptionClosed),
         None,
         Defined,
-        Some("Closure"),
+        closurePropertyGroup,
         Boolean,
         true,
         false,
@@ -718,7 +720,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       )
 
     private val foiExemptionCodeField =
-      CustomMetadataField("FoiExemptionCode", Some("FOI Exemption Code"), None, Defined, Some("Closure"), Text, true, true, None, List(), 2147483647, false, None)
+      CustomMetadataField("FoiExemptionCode", Some("FOI Exemption Code"), None, Defined, closurePropertyGroup, Text, true, true, None, List(), 2147483647, false, None)
 
     private val mockFields = Future(
       Seq(
