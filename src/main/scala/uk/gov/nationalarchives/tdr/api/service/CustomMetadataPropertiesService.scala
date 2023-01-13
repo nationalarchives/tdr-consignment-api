@@ -11,23 +11,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CustomMetadataPropertiesService(customMetadataPropertiesRepository: CustomMetadataPropertiesRepository)(implicit val ec: ExecutionContext) {
 
-  implicit class CustomMetadataFieldsHelper(fields: Seq[CustomMetadataField]) {
-
-    case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
-
-    def toPropertyNames: Set[String] = fields.map(_.name).toSet
-
-    def toValueDependenciesGroups: Seq[FieldGroup] = {
-      fields
-        .flatMap(f => {
-          val values: List[CustomMetadataValues] = f.values
-          values.map(v => {
-            FieldGroup(v.value, v.dependencies)
-          })
-        })
-    }
-  }
-
   def getCustomMetadata: Future[Seq[CustomMetadataField]] = {
     val propertiesValuesAndDependencies: Future[(Seq[FilepropertyRow], Seq[FilepropertyvaluesRow], Seq[FilepropertydependenciesRow])] =
       for {
@@ -66,37 +49,6 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
           )
       }
     }
-
-  def validateProperty(fileIds: Set[UUID], fieldToValidate: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
-    val propertyToValidateName: String = fieldToValidate.name
-    val valueDependenciesGroups = Seq(fieldToValidate).toValueDependenciesGroups
-    val fieldDefaultValue: Option[String] = fieldToValidate.defaultValue
-
-    fileIds
-      .flatMap(id => {
-        val allExistingFileProperties: Seq[FilemetadataRow] = existingProperties.filter(_.fileid == id)
-        val existingPropertiesToValidate = allExistingFileProperties.filter(_.propertyname == propertyToValidateName)
-        if (existingPropertiesToValidate.isEmpty) {
-          None
-        } else {
-          existingPropertiesToValidate.map(existingProperty => {
-            val existingPropertyValue: String = existingProperty.value
-            val valueDependencies = valueDependenciesGroups.filter(_.groupName == existingPropertyValue).toSet
-
-            // Validity test will need to change if multiple value fields require a set of dependencies for each value, eg
-            // FOIExemptionCode 1 requires ClosurePeriod 1
-            // FOIExemptionCode 2 requires ClosurePeriod 2 etc
-            val valid: Boolean = valueDependencies.flatMap(_.fields.toPropertyNames).subsetOf(allExistingFileProperties.map(_.propertyname).toSet)
-            val defaultValueUpdated: Boolean = fieldDefaultValue match {
-              case Some(value) => value != existingPropertyValue
-              case _           => false
-            }
-            FilePropertyState(id, propertyToValidateName, valid, defaultValueUpdated)
-          })
-        }
-      })
-      .toSeq
-  }
 
   private def rowsToMetadata(
       fp: FilepropertyRow,
@@ -148,6 +100,4 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
     case Some("Supplied") => Supplied
     case _                => throw new Exception(s"Invalid property type $propertyType")
   }
-
-  case class FilePropertyState(fileId: UUID, propertyName: String, valid: Boolean, defaultDoesNotMatchExistingValue: Boolean)
 }

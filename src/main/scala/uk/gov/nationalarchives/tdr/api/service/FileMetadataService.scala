@@ -186,6 +186,7 @@ object FileMetadataService {
   val ClosureType = "ClosureType"
   val Description = "description"
   val DescriptionAlternate = "DescriptionAlternate"
+  val TitleAlternate = "TitleAlternate"
 
   /** Save default values for these properties because TDR currently only supports records which are Open, in English, etc. Users agree to these conditions at a consignment level,
     * so it's OK to save these as defaults for every file. They need to be saved so they can be included in the export package. The defaults may be removed in future once we let

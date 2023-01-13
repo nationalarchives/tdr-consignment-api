@@ -106,9 +106,11 @@ class FileService(
     for {
       allRows: List[FileRow] <- rows.map(_.map(_.fileRow))
       fileIds: Set[UUID] = allRows.filter(_.filetype.get == NodeType.fileTypeIdentifier).map(_.fileid).toSet
-      statusInputs = fileIds.flatMap(id => {
-        defaultStatuses.map(ds => FilestatusRow(uuidSource.uuid, id, ds._1, ds._2, Timestamp.from(Instant.now())))
-      }).toList
+      statusInputs = fileIds
+        .flatMap(id => {
+          defaultStatuses.map(ds => FilestatusRow(uuidSource.uuid, id, ds._1, ds._2, Timestamp.from(Instant.now())))
+        })
+        .toList
       addedStatuses <- fileStatusRepository.addFileStatuses(statusInputs)
     } yield addedStatuses
   }
