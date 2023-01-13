@@ -60,6 +60,8 @@ object FileStatusService {
   val ClientChecksum = "ClientChecksum"
   val ClientFilePath = "ClientFilePath"
   val ClientChecks = "ClientChecks"
+  val ClosureMetadata = "ClosureMetadata"
+  val DescriptiveMetadata = "DescriptiveMetadata"
 
   // Values
   val Success = "Success"
@@ -73,4 +75,6 @@ object FileStatusService {
   val InProgress = "InProgress"
   val Completed = "Completed"
   val CompletedWithIssues = "CompletedWithIssues"
+  val Incomplete = "Incomplete"
+  val NotEntered = "NotEntered"
 }
