@@ -77,4 +77,6 @@ object FileStatusService {
   val CompletedWithIssues = "CompletedWithIssues"
   val Incomplete = "Incomplete"
   val NotEntered = "NotEntered"
+
+  val defaultStatuses: Map[String, String] = Map(ClosureMetadata -> NotEntered, DescriptiveMetadata -> NotEntered)
 }

@@ -342,6 +342,12 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.ZeroByteFile should equal("ZeroByteFile")
   }
 
+  "'defaultStatuses'" should "contain the correct statuses and values" in {
+    FileStatusService.defaultStatuses.size shouldBe 2
+    FileStatusService.defaultStatuses.get(ClosureMetadata).get should equal(NotEntered)
+    FileStatusService.defaultStatuses.get(DescriptiveMetadata).get should equal(NotEntered)
+  }
+
   def createFileStatusService(): FileStatusService =
     new FileStatusService(fileRepositoryMock, fileStatusRepositoryMock, disallowedPuidsRepositoryMock, fixedUuidSource)
 }

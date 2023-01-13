@@ -12,6 +12,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdg
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatusInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
@@ -22,6 +24,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
@@ -95,8 +98,19 @@ class FileService(
         }
       }).toList
     })
-
+    addDefaultMetadataStatuses(rows)
     generateMatchedRows(consignmentId, rows)
+  }
+
+  private def addDefaultMetadataStatuses(rows: Future[List[Rows]]): Future[Seq[FilestatusRow]] = {
+    for {
+      allRows: List[FileRow] <- rows.map(_.map(_.fileRow))
+      fileIds: Set[UUID] = allRows.filter(_.filetype.get == NodeType.fileTypeIdentifier).map(_.fileid).toSet
+      statusInputs = fileIds.flatMap(id => {
+        defaultStatuses.map(ds => FilestatusRow(uuidSource.uuid, id, ds._1, ds._2, Timestamp.from(Instant.now())))
+      }).toList
+      addedStatuses <- fileStatusRepository.addFileStatuses(statusInputs)
+    } yield addedStatuses
   }
 
   private def generateMatchedRows(consignmentId: UUID, rows: Future[List[Rows]]): Future[List[FileMatches]] = {
