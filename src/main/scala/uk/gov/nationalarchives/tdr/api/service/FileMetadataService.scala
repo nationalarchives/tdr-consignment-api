@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
@@ -20,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FileMetadataService(
     fileMetadataRepository: FileMetadataRepository,
     fileRepository: FileRepository,
-    customMetadataPropertiesRepository: CustomMetadataPropertiesRepository,
+    customMetadataService: CustomMetadataPropertiesService,
     timeSource: TimeSource,
     uuidSource: UUIDSource
 )(implicit val ec: ExecutionContext) {
@@ -85,7 +85,7 @@ class FileMetadataService(
   }
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
-    val customMetadataService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
+    // val customMetadataService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
     val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
     for {
       existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
