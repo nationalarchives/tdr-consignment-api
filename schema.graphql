@@ -175,6 +175,7 @@ type CurrentStatus {
   series: String
   transferAgreement: String
   upload: String
+  clientChecks: String
   confirmTransfer: String
   export: String
 }
@@ -202,11 +203,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  DateTime
   Text
+  DateTime
+  Integer
   Boolean
   Decimal
-  Integer
 }
 
 type DeleteFileMetadata {

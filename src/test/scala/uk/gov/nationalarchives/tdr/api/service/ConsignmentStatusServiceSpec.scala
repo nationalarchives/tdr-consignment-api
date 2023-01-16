@@ -302,7 +302,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
       val response = consignmentService.getConsignmentStatus(consignmentId).futureValue
 
-      response should be(CurrentStatus(None, None, None, None, None))
+      response should be(CurrentStatus(None, None, None, None, None, None))
     }
 
   forAll(statusValues) { statusValue =>
