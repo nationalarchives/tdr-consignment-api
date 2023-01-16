@@ -12,7 +12,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentS
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
-import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
+import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validConsignmentTypes, validStatusTypes, validStatusValues}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -619,6 +619,10 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     consignmentService.updateConsignmentStatus(updateConsignmentStatusInput).futureValue
 
     statusValueCaptor.getValue should equal(expectedStatusValue)
+  }
+
+  "CurrentStatus' number of arguments (arity)" should "match the validConsignmentTypes length" in {
+    CurrentStatus(None, None, None, None, None, None).productArity should equal(validConsignmentTypes.length)
   }
 
   "validStatusTypes" should "contain the correct values" in {
