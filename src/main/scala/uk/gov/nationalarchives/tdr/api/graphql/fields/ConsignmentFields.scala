@@ -50,7 +50,14 @@ object ConsignmentFields {
 
   case class TransferringBody(name: String, tdrCode: String)
 
-  case class CurrentStatus(series: Option[String], transferAgreement: Option[String], upload: Option[String], clientChecks: Option[String], confirmTransfer: Option[String], `export`: Option[String])
+  case class CurrentStatus(
+      series: Option[String],
+      transferAgreement: Option[String],
+      upload: Option[String],
+      clientChecks: Option[String],
+      confirmTransfer: Option[String],
+      `export`: Option[String]
+  )
 
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
