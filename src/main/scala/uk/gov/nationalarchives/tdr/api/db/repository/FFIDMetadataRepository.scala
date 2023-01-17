@@ -15,9 +15,9 @@ class FFIDMetadataRepository(db: Database)(implicit val executionContext: Execut
   private val insertFileStatusQuery = Filestatus returning Filestatus.map(_.filestatusid) into
     ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
-  def addFFIDMetadata(ffidMetadataRows: List[FfidmetadataRow], fileStatusRows: List[FilestatusRow]): Future[List[FfidmetadataRow]] = {
-    val allUpdates = DBIO.seq(insertFFIDMetadataQuery ++= ffidMetadataRows, insertFileStatusQuery ++= fileStatusRows).transactionally
-    db.run(allUpdates).map(_ => ffidMetadataRows)
+  def addFFIDMetadata(ffidMetadataRows: List[FfidmetadataRow]): Future[List[FfidmetadataRow]] = {
+    val update = insertFFIDMetadataQuery ++= ffidMetadataRows
+    db.run(update).map(_ => ffidMetadataRows)
   }
 
   def countProcessedFfidMetadata(consignmentId: UUID): Future[Int] = {

@@ -85,46 +85,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
   }
 
-  "The api" should "set the clientChecks status to CompleteWithErrors if there is invalid metadata" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
-    (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
-    utils.createConsignment(consignmentId)
-    utils.createConsignmentStatus(consignmentId, ClientChecks, InProgress)
-    utils.createFile(UUID.randomUUID(), consignmentId)
-
-    runTestMutationFileMetadata("mutation_metadatawitherrors", validUserToken())
-    val status = utils.getConsignmentStatus(consignmentId, "ClientChecks")
-    status.getString("Value") should equal("CompletedWithIssues")
-  }
-
-  "The api" should "set the clientChecks status to CompleteWithErrors if there is invalid metadata and an existing status" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
-      (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
-      utils.createConsignment(consignmentId)
-      utils.createFile(UUID.randomUUID(), consignmentId)
-      utils.createConsignmentStatus(consignmentId, ClientChecks, InProgress)
-
-      runTestMutationFileMetadata("mutation_metadatawitherrors", validUserToken())
-      val status = utils.getConsignmentStatus(consignmentId, "ClientChecks")
-      status.getString("Value") should equal("CompletedWithIssues")
-  }
-
-  "The api" should "set the clientChecks status to Complete if the metadata is valid" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val consignmentId = UUID.fromString("f1a9269d-157b-402c-98d8-1633393634c5")
-    (clientSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
-    utils.createConsignment(consignmentId)
-    utils.createConsignmentStatus(consignmentId, ClientChecks, InProgress)
-    utils.createFile(UUID.randomUUID(), consignmentId)
-
-    runTestMutationFileMetadata("mutation_alldata_1", validUserToken())
-    val status = utils.getConsignmentStatus(consignmentId, "ClientChecks")
-    status.getString("Value") should equal("Completed")
-  }
-
   "allDescendants" should "return parents and all descendants for the given parent ids" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     createConsignmentStructure(utils)
