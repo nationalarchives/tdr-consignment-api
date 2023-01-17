@@ -4,7 +4,7 @@ import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata, RedactedFiles}
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
 import java.util.UUID
@@ -23,50 +23,6 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       r.nextStringOption().map(UUID.fromString)
     )
   )
-
-//  implicit val getRedactedFileResult: GetResult[RedactedFiles] = GetResult(r =>
-//    RedactedFiles(
-//      UUID.fromString(r.nextString()),
-//      r.nextString(),
-//      r.nextStringOption().map(UUID.fromString),
-//      r.nextStringOption()
-//    )
-//  )
-//
-//  def getRedactedFilePairs(consignmentId: UUID, fileIds: Seq[UUID] = Nil, onlyNullValues: Boolean = false): Future[Seq[RedactedFiles]] = {
-//    val filterSuffix = if (fileIds.isEmpty) {
-//      ""
-//    } else {
-//      val fileString = fileIds.mkString("('", "','", "')")
-//      s"""AND "RedactedFileId" IN $fileString """
-//    }
-//    val whereSuffix = if (onlyNullValues) {
-//      """AND "FileId" IS NULL"""
-//    } else {
-//      ""
-//    }
-//    val idString = consignmentId.toString
-//    val regexp = "(_R\\d*$)"
-//    val similarTo = "%\\_R\\d*"
-//    val sql = sql"""SELECT "RedactedFileId", "RedactedFileName", "FileId", "FileName" FROM "File" RIGHT JOIN
-//        (
-//        select "ConsignmentId"::text AS "RedactedConsignmentId",
-//        "FileId"::text AS "RedactedFileId",
-//        "ParentId"::text "RedactedParentId",
-//        "FileName" AS "RedactedFileName",
-//        array_upper(string_to_array("FileName", '.'), 1) AS "ArrayLength",
-//        string_to_array("FileName", '.') AS "FileNameArray"
-//         from "File"
-//         WHERE "ConsignmentId"::text = $idString) AS RedactedFiles
-//            ON "ParentId"::text = "RedactedParentId"::text AND
-//             array_to_string(
-//                 array_append("FileNameArray"[0:"ArrayLength"-2], regexp_replace("FileNameArray"["ArrayLength"-1]::text, $regexp, '.')), '.'
-//                 ) = concat(array_to_string((string_to_array("FileName", '.'))[0:"ArrayLength"-1], '.'), '.')
-//             AND array_length(string_to_array("FileName", '.'), 1) > 1
-//            WHERE "FileNameArray"["ArrayLength" - 1] SIMILAR TO $similarTo  AND "ArrayLength" > 1 AND "FileNameArray"["ArrayLength"] != '' #$whereSuffix #$filterSuffix;
-//        """.stripMargin.as[RedactedFiles]
-//    db.run(sql)
-//  }
 
   private val insertFileQuery = File returning File.map(_.fileid) into ((file, fileid) => file.copy(fileid = fileid))
 
@@ -189,6 +145,5 @@ case class FileFilters(
 )
 
 object FileRepository {
-  case class RedactedFiles(redactedFileId: UUID, fileName: Option[String])
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
 }

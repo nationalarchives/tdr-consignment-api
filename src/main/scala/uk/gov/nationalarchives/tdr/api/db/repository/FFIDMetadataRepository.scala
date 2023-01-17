@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.Tables.{Ffidmetadata, FfidmetadataRow, Ffidmetadatamatches, FfidmetadatamatchesRow, File, Filestatus, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{Ffidmetadata, FfidmetadataRow, Ffidmetadatamatches, FfidmetadatamatchesRow, File}
 import uk.gov.nationalarchives.tdr.api.db.repository.FFIDMetadataRepository.FFIDRepositoryMetadata
 import java.util.UUID
 
@@ -11,9 +11,6 @@ class FFIDMetadataRepository(db: Database)(implicit val executionContext: Execut
 
   private val insertFFIDMetadataQuery = Ffidmetadata returning Ffidmetadata.map(_.fileid) into
     ((ffidMetadata, fileid) => ffidMetadata.copy(fileid = fileid))
-
-  private val insertFileStatusQuery = Filestatus returning Filestatus.map(_.filestatusid) into
-    ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
   def addFFIDMetadata(ffidMetadataRows: List[FfidmetadataRow]): Future[List[FfidmetadataRow]] = {
     val update = insertFFIDMetadataQuery ++= ffidMetadataRows

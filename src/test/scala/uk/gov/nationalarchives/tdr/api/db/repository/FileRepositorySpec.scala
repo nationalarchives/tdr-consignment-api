@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
+import org.scalatest.prop.TableDrivenPropertyChecks
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
