@@ -108,7 +108,7 @@ class GraphQLServer(slickSession: SlickSession) {
     val ffidMetadataService =
       new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileStatusRepository, uuidSource)
-    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
+    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, uuidSource, timeSource)
     val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
     val fileService = new FileService(
       fileRepository,
