@@ -16,48 +16,34 @@ class ValidateFileMetadataService(
     timeSource: TimeSource
 )(implicit val ec: ExecutionContext) {
 
-  implicit class CustomMetadataFieldsHelper(fields: Seq[CustomMetadataField]) {
+  def toPropertyNames(fields: Seq[CustomMetadataField]): Set[String] = fields.map(_.name).toSet
 
-    case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
+  def toAdditionalMetadataFieldGroups(fields: Seq[CustomMetadataField]): Seq[FieldGroup] = {
+    val closureFields = fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
+    val descriptiveFields = fields.filter(f => f.propertyGroup.contains("OptionalMetadata"))
+    Seq(FieldGroup(ClosureMetadata, closureFields), FieldGroup(DescriptiveMetadata, descriptiveFields))
+  }
 
-    def toPropertyNames: Set[String] = fields.map(_.name).toSet
-
-    def toAdditionalMetadataFieldGroups: Seq[FieldGroup] = {
-      Seq(FieldGroup(ClosureMetadata, closureFields), FieldGroup(DescriptiveMetadata, descriptiveFields))
-    }
-
-    def closureFields: Seq[CustomMetadataField] = {
-      fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
-    }
-
-    def descriptiveFields: Seq[CustomMetadataField] = {
-      fields.filter(f => f.propertyGroup.contains("OptionalMetadata"))
-    }
-
-    def toValueDependenciesGroups: Seq[FieldGroup] = {
-      fields
-        .flatMap(f => {
-          val values: List[CustomMetadataValues] = f.values
-          values.map(v => {
-            FieldGroup(v.value, v.dependencies)
-          })
-        })
-    }
+  def toValueDependenciesGroups(field: CustomMetadataField): Seq[FieldGroup] = {
+    val values: List[CustomMetadataValues] = field.values
+    values.map(v => {
+      FieldGroup(v.value, v.dependencies)
+    })
   }
 
   def validateAdditionalMetadata(fileIds: Set[UUID], consignmentId: UUID, propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
-      existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(customMetadataFields.toPropertyNames))
+      existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(toPropertyNames(customMetadataFields)))
     } yield {
-      val additionalMetadataGroups: Seq[CustomMetadataFieldsHelper#FieldGroup] = customMetadataFields.toAdditionalMetadataFieldGroups
-      val additionalMetadataProperties: Set[String] = additionalMetadataGroups.flatMap(_.fields.toPropertyNames).toSet
+      val additionalMetadataFieldGroups: Seq[FieldGroup] = toAdditionalMetadataFieldGroups(customMetadataFields)
+      val additionalMetadataPropertyNames: Set[String] = additionalMetadataFieldGroups.flatMap(g => toPropertyNames(g.fields)).toSet
 
-      if (!propertiesToValidate.subsetOf(additionalMetadataProperties)) {
+      if (!propertiesToValidate.subsetOf(additionalMetadataPropertyNames)) {
         List()
       } else {
         val additionalMetadataStatuses = {
-          additionalMetadataGroups
+          additionalMetadataFieldGroups
             .flatMap(group => {
               val states = group.fields.flatMap(f => checkPropertyState(fileIds, f, existingMetadataProperties))
               val filesWithNoAdditionalMetadataStatuses = fileIds
@@ -71,9 +57,9 @@ class ValidateFileMetadataService(
                 .map(s => {
                   val fileId = s._1
                   val status: String = s match {
-                    case s if allPropertiesCompleted(s._2)  => Completed
-                    case s if allPropertiesNotEntered(s._2) => NotEntered
-                    case _                                  => Incomplete
+                    case s if s._2.forall(_.existingValueMatchesDefault.contains(true)) => NotEntered
+                    case s if s._2.forall(_.missingDependencies == false)               => Completed
+                    case _                                                              => Incomplete
                   }
                   FilestatusRow(UUID.randomUUID(), fileId, group.groupName, status, Timestamp.from(timeSource.now))
                 })
@@ -89,17 +75,9 @@ class ValidateFileMetadataService(
     }
   }
 
-  private def allPropertiesCompleted(states: Seq[FilePropertyState]): Boolean = {
-    states.forall(_.missingDependencies == false) && states.exists(_.existingValueMatchesDefault.contains(false))
-  }
-
-  private def allPropertiesNotEntered(states: Seq[FilePropertyState]): Boolean = {
-    states.forall(_.existingValueMatchesDefault.contains(true))
-  }
-
   def checkPropertyState(fileIds: Set[UUID], fieldToCheck: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
     val propertyToCheckName: String = fieldToCheck.name
-    val valueDependenciesGroups = Seq(fieldToCheck).toValueDependenciesGroups
+    val valueDependenciesGroups = toValueDependenciesGroups(fieldToCheck)
     val fieldDefaultValue: Option[String] = fieldToCheck.defaultValue
 
     fileIds
@@ -113,16 +91,18 @@ class ValidateFileMetadataService(
             val existingPropertyValue: String = existingProperty.value
             val valueDependencies = valueDependenciesGroups.filter(_.groupName == existingPropertyValue).toSet
 
-            // Validity test will need to change if multiple value fields require a set of dependencies for each value, eg
+            // Missing dependencies test will need to change if multiple value fields require a set of dependencies for each value, eg
             // FOIExemptionCode 1 requires ClosurePeriod 1
             // FOIExemptionCode 2 requires ClosurePeriod 2 etc
-            val missingDependencies: Boolean = !valueDependencies.flatMap(_.fields.toPropertyNames).subsetOf(allExistingFileProperties.map(_.propertyname).toSet)
+            val missingDependencies: Boolean = !valueDependencies.flatMap(fg => toPropertyNames(fg.fields)).subsetOf(allExistingFileProperties.map(_.propertyname).toSet)
             val matchesDefault: Option[Boolean] = fieldDefaultValue match {
               case Some(value) => Some(value == existingPropertyValue)
               case _           => None
             }
 
-            FilePropertyState(id, propertyToCheckName, missingDependencies, matchesDefault)
+            val y = FilePropertyState(id, propertyToCheckName, missingDependencies, matchesDefault)
+            println(s"File property state: ${y.toString}")
+            y
           })
         }
       })
@@ -130,4 +110,6 @@ class ValidateFileMetadataService(
   }
 
   case class FilePropertyState(fileId: UUID, propertyName: String, missingDependencies: Boolean, existingValueMatchesDefault: Option[Boolean])
+
+  case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
 }
