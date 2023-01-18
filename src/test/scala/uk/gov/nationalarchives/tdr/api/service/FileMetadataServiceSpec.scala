@@ -5,8 +5,9 @@ import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, Defined, Supplied, Text}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -25,8 +26,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fixedFileUuid = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
     val fixedUserId = UUID.fromString("61b49923-daf7-4140-98f1-58ba6cbed61f")
     val metadataRepositoryMock = mock[FileMetadataRepository]
+    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val mockMetadataResponse = Future.successful(
       FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
@@ -44,7 +45,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       .thenReturn(mockMetadataResponse)
     when(metadataRepositoryMock.getFileMetadataByProperty(getFileMetadataFileCaptor.capture(), getFileMetadataPropertyNameCaptor.capture()))
       .thenReturn(Future(mockFileMetadataResponse))
-    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
+    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, FixedTimeSource, fixedUUIDSource)
     service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, "value"), fixedUserId).futureValue
 
     val row = addChecksumCaptor.getValue.head
@@ -62,12 +63,12 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "addFileMetadata" should "call throw an error if the client side checksum is missing" in {
     val metadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val fileId = UUID.randomUUID()
 
     when(metadataRepositoryMock.getFileMetadataByProperty(fileId :: Nil, SHA256ClientSideChecksum))
       .thenReturn(Future(Seq()))
-    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, FixedTimeSource, new FixedUUIDSource())
 
     val err =
       service.addFileMetadata(createInput(SHA256ServerSideChecksum, fileId, "value"), UUID.randomUUID()).failed.futureValue
@@ -80,7 +81,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fixedUserId = UUID.fromString("61b49923-daf7-4140-98f1-58ba6cbed61f")
     val metadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val timestamp = Timestamp.from(FixedTimeSource.now)
     val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
     val mockClientChecksumResponse = Future(Seq(mockClientChecksumRow))
@@ -95,7 +96,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       .thenReturn(mockMetadataResponse)
 
     when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
-    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
+    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, FixedTimeSource, fixedUUIDSource)
     service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, "ChecksumMatch"), fixedUserId).futureValue
     fileStatusCaptor.getValue.size should equal(2)
     fileStatusCaptor.getValue.head.fileid should equal(fixedFileUuid)
@@ -111,7 +112,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fixedUserId = UUID.fromString("61b49923-daf7-4140-98f1-58ba6cbed61f")
     val metadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val mockMetadataResponse = Future.successful(
       FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
@@ -127,7 +128,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       .thenReturn(mockMetadataResponse)
     when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
 
-    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
+    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, FixedTimeSource, fixedUUIDSource)
     service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, ""), fixedUserId).futureValue
     fileStatusCaptor.getValue.size should equal(2)
     fileStatusCaptor.getValue.head.fileid should equal(fixedFileUuid)
@@ -144,7 +145,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val value = "value"
     val metadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val mockMetadataResponse = Future.successful(
       FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
@@ -157,7 +158,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(metadataRepositoryMock.addChecksumMetadata(any[List[FilemetadataRow]], any[Seq[FilestatusRow]])).thenReturn(mockMetadataResponse)
     when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
 
-    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, fixedUUIDSource)
+    val service = new FileMetadataService(metadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, FixedTimeSource, fixedUUIDSource)
     val result: FileMetadataWithFileId =
       service.addFileMetadata(createInput(propertyName, fixedFileUuid, "value"), fixedUserId).futureValue.head
 
@@ -177,7 +178,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val service = new FileMetadataService(
       testSetUp.metadataRepositoryMock,
       testSetUp.fileRepositoryMock,
-      customMetadataSetUp.customMetadataPropertiesRepositoryMock,
+      customMetadataSetUp.customMetadataServiceMock,
       FixedTimeSource,
       testSetUp.fixedUUIDSource
     )
@@ -217,7 +218,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val service = new FileMetadataService(
       testSetUp.metadataRepositoryMock,
       testSetUp.fileRepositoryMock,
-      testSetUp.customMetadataPropertiesRepositoryMock,
+      testSetUp.customMetadataServiceMock,
       FixedTimeSource,
       testSetUp.fixedUUIDSource
     )
@@ -240,7 +241,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val service = new FileMetadataService(
       testSetUp.metadataRepositoryMock,
       testSetUp.fileRepositoryMock,
-      customMetadataSetUp.customMetadataPropertiesRepositoryMock,
+      customMetadataSetUp.customMetadataServiceMock,
       FixedTimeSource,
       testSetUp.fixedUUIDSource
     )
@@ -267,7 +268,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "getFileMetadata" should "call the repository with the correct arguments" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
     val selectedFileIdsCaptor: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val consignmentId = UUID.randomUUID()
@@ -281,7 +282,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       )
     ).thenReturn(mockResponse)
 
-    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, FixedTimeSource, new FixedUUIDSource())
     service.getFileMetadata(consignmentId).futureValue
     consignmentIdCaptor.getValue should equal(consignmentId)
     selectedFileIdsCaptor.getValue should equal(None)
@@ -290,7 +291,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "getFileMetadata" should "return multiple map entries for multiple files" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val fileRepositoryMock = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val consignmentId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
     val fileIdTwo = UUID.randomUUID()
@@ -310,7 +311,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     when(fileMetadataRepositoryMock.getFileMetadata(any[UUID], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(mockResponse)
 
-    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+    val service = new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, FixedTimeSource, new FixedUUIDSource())
     val response = service.getFileMetadata(consignmentId).futureValue
 
     response.size should equal(2)
@@ -330,7 +331,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentId = UUID.randomUUID()
     when(fileMetadataRepository.getSumOfFileSizes(any[UUID])).thenReturn(Future(1))
 
-    val service = new FileMetadataService(fileMetadataRepository, mock[FileRepository], mock[CustomMetadataPropertiesRepository], FixedTimeSource, new FixedUUIDSource())
+    val service = new FileMetadataService(fileMetadataRepository, mock[FileRepository], mock[CustomMetadataPropertiesService], FixedTimeSource, new FixedUUIDSource())
     val result = service.getSumOfFileSizes(consignmentId).futureValue
 
     result should equal(1)
@@ -353,7 +354,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     customMetadataSetUp.stubResponse()
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataSetUp.customMetadataPropertiesRepositoryMock, FixedTimeSource, new FixedUUIDSource())
+      new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataSetUp.customMetadataServiceMock, FixedTimeSource, new FixedUUIDSource())
 
     val thrownException = intercept[Exception] {
       service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId), Seq("Non-ExistentProperty")), UUID.randomUUID()).futureValue
@@ -361,7 +362,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     verify(fileMetadataRepositoryMock, times(0)).addFileMetadata(any[Seq[FilemetadataRow]])
     verify(fileMetadataRepositoryMock, times(0)).deleteFileMetadata(any[Set[UUID]], any[Set[String]])
-    verify(customMetadataSetUp.customMetadataPropertiesRepositoryMock, times(1)).getCustomMetadataDependencies
+    verify(customMetadataSetUp.customMetadataServiceMock, times(1)).getCustomMetadata
 
     thrownException.getMessage should include("Can't find metadata property 'Non-ExistentProperty' in the db.")
   }
@@ -391,7 +392,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val service = new FileMetadataService(
       fileMetadataRepositoryMock,
       fileRepositoryMock,
-      customMetadataTestSetUp.customMetadataPropertiesRepositoryMock,
+      customMetadataTestSetUp.customMetadataServiceMock,
       FixedTimeSource,
       new FixedUUIDSource()
     )
@@ -443,7 +444,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val service = new FileMetadataService(
       fileMetadataRepositoryMock,
       fileRepositoryMock,
-      customMetadataTestSetUp.customMetadataPropertiesRepositoryMock,
+      customMetadataTestSetUp.customMetadataServiceMock,
       FixedTimeSource,
       new FixedUUIDSource()
     )
@@ -489,7 +490,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val service = new FileMetadataService(
       fileMetadataRepositoryMock,
       fileRepositoryMock,
-      customMetadataTestSetUp.customMetadataPropertiesRepositoryMock,
+      customMetadataTestSetUp.customMetadataServiceMock,
       FixedTimeSource,
       new FixedUUIDSource()
     )
@@ -536,11 +537,11 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val service = new FileMetadataService(
       fileMetadataRepositoryMock,
       fileRepositoryMock,
-      customMetadataTestSetUp.customMetadataPropertiesRepositoryMock,
+      customMetadataTestSetUp.customMetadataServiceMock,
       FixedTimeSource,
       new FixedUUIDSource()
     )
-    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId)), userId).futureValue
+    val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(folderId), Seq(ClosureType)), userId).futureValue
 
     response.fileIds should equal(fileIds)
     response.filePropertyNames should equal(expectedPropertyNamesToDelete)
@@ -635,7 +636,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     val metadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
     val fileRepositoryMock: FileRepository = mock[FileRepository]
-    val customMetadataPropertiesRepositoryMock: CustomMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
+    val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
 
     val getAllDescendentIdsCaptor: ArgumentCaptor[Seq[UUID]] = ArgumentCaptor.forClass(classOf[Seq[UUID]])
     val deletePropertyNamesCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
@@ -657,118 +658,87 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   }
 
   private class CustomMetadataTestSetUp {
-    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
-    private val mockPropertyResponse = Future(
-      Seq(
-        FilepropertyRow("ClosureType", None, Some("Closure Type"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-        FilepropertyRow("ClosurePeriod", None, Some("Closure Period"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-        FilepropertyRow(
-          "ClosureStartDate",
-          None,
-          Some("Closure Start Date"),
-          Timestamp.from(Instant.now()),
-          None,
-          Some("Defined"),
-          Some("text"),
-          Some(true),
-          None,
-          Some("Closure")
-        ),
-        FilepropertyRow("TitleClosed", None, Some("Title Closed"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Closure")),
-        FilepropertyRow(
-          "TopLevelProperty1",
-          None,
-          Some("Top Level Property 1"),
-          Timestamp.from(Instant.now()),
-          None,
-          Some("Defined"),
-          Some("text"),
-          Some(true),
-          None,
-          Some("PropertyGroup1")
-        ),
-        FilepropertyRow(
-          "AlternativeTitle",
-          None,
-          Some("Alternative Title"),
-          Timestamp.from(Instant.now()),
-          None,
-          Some("Defined"),
-          Some("text"),
-          Some(true),
-          None,
-          Some("Closure")
-        ),
-        FilepropertyRow("Property1", None, Some("Property 1"), Timestamp.from(Instant.now()), None, Some("Defined"), Some("text"), Some(true), None, Some("Property1Group")),
-        FilepropertyRow(
-          "Property1Dependency",
-          None,
-          Some("Property 1 Dependency"),
-          Timestamp.from(Instant.now()),
-          None,
-          Some("Defined"),
-          Some("text"),
-          Some(true),
-          None,
-          Some("Property1Group")
-        ),
-        FilepropertyRow(Description, None, Some(Description), Timestamp.from(Instant.now()), None, Some("Supplied"), Some("text"), Some(true), None, Some("Descriptive")),
-        FilepropertyRow(
-          DescriptionClosed,
-          None,
-          Some(DescriptionClosed),
-          Timestamp.from(Instant.now()),
-          None,
-          Some("Defined"),
-          Some("boolean"),
-          Some(false),
-          None,
-          Some("Closure")
-        ),
-        FilepropertyRow(
-          DescriptionAlternate,
-          None,
-          Some(DescriptionAlternate),
-          Timestamp.from(Instant.now()),
-          None,
-          Some("Supplied"),
-          Some("text"),
-          Some(true),
-          None,
-          Some("Closure")
-        )
+    val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
+
+    private val closurePropertyGroup: Option[String] = Some("Closure")
+
+    private val alternativeDescriptionField: CustomMetadataField =
+      CustomMetadataField(DescriptionAlternate, Some(DescriptionAlternate), None, Supplied, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
+
+    private val closurePeriodField: CustomMetadataField =
+      CustomMetadataField("ClosurePeriod", Some("Closure Period"), None, Defined, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
+
+    private val closureStartDateField: CustomMetadataField =
+      CustomMetadataField("ClosureStartDate", Some("Closure Start date"), None, Defined, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
+
+    private val descriptionField: CustomMetadataField =
+      CustomMetadataField(Description, Some(Description), None, Defined, Some("OptionalMetadata"), Text, true, false, None, List(), 2147483647, false, None)
+
+    private val titleClosedField: CustomMetadataField =
+      CustomMetadataField("TitleClosed", Some("Title Closed"), None, Defined, closurePropertyGroup, Text, true, false, None, List(), 2147483647, false, None)
+
+    private val topLevelDependencyField: CustomMetadataField =
+      CustomMetadataField("TopLevelProperty1", Some("Top Level Property 1"), None, Defined, Some("PropertyGroup1"), Text, true, false, None, List(), 2147483647, false, None)
+
+    private val closureTypeClosedValues: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField, closureStartDateField, titleClosedField), "Closed", 2147483647)
+    private val closureTypeOpenValues: CustomMetadataValues = CustomMetadataValues(List(), "Open", 2147483647)
+
+    private val closureTypeField: CustomMetadataField =
+      CustomMetadataField(
+        ClosureType,
+        Some(ClosureType),
+        None,
+        Defined,
+        closurePropertyGroup,
+        Text,
+        true,
+        false,
+        Some("Open"),
+        List(closureTypeClosedValues, closureTypeOpenValues),
+        2147483647,
+        false,
+        None
       )
-    )
-    private val mockPropertyValuesResponse = Future(
-      Seq(
-        FilepropertyvaluesRow("ClosureType", "Closed", None, Some(3), None, None),
-        FilepropertyvaluesRow("ClosureType", "Open", Some(true), Some(1), None, None),
-        FilepropertyvaluesRow("TitleClosed", "true", None, Some(2), None, None),
-        FilepropertyvaluesRow("TitleClosed", "false", Some(true), Some(1), None, None),
-        FilepropertyvaluesRow("Property1", "33", None, Some(4), None, None),
-        FilepropertyvaluesRow("Property1Dependency", "34", None, None, None, None),
-        FilepropertyvaluesRow(DescriptionClosed, "true", None, Some(6), None, None),
-        FilepropertyvaluesRow(DescriptionClosed, "false", Some(true), None, None, None)
+
+    private val descriptionClosedTrueValues: CustomMetadataValues = CustomMetadataValues(List(alternativeDescriptionField), "true", 2147483647)
+
+    private val descriptionClosedField: CustomMetadataField =
+      CustomMetadataField(
+        DescriptionClosed,
+        Some(DescriptionClosed),
+        None,
+        Defined,
+        closurePropertyGroup,
+        Boolean,
+        true,
+        false,
+        Some("false"),
+        List(descriptionClosedTrueValues),
+        2147483647,
+        false,
+        None
       )
-    )
-    private val mockPropertyDependenciesResponse = Future(
+
+    private val foiExemptionCodeField =
+      CustomMetadataField("FoiExemptionCode", Some("FOI Exemption Code"), None, Defined, closurePropertyGroup, Text, true, true, None, List(), 2147483647, false, None)
+
+    private val mockFields = Future(
       Seq(
-        FilepropertydependenciesRow(3, "ClosurePeriod", None),
-        FilepropertydependenciesRow(3, "ClosureStartDate", None),
-        FilepropertydependenciesRow(3, "TitleClosed", None),
-        FilepropertydependenciesRow(2, "Property1", None),
-        FilepropertydependenciesRow(4, "Property1Dependency", None),
-        FilepropertydependenciesRow(2, "AlternativeTitle", None),
-        FilepropertydependenciesRow(6, DescriptionAlternate, None),
-        FilepropertydependenciesRow(7, DescriptionClosed, None),
-        FilepropertydependenciesRow(8, DescriptionClosed, None)
+        topLevelDependencyField,
+        closureStartDateField,
+        closurePeriodField,
+        titleClosedField,
+        closureTypeField,
+        closureTypeField,
+        descriptionField,
+        descriptionClosedField,
+        alternativeDescriptionField,
+        foiExemptionCodeField
       )
     )
 
     def stubResponse(): Unit = {
-      when(customMetadataPropertiesRepositoryMock.getCustomMetadataProperty).thenReturn(mockPropertyResponse)
-      when(customMetadataPropertiesRepositoryMock.getCustomMetadataValues).thenReturn(mockPropertyValuesResponse)
-      when(customMetadataPropertiesRepositoryMock.getCustomMetadataDependencies).thenReturn(mockPropertyDependenciesResponse)
+      when(customMetadataServiceMock.getCustomMetadata).thenReturn(mockFields)
     }
   }
 }
