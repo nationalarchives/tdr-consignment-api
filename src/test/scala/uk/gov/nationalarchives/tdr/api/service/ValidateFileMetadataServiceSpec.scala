@@ -5,7 +5,7 @@ import org.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
@@ -19,14 +19,30 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
   val fixedTimeSource: FixedTimeSource.type = FixedTimeSource
 
-  "validateFileMetadata" should "update 'ClosureMetadata' status to 'Complete' for multiple files where there are no missing dependencies" in {
+  "validateAdditionalMetadata" should "not update 'additional metadata' statuses if updated properties are not 'additional metadata' properties" in {
+    val testSetUp = new ValidatePropertiesSetUp()
+    val fileId1 = testSetUp.fileId1
+    val fileId2 = testSetUp.fileId2
+    val fileIds = Set(fileId1, fileId2)
+
+    testSetUp.stubMockResponses(fileIds)
+    val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
+
+    val service = new ValidateFileMetadataService(testSetUp.mockCustomMetadataService, testSetUp.mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource)
+    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("nonAdditionalMetadataProperty")).futureValue
+
+    response.size shouldBe 0
+
+    verify(mockFileStatusRepository, times(0)).deleteFileStatus(any[Set[UUID]], any[Set[String]])
+    verify(mockFileStatusRepository, times(0)).addFileStatuses(any[List[FilestatusRow]])
+  }
+
+  "validateAdditionalMetadata" should "update 'ClosureMetadata' status to 'Complete' for multiple files where there are no missing dependencies" in {
     val testSetUp = new ValidatePropertiesSetUp()
     val userId = testSetUp.userId
     val fileId1 = testSetUp.fileId1
     val fileId2 = testSetUp.fileId2
     val fileIds = Set(fileId1, fileId2)
-
-    // closurePeriodField, foiExemptionCodeField, descriptionClosedField, titleClosedField
 
     val existingMetadataRows: List[FilemetadataRow] = List(
       FilemetadataRow(UUID.randomUUID(), fileId1, "Closed", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
@@ -47,9 +63,13 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(testSetUp.mockCustomMetadataService, testSetUp.mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource)
-    val response = service.validateFileMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
+
+    verify(mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
+    verify(mockFileStatusRepository, times(1)).addFileStatuses(response)
+
     val file1Statuses = response.filter(_.fileid == fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
@@ -65,7 +85,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file2DescriptiveStatus.value should equal("NotEntered")
   }
 
-  "validateFileMetadata" should "update 'ClosureMetadata' status to 'Incomplete' for multiple files where there are missing dependencies" in {
+  "validateAdditionalMetadata" should "update 'ClosureMetadata' status to 'Incomplete' for multiple files where there are missing dependencies" in {
     val testSetUp = new ValidatePropertiesSetUp()
     val userId = testSetUp.userId
     val fileId1 = testSetUp.fileId1
@@ -83,9 +103,13 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(testSetUp.mockCustomMetadataService, testSetUp.mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource)
-    val response = service.validateFileMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "Language")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
+
+    verify(mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
+    verify(mockFileStatusRepository, times(1)).addFileStatuses(response)
+
     val file1Statuses = response.filter(_.fileid == fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
@@ -101,7 +125,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file2DescriptiveStatus.value should equal("NotEntered")
   }
 
-  "validateFileMetadata" should "update 'ClosureMetadata' status to 'NotEntered' for multiple files where all existing property values match defaults" in {
+  "validateAdditionalMetadata" should "update 'ClosureMetadata' status to 'NotEntered' for multiple files where all existing property values match defaults" in {
     val testSetUp = new ValidatePropertiesSetUp()
     val userId = testSetUp.userId
     val fileId1 = testSetUp.fileId1
@@ -119,9 +143,13 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(testSetUp.mockCustomMetadataService, testSetUp.mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource)
-    val response = service.validateFileMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "Language")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
+
+    verify(mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
+    verify(mockFileStatusRepository, times(1)).addFileStatuses(response)
+
     val file1Statuses = response.filter(_.fileid == fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
@@ -137,7 +165,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file2DescriptiveStatus.value should equal("NotEntered")
   }
 
-  "validateFileMetadata" should "update 'ClosureMetadata' and 'DescriptiveMetadata' statuses to 'NotEntered' for multiple files where there are no existing metadata properties" in {
+  "validateAdditionalMetadata" should "update 'ClosureMetadata' and 'DescriptiveMetadata' statuses to 'NotEntered' for multiple files where there are no existing metadata properties" in {
     val mockFileMetadataRepository: FileMetadataRepository = mock[FileMetadataRepository]
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
@@ -147,9 +175,13 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     when(mockFileMetadataRepository.getFileMetadata(any[UUID], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(List()))
 
     val service = new ValidateFileMetadataService(testSetUp.mockCustomMetadataService, mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource)
-    val response = service.validateFileMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
+
+    verify(mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
+    verify(mockFileStatusRepository, times(1)).addFileStatuses(response)
+
     val file1Statuses = response.filter(_.fileid == testSetUp.fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
@@ -158,16 +190,17 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file1DescriptiveStatus.value should equal("NotEntered")
 
     val file2Statuses = response.filter(_.fileid == testSetUp.fileId2)
-    file2Statuses.size shouldBe 2
     val file2ClosureStatus = file2Statuses.find(_.statustype == ClosureMetadata).get
     file2ClosureStatus.value should equal("NotEntered")
     val file2DescriptiveStatus = file2Statuses.find(_.statustype == DescriptiveMetadata).get
     file2DescriptiveStatus.value should equal("NotEntered")
   }
 
-  "validateFileMetadata" should "update 'DescriptiveMetadata' status to 'Complete' for multiple files where there are no missing dependencies" in {}
+  "validateAdditionalMetadata" should "update 'ClosureMetadata' status to 'Incomplete' for multiple files where all values set to default but dependency is missing" in {}
 
-  "validateProperty" should "return the property correct states for multiple files where the property value has no dependencies" in {
+  "validateAdditionalMetadata" should "update 'DescriptiveMetadata' status to 'Complete' for multiple files where there are no missing dependencies" in {}
+
+  "checkPropertyState" should "return the property correct states for multiple files where the property value has no dependencies" in {
     val testSetup = new ValidatePropertySetUp()
     val userId: UUID = testSetup.userId
     val fileId1: UUID = testSetup.fileId1
@@ -184,26 +217,26 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val fileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(customMetadataService, fileMetadataRepository, fileStatusRepository, fixedTimeSource)
-    val response = service.validateProperty(Set(fileId1, fileId2), fieldToValidate, existingMetadata)
+    val response = service.checkPropertyState(Set(fileId1, fileId2), fieldToValidate, existingMetadata)
 
     response.size shouldBe 2
     val file1State = response.find(_.fileId == fileId1).get
-    file1State.valid shouldBe true
+    file1State.missingDependencies shouldBe false
     file1State.propertyName should equal(fieldToValidate.name)
     file1State.existingValueMatchesDefault shouldBe None
     val file2State = response.find(_.fileId == fileId2).get
-    file2State.valid shouldBe true
+    file2State.missingDependencies shouldBe false
     file2State.propertyName should equal(fieldToValidate.name)
     file2State.existingValueMatchesDefault shouldBe None
   }
 
-  "validateProperty" should "return the correct property states for multiple files where one file is missing a dependency" in {
+  "checkPropertyState" should "return the correct property states for multiple files where one file is missing a dependency" in {
     val testSetup = new ValidatePropertySetUp()
     val userId: UUID = testSetup.userId
     val fileId1: UUID = testSetup.fileId1
     val fileId2: UUID = testSetup.fileId2
 
-    val fieldToValidate = testSetup.hasDependenciesField1
+    val fieldToCheck = testSetup.hasDependenciesField1
 
     val existingMetadata: Seq[FilemetadataRow] = Seq(
       FilemetadataRow(UUID.randomUUID(), fileId1, "value1", Timestamp.from(FixedTimeSource.now), userId, "Dependent"),
@@ -216,26 +249,26 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val fileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(customMetadataService, fileMetadataRepository, fileStatusRepository, fixedTimeSource)
-    val response = service.validateProperty(Set(fileId1, fileId2), fieldToValidate, existingMetadata)
+    val response = service.checkPropertyState(Set(fileId1, fileId2), fieldToCheck, existingMetadata)
 
     response.size shouldBe 2
     val file1State = response.find(_.fileId == fileId1).get
-    file1State.valid shouldBe true
-    file1State.propertyName should equal(fieldToValidate.name)
+    file1State.missingDependencies shouldBe false
+    file1State.propertyName should equal(fieldToCheck.name)
     file1State.existingValueMatchesDefault shouldBe None
     val file2State = response.find(_.fileId == fileId2).get
-    file2State.valid shouldBe false
-    file2State.propertyName should equal(fieldToValidate.name)
+    file2State.missingDependencies shouldBe true
+    file2State.propertyName should equal(fieldToCheck.name)
     file2State.existingValueMatchesDefault shouldBe None
   }
 
-  "validateProperty" should "return the correct property states for multiple files where property is multi-value with no dependencies" in {
+  "checkPropertyState" should "return the correct property states for multiple files where property is multi-value with no dependencies" in {
     val testSetup = new ValidatePropertySetUp()
     val userId: UUID = testSetup.userId
     val fileId1: UUID = testSetup.fileId1
     val fileId2: UUID = testSetup.fileId2
 
-    val fieldToValidate = testSetup.multiValueField1
+    val fieldToCheck = testSetup.multiValueField1
 
     val existingMetadata: List[FilemetadataRow] = List(
       FilemetadataRow(UUID.randomUUID(), fileId1, "40", Timestamp.from(FixedTimeSource.now), userId, "MultiValueProperty"),
@@ -249,20 +282,20 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val fileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(customMetadataService, fileMetadataRepository, fileStatusRepository, fixedTimeSource)
-    val response = service.validateProperty(Set(fileId1, fileId2), fieldToValidate, existingMetadata)
+    val response = service.checkPropertyState(Set(fileId1, fileId2), fieldToCheck, existingMetadata)
 
     response.size shouldBe 2
     val file1State = response.find(_.fileId == fileId1).get
-    file1State.valid shouldBe true
-    file1State.propertyName should equal(fieldToValidate.name)
+    file1State.missingDependencies shouldBe false
+    file1State.propertyName should equal(fieldToCheck.name)
     file1State.existingValueMatchesDefault shouldBe None
     val file2State = response.find(_.fileId == fileId2).get
-    file2State.valid shouldBe true
-    file2State.propertyName should equal(fieldToValidate.name)
+    file2State.missingDependencies shouldBe false
+    file2State.propertyName should equal(fieldToCheck.name)
     file2State.existingValueMatchesDefault shouldBe None
   }
 
-  "validateProperty" should "return the no property states where property does not exist for file" in {
+  "checkPropertyState" should "return the no property states where property does not exist for file" in {
     val testSetup = new ValidatePropertySetUp()
     val userId: UUID = testSetup.userId
     val fileId1: UUID = testSetup.fileId1
@@ -273,23 +306,23 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       FilemetadataRow(UUID.randomUUID(), fileId2, "someValue", Timestamp.from(FixedTimeSource.now), userId, "someOtherProperty")
     )
 
-    val fieldToValidate = testSetup.noDependenciesField1
+    val fieldToCheck = testSetup.noDependenciesField1
 
     val customMetadataService: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
     val fileMetadataRepository: FileMetadataRepository = mock[FileMetadataRepository]
     val fileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(customMetadataService, fileMetadataRepository, fileStatusRepository, fixedTimeSource)
-    val response = service.validateProperty(Set(fileId1, fileId2), fieldToValidate, existingMetadata)
+    val response = service.checkPropertyState(Set(fileId1, fileId2), fieldToCheck, existingMetadata)
 
     response.size shouldBe 0
   }
 
-  "validateProperty" should "return the correct property states where default property value is different from existing property value" in {
+  "checkPropertyState" should "return the correct property states where default property value is different from existing property value" in {
     val testSetup = new ValidatePropertySetUp()
     val userId: UUID = testSetup.userId
     val fileId1: UUID = testSetup.fileId1
-    val fieldToValidate = testSetup.hasDefaultField1
+    val fieldToCheck = testSetup.hasDefaultField1
 
     val existingMetadata: Seq[FilemetadataRow] = Seq(
       FilemetadataRow(UUID.randomUUID(), fileId1, "valueOtherThanDefault", Timestamp.from(FixedTimeSource.now), userId, "HasDefaultField")
@@ -300,25 +333,25 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val fileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(customMetadataService, fileMetadataRepository, fileStatusRepository, fixedTimeSource)
-    val response = service.validateProperty(Set(fileId1), fieldToValidate, existingMetadata)
+    val response = service.checkPropertyState(Set(fileId1), fieldToCheck, existingMetadata)
 
     response.size shouldBe 1
     val state = response.head
     state.fileId should equal(fileId1)
-    state.propertyName should equal(fieldToValidate.name)
-    state.valid shouldBe true
+    state.propertyName should equal(fieldToCheck.name)
+    state.missingDependencies shouldBe false
     state.existingValueMatchesDefault.get shouldBe false
   }
 
-  "validateProperty" should "return the correct property states where default property value is same as existing value" in {
+  "checkPropertyState" should "return the correct property states where default property value is same as existing value" in {
     val testSetup = new ValidatePropertySetUp()
     val userId: UUID = testSetup.userId
     val fileId1: UUID = testSetup.fileId1
 
-    val fieldToValidate = testSetup.hasDefaultField1
+    val fieldToCheck = testSetup.hasDefaultField1
 
     val existingMetadata: Seq[FilemetadataRow] = Seq(
-      FilemetadataRow(UUID.randomUUID(), fileId1, fieldToValidate.defaultValue.get, Timestamp.from(FixedTimeSource.now), userId, "HasDefaultField")
+      FilemetadataRow(UUID.randomUUID(), fileId1, fieldToCheck.defaultValue.get, Timestamp.from(FixedTimeSource.now), userId, "HasDefaultField")
     )
 
     val customMetadataService: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
@@ -326,13 +359,13 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val fileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
 
     val service = new ValidateFileMetadataService(customMetadataService, fileMetadataRepository, fileStatusRepository, fixedTimeSource)
-    val response = service.validateProperty(Set(fileId1), fieldToValidate, existingMetadata)
+    val response = service.checkPropertyState(Set(fileId1), fieldToCheck, existingMetadata)
 
     response.size shouldBe 1
     val state = response.head
     state.fileId should equal(fileId1)
-    state.propertyName should equal(fieldToValidate.name)
-    state.valid shouldBe true
+    state.propertyName should equal(fieldToCheck.name)
+    state.missingDependencies shouldBe false
     state.existingValueMatchesDefault.get shouldBe true
   }
 
