@@ -66,6 +66,7 @@ class ConsignmentStatusService(
         consignmentStatusTypesAndVals.get("Series"),
         consignmentStatusTypesAndVals.get("TransferAgreement"),
         consignmentStatusTypesAndVals.get("Upload"),
+        consignmentStatusTypesAndVals.get("ClientChecks"),
         consignmentStatusTypesAndVals.get("ConfirmTransfer"),
         consignmentStatusTypesAndVals.get("Export")
       )
@@ -95,6 +96,7 @@ class ConsignmentStatusService(
 }
 
 object ConsignmentStatusService {
-  val validStatusTypes: Set[String] = Set("Series", "TransferAgreement", "Upload", "ConfirmTransfer", "Export", "ClientChecks", "ServerFFID", "ServerChecksum", "ServerAntivirus")
+  val validConsignmentTypes: List[String] = List("Series", "TransferAgreement", "Upload", "ClientChecks", "ConfirmTransfer", "Export")
+  val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set("ServerFFID", "ServerChecksum", "ServerAntivirus")
   val validStatusValues: Set[String] = Set("InProgress", "Completed", "CompletedWithIssues", "Failed")
 }
