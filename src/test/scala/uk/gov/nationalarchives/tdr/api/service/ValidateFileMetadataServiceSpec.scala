@@ -22,7 +22,18 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
   "toPropertyNames" should "return all the names of the 'custom metadata fields'" in {
     val testSetUp = new ValidatePropertiesSetUp()
     val expectedPropertyNames =
-      Set("ClosureType", "TitleClosed", "DescriptionClosed", "FoiExemptionCode", "TitleAlternate", "AlternativeDescription", "Language", "description", "ClosurePeriod", "MultiValueWithDependencies")
+      Set(
+        "ClosureType",
+        "TitleClosed",
+        "DescriptionClosed",
+        "FoiExemptionCode",
+        "TitleAlternate",
+        "AlternativeDescription",
+        "Language",
+        "description",
+        "ClosurePeriod",
+        "MultiValueWithDependencies"
+      )
 
     val service = testSetUp.service
     val propertyNames = service.toPropertyNames(mockCustomMetadataFields())
@@ -228,8 +239,6 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file2DescriptiveStatus.value should equal("NotEntered")
   }
 
-  "validateAdditionalMetadata" should "update 'ClosureMetadata' status to 'Incomplete' for multiple files where all values set to default but dependency is missing" in {}
-
   "checkPropertyState" should "return the correct property states for multiple files where the property value has no dependencies" in {
     val testSetup = new ValidatePropertiesSetUp()
     val userId: UUID = testSetup.userId
@@ -324,6 +333,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val existingMetadata: List[FilemetadataRow] = List(
       FilemetadataRow(UUID.randomUUID(), fileId1, "40", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies"),
       FilemetadataRow(UUID.randomUUID(), fileId1, "30", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "valueWithNoDependency", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies"),
       FilemetadataRow(UUID.randomUUID(), fileId1, "someDate", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
       FilemetadataRow(UUID.randomUUID(), fileId1, "someDate", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
       FilemetadataRow(UUID.randomUUID(), fileId2, "40", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies"),

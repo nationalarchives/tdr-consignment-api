@@ -77,18 +77,17 @@ class ValidateFileMetadataService(
 
   def checkPropertyState(fileIds: Set[UUID], fieldToCheck: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
     val propertyToCheckName: String = fieldToCheck.name
-    val valueDependenciesGroups = toValueDependenciesGroups(fieldToCheck)
+    val valueDependenciesGroups: Seq[FieldGroup] = toValueDependenciesGroups(fieldToCheck)
     val fieldDefaultValue: Option[String] = fieldToCheck.defaultValue
-
-    val dependencyValues = valueDependenciesGroups.map(_.groupName)
+    val dependencyValues: Seq[String] = valueDependenciesGroups.map(_.groupName)
 
     fileIds
       .flatMap(id => {
         val allExistingFileProperties: Seq[FilemetadataRow] = existingProperties.filter(_.fileid == id)
-        val existingPropertiesToValidate = allExistingFileProperties.filter(_.propertyname == propertyToCheckName)
-        val existingPropertiesWithDependencies = existingPropertiesToValidate.filter(ep => dependencyValues.contains(ep.value))
+        val existingPropertiesToValidate: Seq[FilemetadataRow] = allExistingFileProperties.filter(_.propertyname == propertyToCheckName)
+        val existingPropertiesWithDependencies: Seq[FilemetadataRow] = existingPropertiesToValidate.filter(ep => dependencyValues.contains(ep.value))
         val expectedDependencies: Seq[CustomMetadataField] =
-          existingPropertiesWithDependencies.flatMap(epv => valueDependenciesGroups.filter(_.groupName == epv.value)).flatMap(_.fields)
+          existingPropertiesWithDependencies.flatMap(epd => valueDependenciesGroups.filter(_.groupName == epd.value)).flatMap(_.fields)
         val actualDependencyProperties = allExistingFileProperties.filter(p => expectedDependencies.map(_.name).contains(p.propertyname))
 
         if (existingPropertiesToValidate.isEmpty) {
