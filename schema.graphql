@@ -55,7 +55,7 @@ input AddMultipleFileStatusesInput {
 input AddTransferAgreementComplianceInput {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
+  initialOpenRecords: Boolean
   sensitivityReviewSignedOff: Boolean!
 }
 
@@ -63,7 +63,7 @@ input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
-  allEnglish: Boolean!
+  allEnglish: Boolean
 }
 
 input AllDescendantsInput {
@@ -202,11 +202,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  DateTime
-  Text
   Boolean
-  Decimal
   Integer
+  Text
+  DateTime
+  Decimal
 }
 
 type DeleteFileMetadata {
@@ -461,7 +461,7 @@ input StartUploadInput {
 type TransferAgreementCompliance {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
+  initialOpenRecords: Boolean
   sensitivityReviewSignedOff: Boolean!
 }
 
@@ -469,7 +469,7 @@ type TransferAgreementPrivateBeta {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
-  allEnglish: Boolean!
+  allEnglish: Boolean
 }
 
 type TransferringBody {

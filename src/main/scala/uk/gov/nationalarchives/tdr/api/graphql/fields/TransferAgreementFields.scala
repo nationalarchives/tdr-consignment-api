@@ -12,13 +12,13 @@ import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 
 object TransferAgreementFields {
-  case class TransferAgreementPrivateBeta(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Boolean)
+  case class TransferAgreementPrivateBeta(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Option[Boolean])
 
-  case class TransferAgreementCompliance(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Boolean, sensitivityReviewSignedOff: Boolean)
+  case class TransferAgreementCompliance(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Option[Boolean], sensitivityReviewSignedOff: Boolean)
 
-  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Boolean) extends UserOwnsConsignment
+  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Option[Boolean]) extends UserOwnsConsignment
 
-  case class AddTransferAgreementComplianceInput(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Boolean, sensitivityReviewSignedOff: Boolean)
+  case class AddTransferAgreementComplianceInput(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Option[Boolean], sensitivityReviewSignedOff: Boolean)
       extends UserOwnsConsignment
 
   val TransferAgreementPrivateBetaType: ObjectType[Unit, TransferAgreementPrivateBeta] = deriveObjectType[Unit, TransferAgreementPrivateBeta]()
