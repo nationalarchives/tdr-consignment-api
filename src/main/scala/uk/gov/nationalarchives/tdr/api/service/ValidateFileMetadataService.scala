@@ -80,29 +80,28 @@ class ValidateFileMetadataService(
     val valueDependenciesGroups = toValueDependenciesGroups(fieldToCheck)
     val fieldDefaultValue: Option[String] = fieldToCheck.defaultValue
 
+    val dependencyValues = valueDependenciesGroups.map(_.groupName)
+
     fileIds
       .flatMap(id => {
         val allExistingFileProperties: Seq[FilemetadataRow] = existingProperties.filter(_.fileid == id)
         val existingPropertiesToValidate = allExistingFileProperties.filter(_.propertyname == propertyToCheckName)
+        val existingPropertiesWithDependencies = existingPropertiesToValidate.filter(ep => dependencyValues.contains(ep.value))
+        val expectedDependencies: Seq[CustomMetadataField] =
+          existingPropertiesWithDependencies.flatMap(epv => valueDependenciesGroups.filter(_.groupName == epv.value)).flatMap(_.fields)
+        val actualDependencyProperties = allExistingFileProperties.filter(p => expectedDependencies.map(_.name).contains(p.propertyname))
+
         if (existingPropertiesToValidate.isEmpty) {
           None
         } else {
           existingPropertiesToValidate.map(existingProperty => {
             val existingPropertyValue: String = existingProperty.value
-            val valueDependencies = valueDependenciesGroups.filter(_.groupName == existingPropertyValue).toSet
-
-            // Missing dependencies test will need to change if multiple value fields require a set of dependencies for each value, eg
-            // FOIExemptionCode 1 requires ClosurePeriod 1
-            // FOIExemptionCode 2 requires ClosurePeriod 2 etc
-            val missingDependencies: Boolean = !valueDependencies.flatMap(fg => toPropertyNames(fg.fields)).subsetOf(allExistingFileProperties.map(_.propertyname).toSet)
+            val missingDependencies: Boolean = actualDependencyProperties.size < expectedDependencies.size
             val matchesDefault: Option[Boolean] = fieldDefaultValue match {
               case Some(value) => Some(value == existingPropertyValue)
               case _           => None
             }
-
-            val y = FilePropertyState(id, propertyToCheckName, missingDependencies, matchesDefault)
-            println(s"File property state: ${y.toString}")
-            y
+            FilePropertyState(id, propertyToCheckName, missingDependencies, matchesDefault)
           })
         }
       })

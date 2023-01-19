@@ -22,7 +22,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
   "toPropertyNames" should "return all the names of the 'custom metadata fields'" in {
     val testSetUp = new ValidatePropertiesSetUp()
     val expectedPropertyNames =
-      Set("ClosureType", "TitleClosed", "DescriptionClosed", "FoiExemptionCode", "TitleAlternate", "AlternativeDescription", "Language", "description", "ClosurePeriod")
+      Set("ClosureType", "TitleClosed", "DescriptionClosed", "FoiExemptionCode", "TitleAlternate", "AlternativeDescription", "Language", "description", "ClosurePeriod", "MultiValueWithDependencies")
 
     val service = testSetUp.service
     val propertyNames = service.toPropertyNames(mockCustomMetadataFields())
@@ -313,6 +313,38 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file2State.existingValueMatchesDefault shouldBe None
   }
 
+  "checkPropertyState" should "return the correct property states for multiple files where property is multi-value with dependencies and file is missing dependency" in {
+    val testSetup = new ValidatePropertiesSetUp()
+    val userId: UUID = testSetup.userId
+    val fileId1: UUID = testSetup.fileId1
+    val fileId2: UUID = testSetup.fileId2
+
+    val fieldToCheck = testSetup.mockFields.find(_.name == "MultiValueWithDependencies").get
+
+    val existingMetadata: List[FilemetadataRow] = List(
+      FilemetadataRow(UUID.randomUUID(), fileId1, "40", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "30", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "someDate", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId1, "someDate", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "40", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "someDate", Timestamp.from(FixedTimeSource.now), userId, "ClosurePeriod"),
+      FilemetadataRow(UUID.randomUUID(), fileId2, "30", Timestamp.from(FixedTimeSource.now), userId, "MultiValueWithDependencies")
+    )
+
+    val service = testSetup.service
+    val response = service.checkPropertyState(Set(fileId1, fileId2), fieldToCheck, existingMetadata)
+
+    response.size shouldBe 2
+    val file1State = response.find(_.fileId == fileId1).get
+    file1State.missingDependencies shouldBe false
+    file1State.propertyName should equal(fieldToCheck.name)
+    file1State.existingValueMatchesDefault shouldBe None
+    val file2State = response.find(_.fileId == fileId2).get
+    file2State.missingDependencies shouldBe true
+    file2State.propertyName should equal(fieldToCheck.name)
+    file2State.existingValueMatchesDefault shouldBe None
+  }
+
   "checkPropertyState" should "return no property states where property does not exist for file" in {
     val testSetup = new ValidatePropertiesSetUp()
     val fileId1: UUID = testSetup.fileId1
@@ -416,8 +448,6 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       )
     val alternativeTitleField: CustomMetadataField =
       CustomMetadataField("TitleAlternate", Some("Alternative Title"), None, Defined, Some("OptionalClosure"), Text, true, false, None, List(), 2147483647, false, None)
-    val foiExemptionCode40Value: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField), "40", 2147483647)
-    val foiExemptionCode30Value: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField), "30", 2147483647)
     val foiExemptionCodeField =
       CustomMetadataField(
         "FoiExemptionCode",
@@ -493,6 +523,25 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         None
       )
 
+    val multiValueDependency40Value: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField), "40", 2147483647)
+    val multiValueDependency30Value: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField), "30", 2147483647)
+    val multiValueWithDependenciesField =
+      CustomMetadataField(
+        "MultiValueWithDependencies",
+        Some("FOI Exemption Code"),
+        None,
+        Defined,
+        Some("Group"),
+        Text,
+        true,
+        true,
+        None,
+        List(multiValueDependency30Value, multiValueDependency40Value),
+        2147483647,
+        false,
+        None
+      )
+
     Seq(
       closurePeriodField,
       closureTypeField,
@@ -502,7 +551,8 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       languageField,
       titleClosedField,
       descriptionClosedField,
-      alternativeTitleField
+      alternativeTitleField,
+      multiValueWithDependenciesField
     )
   }
 }
