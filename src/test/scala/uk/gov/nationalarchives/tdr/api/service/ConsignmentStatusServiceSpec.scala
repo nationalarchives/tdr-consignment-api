@@ -447,7 +447,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
   }
 
-
   "validStatusTypes" should "contain the correct values" in {
     val expectedValues = List("ClientChecks", "ConfirmTransfer", "Export", "Series", "ServerAntivirus", "ServerChecksum", "ServerFFID", "TransferAgreement", "Upload")
     validStatusTypes.toList.sorted should equal(expectedValues)
