@@ -8,6 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, Defined, Supplied, Text}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -481,6 +482,10 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     fileMetadataDelete.size should equal(4)
     fileMetadataDelete should equal(Set("ClosurePeriod", "ClosureStartDate", TitleClosed, ClosureType))
+  }
+
+  "file metadata property names" should "have the correct values" in {
+    FileMetadataFields.SHA256ServerSideChecksum should equal("SHA256ServerSideChecksum")
   }
 
   private def generateFileRows(fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID], fixedUserId: UUID): Seq[FileRow] = {

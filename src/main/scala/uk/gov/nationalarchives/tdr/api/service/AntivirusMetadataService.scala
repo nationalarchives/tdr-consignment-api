@@ -1,9 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.Tables.{AvmetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.AvmetadataRow
 import uk.gov.nationalarchives.tdr.api.db.repository.AntivirusMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.{AddAntivirusMetadataInput, AddAntivirusMetadataInputValues, AntivirusMetadata}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Success, VirusDetected}
 
 import java.sql.Timestamp
 import java.time.Instant

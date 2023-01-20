@@ -223,15 +223,22 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.Antivirus should equal("Antivirus")
     FileStatusService.ChecksumMatch should equal("ChecksumMatch")
     FileStatusService.FFID should equal("FFID")
+    FileStatusService.Redaction should equal("Redaction")
+    FileStatusService.Upload should equal("Upload")
+    FileStatusService.ServerChecksum should equal("ServerChecksum")
+    FileStatusService.ClientChecks should equal("ClientChecks")
   }
 
   "'status values'" should "have the correct values assigned" in {
+    FileStatusService.Success should equal("Success")
     FileStatusService.Mismatch should equal("Mismatch")
-    FileStatusService.NonJudgmentFormat should equal("NonJudgmentFormat")
-    FileStatusService.PasswordProtected should equal("PasswordProtected")
     FileStatusService.VirusDetected should equal("VirusDetected")
-    FileStatusService.ZeroByteFile should equal("ZeroByteFile")
+    FileStatusService.PasswordProtected should equal("PasswordProtected")
     FileStatusService.Zip should equal("Zip")
+    FileStatusService.NonJudgmentFormat should equal("NonJudgmentFormat")
+    FileStatusService.ZeroByteFile should equal("ZeroByteFile")
+    FileStatusService.InProgress should equal("InProgress")
+    FileStatusService.Completed should equal("Completed")
   }
 
   def createFileStatusService(): FileStatusService =
