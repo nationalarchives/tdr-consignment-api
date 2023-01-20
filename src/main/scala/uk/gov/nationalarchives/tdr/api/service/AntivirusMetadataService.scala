@@ -19,19 +19,13 @@ class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRep
     addAntivirusMetadata(AddAntivirusMetadataInput(values :: Nil)).map(_.head)
 
   def addAntivirusMetadata(input: AddAntivirusMetadataInput): Future[List[AntivirusMetadata]] = {
-    val (inputRows, fileStatusRows) = input.antivirusMetadata
+    val inputRows = input.antivirusMetadata
       .map(values => {
         val inputRow =
           AvmetadataRow(values.fileId, values.software, values.softwareVersion, values.databaseVersion, values.result, Timestamp.from(Instant.ofEpochMilli(values.datetime)))
-        val fileStatusValue = values.result match {
-          case "" => Success
-          case _  => VirusDetected
-        }
-        val fileStatusRow = FilestatusRow(uuidSource.uuid, values.fileId, Antivirus, fileStatusValue, Timestamp.from(timeSource.now))
-        (inputRow, fileStatusRow)
+        inputRow
       })
-      .unzip
-    antivirusMetadataRepository.addAntivirusMetadata(inputRows, fileStatusRows).map(rowsToAntivirusMetadata)
+    antivirusMetadataRepository.addAntivirusMetadata(inputRows).map(rowsToAntivirusMetadata)
   }
 
   private def rowsToAntivirusMetadata(rows: List[AvmetadataRow]): List[AntivirusMetadata] = {

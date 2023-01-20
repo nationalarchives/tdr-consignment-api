@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Cannot find client side checksum for file 28f78f42-0f77-4384-bcdb-04d85100171e",
+      "message": "ERROR: insert or update on table \"FileMetadata\" violates foreign key constraint \"FileMetadata_File_FileId_fkey\"\n  Detail: Key (FileId)=(28f78f42-0f77-4384-bcdb-04d85100171e) is not present in table \"File\".",
       "locations": [
         {
           "column": 47,
