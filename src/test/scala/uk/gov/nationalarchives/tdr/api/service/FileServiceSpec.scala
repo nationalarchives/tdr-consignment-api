@@ -163,7 +163,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     when(fileRepositoryMock.getFiles(consignmentId, FileFilters(None)))
       .thenReturn(Future(fileAndMetadataRows))
-//    when(fileRepositoryMock.getRedactedFilePairs(consignmentId)).thenReturn(Future(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(List()))
     when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, Set(FFID))).thenReturn(mockFileStatusResponse)
