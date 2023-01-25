@@ -40,27 +40,14 @@ class FileMetadataService(
     addFileMetadata(AddFileMetadataWithFileIdInput(addFileMetadataInput :: Nil), userId).map(_.head)
 
   def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
-    fileMetadataRepository
-      .getFileMetadataByProperty(input.metadataInputValues.map(_.fileId), SHA256ClientSideChecksum)
-      .flatMap(metadataRows => {
-        val existingMetadataMap: Map[UUID, Option[FilemetadataRow]] = metadataRows.groupBy(_.fileid).view.mapValues(_.headOption).toMap
-        val (metadataRow, statusRows) = input.metadataInputValues
-          .map(addFileMetadataInput => {
-            val fileId = addFileMetadataInput.fileId
-            val fileMetadataRow =
-              FilemetadataRow(uuidSource.uuid, fileId, addFileMetadataInput.value, Timestamp.from(timeSource.now), userId, addFileMetadataInput.filePropertyName)
-            val statusRows = fileMetadataRow.propertyname match {
-              case SHA256ServerSideChecksum =>
-                Seq(getFileStatusRowForChecksumMatch(existingMetadataMap.get(fileId).flatten, fileMetadataRow), getFileStatusRowForServerChecksum(fileMetadataRow))
-              case _ => Nil
-            }
-            (fileMetadataRow, statusRows)
-          })
-          .unzip
-        fileMetadataRepository
-          .addChecksumMetadata(metadataRow, statusRows.flatten)
-          .map(_.map(row => FileMetadataWithFileId(row.propertyname, row.fileid, row.value)).toList)
+    val metadataRow = input.metadataInputValues
+      .map(addFileMetadataInput => {
+        val fileId = addFileMetadataInput.fileId
+        FilemetadataRow(uuidSource.uuid, fileId, addFileMetadataInput.value, Timestamp.from(timeSource.now), userId, addFileMetadataInput.filePropertyName)
       })
+    fileMetadataRepository
+      .addFileMetadata(metadataRow)
+      .map(_.map(row => FileMetadataWithFileId(row.propertyname, row.fileid, row.value)).toList)
       .recover(err => throw InputDataException(err.getMessage))
   }
 
@@ -146,31 +133,13 @@ class FileMetadataService(
         fileId -> getFileMetadataValues(fileMetadata)
       }
     }
-
-  private def getFileStatusRowForChecksumMatch(checksumFileMetadata: Option[FilemetadataRow], fileMetadataInput: FilemetadataRow): FilestatusRow = {
-    val fileStatus = checksumFileMetadata match {
-      case Some(cfm) if cfm.value == fileMetadataInput.value => Success
-      case Some(_)                                           => Mismatch
-      case None                                              => throw new IllegalStateException(s"Cannot find client side checksum for file ${fileMetadataInput.fileid}")
-    }
-    loggingUtils.logFileFormatStatus("checksumMatch", fileMetadataInput.fileid, fileStatus)
-    FilestatusRow(uuidSource.uuid, fileMetadataInput.fileid, ChecksumMatch, fileStatus, fileMetadataInput.datetime)
-  }
-
-  private def getFileStatusRowForServerChecksum(fileMetadataInput: FilemetadataRow): FilestatusRow = {
-    val fileStatus = fileMetadataInput.value match {
-      case "" => Failed
-      case _  => Success
-    }
-    loggingUtils.logFileFormatStatus("serverChecksum", fileMetadataInput.fileid, fileStatus)
-    FilestatusRow(uuidSource.uuid, fileMetadataInput.fileid, ServerChecksum, fileStatus, fileMetadataInput.datetime)
-  }
 }
 
 object FileMetadataService {
 
   val SHA256ClientSideChecksum = "SHA256ClientSideChecksum"
   val ClientSideOriginalFilepath = "ClientSideOriginalFilepath"
+  val OriginalFilepath = "OriginalFilepath"
   val ClientSideFileLastModifiedDate = "ClientSideFileLastModifiedDate"
   val ClientSideFileSize = "ClientSideFileSize"
   val ClosurePeriod = "ClosurePeriod"

@@ -5,11 +5,11 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.FilemetadataRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 
 import java.sql.Timestamp
@@ -24,9 +24,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
   override def afterContainersStart(containers: containerDef.Container): Unit = {
     super.afterContainersStart(containers)
   }
-
-  private def getFileStatusValue(fileId: UUID, utils: TestUtils): String =
-    utils.getFileStatusResult(fileId, "Status Type").head
 
   private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int = 1): Assertion = {
     utils.countFileMetadata(fileId) should be(numberOfFileMetadataRows)
@@ -153,22 +150,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
     result.length should equal(numberOfFileMetadataRows)
     checkFileMetadataExists(fileId, utils, numberOfFileMetadataRows)
-  }
-
-  "addChecksumMetadata" should "update the checksum validation field on the file table" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val utils = TestUtils(db)
-    val fileMetadataRepository = new FileMetadataRepository(db)
-    val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
-    val fileId = UUID.fromString("59ce7106-57f2-48ff-b451-4148e6bf74f9")
-    utils.createConsignment(consignmentId, userId)
-    utils.createFile(fileId, consignmentId)
-    utils.addFileProperty("FileProperty")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, "FileProperty")
-    val input = FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty") :: Nil
-    val statusInput = FilestatusRow(UUID.randomUUID(), fileId, "Status Type", "Value", Timestamp.from(Instant.now()))
-    fileMetadataRepository.addChecksumMetadata(input, Seq(statusInput)).futureValue
-    getFileStatusValue(fileId, utils) should equal("Value")
   }
 
   "getFileMetadataByProperty" should "return the correct metadata" in withContainers { case container: PostgreSQLContainer =>
