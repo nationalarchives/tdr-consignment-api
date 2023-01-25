@@ -6,7 +6,6 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, Success, VirusDetected}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -81,31 +80,6 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoAntivirusMetadataAdded(utils)
-  }
-
-  "addAntivirusMetadata" should "set the file status to virus found when there is a virus found" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val utils = TestUtils(db)
-    val consignmentId = utils.createConsignment(UUID.randomUUID())
-    utils.createFile(UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313"), consignmentId)
-
-    runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
-
-    val result = utils.getFileStatusResult(defaultFileId, Antivirus)
-    result.size should be(1)
-    result.head should equal(VirusDetected)
-  }
-
-  "addAntivirusMetadata" should "set the file status to success when there is no virus found" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val utils = TestUtils(db)
-    val consignmentId = utils.createConsignment(UUID.randomUUID())
-    utils.createFile(UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313"), consignmentId)
-    runTestMutation("mutation_noresult", validBackendChecksToken("antivirus"))
-
-    val result = utils.getFileStatusResult(defaultFileId, Antivirus)
-    result.size should be(1)
-    result.head should equal(Success)
   }
 
   private def checkAntivirusMetadataExists(fileId: UUID, utils: TestUtils): Unit = {

@@ -83,8 +83,6 @@ class GraphQLServer(slickSession: SlickSession) {
     val ffidMetadataMatchesRepository = new FFIDMetadataMatchesRepository(db)
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val antivirusMetadataRepository = new AntivirusMetadataRepository(db)
-    val disallowedPuidsRepository = new DisallowedPuidsRepository(db)
-    val allowedPuidsRepository = new AllowedPuidsRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
     val displayPropertiesRepository = new DisplayPropertiesRepository(db)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
@@ -109,16 +107,14 @@ class GraphQLServer(slickSession: SlickSession) {
     val validateFileMetadataService = new ValidateFileMetadataService(customMetadataPropertiesService, fileMetadataRepository, fileStatusRepository, timeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, fileRepository, customMetadataPropertiesService, validateFileMetadataService, timeSource, uuidSource)
     val ffidMetadataService =
-      new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository, allowedPuidsRepository, disallowedPuidsRepository, timeSource, uuidSource)
-    val fileStatusService = new FileStatusService(fileRepository, fileStatusRepository, disallowedPuidsRepository, uuidSource)
-    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
+      new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepository, uuidSource)
+    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, uuidSource, timeSource)
     val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
     val fileService = new FileService(
       fileRepository,
-      fileStatusRepository,
       consignmentRepository,
       customMetadataPropertiesRepository,
-      consignmentStatusService,
       ffidMetadataService,
       antivirusMetadataService,
       fileStatusService,

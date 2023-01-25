@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "No consignment found for file 16b8c5f9-9d72-4d12-af06-4c2749823ebd",
+      "message": "ERROR: insert or update on table \"FFIDMetadata\" violates foreign key constraint \"FFIDMetadata_Consignment_fkey\"\n  Detail: Key (FileId)=(16b8c5f9-9d72-4d12-af06-4c2749823ebd) is not present in table \"File\".",
       "extensions": {
         "code": "INVALID_INPUT_DATA"
       }
