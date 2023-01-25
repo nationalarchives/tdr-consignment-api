@@ -122,6 +122,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   "addFileMetadata" should "throw an error if the file id does not exist" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.seedDatabaseWithDefaultEntries()
+    utils.addFileProperty(SHA256ServerSideChecksum)
     val expectedResponse: GraphqlAddFileMetadataMutationData = expectedAddFileMetadataMutationResponse("data_fileid_not_exists")
     val response: GraphqlAddFileMetadataMutationData = runAddFileMetadataTestMutation("mutation_fileidnotexists", validBackendChecksToken("checksum"))
 
@@ -137,32 +138,6 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFileMetadataAdded(utils)
-  }
-
-  "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum matches" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    utils.seedDatabaseWithDefaultEntries()
-    utils.addFileProperty(SHA256ServerSideChecksum)
-    runAddFileMetadataTestMutation("mutation_alldata", validBackendChecksToken("checksum"))
-
-    val result = utils.getFileStatusResult(defaultFileId, ChecksumMatch)
-    result.size should be(1)
-    result.head should equal(Success)
-  }
-
-  "addFileMetadata" should "add the checksum validation result if this is a checksum update and the checksum doesn't match" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-      runAddFileMetadataTestMutation("mutation_mismatch_checksum", validBackendChecksToken("checksum"))
-      utils.getFileStatusResult(defaultFileId, ChecksumMatch)
-  }
-
-  "addFileMetadata" should "not add the checksum validation result if this is not a checksum update" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    utils.seedDatabaseWithDefaultEntries()
-    runAddFileMetadataTestMutation("mutation_notchecksum", validBackendChecksToken("checksum"))
-    checkNoValidationResultExists(defaultFileId, utils)
   }
 
   "updateBulkFileMetadata" should "update all file metadata based on input" in withContainers { case container: PostgreSQLContainer =>

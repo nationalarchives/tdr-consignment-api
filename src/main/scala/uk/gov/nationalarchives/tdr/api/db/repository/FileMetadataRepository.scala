@@ -36,11 +36,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(insertFileMetadataQuery ++= rows)
   }
 
-  def addChecksumMetadata(fileMetadataRow: Seq[FilemetadataRow], fileStatusRow: Seq[FilestatusRow]): Future[Seq[FilemetadataRow]] = {
-    val allUpdates = DBIO.seq(insertFileMetadataQuery ++= fileMetadataRow, insertFileStatusQuery ++= fileStatusRow).transactionally
-    db.run(allUpdates).map(_ => fileMetadataRow)
-  }
-
   def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
       .filter(_.fileid inSet fileIds)

@@ -542,14 +542,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.addFileProperty(SHA256ServerSideChecksum)
     staticMetadataProperties.map(_.name).foreach(utils.addFileProperty)
     clientSideProperties.foreach(utils.addFileProperty)
+    utils.addFileProperty(OriginalFilepath)
     val originalFilePath = "/an/original/file/path"
     val topDirectory = UUID.fromString("ce0a51a5-a224-474f-b3a4-df75effd5b34")
-    val originalFileId = UUID.fromString("6420152a-aaf2-4401-a309-f67ae35f5702")
     val redactedFileId = UUID.randomUUID()
     createDirectoryAndMetadata(consignmentId, topDirectory, utils, "directory")
-    utils.createFile(originalFileId, consignmentId, fileName = "original.txt", parentId = topDirectory.some)
+
     utils.createFile(redactedFileId, consignmentId, fileName = "original_R.txt", parentId = topDirectory.some)
-    utils.addFileMetadata(UUID.randomUUID.toString, originalFileId.toString, ClientSideOriginalFilepath, originalFilePath)
+    utils.addFileMetadata(UUID.randomUUID.toString, redactedFileId.toString, OriginalFilepath, originalFilePath)
 
     val response: GraphqlQueryData = runTestQuery("query_redacted_original", validUserToken())
     val originalFile = for {
