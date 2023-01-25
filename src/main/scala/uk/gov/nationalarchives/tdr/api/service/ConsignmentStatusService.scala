@@ -1,13 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Failed, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import java.sql.Timestamp
@@ -16,16 +15,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentStatusService(
     consignmentStatusRepository: ConsignmentStatusRepository,
-    fileStatusRepository: FileStatusRepository,
     uuidSource: UUIDSource,
     timeSource: TimeSource
 )(implicit val executionContext: ExecutionContext) {
 
   implicit class ConsignmentStatusInputHelper(input: ConsignmentStatusInput) {
-    private val statusesToUpdateBasedOnFile: Set[String] = Set("Upload")
-
     def statusValueToString: String = input.statusValue.getOrElse("")
-    def statusTypeUpdatesBasedOnFileStatuses: Boolean = statusesToUpdateBasedOnFile.contains(input.statusType)
   }
 
   def addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput): Future[ConsignmentStatus] = {
@@ -79,27 +74,13 @@ class ConsignmentStatusService(
   }
 
   def updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput): Future[Int] = {
-    if (updateConsignmentStatusInput.statusTypeUpdatesBasedOnFileStatuses) {
-      updateBasedOnFileStatus(updateConsignmentStatusInput.consignmentId, updateConsignmentStatusInput.statusType)
-    } else {
-      validateStatusTypeAndValue(updateConsignmentStatusInput)
-      consignmentStatusRepository.updateConsignmentStatus(
-        updateConsignmentStatusInput.consignmentId,
-        updateConsignmentStatusInput.statusType,
-        updateConsignmentStatusInput.statusValue.get,
-        Timestamp.from(timeSource.now)
-      )
-    }
-  }
-
-  private def updateBasedOnFileStatus(consignmentId: UUID, statusType: String): Future[Int] = {
-    val noFileStatusesError = s"Error: There are no $statusType statuses for any files from consignment $consignmentId"
-    for {
-      fileUploadStatuses <- fileStatusRepository.getFileStatus(consignmentId, Set(statusType))
-      successful = !fileUploadStatuses.exists(_.value == Failed)
-      consignmentStatus = if (successful) "Completed" else "CompletedWithIssues"
-      updated <- consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, consignmentStatus, Timestamp.from(timeSource.now))
-    } yield updated
+    validateStatusTypeAndValue(updateConsignmentStatusInput)
+    consignmentStatusRepository.updateConsignmentStatus(
+      updateConsignmentStatusInput.consignmentId,
+      updateConsignmentStatusInput.statusType,
+      updateConsignmentStatusInput.statusValue.get,
+      Timestamp.from(timeSource.now)
+    )
   }
 
   private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput): Boolean = {
