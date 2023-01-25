@@ -1,12 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.{FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
 
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class CustomMetadataPropertiesService(customMetadataPropertiesRepository: CustomMetadataPropertiesRepository)(implicit val ec: ExecutionContext) {

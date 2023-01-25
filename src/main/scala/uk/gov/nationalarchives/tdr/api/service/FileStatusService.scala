@@ -66,7 +66,6 @@ object FileStatusService {
   val ZeroByteFile = "ZeroByteFile"
   val InProgress = "InProgress"
   val Completed = "Completed"
-  val CompletedWithIssues = "CompletedWithIssues"
   val Incomplete = "Incomplete"
   val NotEntered = "NotEntered"
 

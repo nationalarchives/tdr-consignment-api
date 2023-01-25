@@ -20,11 +20,10 @@ import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natu
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
 
 import java.sql.Timestamp
-import java.time.Instant
 import java.util.UUID
-import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
 
@@ -90,16 +89,16 @@ class FileService(
     generateMatchedRows(rows)
   }
 
-  private def addDefaultMetadataStatuses(rows: Future[List[Rows]]): Future[Seq[FilestatusRow]] = {
+  private def addDefaultMetadataStatuses(rows: Future[List[Rows]]): Future[List[FileStatus]] = {
     for {
       allRows: List[FileRow] <- rows.map(_.map(_.fileRow))
       fileIds: Set[UUID] = allRows.filter(_.filetype.get == NodeType.fileTypeIdentifier).map(_.fileid).toSet
       statusInputs = fileIds
         .flatMap(id => {
-          defaultStatuses.map(ds => FilestatusRow(uuidSource.uuid, id, ds._1, ds._2, Timestamp.from(Instant.now())))
+          defaultStatuses.map(ds => AddFileStatusInput(id, ds._1, ds._2))
         })
         .toList
-      addedStatuses <- fileStatusRepository.addFileStatuses(statusInputs)
+      addedStatuses <- fileStatusService.addFileStatuses(AddMultipleFileStatusesInput(statusInputs))
     } yield addedStatuses
   }
 
