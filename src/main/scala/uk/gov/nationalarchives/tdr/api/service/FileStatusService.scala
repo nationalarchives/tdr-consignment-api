@@ -14,6 +14,10 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
     val executionContext: ExecutionContext
 ) {
 
+  private def toFileStatuses(rows: Seq[FilestatusRow]): Seq[FileStatus] = {
+    rows.map(r => FileStatus(r.fileid, r.statustype, r.value))
+  }
+
   def addFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput): Future[List[FileStatus]] = {
     val rows = addMultipleFileStatusesInput.statuses.map(addFileStatusInput => {
       FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now()))
@@ -26,12 +30,21 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
     addFileStatuses(AddMultipleFileStatusesInput(addFileStatusInput :: Nil)).map(_.head)
   }
 
+  def getFileStatuses(consignmentId: UUID, statusTypes: Set[String], selectedFileIds: Option[Set[UUID]] = None): Future[List[FileStatus]] = {
+    for {
+      rows <- fileStatusRepository.getFileStatus(consignmentId, statusTypes, selectedFileIds)
+    } yield toFileStatuses(rows).toList
+  }
+
+  @deprecated("Use getFileStatuses(consignmentId: UUID, statusTypes: Set[String], selectedFileIds: Option[Set[UUID]] = None)")
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
     for {
-      ffidStatus <- fileStatusRepository.getFileStatus(consignmentId, Set(FFID), selectedFileIds)
-      fileStatusMap = ffidStatus.flatMap(fileStatusRow => Map(fileStatusRow.fileid -> fileStatusRow.value)).toMap
+      ffidStatus <- getFileStatuses(consignmentId, Set(FFID), selectedFileIds)
+      fileStatusMap = ffidStatus.flatMap(row => Map(row.fileId -> row.statusValue)).toMap
     } yield fileStatusMap
   }
+
+
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
     val statusTypes = Set(ChecksumMatch, Antivirus, FFID, Redaction)
