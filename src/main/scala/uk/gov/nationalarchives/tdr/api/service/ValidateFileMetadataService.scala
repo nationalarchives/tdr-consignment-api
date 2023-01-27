@@ -13,7 +13,8 @@ class ValidateFileMetadataService(
     customMetadataService: CustomMetadataPropertiesService,
     fileMetadataRepository: FileMetadataRepository,
     fileStatusRepository: FileStatusRepository,
-    timeSource: TimeSource
+    timeSource: TimeSource,
+    uuidSource: UUIDSource
 )(implicit val ec: ExecutionContext) {
 
   def toPropertyNames(fields: Seq[CustomMetadataField]): Set[String] = fields.map(_.name).toSet
@@ -49,19 +50,19 @@ class ValidateFileMetadataService(
               val filesWithNoAdditionalMetadataStatuses = fileIds
                 .filter(id => !states.map(_.fileId).contains(id))
                 .map(id => {
-                  FilestatusRow(UUID.randomUUID(), id, group.groupName, NotEntered, Timestamp.from(timeSource.now))
+                  FilestatusRow(uuidSource.uuid, id, group.groupName, NotEntered, Timestamp.from(timeSource.now))
                 })
 
               val statuses = states
                 .groupBy(_.fileId)
                 .map(s => {
-                  val fileId = s._1
+                  val (fileId, fileStates) = s
                   val status: String = s match {
-                    case s if s._2.forall(_.existingValueMatchesDefault.contains(true)) => NotEntered
-                    case s if s._2.forall(_.missingDependencies == false)               => Completed
-                    case _                                                              => Incomplete
+                    case _ if fileStates.forall(_.existingValueMatchesDefault == true) => NotEntered
+                    case _ if fileStates.forall(_.missingDependencies == false)        => Completed
+                    case _                                                             => Incomplete
                   }
-                  FilestatusRow(UUID.randomUUID(), fileId, group.groupName, status, Timestamp.from(timeSource.now))
+                  FilestatusRow(uuidSource.uuid, fileId, group.groupName, status, Timestamp.from(timeSource.now))
                 })
               statuses ++ filesWithNoAdditionalMetadataStatuses
             })
@@ -96,9 +97,9 @@ class ValidateFileMetadataService(
           existingPropertiesToValidate.map(existingProperty => {
             val existingPropertyValue: String = existingProperty.value
             val missingDependencies: Boolean = actualDependencyProperties.size < expectedDependencies.size
-            val matchesDefault: Option[Boolean] = fieldDefaultValue match {
-              case Some(value) => Some(value == existingPropertyValue)
-              case _           => None
+            val matchesDefault: Boolean = fieldDefaultValue match {
+              case Some(value) => value == existingPropertyValue
+              case _           => false
             }
             FilePropertyState(id, propertyToCheckName, missingDependencies, matchesDefault)
           })
@@ -107,7 +108,7 @@ class ValidateFileMetadataService(
       .toSeq
   }
 
-  case class FilePropertyState(fileId: UUID, propertyName: String, missingDependencies: Boolean, existingValueMatchesDefault: Option[Boolean])
+  case class FilePropertyState(fileId: UUID, propertyName: String, missingDependencies: Boolean, existingValueMatchesDefault: Boolean)
 
   case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
 }

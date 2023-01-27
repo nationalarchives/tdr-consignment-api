@@ -74,7 +74,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val fileId2 = testSetUp.fileId2
     val fileIds = Set(fileId1, fileId2)
 
-    testSetUp.stubMockResponses(fileIds)
+    testSetUp.stubMockResponses()
 
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("nonAdditionalMetadataProperty")).futureValue
@@ -109,7 +109,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       FilemetadataRow(UUID.randomUUID(), fileId2, "false", Timestamp.from(FixedTimeSource.now), userId, "DescriptionClosed")
     )
 
-    testSetUp.stubMockResponses(fileIds, existingMetadataRows)
+    testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
@@ -148,7 +148,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       FilemetadataRow(UUID.randomUUID(), fileId2, "English", Timestamp.from(FixedTimeSource.now), userId, "Language")
     )
 
-    testSetUp.stubMockResponses(fileIds, existingMetadataRows)
+    testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
@@ -187,7 +187,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       FilemetadataRow(UUID.randomUUID(), fileId2, "English", Timestamp.from(FixedTimeSource.now), userId, "Language")
     )
 
-    testSetUp.stubMockResponses(fileIds, existingMetadataRows)
+    testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
@@ -215,7 +215,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
   "validateAdditionalMetadata" should "update 'additional metadata' statuses to 'NotEntered' for multiple files where there are no existing additional metadata properties" in {
     val testSetUp = new ValidatePropertiesSetUp()
     val fileIds = Set(testSetUp.fileId1, testSetUp.fileId2)
-    testSetUp.stubMockResponses(fileIds)
+    testSetUp.stubMockResponses()
 
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
@@ -258,11 +258,11 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val file1State = response.find(_.fileId == fileId1).get
     file1State.missingDependencies shouldBe false
     file1State.propertyName should equal(fieldToValidate.name)
-    file1State.existingValueMatchesDefault shouldBe Some(false)
+    file1State.existingValueMatchesDefault shouldBe false
     val file2State = response.find(_.fileId == fileId2).get
     file2State.missingDependencies shouldBe false
     file2State.propertyName should equal(fieldToValidate.name)
-    file2State.existingValueMatchesDefault shouldBe Some(false)
+    file2State.existingValueMatchesDefault shouldBe false
   }
 
   "checkPropertyState" should "return the correct property states for multiple files where one file is missing a dependency" in {
@@ -286,11 +286,11 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val file1State = response.find(_.fileId == fileId1).get
     file1State.missingDependencies shouldBe false
     file1State.propertyName should equal(fieldToCheck.name)
-    file1State.existingValueMatchesDefault shouldBe Some(false)
+    file1State.existingValueMatchesDefault shouldBe false
     val file2State = response.find(_.fileId == fileId2).get
     file2State.missingDependencies shouldBe true
     file2State.propertyName should equal(fieldToCheck.name)
-    file2State.existingValueMatchesDefault shouldBe Some(false)
+    file2State.existingValueMatchesDefault shouldBe false
   }
 
   "checkPropertyState" should "return the correct property states for multiple files where property is multi-value with no dependencies" in {
@@ -315,11 +315,11 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val file1State = response.find(_.fileId == fileId1).get
     file1State.missingDependencies shouldBe false
     file1State.propertyName should equal(fieldToCheck.name)
-    file1State.existingValueMatchesDefault shouldBe None
+    file1State.existingValueMatchesDefault shouldBe false
     val file2State = response.find(_.fileId == fileId2).get
     file2State.missingDependencies shouldBe false
     file2State.propertyName should equal(fieldToCheck.name)
-    file2State.existingValueMatchesDefault shouldBe None
+    file2State.existingValueMatchesDefault shouldBe false
   }
 
   "checkPropertyState" should "return the correct property states for multiple files where property is multi-value with dependencies and file is missing dependency" in {
@@ -348,11 +348,11 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val file1State = response.find(_.fileId == fileId1).get
     file1State.missingDependencies shouldBe false
     file1State.propertyName should equal(fieldToCheck.name)
-    file1State.existingValueMatchesDefault shouldBe None
+    file1State.existingValueMatchesDefault shouldBe false
     val file2State = response.find(_.fileId == fileId2).get
     file2State.missingDependencies shouldBe true
     file2State.propertyName should equal(fieldToCheck.name)
-    file2State.existingValueMatchesDefault shouldBe None
+    file2State.existingValueMatchesDefault shouldBe false
   }
 
   "checkPropertyState" should "return no property states where property does not exist for file" in {
@@ -388,7 +388,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     state.fileId should equal(fileId1)
     state.propertyName should equal(fieldToCheck.name)
     state.missingDependencies shouldBe false
-    state.existingValueMatchesDefault.get shouldBe false
+    state.existingValueMatchesDefault shouldBe false
   }
 
   "checkPropertyState" should "return the correct property states where default property value is same as existing value" in {
@@ -410,7 +410,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     state.fileId should equal(fileId1)
     state.propertyName should equal(fieldToCheck.name)
     state.missingDependencies shouldBe false
-    state.existingValueMatchesDefault.get shouldBe true
+    state.existingValueMatchesDefault shouldBe true
   }
 
   private class ValidatePropertiesSetUp() {
@@ -422,12 +422,12 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val mockCustomMetadataService: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
     val mockFileMetadataRepository: FileMetadataRepository = mock[FileMetadataRepository]
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
-    val service = new ValidateFileMetadataService(mockCustomMetadataService, mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource)
-    val mockFields = mockCustomMetadataFields()
     val fixedUUIDSource = new FixedUUIDSource()
     fixedUUIDSource.reset
+    val service = new ValidateFileMetadataService(mockCustomMetadataService, mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource, fixedUUIDSource)
+    val mockFields = mockCustomMetadataFields()
 
-    def stubMockResponses(fileIds: Set[UUID] = Set(fileId1), metadataRows: List[FilemetadataRow] = List()): Unit = {
+    def stubMockResponses(metadataRows: List[FilemetadataRow] = List()): Unit = {
       when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
       when(mockFileMetadataRepository.getFileMetadata(any[UUID], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
     }
