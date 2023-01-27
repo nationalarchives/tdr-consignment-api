@@ -44,8 +44,6 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
     } yield fileStatusMap
   }
 
-
-
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
     val statusTypes = Set(ChecksumMatch, Antivirus, FFID, Redaction)
     fileStatusRepository
@@ -66,6 +64,8 @@ object FileStatusService {
   val Upload = "Upload"
   val ServerChecksum = "ServerChecksum"
   val ClientChecks = "ClientChecks"
+
+  val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks)
 
   // Values
   val Success = "Success"

@@ -219,6 +219,37 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     response should equal(expected)
   }
 
+  "getFileStatuses" should "return expected file status types" in {
+    val fileId1 = UUID.randomUUID()
+    val fileId2 = UUID.randomUUID()
+
+    mockResponse(
+      Set(FFID, Upload, Antivirus),
+      Seq(
+        FilestatusRow(UUID.randomUUID(), fileId1, FFID, Success, Timestamp.from(Instant.now)),
+        FilestatusRow(UUID.randomUUID(), fileId2, Upload, Success, Timestamp.from(Instant.now)),
+        FilestatusRow(UUID.randomUUID(), fileId1, Antivirus, VirusDetected, Timestamp.from(Instant.now))
+      )
+    )
+
+    val response = createFileStatusService().getFileStatuses(consignmentId, Set(FFID, Upload, Antivirus)).futureValue
+    response.size shouldBe 3
+    val statusFFID = response.find(_.statusType == FFID).get
+    statusFFID.fileId should equal(fileId1)
+    statusFFID.statusType should equal(FFID)
+    statusFFID.statusValue should equal(Success)
+
+    val statusUpload = response.find(_.statusType == Upload).get
+    statusUpload.fileId should equal(fileId2)
+    statusUpload.statusType should equal(Upload)
+    statusUpload.statusValue should equal(Success)
+
+    val statusAntivirus = response.find(_.statusType == Antivirus).get
+    statusAntivirus.fileId should equal(fileId1)
+    statusAntivirus.statusType should equal(Antivirus)
+    statusAntivirus.statusValue should equal(VirusDetected)
+  }
+
   "'status types'" should "have the correct values assigned" in {
     FileStatusService.Antivirus should equal("Antivirus")
     FileStatusService.ChecksumMatch should equal("ChecksumMatch")

@@ -203,11 +203,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Text
+  Decimal
   DateTime
   Integer
   Boolean
-  Decimal
+  Text
 }
 
 type DeleteFileMetadata {
@@ -283,6 +283,7 @@ type File {
   antivirusMetadata: AntivirusMetadata
   originalFilePath: String
   fileMetadata: [FileMetadataValue!]!
+  fileStatuses: [FileStatus!]!
 }
 
 type FileChecks {

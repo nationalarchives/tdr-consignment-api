@@ -186,10 +186,17 @@ object ConsignmentFields {
         "paginatedFiles",
         fileConnections,
         arguments = PaginationInputArg :: Nil,
-        resolve = ctx => {
+        resolve = Projector((ctx, projected) => {
           val paginationInput = ctx.args.argOpt("paginationInput")
-          DeferPaginatedFiles(ctx.value.consignmentid, paginationInput)
-        }
+          val queriedFileFields = QueriedFileFields(
+            projected.exists(_.name == "originalFilePath"),
+            projected.exists(_.name == "antivirusMetadata"),
+            projected.exists(_.name == "ffidMetadata"),
+            projected.exists(_.name == "fileStatus"),
+            projected.exists(_.name == "allFileStatuses")
+          )
+          DeferPaginatedFiles(ctx.value.consignmentid, paginationInput, queriedFileFields)
+        })
       ),
       Field(
         "consignmentReference",
