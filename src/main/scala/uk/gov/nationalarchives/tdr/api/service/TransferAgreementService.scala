@@ -53,14 +53,19 @@ class TransferAgreementService(
     val consignmentId = input.consignmentId
     Seq(
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, PublicRecordsConfirmed, input.allPublicRecords.toString, time, userId),
-      ConsignmentmetadataRow(uuidSource.uuid, consignmentId, AllEnglishConfirmed, input.allEnglish.toString, time, userId),
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, CrownCopyrightConfirmed, input.allCrownCopyright.toString, time, userId)
-    )
+    ) ++
+      input.allEnglish.map(allEnglish => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, AllEnglishConfirmed, allEnglish.toString, time, userId) :: Nil).getOrElse(Nil)
   }
 
   private def convertDbRowsToTransferAgreementPrivateBeta(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): TransferAgreementPrivateBeta = {
     val propertyNameToValue = rows.map(row => row.propertyname -> row.value.toBoolean).toMap
-    TransferAgreementPrivateBeta(consignmentId, propertyNameToValue(PublicRecordsConfirmed), propertyNameToValue(CrownCopyrightConfirmed), propertyNameToValue(AllEnglishConfirmed))
+    TransferAgreementPrivateBeta(
+      consignmentId,
+      propertyNameToValue(PublicRecordsConfirmed),
+      propertyNameToValue(CrownCopyrightConfirmed),
+      propertyNameToValue.get(AllEnglishConfirmed)
+    )
   }
 
   private def convertTAComplianceInputToPropertyRows(input: AddTransferAgreementComplianceInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
@@ -68,9 +73,11 @@ class TransferAgreementService(
     val consignmentId = input.consignmentId
     Seq(
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, AppraisalSelectionSignOffConfirmed, input.appraisalSelectionSignedOff.toString, time, userId),
-      ConsignmentmetadataRow(uuidSource.uuid, consignmentId, InitialOpenRecordsConfirmed, input.initialOpenRecords.toString, time, userId),
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, SensitivityReviewSignOffConfirmed, input.sensitivityReviewSignedOff.toString, time, userId)
-    )
+    ) ++
+      input.initialOpenRecords
+        .map(initialOpenRecords => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, InitialOpenRecordsConfirmed, initialOpenRecords.toString, time, userId) :: Nil)
+        .getOrElse(Nil)
   }
 
   private def convertDbRowsToTransferAgreementCompliance(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): TransferAgreementCompliance = {
@@ -78,7 +85,7 @@ class TransferAgreementService(
     TransferAgreementCompliance(
       consignmentId,
       propertyNameToValue(AppraisalSelectionSignOffConfirmed),
-      propertyNameToValue(InitialOpenRecordsConfirmed),
+      propertyNameToValue.get(InitialOpenRecordsConfirmed),
       propertyNameToValue(SensitivityReviewSignOffConfirmed)
     )
   }

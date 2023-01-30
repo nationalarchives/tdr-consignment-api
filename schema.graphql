@@ -55,7 +55,7 @@ input AddMultipleFileStatusesInput {
 input AddTransferAgreementComplianceInput {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
+  initialOpenRecords: Boolean
   sensitivityReviewSignedOff: Boolean!
 }
 
@@ -63,7 +63,7 @@ input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
-  allEnglish: Boolean!
+  allEnglish: Boolean
 }
 
 input AllDescendantsInput {
@@ -462,7 +462,7 @@ input StartUploadInput {
 type TransferAgreementCompliance {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
-  initialOpenRecords: Boolean!
+  initialOpenRecords: Boolean
   sensitivityReviewSignedOff: Boolean!
 }
 
@@ -470,7 +470,7 @@ type TransferAgreementPrivateBeta {
   consignmentId: UUID!
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
-  allEnglish: Boolean!
+  allEnglish: Boolean
 }
 
 type TransferringBody {
