@@ -112,10 +112,6 @@ class FileService(
     }
   }
 
-  private def getFfidStatus(fileStatuses: Seq[FileStatus]): Map[UUID, String] = {
-    fileStatuses.filter(_.statusType == FFID).map(s => s.fileId -> s.statusValue).toMap
-  }
-
   def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
     // For now only interested in basic file metadata
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
@@ -134,19 +130,16 @@ class FileService(
   @deprecated("Use getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: Option[QueriedFileFields] = None)")
   def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields): Future[List[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
-    val fileIds = filters.selectedFileIds match {
-      case Some(value) => Some(value.toSet)
-      case _           => None
-    }
+    val fileIds = filters.selectedFileIds.map(_.toSet)
 
     for {
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
-      ffidMetadataList <- if (queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future(Nil)
-      avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
+      ffidMetadataList <- if (queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future.successful(Nil)
+      avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future.successful(Nil)
       propertyNames <- getPropertyNames(filters.metadataFilters)
-      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future(Nil)
+      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future.successful(Nil)
       fileStatuses <-
-        if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
+        if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future.successful(Nil)
     } yield {
       val ffidStatus = ffidStatuses.map(fs => fs.fileId -> fs.statusValue).toMap
       fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, propertyNames, fileStatuses).toList

@@ -98,7 +98,7 @@ object ConsignmentFields {
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
   val ConsignmentFiltersInputArg: Argument[Option[ConsignmentFilters]] = Argument("consignmentFiltersInput", OptionInputType(ConsignmentFiltersInputType))
 
-  def getQueriedFileFields(projected: Vector[ProjectedName]) = QueriedFileFields(
+  def getQueriedFileFields(projected: Vector[ProjectedName]): QueriedFileFields = QueriedFileFields(
     projected.exists(_.name == "originalFilePath"),
     projected.exists(_.name == "antivirusMetadata"),
     projected.exists(_.name == "ffidMetadata"),

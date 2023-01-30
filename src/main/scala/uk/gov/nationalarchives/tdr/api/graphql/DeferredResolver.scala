@@ -24,9 +24,9 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case DeferConsignmentSeries(consignmentId)        => context.consignmentService.getSeriesOfConsignment(consignmentId)
       case DeferConsignmentBody(consignmentId)          => context.consignmentService.getTransferringBodyOfConsignment(consignmentId)
       case DeferCurrentConsignmentStatus(consignmentId) => context.consignmentStatusService.getConsignmentStatus(consignmentId)
-      case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields: QueriedFileFields) =>
+      case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
         context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
-      case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields: QueriedFileFields) =>
+      case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields) =>
         context.fileService.getPaginatedFiles(consignmentId, paginationInput, queriedFileFields)
       case DeferChecksSucceeded(consignmentId) => context.fileStatusService.allChecksSucceeded(consignmentId)
       case other                               => throw UnsupportedDeferError(other)
