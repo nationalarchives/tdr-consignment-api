@@ -129,10 +129,11 @@ class FileService(
       ffidMetadataList <- if (queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future(Nil)
       avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
       propertyNames <- getPropertyNames(filters.metadataFilters)
+      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future(Nil)
       fileStatuses <-
         if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
     } yield {
-      val ffidStatus = getFfidStatus(fileStatuses)
+      val ffidStatus = ffidStatuses.map(fs => fs.fileId -> fs.statusValue).toMap
       fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, propertyNames, fileStatuses).toList
     }
   }
@@ -152,11 +153,12 @@ class FileService(
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
+      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future(Nil)
       fileStatuses <- if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val sortedFileRows = response.sortBy(row => natural(row.filename.getOrElse("")))
-      val ffidStatus = getFfidStatus(fileStatuses)
+      val ffidStatus = ffidStatuses.map(fs => fs.fileId -> fs.statusValue).toMap
       val files: Seq[File] = sortedFileRows.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus, fileStatuses)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
       val totalPages = Math.ceil(totalItems.toDouble / limit.toDouble).toInt
