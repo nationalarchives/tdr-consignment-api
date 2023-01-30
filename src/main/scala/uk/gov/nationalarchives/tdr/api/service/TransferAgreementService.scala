@@ -55,7 +55,7 @@ class TransferAgreementService(
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, PublicRecordsConfirmed, input.allPublicRecords.toString, time, userId),
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, CrownCopyrightConfirmed, input.allCrownCopyright.toString, time, userId)
     ) ++
-      input.allEnglish.map(_ => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, AllEnglishConfirmed, input.allEnglish.toString, time, userId) :: Nil).getOrElse(Nil)
+      input.allEnglish.map(allEnglish => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, AllEnglishConfirmed, allEnglish.toString, time, userId) :: Nil).getOrElse(Nil)
   }
 
   private def convertDbRowsToTransferAgreementPrivateBeta(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): TransferAgreementPrivateBeta = {
@@ -76,7 +76,7 @@ class TransferAgreementService(
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, SensitivityReviewSignOffConfirmed, input.sensitivityReviewSignedOff.toString, time, userId)
     ) ++
       input.initialOpenRecords
-        .map(_ => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, InitialOpenRecordsConfirmed, input.initialOpenRecords.toString, time, userId) :: Nil)
+        .map(initialOpenRecords => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, InitialOpenRecordsConfirmed, initialOpenRecords.toString, time, userId) :: Nil)
         .getOrElse(Nil)
   }
 
