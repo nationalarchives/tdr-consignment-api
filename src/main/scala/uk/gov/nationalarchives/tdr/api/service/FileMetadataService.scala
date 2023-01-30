@@ -23,6 +23,7 @@ class FileMetadataService(
     fileMetadataRepository: FileMetadataRepository,
     fileRepository: FileRepository,
     customMetadataService: CustomMetadataPropertiesService,
+    validateFileMetadataService: ValidateFileMetadataService,
     timeSource: TimeSource,
     uuidSource: UUIDSource
 )(implicit val ec: ExecutionContext) {
@@ -69,6 +70,7 @@ class FileMetadataService(
       fileIds: Set[UUID] = existingFileRows.toFileTypeIds
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
+      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
@@ -106,6 +108,7 @@ class FileMetadataService(
       }.toSeq
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
+      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, existingFileRows.map(_.consignmentid).head, allPropertiesToDelete)
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
 
