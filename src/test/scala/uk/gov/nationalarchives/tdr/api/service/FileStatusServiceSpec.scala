@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
+import uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.FixedUUIDSource
 
@@ -248,6 +249,30 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     statusAntivirus.fileId should equal(fileId1)
     statusAntivirus.statusType should equal(Antivirus)
     statusAntivirus.statusValue should equal(VirusDetected)
+  }
+
+  "getFileStatuses" should "return empty status list if no statuses present" in {
+    mockResponse(
+      Set(FFID, Upload, Antivirus),
+      Seq()
+    )
+
+    val response = createFileStatusService().getFileStatuses(consignmentId, Set(FFID, Upload, Antivirus)).futureValue
+    response.size shouldBe 0
+  }
+
+  "allFileStatusTypes" should "include all file status types" in {
+    val expectedTypes = Set(
+      FileStatusService.Antivirus,
+      FileStatusService.ChecksumMatch,
+      FileStatusService.FFID,
+      FileStatusService.Redaction,
+      FileStatusService.Upload,
+      FileStatusService.ServerChecksum,
+      FileStatusService.ClientChecks
+    )
+
+    FileStatusService.allFileStatusTypes should equal(expectedTypes)
   }
 
   "'status types'" should "have the correct values assigned" in {

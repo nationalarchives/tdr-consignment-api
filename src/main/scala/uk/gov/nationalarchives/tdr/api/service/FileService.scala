@@ -15,7 +15,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatu
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.allFileStatusTypes
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes}
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
@@ -97,6 +97,10 @@ class FileService(
     }
   }
 
+  private def getFfidStatus(fileStatuses: Seq[FileStatus]): Map[UUID, String] = {
+    fileStatuses.filter(_.statusType == FFID).map(s => s.fileId -> s.statusValue).toMap
+  }
+
   def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
     // For now only interested in basic file metadata
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
@@ -115,16 +119,22 @@ class FileService(
   @deprecated("Use getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: Option[QueriedFileFields] = None)")
   def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields): Future[List[File]] = {
     val filters = fileFilters.getOrElse(FileFilters())
+    val fileIds = filters.selectedFileIds match {
+      case Some(value) => Some(value.toSet)
+      case _           => None
+    }
 
     for {
       fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
       ffidMetadataList <- if (queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future(Nil)
       avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future(Nil)
-      ffidStatus <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatus(consignmentId) else Future(Map.empty[UUID, String])
       propertyNames <- getPropertyNames(filters.metadataFilters)
       fileStatuses <-
-        if (queriedFileFields.allFileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, Some(filters.selectedFileIds.toSet.flatten)) else Future(Nil)
-    } yield fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, propertyNames, fileStatuses).toList
+        if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
+    } yield {
+      val ffidStatus = getFfidStatus(fileStatuses)
+      fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, propertyNames, fileStatuses).toList
+    }
   }
 
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: QueriedFileFields): Future[TDRConnection[File]] = {
@@ -142,11 +152,11 @@ class FileService(
       fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
-      ffidStatus <- fileStatusService.getFileStatus(consignmentId, fileIds)
-      fileStatuses <- if (queriedFileFields.allFileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
+      fileStatuses <- if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val sortedFileRows = response.sortBy(row => natural(row.filename.getOrElse("")))
+      val ffidStatus = getFfidStatus(fileStatuses)
       val files: Seq[File] = sortedFileRows.toFiles(fileMetadata, avList, ffidMetadataList, ffidStatus, fileStatuses)
       val edges: Seq[FileEdge] = files.map(_.toFileEdge)
       val totalPages = Math.ceil(totalItems.toDouble / limit.toDouble).toInt

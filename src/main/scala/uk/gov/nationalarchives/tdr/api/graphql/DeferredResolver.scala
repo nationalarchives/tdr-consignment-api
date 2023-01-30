@@ -52,5 +52,5 @@ case class QueriedFileFields(
     antivirusMetadata: Boolean = false,
     ffidMetadata: Boolean = false,
     fileStatus: Boolean = false,
-    allFileStatuses: Boolean = false
+    fileStatuses: Boolean = false
 )

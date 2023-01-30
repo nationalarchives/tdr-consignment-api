@@ -1,6 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.scalalogging.Logger
+import sangria.macros.derive.GraphQLDeprecated
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -197,6 +198,7 @@ object FileMetadataService {
       fileName: Option[String] = None,
       parentId: Option[UUID] = None,
       metadata: FileMetadataValues,
+      @GraphQLDeprecated("Should use 'fileStatuses' field")
       fileStatus: Option[String] = None,
       ffidMetadata: Option[FFIDMetadata],
       antivirusMetadata: Option[AntivirusMetadata],

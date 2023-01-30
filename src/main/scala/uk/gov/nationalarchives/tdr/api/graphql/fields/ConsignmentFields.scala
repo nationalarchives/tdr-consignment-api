@@ -5,7 +5,7 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, Projector, StringType, fields}
+import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, ProjectedName, Projector, StringType, fields}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataFilters}
@@ -98,6 +98,14 @@ object ConsignmentFields {
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
   val ConsignmentFiltersInputArg: Argument[Option[ConsignmentFilters]] = Argument("consignmentFiltersInput", OptionInputType(ConsignmentFiltersInputType))
 
+  def getQueriedFileFields(projected: Vector[ProjectedName]) = QueriedFileFields(
+    projected.exists(_.name == "originalFilePath"),
+    projected.exists(_.name == "antivirusMetadata"),
+    projected.exists(_.name == "ffidMetadata"),
+    projected.exists(_.name == "fileStatus"),
+    projected.exists(_.name == "fileStatuses")
+  )
+
   implicit val ConnectionDefinition(_, fileConnections) =
     Connection.definition[ConsignmentApiContext, TDRConnection, File](
       name = "File",
@@ -173,12 +181,7 @@ object ConsignmentFields {
         arguments = FileFiltersInputArg :: Nil,
         resolve = Projector((ctx, projected) => {
           val fileFilters = ctx.args.argOpt("fileFiltersInput")
-          val queriedFileFields = QueriedFileFields(
-            projected.exists(_.name == "originalFilePath"),
-            projected.exists(_.name == "antivirusMetadata"),
-            projected.exists(_.name == "ffidMetadata"),
-            projected.exists(_.name == "fileStatus")
-          )
+          val queriedFileFields = getQueriedFileFields(projected)
           DeferFiles(ctx.value.consignmentid, fileFilters, queriedFileFields)
         })
       ),
@@ -188,13 +191,7 @@ object ConsignmentFields {
         arguments = PaginationInputArg :: Nil,
         resolve = Projector((ctx, projected) => {
           val paginationInput = ctx.args.argOpt("paginationInput")
-          val queriedFileFields = QueriedFileFields(
-            projected.exists(_.name == "originalFilePath"),
-            projected.exists(_.name == "antivirusMetadata"),
-            projected.exists(_.name == "ffidMetadata"),
-            projected.exists(_.name == "fileStatus"),
-            projected.exists(_.name == "allFileStatuses")
-          )
+          val queriedFileFields = getQueriedFileFields(projected)
           DeferPaginatedFiles(ctx.value.consignmentid, paginationInput, queriedFileFields)
         })
       ),
