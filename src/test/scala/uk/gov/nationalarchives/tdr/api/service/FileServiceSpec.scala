@@ -26,7 +26,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.An
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddMultipleFileStatusesInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
@@ -624,6 +624,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val consignmentId = UUID.randomUUID()
     val userId = UUID.randomUUID()
+    val file1Id = UUID.fromString("47e365a4-fc1e-4375-b2f6-dccb6d361f5f")
+    val file2Id = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
 
     val fileRowCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
     val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
@@ -648,18 +650,27 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       ConfigFactory.load()
     )
 
+    val expectedStatusInput = AddMultipleFileStatusesInput(
+      List(
+        AddFileStatusInput(file1Id, "ClosureMetadata", "NotEntered"),
+        AddFileStatusInput(file1Id, "DescriptiveMetadata", "NotEntered"),
+        AddFileStatusInput(file2Id, "ClosureMetadata", "NotEntered"),
+        AddFileStatusInput(file2Id, "DescriptiveMetadata", "NotEntered")
+      )
+    )
+
     val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
-    verify(fileStatusServiceMock, times(1)).addFileStatuses(any[AddMultipleFileStatusesInput])
+    verify(fileStatusServiceMock, times(1)).addFileStatuses(expectedStatusInput)
 
     val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
 
-    response.head.fileId should equal(UUID.fromString("47e365a4-fc1e-4375-b2f6-dccb6d361f5f"))
+    response.head.fileId should equal(file1Id)
     response.head.matchId should equal(2)
 
-    response.last.fileId should equal(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"))
+    response.last.fileId should equal(file2Id)
     response.last.matchId should equal(1)
 
     val expectedFileRows = 5
