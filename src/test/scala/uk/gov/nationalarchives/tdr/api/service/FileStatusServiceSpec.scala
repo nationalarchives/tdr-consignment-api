@@ -227,6 +227,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.Upload should equal("Upload")
     FileStatusService.ServerChecksum should equal("ServerChecksum")
     FileStatusService.ClientChecks should equal("ClientChecks")
+    FileStatusService.ClosureMetadata should equal("ClosureMetadata")
+    FileStatusService.DescriptiveMetadata should equal("DescriptiveMetadata")
   }
 
   "'status values'" should "have the correct values assigned" in {
@@ -239,6 +241,13 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.ZeroByteFile should equal("ZeroByteFile")
     FileStatusService.InProgress should equal("InProgress")
     FileStatusService.Completed should equal("Completed")
+    FileStatusService.NotEntered should equal("NotEntered")
+  }
+
+  "'defaultStatuses'" should "contain the correct statuses and values" in {
+    FileStatusService.defaultStatuses.size shouldBe 2
+    FileStatusService.defaultStatuses.get(ClosureMetadata).get should equal(NotEntered)
+    FileStatusService.defaultStatuses.get(DescriptiveMetadata).get should equal(NotEntered)
   }
 
   def createFileStatusService(): FileStatusService =

@@ -11,13 +11,16 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.An
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.defaultStatuses
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -82,7 +85,21 @@ class FileService(
       }).toList
     })
 
+    addDefaultMetadataStatuses(rows)
     generateMatchedRows(rows)
+  }
+
+  private def addDefaultMetadataStatuses(rows: Future[List[Rows]]): Future[List[FileStatus]] = {
+    for {
+      allRows: List[FileRow] <- rows.map(_.map(_.fileRow))
+      fileIds: Set[UUID] = allRows.filter(_.filetype.get == NodeType.fileTypeIdentifier).map(_.fileid).toSet
+      statusInputs = fileIds
+        .flatMap(id => {
+          defaultStatuses.map(ds => AddFileStatusInput(id, ds._1, ds._2))
+        })
+        .toList
+      addedStatuses <- fileStatusService.addFileStatuses(AddMultipleFileStatusesInput(statusInputs))
+    } yield addedStatuses
   }
 
   private def generateMatchedRows(rows: Future[List[Rows]]): Future[List[FileMatches]] = {

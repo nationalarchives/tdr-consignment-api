@@ -53,6 +53,8 @@ object FileStatusService {
   val Upload = "Upload"
   val ServerChecksum = "ServerChecksum"
   val ClientChecks = "ClientChecks"
+  val ClosureMetadata = "ClosureMetadata"
+  val DescriptiveMetadata = "DescriptiveMetadata"
 
   // Values
   val Success = "Success"
@@ -64,4 +66,8 @@ object FileStatusService {
   val ZeroByteFile = "ZeroByteFile"
   val InProgress = "InProgress"
   val Completed = "Completed"
+  val Incomplete = "Incomplete"
+  val NotEntered = "NotEntered"
+
+  val defaultStatuses: Map[String, String] = Map(ClosureMetadata -> NotEntered, DescriptiveMetadata -> NotEntered)
 }

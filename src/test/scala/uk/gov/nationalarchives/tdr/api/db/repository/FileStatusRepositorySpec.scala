@@ -73,8 +73,71 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
     response.head.fileid shouldBe fileOneId
   }
 
+  "deleteFileStatus" should "delete the specified status type for the specified file" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileStatusRepository = new FileStatusRepository(db)
+    val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type1", "Value")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type2", "Value")
+
+    val response = fileStatusRepository.deleteFileStatus(Set(fileOneId), Set("Status Type1")).futureValue
+    response shouldBe 1
+    checkFileStatusDeleted(fileOneId, "Status Type1", utils)
+    checkFileStatusExists(fileTwoId, "Status Type2", "Value", utils)
+  }
+
+  "deleteFileStatus" should "delete the specified status type for multiple files" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileStatusRepository = new FileStatusRepository(db)
+    val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type1", "Value")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type1", "Value")
+
+    val response = fileStatusRepository.deleteFileStatus(Set(fileOneId, fileTwoId), Set("Status Type1")).futureValue
+    response shouldBe 2
+    checkFileStatusDeleted(fileOneId, "Status Type1", utils)
+    checkFileStatusDeleted(fileTwoId, "Status Type1", utils)
+  }
+
+  "deleteFileStatus" should "delete multiple status types for multiple files" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileStatusRepository = new FileStatusRepository(db)
+    val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type1", "Value")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type2", "Value")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type1", "Value")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type2", "Value")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Different Status Type", "Value")
+
+    val response = fileStatusRepository.deleteFileStatus(Set(fileOneId, fileTwoId), Set("Status Type1", "Status Type2")).futureValue
+    response shouldBe 4
+    checkFileStatusDeleted(fileOneId, "Status Type1", utils)
+    checkFileStatusDeleted(fileTwoId, "Status Type1", utils)
+    checkFileStatusDeleted(fileOneId, "Status Type2", utils)
+    checkFileStatusDeleted(fileTwoId, "Status Type2", utils)
+
+    checkFileStatusExists(fileTwoId, "Different Status Type", "Value", utils)
+  }
+
   private def checkFileStatusExists(fileId: UUID, statusType: String, expectedValue: String, utils: TestUtils): Unit = {
     val rs = utils.getFileStatusResult(fileId, statusType)
     rs.contains(expectedValue) shouldBe true
+  }
+
+  private def checkFileStatusDeleted(fileId: UUID, statusType: String, utils: TestUtils): Unit = {
+    val rs = utils.getFileStatusResult(fileId, statusType)
+    rs.size shouldBe 0
   }
 }
