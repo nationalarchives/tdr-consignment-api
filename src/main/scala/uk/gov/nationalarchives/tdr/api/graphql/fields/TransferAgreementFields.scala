@@ -16,10 +16,15 @@ object TransferAgreementFields {
 
   case class TransferAgreementCompliance(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Option[Boolean], sensitivityReviewSignedOff: Boolean)
 
-  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Option[Boolean]) extends UserOwnsConsignment
-
-  case class AddTransferAgreementComplianceInput(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Option[Boolean], sensitivityReviewSignedOff: Boolean)
+  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Option[Boolean])
       extends UserOwnsConsignment
+
+  case class AddTransferAgreementComplianceInput(
+      consignmentId: UUID,
+      appraisalSelectionSignedOff: Boolean,
+      initialOpenRecords: Option[Boolean],
+      sensitivityReviewSignedOff: Boolean
+  ) extends UserOwnsConsignment
 
   val TransferAgreementPrivateBetaType: ObjectType[Unit, TransferAgreementPrivateBeta] = deriveObjectType[Unit, TransferAgreementPrivateBeta]()
   val TransferAgreementComplianceType: ObjectType[Unit, TransferAgreementCompliance] = deriveObjectType[Unit, TransferAgreementCompliance]()

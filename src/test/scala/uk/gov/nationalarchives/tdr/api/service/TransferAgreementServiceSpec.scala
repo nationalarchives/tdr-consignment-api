@@ -7,7 +7,12 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentMetadataRepository, ConsignmentStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{AddTransferAgreementComplianceInput, AddTransferAgreementPrivateBetaInput, TransferAgreementCompliance, TransferAgreementPrivateBeta}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{
+  AddTransferAgreementComplianceInput,
+  AddTransferAgreementPrivateBetaInput,
+  TransferAgreementCompliance,
+  TransferAgreementPrivateBeta
+}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
