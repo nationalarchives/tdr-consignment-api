@@ -3,7 +3,7 @@
     "consignments": {
       "pageInfo": {
         "startCursor": "consignment-ref2",
-        "endCursor": "consignment-ref3",
+        "endCursor": "consignment-ref1",
         "hasNextPage": true,
         "hasPreviousPage": true
       },
@@ -16,8 +16,8 @@
         },
         {
           "node": {
-            "consignmentid": "e6dadac0-0666-4653-b462-adca0b988095",
-            "consignmentReference": "consignment-ref3"
+            "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
+            "consignmentReference": "consignment-ref1"
           }
         }
       ]

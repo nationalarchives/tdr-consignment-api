@@ -3,7 +3,7 @@
     "consignments": {
       "pageInfo": {
         "startCursor": "consignment-ref2",
-        "endCursor": "consignment-ref3",
+        "endCursor": "consignment-ref1",
         "hasNextPage": true,
         "hasPreviousPage": true
       },
@@ -93,12 +93,12 @@
               "name": "Default transferring body name",
               "tdrCode": "default-transferring-body-code"
             },
-            "consignmentid": "614d0cba-380f-4b09-a6e4-542413dd7f4a",
-            "consignmentReference": "consignment-ref3",
+            "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
+            "consignmentReference": "consignment-ref1",
             "totalFiles": 1,
             "files": [
               {
-                "fileId": "6f9d3202-aca0-48b6-b464-6c0a2ff61bd8",
+                "fileId": "9b003759-a9a2-4bf9-8e34-14079bdaed58",
                 "metadata": {
                   "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
                   "legalStatus": "Public Record",
@@ -123,14 +123,7 @@
                   ],
                   "containerSignatureFileVersion": "TEST DATA container signature file version",
                   "binarySignatureFileVersion": "TEST DATA binary signature file version"
-                },
-                "fileStatuses": [
-                  {
-                    "fileId": "6f9d3202-aca0-48b6-b464-6c0a2ff61bd8",
-                    "statusType": "Upload",
-                    "statusValue": "Success"
-                  }
-                ]
+                }
               }
             ],
             "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",

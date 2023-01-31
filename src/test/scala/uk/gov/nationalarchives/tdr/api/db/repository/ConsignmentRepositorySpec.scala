@@ -154,12 +154,23 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(2, Some("TDR-2021-A")).futureValue
+    val response = consignmentRepository.getConsignments(2, Some("TDR-2021-D")).futureValue
 
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-    consignmentIds should contain(consignmentIdTwo)
     consignmentIds should contain(consignmentIdThree)
+    consignmentIds should contain(consignmentIdTwo)
+  }
+
+  "getConsignments" should "return no consignments if cursor value is last one" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
+
+    val response = consignmentRepository.getConsignments(10, Some("TDR-2021-A")).futureValue
+
+    response should have size 0
   }
 
   "getConsignments" should "return all consignments up to limit where no cursor provided including first consignment" in withContainers { case container: PostgreSQLContainer =>
@@ -171,21 +182,18 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val response = consignmentRepository.getConsignments(2, None).futureValue
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-    consignmentIds should contain(consignmentIdOne)
-    consignmentIds should contain(consignmentIdTwo)
+    consignmentIds should contain(consignmentIdFour)
+    consignmentIds should contain(consignmentIdThree)
   }
 
-  "getConsignments" should "return all consignments up to limit where empty cursor provided" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignments" should "return no consignments when empty cursor provided" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
     createConsignments(utils)
 
     val response = consignmentRepository.getConsignments(2, Some("")).futureValue
-    response should have size 2
-    val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-    consignmentIds should contain(consignmentIdOne)
-    consignmentIds should contain(consignmentIdTwo)
+    response should have size 0
   }
 
   "getConsignments" should "return no consignments where limit set at '0'" in withContainers { case container: PostgreSQLContainer =>
@@ -198,18 +206,18 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     response should have size 0
   }
 
-  "getConsignments" should "return consignments where non-existent cursor value provided, and reference is greater than the cursor value" in withContainers {
+  "getConsignments" should "return consignments where non-existent cursor value provided, and reference is lower than the cursor value" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val utils = TestUtils(db)
       createConsignments(utils)
 
-      val response = consignmentRepository.getConsignments(2, Some("AAA")).futureValue
+      val response = consignmentRepository.getConsignments(2, Some("TDR-2021-ZZZ")).futureValue
       response should have size 2
       val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
-      consignmentIds should contain(consignmentIdOne)
-      consignmentIds should contain(consignmentIdTwo)
+      consignmentIds should contain(consignmentIdFour)
+      consignmentIds should contain(consignmentIdThree)
   }
 
   "getConsignments" should "return no consignments where there are no consignments" in withContainers { case container: PostgreSQLContainer =>
@@ -271,6 +279,20 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
     consignmentIds should contain(consignmentIdOne)
     consignmentIds should contain(consignmentIdForUser2)
+  }
+
+  "getConsignments" should "return the consignments in descending order" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
+
+    val response = consignmentRepository.getConsignments(10, None, None).futureValue
+
+    val consignmentReferences: List[String] = response.map(cr => cr.consignmentreference).toList
+
+    response should have size 4
+    consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
   }
 
   private def createConsignments(utils: TestUtils): Unit = {
