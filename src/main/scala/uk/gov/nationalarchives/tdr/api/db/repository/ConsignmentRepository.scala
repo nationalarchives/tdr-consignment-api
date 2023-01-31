@@ -63,8 +63,8 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     val query = Consignment
       .filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
       .filterOpt(consignmentFilters.flatMap(_.consignmentType))(_.consignmenttype === _)
-      .filterOpt(after)(_.consignmentreference > _)
-      .sortBy(_.consignmentreference)
+      .sortBy(_.consignmentreference.desc.nullsFirst)
+      .filterOpt(after)(_.consignmentreference < _)
       .take(limit)
     db.run(query.result)
   }
