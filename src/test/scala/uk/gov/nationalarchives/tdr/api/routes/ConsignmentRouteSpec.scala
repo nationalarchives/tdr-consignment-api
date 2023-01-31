@@ -1,7 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.UUID
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
@@ -11,10 +9,13 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.{userId, _}
+import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
+
+import java.time.{LocalDateTime, ZonedDateTime}
+import java.util.UUID
 
 //scalastyle:off number.of.methods
 //scalastyle:off number.of.types
@@ -102,6 +103,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class UpdateSeriesIdOfConsignment(updateConsignmentSeriesId: Option[Int])
 
+  case class FileStatus(fileId: UUID, statusType: String, statusValue: String)
+
   case class File(
       fileId: UUID,
       fileType: Option[String],
@@ -110,7 +113,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       metadata: FileMetadataValues = FileMetadataValues(None, None, None, None, None, None, None, None, None),
       fileStatus: Option[String],
       ffidMetadata: Option[FFIDMetadataValues],
-      originalFilePath: Option[String]
+      originalFilePath: Option[String],
+      fileStatuses: List[FileStatus] = Nil
   )
 
   case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
@@ -594,13 +598,20 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   "consignments" should "allow a user with reporting access to return consignments in a paginated format" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
+    val file1Id = UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58")
+    val file2Id = UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")
+    val file3Id = UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")
+
     val consignmentParams: List[ConsignmentParams] = List(
-      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
-      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72"))),
-      ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"), "consignment-ref3", List(UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")))
+      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List(file1Id)),
+      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List(file2Id)),
+      ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"), "consignment-ref3", List(file3Id))
     )
     utils.addFileProperty(SHA256ServerSideChecksum)
     setUpConsignments(consignmentParams, utils)
+
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, "Upload", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), file3Id, "Upload", "Success")
 
     val reportingAccessToken = validReportingToken("reporting")
 

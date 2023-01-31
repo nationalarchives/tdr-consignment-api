@@ -24,10 +24,10 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case DeferConsignmentSeries(consignmentId)        => context.consignmentService.getSeriesOfConsignment(consignmentId)
       case DeferConsignmentBody(consignmentId)          => context.consignmentService.getTransferringBodyOfConsignment(consignmentId)
       case DeferCurrentConsignmentStatus(consignmentId) => context.consignmentStatusService.getConsignmentStatus(consignmentId)
-      case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields: QueriedFileFields) =>
+      case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
         context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
-      case DeferPaginatedFiles(consignmentId, paginationInput) =>
-        context.fileService.getPaginatedFiles(consignmentId, paginationInput)
+      case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields) =>
+        context.fileService.getPaginatedFiles(consignmentId, paginationInput, queriedFileFields)
       case DeferChecksSucceeded(consignmentId) => context.fileStatusService.allChecksSucceeded(consignmentId)
       case other                               => throw UnsupportedDeferError(other)
     }
@@ -43,8 +43,14 @@ case class DeferParentFolderId(consignmentId: UUID) extends Deferred[Option[UUID
 case class DeferConsignmentSeries(consignmentId: UUID) extends Deferred[Option[Series]]
 case class DeferConsignmentBody(consignmentId: UUID) extends Deferred[TransferringBody]
 case class DeferFiles(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields) extends Deferred[List[File]]
-case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput]) extends Deferred[TDRConnection[File]]
+case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: QueriedFileFields) extends Deferred[TDRConnection[File]]
 case class DeferCurrentConsignmentStatus(consignmentId: UUID) extends Deferred[CurrentStatus]
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]
 
-case class QueriedFileFields(originalFilePath: Boolean = false, antivirusMetadata: Boolean = false, ffidMetadata: Boolean = false, fileStatus: Boolean = false)
+case class QueriedFileFields(
+    originalFilePath: Boolean = false,
+    antivirusMetadata: Boolean = false,
+    ffidMetadata: Boolean = false,
+    fileStatus: Boolean = false,
+    fileStatuses: Boolean = false
+)

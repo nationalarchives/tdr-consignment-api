@@ -91,7 +91,14 @@
             ],
             "containerSignatureFileVersion": "TEST DATA container signature file version",
             "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          }
+          },
+          "fileStatuses": [
+            {
+              "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
         },
         {
           "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
@@ -128,7 +135,14 @@
             ],
             "containerSignatureFileVersion": "TEST DATA container signature file version",
             "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          }
+          },
+          "fileStatuses": [
+            {
+              "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
         },
         {
           "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
@@ -160,7 +174,14 @@
             ],
             "containerSignatureFileVersion": "TEST DATA container signature file version",
             "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          }
+          },
+          "fileStatuses": [
+            {
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
         }
       ],
       "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",

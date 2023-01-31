@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
+import uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.FixedUUIDSource
 
@@ -217,6 +218,61 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     val response = createFileStatusService().getFileStatus(consignmentId).futureValue
     val expected = Map(consignmentId -> Success)
     response should equal(expected)
+  }
+
+  "getFileStatuses" should "return expected file status types" in {
+    val fileId1 = UUID.randomUUID()
+    val fileId2 = UUID.randomUUID()
+
+    mockResponse(
+      Set(FFID, Upload, Antivirus),
+      Seq(
+        FilestatusRow(UUID.randomUUID(), fileId1, FFID, Success, Timestamp.from(Instant.now)),
+        FilestatusRow(UUID.randomUUID(), fileId2, Upload, Success, Timestamp.from(Instant.now)),
+        FilestatusRow(UUID.randomUUID(), fileId1, Antivirus, VirusDetected, Timestamp.from(Instant.now))
+      )
+    )
+
+    val response = createFileStatusService().getFileStatuses(consignmentId, Set(FFID, Upload, Antivirus)).futureValue
+    response.size shouldBe 3
+    val statusFFID = response.find(_.statusType == FFID).get
+    statusFFID.fileId should equal(fileId1)
+    statusFFID.statusType should equal(FFID)
+    statusFFID.statusValue should equal(Success)
+
+    val statusUpload = response.find(_.statusType == Upload).get
+    statusUpload.fileId should equal(fileId2)
+    statusUpload.statusType should equal(Upload)
+    statusUpload.statusValue should equal(Success)
+
+    val statusAntivirus = response.find(_.statusType == Antivirus).get
+    statusAntivirus.fileId should equal(fileId1)
+    statusAntivirus.statusType should equal(Antivirus)
+    statusAntivirus.statusValue should equal(VirusDetected)
+  }
+
+  "getFileStatuses" should "return empty status list if no statuses present" in {
+    mockResponse(
+      Set(FFID, Upload, Antivirus),
+      Seq()
+    )
+
+    val response = createFileStatusService().getFileStatuses(consignmentId, Set(FFID, Upload, Antivirus)).futureValue
+    response.size shouldBe 0
+  }
+
+  "allFileStatusTypes" should "include all file status types" in {
+    val expectedTypes = Set(
+      FileStatusService.Antivirus,
+      FileStatusService.ChecksumMatch,
+      FileStatusService.FFID,
+      FileStatusService.Redaction,
+      FileStatusService.Upload,
+      FileStatusService.ServerChecksum,
+      FileStatusService.ClientChecks
+    )
+
+    FileStatusService.allFileStatusTypes should equal(expectedTypes)
   }
 
   "'status types'" should "have the correct values assigned" in {

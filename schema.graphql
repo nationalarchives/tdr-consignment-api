@@ -278,11 +278,12 @@ type File {
   fileName: String
   parentId: UUID
   metadata: FileMetadataValues!
-  fileStatus: String
+  fileStatus: String @deprecated(reason: "Should use 'fileStatuses' field")
   ffidMetadata: FFIDMetadata
   antivirusMetadata: AntivirusMetadata
   originalFilePath: String
   fileMetadata: [FileMetadataValue!]!
+  fileStatuses: [FileStatus!]!
 }
 
 type FileChecks {

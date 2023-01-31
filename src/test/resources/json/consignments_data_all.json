@@ -52,7 +52,14 @@
                   ],
                   "containerSignatureFileVersion": "TEST DATA container signature file version",
                   "binarySignatureFileVersion": "TEST DATA binary signature file version"
-                }
+                },
+                "fileStatuses": [
+                  {
+                    "fileId": "62c53beb-84d6-4676-80ea-b43f5329de72",
+                    "statusType": "Upload",
+                    "statusValue": "Success"
+                  }
+                ]
               }
             ],
             "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
@@ -116,7 +123,14 @@
                   ],
                   "containerSignatureFileVersion": "TEST DATA container signature file version",
                   "binarySignatureFileVersion": "TEST DATA binary signature file version"
-                }
+                },
+                "fileStatuses": [
+                  {
+                    "fileId": "6f9d3202-aca0-48b6-b464-6c0a2ff61bd8",
+                    "statusType": "Upload",
+                    "statusValue": "Success"
+                  }
+                ]
               }
             ],
             "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
