@@ -176,6 +176,9 @@ type CurrentStatus {
   transferAgreement: String
   upload: String
   clientChecks: String
+  serverAntivirus: String
+  serverChecksum: String
+  serverFFID: String
   confirmTransfer: String
   export: String
 }
@@ -203,9 +206,9 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Text
-  DateTime
   Integer
+  DateTime
+  Text
   Boolean
   Decimal
 }

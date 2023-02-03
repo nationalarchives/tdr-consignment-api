@@ -32,7 +32,10 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     "Upload",
     "ConfirmTransfer",
     "Export",
-    "ClientChecks"
+    "ClientChecks",
+    "ServerAntivirus",
+    "ServerChecksum",
+    "ServerFFID"
   )
 
   val statusValues: TableFor1[String] = Table(
@@ -194,11 +197,27 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       val consignmentStatusRow1 = generateConsignmentStatusRow(consignmentId, "Series", "Completed")
       val consignmentStatusRow2 = generateConsignmentStatusRow(consignmentId, "TransferAgreement", "Completed")
       val consignmentStatusRow3 = generateConsignmentStatusRow(consignmentId, "Upload", "Completed")
-      val consignmentStatusRow4 = generateConsignmentStatusRow(consignmentId, "ConfirmTransfer", "Completed")
-      val consignmentStatusRow5 = generateConsignmentStatusRow(consignmentId, "Export", "Completed")
+      val consignmentStatusRow4 = generateConsignmentStatusRow(consignmentId, "ClientChecks", "Completed")
+      val consignmentStatusRow5 = generateConsignmentStatusRow(consignmentId, "ServerAntivirus", "Completed")
+      val consignmentStatusRow6 = generateConsignmentStatusRow(consignmentId, "ServerChecksum", "Completed")
+      val consignmentStatusRow7 = generateConsignmentStatusRow(consignmentId, "ServerFFID", "Completed")
+      val consignmentStatusRow8 = generateConsignmentStatusRow(consignmentId, "ConfirmTransfer", "Completed")
+      val consignmentStatusRow9 = generateConsignmentStatusRow(consignmentId, "Export", "Completed")
 
       val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] =
-        Future.successful(Seq(consignmentStatusRow1, consignmentStatusRow2, consignmentStatusRow3, consignmentStatusRow4, consignmentStatusRow5))
+        Future.successful(
+          Seq(
+            consignmentStatusRow1,
+            consignmentStatusRow2,
+            consignmentStatusRow3,
+            consignmentStatusRow4,
+            consignmentStatusRow5,
+            consignmentStatusRow6,
+            consignmentStatusRow7,
+            consignmentStatusRow8,
+            consignmentStatusRow9
+          )
+        )
       when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockRepoResponse)
 
       val response: CurrentStatus = consignmentService.getConsignmentStatus(consignmentId).futureValue
@@ -206,6 +225,10 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       response.series should be(Some("Completed"))
       response.transferAgreement should be(Some("Completed"))
       response.upload should be(Some("Completed"))
+      response.clientChecks should be(Some("Completed"))
+      response.serverAntivirus should be(Some("Completed"))
+      response.serverChecksum should be(Some("Completed"))
+      response.serverFFID should be(Some("Completed"))
       response.confirmTransfer should be(Some("Completed"))
       response.export should be(Some("Completed"))
     }
@@ -301,7 +324,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
       val response = consignmentService.getConsignmentStatus(consignmentId).futureValue
 
-      response should be(CurrentStatus(None, None, None, None, None, None))
+      response should be(CurrentStatus(None, None, None, None, None, None, None, None, None))
     }
 
   forAll(statusValues) { statusValue =>
