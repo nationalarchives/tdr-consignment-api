@@ -26,7 +26,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.An
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, ClientSideMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
@@ -341,7 +341,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     }
   }
 
-  "getFileMetadata" should "return the correct metadata" in {
+  "getFileMetadata" should "return the correct metadata with file statuses" in {
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val antivirusRepositoryMock = mock[AntivirusMetadataRepository]
     val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
@@ -389,11 +389,16 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val mockFileStatusResponse = Future(
       Seq(FilestatusRow(UUID.randomUUID(), fileId, "FFID", "Success", timestamp))
     )
+    val mockFileStatuses =
+      Seq(FilestatusRow(UUID.randomUUID(), fileId, "FFID", "Success", timestamp), FilestatusRow(UUID.randomUUID(), fileId, "ClosureMetadata", "NotEntered", timestamp))
+
+    val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks, ClosureMetadata, DescriptiveMetadata)
 
     when(fileRepositoryMock.getFiles(consignmentId, FileFilters()))
       .thenReturn(Future(fileAndMetadataRows))
     when(antivirusRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(mockAvMetadataResponse)
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, Set(FFID), None)).thenReturn(mockFileStatusResponse)
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId, allFileStatusTypes, None)).thenReturn(Future(mockFileStatuses))
 
     val fileMetadataService =
       new FileMetadataService(fileMetadataRepositoryMock, fileRepositoryMock, customMetadataServiceMock, validateFileMetadataServiceMock, FixedTimeSource, fixedUuidSource)
@@ -418,7 +423,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fixedUuidSource,
       ConfigFactory.load()
     )
-    val queriedFileFields = QueriedFileFields(antivirusMetadata = true, ffidMetadata = true, fileStatus = true)
+    val queriedFileFields = QueriedFileFields(antivirusMetadata = true, ffidMetadata = true, fileStatus = true, fileStatuses = true)
     val fileList: Seq[File] = service.getFileMetadata(consignmentId, queriedFileFields = queriedFileFields).futureValue
 
     fileList.length should equal(1)
@@ -461,7 +466,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       ),
       Option(AntivirusMetadata(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp.getTime)),
       None,
-      fileMetadata
+      fileMetadata,
+      mockFileStatuses.map(p => FileStatus(p.fileid, p.statustype, p.value)).toList
     )
 
     actualFileMetadata should equal(expectedFileMetadata)
