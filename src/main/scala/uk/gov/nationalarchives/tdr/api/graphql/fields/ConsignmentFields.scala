@@ -55,6 +55,9 @@ object ConsignmentFields {
       transferAgreement: Option[String],
       upload: Option[String],
       clientChecks: Option[String],
+      serverAntivirus: Option[String],
+      serverChecksum: Option[String],
+      serverFFID: Option[String],
       confirmTransfer: Option[String],
       `export`: Option[String]
   )

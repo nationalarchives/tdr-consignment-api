@@ -67,6 +67,9 @@ class ConsignmentStatusService(
         consignmentStatusTypesAndVals.get("TransferAgreement"),
         consignmentStatusTypesAndVals.get("Upload"),
         consignmentStatusTypesAndVals.get("ClientChecks"),
+        consignmentStatusTypesAndVals.get("ServerAntivirus"),
+        consignmentStatusTypesAndVals.get("ServerChecksum"),
+        consignmentStatusTypesAndVals.get("ServerFFID"),
         consignmentStatusTypesAndVals.get("ConfirmTransfer"),
         consignmentStatusTypesAndVals.get("Export")
       )
