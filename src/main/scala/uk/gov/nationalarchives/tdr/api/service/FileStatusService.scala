@@ -67,7 +67,7 @@ object FileStatusService {
   val ClosureMetadata = "ClosureMetadata"
   val DescriptiveMetadata = "DescriptiveMetadata"
 
-  val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks)
+  val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks, ClosureMetadata, DescriptiveMetadata)
 
   // Values
   val Success = "Success"

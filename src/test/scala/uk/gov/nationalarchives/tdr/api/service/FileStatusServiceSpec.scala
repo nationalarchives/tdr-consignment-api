@@ -269,7 +269,9 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
       FileStatusService.Redaction,
       FileStatusService.Upload,
       FileStatusService.ServerChecksum,
-      FileStatusService.ClientChecks
+      FileStatusService.ClientChecks,
+      FileStatusService.ClosureMetadata,
+      FileStatusService.DescriptiveMetadata
     )
 
     FileStatusService.allFileStatusTypes should equal(expectedTypes)
