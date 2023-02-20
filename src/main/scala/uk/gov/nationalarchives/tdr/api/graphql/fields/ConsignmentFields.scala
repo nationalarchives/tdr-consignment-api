@@ -10,6 +10,7 @@ import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataFilters}
 import uk.gov.nationalarchives.tdr.api.graphql._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValue, FileMetadataValues}
@@ -91,6 +92,8 @@ object ConsignmentFields {
   }
   implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
     deriveObjectType[Unit, CurrentStatus]()
+  implicit val ConsignmentStatusType: ObjectType[Unit, ConsignmentStatus] =
+    deriveObjectType[Unit, ConsignmentStatus]()
 
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
   implicit val FileMetadataFiltersInputType: InputObjectType[FileMetadataFilters] = deriveInputObjectType[FileMetadataFilters]()
@@ -107,6 +110,10 @@ object ConsignmentFields {
     projected.exists(_.name == "ffidMetadata"),
     projected.exists(_.name == "fileStatus"),
     projected.exists(_.name == "fileStatuses")
+  )
+
+  def getQueriedConsignmentFields(projected: Vector[ProjectedName]): QueriedConsignmentFields = QueriedConsignmentFields(
+    projected.exists(_.name == "consignmentStatuses")
   )
 
   implicit val ConnectionDefinition(_, fileConnections) =
@@ -207,6 +214,14 @@ object ConsignmentFields {
         "currentStatus",
         CurrentStatusType,
         resolve = context => DeferCurrentConsignmentStatus(context.value.consignmentid)
+      ),
+      Field(
+        "consignmentStatuses",
+        ListType(ConsignmentStatusType),
+        resolve = Projector((ctx, projected) => {
+          val queriedFields = getQueriedConsignmentFields(projected)
+          DeferConsignmentStatuses(ctx.value.consignmentid, queriedFields)
+        })
       )
     )
   )
