@@ -199,14 +199,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
 
-//    val consignmentParams: List[ConsignmentParams] = List(
-//      ConsignmentParams(consignmentId1, "consignment-ref1", List(file1Id), statusParams = List(StatusParams(statusId1, "Upload", "Completed"))),
-//      ConsignmentParams(consignmentId2, "consignment-ref2", List(file2Id), statusParams = List(StatusParams(statusId2, "Upload", "Completed"))),
-//      ConsignmentParams(consignmentId3, "consignment-ref3", List(file3Id), statusParams = List(StatusParams(statusId3, "Upload", "Completed")))
-//    )
-//    utils.addFileProperty(SHA256ServerSideChecksum)
-//    setUpConsignments(consignmentParams, utils)
-
     val extensionMatch = "txt"
     val identificationBasisMatch = "TEST DATA identification"
     val puidMatch = "TEST DATA puid"
@@ -852,7 +844,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private def setUpConsignmentsFor(consignmentParams: List[ConsignmentParams], utils: TestUtils, userId: UUID): Unit = {
     consignmentParams.foreach(ps => {
       utils.createConsignment(ps.consignmentId, userId, fixedSeriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId, consignmentType = ps.consignmentType)
-      // utils.createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
       utils.addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
       ps.fileIds.foreach(fs => {
         setUpFileAndStandardMetadata(ps.consignmentId, fs, utils)
