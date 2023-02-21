@@ -1,21 +1,21 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.scalatest.ResetMocksAfterEachTest
+import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
+import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
+import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
-import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validConsignmentTypes, validStatusTypes, validStatusValues}
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{ZoneId, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -188,6 +188,62 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
 
     thrownException.getMessage should equal(s"Invalid ConsignmentStatus input: either '$expectedStatusType' or '$expectedStatusValue'")
+  }
+
+  "getConsignmentStatuses" should "return all consignment statuses" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val consignmentId = fixedUUIDSource.uuid
+    val zoneId = ZoneId.of("UTC")
+    val consignmentStatusRow1 = generateConsignmentStatusRow(consignmentId, "Series", "Completed")
+    val consignmentStatusRow2 = generateConsignmentStatusRow(consignmentId, "TransferAgreement", "Completed")
+    val consignmentStatusRow3 = generateConsignmentStatusRow(consignmentId, "Upload", "Completed")
+
+    val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] =
+      Future.successful(
+        Seq(
+          consignmentStatusRow1,
+          consignmentStatusRow2,
+          consignmentStatusRow3
+        )
+      )
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockRepoResponse)
+
+    val response: List[ConsignmentStatus] = consignmentService.getConsignmentStatuses(consignmentId).futureValue
+    response.size shouldBe 3
+    val seriesStatus = response.find(_.statusType == "Series").get
+    seriesStatus.value shouldBe "Completed"
+    seriesStatus.consignmentId should equal(consignmentId)
+    seriesStatus.consignmentStatusId should equal(consignmentStatusRow1.consignmentstatusid)
+    seriesStatus.createdDatetime should equal(ZonedDateTime.ofInstant(consignmentStatusRow1.createddatetime.toInstant, zoneId))
+    seriesStatus.modifiedDatetime.get should equal(ZonedDateTime.ofInstant(consignmentStatusRow1.modifieddatetime.get.toInstant, zoneId))
+
+    val taStatus = response.find(_.statusType == "TransferAgreement").get
+    taStatus.value shouldBe "Completed"
+    taStatus.consignmentId should equal(consignmentId)
+    taStatus.consignmentStatusId should equal(consignmentStatusRow2.consignmentstatusid)
+    taStatus.createdDatetime should equal(ZonedDateTime.ofInstant(consignmentStatusRow2.createddatetime.toInstant, zoneId))
+    taStatus.modifiedDatetime.get should equal(ZonedDateTime.ofInstant(consignmentStatusRow2.modifieddatetime.get.toInstant, zoneId))
+
+    val uploadStatus = response.find(_.statusType == "Upload").get
+    uploadStatus.value shouldBe "Completed"
+    uploadStatus.consignmentId should equal(consignmentId)
+    uploadStatus.consignmentStatusId should equal(consignmentStatusRow3.consignmentstatusid)
+    uploadStatus.createdDatetime should equal(ZonedDateTime.ofInstant(consignmentStatusRow3.createddatetime.toInstant, zoneId))
+    uploadStatus.modifiedDatetime.get should equal(ZonedDateTime.ofInstant(consignmentStatusRow3.modifieddatetime.get.toInstant, zoneId))
+  }
+
+  "getConsignmentStatuses" should "not return any available consignment statuses if there are no consignment statuses" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val consignmentId = fixedUUIDSource.uuid
+
+    val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] =
+      Future.successful(
+        Seq()
+      )
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentId)).thenReturn(mockRepoResponse)
+
+    val response: List[ConsignmentStatus] = consignmentService.getConsignmentStatuses(consignmentId).futureValue
+    response.isEmpty shouldBe true
   }
 
   "getConsignmentStatus" should

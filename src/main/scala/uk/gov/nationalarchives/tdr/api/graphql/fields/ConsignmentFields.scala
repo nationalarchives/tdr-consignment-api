@@ -112,10 +112,6 @@ object ConsignmentFields {
     projected.exists(_.name == "fileStatuses")
   )
 
-  def getQueriedConsignmentFields(projected: Vector[ProjectedName]): QueriedConsignmentFields = QueriedConsignmentFields(
-    projected.exists(_.name == "consignmentStatuses")
-  )
-
   implicit val ConnectionDefinition(_, fileConnections) =
     Connection.definition[ConsignmentApiContext, TDRConnection, File](
       name = "File",
@@ -218,10 +214,7 @@ object ConsignmentFields {
       Field(
         "consignmentStatuses",
         ListType(ConsignmentStatusType),
-        resolve = Projector((ctx, projected) => {
-          val queriedFields = getQueriedConsignmentFields(projected)
-          DeferConsignmentStatuses(ctx.value.consignmentid, queriedFields)
-        })
+        resolve = context => DeferConsignmentStatuses(context.value.consignmentid)
       )
     )
   )

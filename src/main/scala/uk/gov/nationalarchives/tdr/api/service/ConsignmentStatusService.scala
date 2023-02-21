@@ -1,11 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
-import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
-import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
-import uk.gov.nationalarchives.tdr.api.graphql.{QueriedConsignmentFields, QueriedFileFields}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
@@ -62,18 +61,18 @@ class ConsignmentStatusService(
     }
   }
 
-  def getConsignmentStatuses(consignmentId: UUID, queriedFields: QueriedConsignmentFields): Future[List[ConsignmentStatus]] = {
+  def getConsignmentStatuses(consignmentId: UUID): Future[List[ConsignmentStatus]] = {
     for {
-      rows <- if (queriedFields.consignmentStatuses) consignmentStatusRepository.getConsignmentStatus(consignmentId) else Future(Nil)
+      rows <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
     } yield {
       rows.map(r => toConsignmentStatus(r)).toList
     }
   }
 
-  @deprecated("Use getConsignmentStatuses(consignmentId: UUID, queriedFields: QueriedConsignmentFields)")
+  @deprecated("Use getConsignmentStatuses(consignmentId: UUID): Future[List[ConsignmentStatus]]")
   def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
     for {
-      consignmentStatuses <- getConsignmentStatuses(consignmentId, QueriedConsignmentFields(consignmentStatuses = true))
+      consignmentStatuses <- getConsignmentStatuses(consignmentId)
     } yield {
       val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statusType, cs.value)).toMap
       CurrentStatus(

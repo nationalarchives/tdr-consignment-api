@@ -248,11 +248,17 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     result
   }
 
-  def createConsignmentStatus(consignmentId: UUID, statusType: String, statusValue: String, createdDate: Timestamp = Timestamp.from(FixedTimeSource.now)): Unit = {
+  def createConsignmentStatus(
+      consignmentId: UUID,
+      statusType: String,
+      statusValue: String,
+      createdDate: Timestamp = Timestamp.from(FixedTimeSource.now),
+      statusId: UUID = UUID.randomUUID()
+  ): Unit = {
     val sql =
       s"""INSERT INTO "ConsignmentStatus" ("ConsignmentStatusId", "ConsignmentId", "StatusType", "Value", "CreatedDatetime") VALUES (?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setObject(1, UUID.randomUUID(), Types.OTHER)
+    ps.setObject(1, statusId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setString(3, statusType)
     ps.setString(4, statusValue)
