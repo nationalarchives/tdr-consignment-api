@@ -1,10 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
-import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
-import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
@@ -21,6 +21,17 @@ class ConsignmentStatusService(
 
   implicit class ConsignmentStatusInputHelper(input: ConsignmentStatusInput) {
     def statusValueToString: String = input.statusValue.getOrElse("")
+  }
+
+  private def toConsignmentStatus(row: ConsignmentstatusRow): ConsignmentStatus = {
+    ConsignmentStatus(
+      row.consignmentstatusid,
+      row.consignmentid,
+      row.statustype,
+      row.value,
+      row.createddatetime.toZonedDateTime,
+      row.modifieddatetime.map(timestamp => timestamp.toZonedDateTime)
+    )
   }
 
   def addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput): Future[ConsignmentStatus] = {
@@ -46,22 +57,24 @@ class ConsignmentStatusService(
         consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
       }
     } yield {
-      ConsignmentStatus(
-        consignmentStatusRow.consignmentstatusid,
-        consignmentStatusRow.consignmentid,
-        consignmentStatusRow.statustype,
-        consignmentStatusRow.value,
-        consignmentStatusRow.createddatetime.toZonedDateTime,
-        consignmentStatusRow.modifieddatetime.map(timestamp => timestamp.toZonedDateTime)
-      )
+      toConsignmentStatus(consignmentStatusRow)
     }
   }
 
+  def getConsignmentStatuses(consignmentId: UUID): Future[List[ConsignmentStatus]] = {
+    for {
+      rows <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
+    } yield {
+      rows.map(r => toConsignmentStatus(r)).toList
+    }
+  }
+
+  @deprecated("Use getConsignmentStatuses(consignmentId: UUID): Future[List[ConsignmentStatus]]")
   def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
     for {
-      consignmentStatuses <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
+      consignmentStatuses <- getConsignmentStatuses(consignmentId)
     } yield {
-      val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statustype, cs.value)).toMap
+      val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statusType, cs.value)).toMap
       CurrentStatus(
         consignmentStatusTypesAndVals.get("Series"),
         consignmentStatusTypesAndVals.get("TransferAgreement"),

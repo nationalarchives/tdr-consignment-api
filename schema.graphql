@@ -131,6 +131,7 @@ type Consignment {
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
   currentStatus: CurrentStatus!
+  consignmentStatuses: [ConsignmentStatus!]!
 }
 
 "A connection to a list of items."

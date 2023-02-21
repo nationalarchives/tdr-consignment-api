@@ -199,7 +199,16 @@
       "currentStatus": {
         "transferAgreement": "Completed",
         "upload": "Completed"
-      }
+      },
+      "consignmentStatuses": [
+        {
+          "consignmentStatusId": "21f3a11d-05f4-4565-b668-8586644fd441",
+          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
+          "statusType": "Upload",
+          "value": "Completed",
+          "createdDatetime": "2020-01-01T09:00:00Z"
+        }
+      ]
     }
   }
 }

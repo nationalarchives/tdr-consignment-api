@@ -6,14 +6,16 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
-import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils._
 
+import java.sql.Timestamp
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
@@ -68,7 +70,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       paginatedFiles: Option[FileConnections],
       currentStatus: Option[CurrentStatus] = None,
       consignmentType: Option[String],
-      bodyId: Option[UUID] = None
+      bodyId: Option[UUID] = None,
+      consignmentStatuses: List[ConsignmentStatus] = Nil
   )
 
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
@@ -242,7 +245,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     utils.addParentFolderName(defaultConsignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
 
-    utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed")
+    utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed", statusId = UUID.fromString("21f3a11d-05f4-4565-b668-8586644fd441"))
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
     val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = defaultBodyCode))
@@ -598,14 +601,22 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   "consignments" should "allow a user with reporting access to return consignments in a paginated format" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
+    val consignmentId1 = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
+    val consignmentId2 = UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8")
+    val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
+
     val file1Id = UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58")
     val file2Id = UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")
     val file3Id = UUID.fromString("6f9d3202-aca0-48b6-b464-6c0a2ff61bd8")
 
+    val statusId1 = UUID.fromString("21f3a11d-05f4-4565-b668-8586644fd441")
+    val statusId2 = UUID.fromString("d752ee66-514a-4076-a832-e627b0f855ad")
+    val statusId3 = UUID.fromString("a6e82df6-af6d-4412-a8b9-69aa62bc52da")
+
     val consignmentParams: List[ConsignmentParams] = List(
-      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List(file1Id)),
-      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List(file2Id)),
-      ConsignmentParams(UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a"), "consignment-ref3", List(file3Id))
+      ConsignmentParams(consignmentId1, "consignment-ref1", List(file1Id), statusParams = List(StatusParams(statusId1, "Upload", "Completed"))),
+      ConsignmentParams(consignmentId2, "consignment-ref2", List(file2Id), statusParams = List(StatusParams(statusId2, "Upload", "Completed"))),
+      ConsignmentParams(consignmentId3, "consignment-ref3", List(file3Id), statusParams = List(StatusParams(statusId3, "Upload", "Completed")))
     )
     utils.addFileProperty(SHA256ServerSideChecksum)
     setUpConsignments(consignmentParams, utils)
@@ -831,14 +842,19 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   private def setUpConsignmentsFor(consignmentParams: List[ConsignmentParams], utils: TestUtils, userId: UUID): Unit = {
-
     consignmentParams.foreach(ps => {
       utils.createConsignment(ps.consignmentId, userId, fixedSeriesId, consignmentRef = ps.consignmentRef, bodyId = fixedBodyId, consignmentType = ps.consignmentType)
-      utils.createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
       utils.addParentFolderName(ps.consignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
       ps.fileIds.foreach(fs => {
         setUpFileAndStandardMetadata(ps.consignmentId, fs, utils)
       })
+      if (ps.statusParams.isEmpty) {
+        utils.createConsignmentStatus(ps.consignmentId, "Upload", "Completed")
+      } else {
+        ps.statusParams.foreach(sp => {
+          utils.createConsignmentStatus(ps.consignmentId, sp.statusType, sp.value, createdDate = sp.createdDatetime, statusId = sp.statusId)
+        })
+      }
     })
   }
 
@@ -893,4 +909,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 }
 
-case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID], consignmentType: String = "standard")
+case class StatusParams(statusId: UUID, statusType: String, value: String, createdDatetime: Timestamp = Timestamp.from(FixedTimeSource.now))
+
+case class ConsignmentParams(consignmentId: UUID, consignmentRef: String, fileIds: List[UUID], consignmentType: String = "standard", statusParams: List[StatusParams] = Nil)

@@ -76,7 +76,16 @@
             },
             "currentStatus": {
               "upload": "Completed"
-            }
+            },
+            "consignmentStatuses": [
+              {
+                "consignmentStatusId": "d752ee66-514a-4076-a832-e627b0f855ad",
+                "consignmentId": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
+                "statusType": "Upload",
+                "value": "Completed",
+                "createdDatetime": "2020-01-01T09:00:00Z"
+              }
+            ]
           }
         },
         {
@@ -140,7 +149,16 @@
             },
             "currentStatus": {
               "upload": "Completed"
-            }
+            },
+            "consignmentStatuses": [
+              {
+                "consignmentStatusId": "21f3a11d-05f4-4565-b668-8586644fd441",
+                "consignmentId": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
+                "statusType": "Upload",
+                "value": "Completed",
+                "createdDatetime": "2020-01-01T09:00:00Z"
+              }
+            ]
           }
         }
       ]
