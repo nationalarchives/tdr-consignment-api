@@ -20,10 +20,10 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case DeferFileSizeSum(consignmentId) => context.fileMetadataService.getSumOfFileSizes(consignmentId)
       case DeferFileChecksProgress(consignmentId) =>
         context.consignmentService.getConsignmentFileProgress(consignmentId)
-      case DeferParentFolder(consignmentId)      => context.consignmentService.getConsignmentParentFolder(consignmentId)
-      case DeferParentFolderId(consignmentId)    => context.fileService.getConsignmentParentFolderId(consignmentId)
-      case DeferConsignmentSeries(consignmentId) => context.consignmentService.getSeriesOfConsignment(consignmentId)
-      case DeferConsignmentBody(consignmentId)   => context.consignmentService.getTransferringBodyOfConsignment(consignmentId)
+      case DeferParentFolder(consignmentId)        => context.consignmentService.getConsignmentParentFolder(consignmentId)
+      case DeferParentFolderId(consignmentId)      => context.fileService.getConsignmentParentFolderId(consignmentId)
+      case DeferConsignmentSeries(consignmentId)   => context.consignmentService.getSeriesOfConsignment(consignmentId)
+      case DeferConsignmentBody(consignmentId)     => context.consignmentService.getTransferringBodyOfConsignment(consignmentId)
       case DeferConsignmentStatuses(consignmentId) => context.consignmentStatusService.getConsignmentStatuses(consignmentId)
       case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
         context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
