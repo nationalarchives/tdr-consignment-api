@@ -68,7 +68,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       transferringBody: Option[TransferringBody],
       files: Option[List[File]],
       paginatedFiles: Option[FileConnections],
-      currentStatus: Option[CurrentStatus] = None,
       consignmentType: Option[String],
       bodyId: Option[UUID] = None,
       consignmentStatuses: List[ConsignmentStatus] = Nil
@@ -143,8 +142,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       matches: List[FFIDMetadataMatches],
       datetime: Long
   )
-
-  case class CurrentStatus(upload: Option[String])
 
   case class StartUpload(startUpload: String)
 

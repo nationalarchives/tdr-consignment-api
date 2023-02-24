@@ -51,18 +51,6 @@ object ConsignmentFields {
 
   case class TransferringBody(name: String, tdrCode: String)
 
-  case class CurrentStatus(
-      series: Option[String],
-      transferAgreement: Option[String],
-      upload: Option[String],
-      clientChecks: Option[String],
-      serverAntivirus: Option[String],
-      serverChecksum: Option[String],
-      serverFFID: Option[String],
-      confirmTransfer: Option[String],
-      `export`: Option[String]
-  )
-
   case class StartUploadInput(consignmentId: UUID, parentFolder: String) extends UserOwnsConsignment
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
@@ -90,8 +78,6 @@ object ConsignmentFields {
   implicit val FileMetadataType: ObjectType[Unit, FileMetadataValues] = {
     deriveObjectType[Unit, FileMetadataValues]()
   }
-  implicit val CurrentStatusType: ObjectType[Unit, CurrentStatus] =
-    deriveObjectType[Unit, CurrentStatus]()
   implicit val ConsignmentStatusType: ObjectType[Unit, ConsignmentStatus] =
     deriveObjectType[Unit, ConsignmentStatus]()
 
@@ -205,11 +191,6 @@ object ConsignmentFields {
         "consignmentReference",
         StringType,
         resolve = _.value.consignmentReference
-      ),
-      Field(
-        "currentStatus",
-        CurrentStatusType,
-        resolve = context => DeferCurrentConsignmentStatus(context.value.consignmentid)
       ),
       Field(
         "consignmentStatuses",

@@ -130,7 +130,6 @@ type Consignment {
   files(fileFiltersInput: FileFilters): [File!]!
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
-  currentStatus: CurrentStatus!
   consignmentStatuses: [ConsignmentStatus!]!
 }
 
@@ -170,18 +169,6 @@ input ConsignmentStatusInput {
   consignmentId: UUID!
   statusType: String!
   statusValue: String
-}
-
-type CurrentStatus {
-  series: String
-  transferAgreement: String
-  upload: String
-  clientChecks: String
-  serverAntivirus: String
-  serverChecksum: String
-  serverFFID: String
-  confirmTransfer: String
-  export: String
 }
 
 type CustomMetadataField {
