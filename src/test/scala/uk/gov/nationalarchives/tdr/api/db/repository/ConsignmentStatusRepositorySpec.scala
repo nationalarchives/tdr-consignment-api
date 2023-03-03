@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import akka.stream.alpakka.slick.scaladsl.SlickSession
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -29,7 +28,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val statusValue = "Value"
     val createdTimestamp = Timestamp.from(now)
 
-    TestUtils(db).createConsignment(consignmentId, userId)
+    TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
     val transferAgreementStatusRow = ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp)
 
     val consignmentStatus = consignmentStatusRepository.addConsignmentStatus(transferAgreementStatusRow).futureValue
@@ -50,7 +49,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val statusValue = "InProgress"
     val createdTimestamp = Timestamp.from(now)
 
-    TestUtils(db).createConsignment(consignmentId, userId)
+    TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
     TestUtils(db).createConsignmentStatus(consignmentId, statusType, statusValue, createdTimestamp)
 
     val consignmentStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue.head
@@ -69,7 +68,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
       val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
       val userId = UUID.fromString("aee2d1a9-e1db-43a0-9fd6-a6c342bb187b")
 
-      TestUtils(db).createConsignment(consignmentId, userId)
+      TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
 
       val consignmentStatus = consignmentStatusRepository.getConsignmentStatus(consignmentId).futureValue
 
@@ -88,7 +87,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val statusTypeThree = "Export"
     val statusValueThree = "InProgress"
 
-    TestUtils(db).createConsignment(consignmentId, userId)
+    TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
     TestUtils(db).createConsignmentStatus(consignmentId, statusTypeOne, statusValueOne)
     TestUtils(db).createConsignmentStatus(consignmentId, statusTypeTwo, statusValueTwo)
     TestUtils(db).createConsignmentStatus(consignmentId, statusTypeThree, statusValueThree)
@@ -112,9 +111,9 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val statusType = "Upload"
     val statusValue = "Completed"
 
-    TestUtils(db).createConsignment(consignmentId, userId)
-    TestUtils(db).createConsignment(consignmentIdTwo, userId)
-    TestUtils(db).createConsignment(consignmentIdThree, userId)
+    TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
+    TestUtils(db).createConsignment(consignmentIdTwo, userId, includeStatusRows = false)
+    TestUtils(db).createConsignment(consignmentIdThree, userId, includeStatusRows = false)
 
     TestUtils(db).createConsignmentStatus(consignmentId, statusType, statusValue)
     TestUtils(db).createConsignmentStatus(consignmentIdTwo, statusType, statusValue)
@@ -136,7 +135,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val createdTimestamp = Timestamp.from(now)
     val modifiedTimestamp = Timestamp.from(now)
 
-    TestUtils(db).createConsignment(consignmentId, userId)
+    TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
     TestUtils(db).createConsignmentStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
     val response: Int =
       consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, statusValue, modifiedTimestamp).futureValue
@@ -164,7 +163,7 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val createdTimestamp = Timestamp.from(now)
     val modifiedTimestamp = Timestamp.from(now)
 
-    TestUtils(db).createConsignment(consignmentId, userId)
+    TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
 
     TestUtils(db).createConsignmentStatus(consignmentId, statusTypeOne, statusValueOne, createdTimestamp)
     TestUtils(db).createConsignmentStatus(consignmentId, statusTypeTwo, statusValueTwo, createdTimestamp)

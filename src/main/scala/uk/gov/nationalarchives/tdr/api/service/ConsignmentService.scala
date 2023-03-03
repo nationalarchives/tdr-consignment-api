@@ -63,6 +63,7 @@ class ConsignmentService(
   def addConsignment(addConsignmentInput: AddConsignmentInput, token: Token): Future[Consignment] = {
     val now = timeSource.now
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
+    val timestampNow = Timestamp.from(now)
     val consignmentType: String = addConsignmentInput.consignmentType.validateType
 
     val userBody = token.transferringBody.getOrElse(throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
@@ -71,17 +72,22 @@ class ConsignmentService(
       sequence <- consignmentRepository.getNextConsignmentSequence
       body <- transferringBodyService.getBodyByCode(userBody)
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
+      consignmentId = uuidSource.uuid
       consignmentRow = ConsignmentRow(
-        uuidSource.uuid,
+        consignmentId,
         addConsignmentInput.seriesid,
         token.userId,
-        Timestamp.from(now),
+        timestampNow,
         consignmentsequence = sequence,
         consignmentreference = consignmentRef,
         consignmenttype = consignmentType,
         bodyid = body.bodyId
       )
+      descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, "NotEntered", timestampNow, Option(timestampNow))
+      closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, "NotEntered", timestampNow, Option(timestampNow))
       consignment <- consignmentRepository.addConsignment(consignmentRow).map(row => convertRowToConsignment(row))
+      _ <- consignmentStatusRepository.addConsignmentStatus(descriptiveMetadataStatusRow)
+      _ <- consignmentStatusRepository.addConsignmentStatus(closureMetadataStatusRow)
     } yield consignment
   }
 

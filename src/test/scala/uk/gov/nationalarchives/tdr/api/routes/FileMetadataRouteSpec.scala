@@ -7,7 +7,7 @@ import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, ClosureMetadata, Completed, DescriptiveMetadata, NotEntered, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -181,6 +181,34 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     correctPropertiesWerePassedIn should equal(true)
     responseFileIds.sorted should equal(expectedResponseFileIds.sorted)
     responseFileIds.foreach(fileId => responseFileMetadataProperties.foreach(fileMetadata => checkFileMetadataExists(fileId, utils, fileMetadata.filePropertyName)))
+  }
+
+  "updateBulkFileMetadata" should "set the expected consignment and file statuses" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+    val propertyGroup = "MandatoryClosure"
+
+    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+    utils.addFileProperty("property1", propertyGroup)
+    utils.addFileProperty("property2", propertyGroup)
+    utils.addFileProperty("property3", propertyGroup)
+
+    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFile(fileThreeId, consignmentId)
+
+    runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
+
+    utils.getFileStatusResult(fileTwoId, DescriptiveMetadata).head should equal(NotEntered)
+    utils.getFileStatusResult(fileTwoId, ClosureMetadata).head should equal(Completed)
+    utils.getFileStatusResult(fileThreeId, DescriptiveMetadata).head should equal(NotEntered)
+    utils.getFileStatusResult(fileThreeId, ClosureMetadata).head should equal(Completed)
+    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(NotEntered)
+    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
   }
 
   "updateBulkFileMetadata" should "not allow bulk updating of file metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
@@ -421,16 +449,6 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getRow should equal(0)
-  }
-
-  private def checkNoValidationResultExists(fileId: UUID, utils: TestUtils): Unit = {
-    val sql = s"""SELECT COUNT("Value") FROM "FileStatus" where "FileId" = ? AND "StatusType" = ?"""
-    val ps: PreparedStatement = utils.connection.prepareStatement(sql)
-    ps.setObject(1, fileId, Types.OTHER)
-    ps.setString(2, ChecksumMatch)
-    val rs: ResultSet = ps.executeQuery()
-    rs.next()
-    rs.getInt(1) should be(0)
   }
 
   private def createFileAndFileMetadata(utils: TestUtils, consignmentId: UUID, folderOneId: UUID, fileOneId: UUID, fileTwoId: UUID): Unit = {

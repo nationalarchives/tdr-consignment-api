@@ -6,11 +6,12 @@ import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
-import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
+import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
-import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
+import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.validStatusValues
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Completed, DescriptiveMetadata, Incomplete, NotEntered}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -388,13 +389,35 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
   }
 
-  "validStatusTypes" should "contain the correct values" in {
-    val expectedValues = List("ClientChecks", "ConfirmTransfer", "Export", "Series", "ServerAntivirus", "ServerChecksum", "ServerFFID", "TransferAgreement", "Upload")
-    validStatusTypes.toList.sorted should equal(expectedValues)
+  val updateMetadataTable: TableFor2[List[String], String] = Table(
+    ("statusValues", "expectedRowValue"),
+    (List(NotEntered, NotEntered), NotEntered),
+    (List(NotEntered, Incomplete), Incomplete),
+    (List(NotEntered, Incomplete, Completed), Incomplete),
+    (List(NotEntered, Completed), Completed),
+    (List(Completed, Completed), Completed)
+  )
+
+  forAll(updateMetadataTable) { (statusValues, expectedRowValue) =>
+    "updateMetadataConsignmentStatus" should s"add the expected consignment status rows for input ${statusValues.mkString(",")}" in {
+      val statusCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+      val valueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+
+      when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], statusCaptor.capture(), valueCaptor.capture(), any[Timestamp]))
+        .thenReturn(Future.successful(1))
+      val statusRows = statusValues.map(statusValue => {
+        FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), DescriptiveMetadata, statusValue, Timestamp.from(FixedTimeSource.now))
+      })
+
+      consignmentService.updateMetadataConsignmentStatus(UUID.randomUUID(), statusRows, DescriptiveMetadata).futureValue
+
+      statusCaptor.getValue should equal(DescriptiveMetadata)
+      valueCaptor.getValue should equal(expectedRowValue)
+    }
   }
 
   "validStatusValues" should "contain the correct values" in {
-    val expectedValues = List("Completed", "CompletedWithIssues", "Failed", "InProgress")
+    val expectedValues = List("Completed", "CompletedWithIssues", "Failed", "InProgress", "Incomplete", "NotEntered")
     validStatusValues.toList.sorted should equal(expectedValues)
   }
 

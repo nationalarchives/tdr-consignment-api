@@ -7,7 +7,7 @@ import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{PasswordProtected, Zip}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered, PasswordProtected, Zip}
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
@@ -211,7 +211,8 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       seriesId: UUID = fixedSeriesId,
       consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
       consignmentType: String = "standard",
-      bodyId: UUID = fixedBodyId
+      bodyId: UUID = fixedBodyId,
+      includeStatusRows: Boolean = true
   ): UUID = {
     val sql =
       """INSERT INTO "Consignment" """ +
@@ -236,6 +237,10 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setObject(9, bodyId, Types.OTHER)
     ps.setInt(10, nextSequence)
     ps.executeUpdate()
+    if (includeStatusRows) {
+      createConsignmentStatus(consignmentId, DescriptiveMetadata, NotEntered)
+      createConsignmentStatus(consignmentId, ClosureMetadata, NotEntered)
+    }
     consignmentId
   }
 
@@ -395,6 +400,18 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       ps.setString(6, propertyName)
       ps.executeUpdate()
     })
+  }
+
+  def addFileProperty(name: String, propertyGroup: String): Unit = {
+    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype", "PropertyGroup") VALUES (?, ?, ?, ?)"""
+    val defaultPropertyType = "System"
+    val defaultDataType = "text"
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, name)
+    ps.setString(2, defaultPropertyType)
+    ps.setString(3, defaultDataType)
+    ps.setString(4, propertyGroup)
+    ps.executeUpdate()
   }
 
   def addFileProperty(name: String): Unit = {
