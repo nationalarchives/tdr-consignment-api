@@ -519,32 +519,34 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   }
 
   "startUpload" should "create an upload in progress status and add the parent folder" in {
+    val startUploadInputCaptor: ArgumentCaptor[StartUploadInput] = ArgumentCaptor.forClass(classOf[StartUploadInput])
     val consignmentStatusCaptor: ArgumentCaptor[List[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[List[ConsignmentstatusRow]])
-    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
-    val parentFolderCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val parentFolder = "parentFolder"
 
+    val startUploadInput = StartUploadInput(consignmentId, parentFolder, true)
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
-    when(consignmentRepoMock.addParentFolder(consignmentIdCaptor.capture(), parentFolderCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext]))
-      .thenReturn(Future.successful(parentFolder))
-    consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
+    when(consignmentRepoMock.addUploadDetails(startUploadInputCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext])).thenReturn(Future.successful(parentFolder))
+    consignmentService.startUpload(startUploadInput).futureValue
+
+    startUploadInputCaptor.getValue should be(startUploadInput)
 
     val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == "Upload").get
     statusRow.consignmentid should be(consignmentId)
     statusRow.statustype should be("Upload")
     statusRow.value should be("InProgress")
-    consignmentIdCaptor.getValue should be(consignmentId)
-    parentFolderCaptor.getValue should be(parentFolder)
   }
 
   "startUpload" should "create a ClientChecks in progress status" in {
     val consignmentStatusCaptor: ArgumentCaptor[List[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[List[ConsignmentstatusRow]])
+    val startUploadInputCaptor: ArgumentCaptor[StartUploadInput] = ArgumentCaptor.forClass(classOf[StartUploadInput])
     val parentFolder = "parentFolder"
+    val startUploadInput = StartUploadInput(consignmentId, parentFolder, false)
 
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
-    when(consignmentRepoMock.addParentFolder(any[UUID], any[String], consignmentStatusCaptor.capture())(any[ExecutionContext]))
-      .thenReturn(Future.successful(parentFolder))
-    consignmentService.startUpload(StartUploadInput(consignmentId, parentFolder)).futureValue
+    when(consignmentRepoMock.addUploadDetails(startUploadInputCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext])).thenReturn(Future.successful(parentFolder))
+    consignmentService.startUpload(startUploadInput).futureValue
+
+    startUploadInputCaptor.getValue should be(startUploadInput)
 
     val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == "ClientChecks").get
     statusRow.consignmentid should be(consignmentId)
@@ -555,7 +557,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "startUpload" should "return an error if there is an existing consignment status" in {
     val statusRows = Seq(ConsignmentstatusRow(UUID.randomUUID(), consignmentId, "Upload", "InProgress", Timestamp.from(FixedTimeSource.now), Option.empty))
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(statusRows))
-    val exception = consignmentService.startUpload(StartUploadInput(consignmentId, "parentFolder")).failed.futureValue
+    val exception = consignmentService.startUpload(StartUploadInput(consignmentId, "parentFolder", false)).failed.futureValue
     exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
   }
 
