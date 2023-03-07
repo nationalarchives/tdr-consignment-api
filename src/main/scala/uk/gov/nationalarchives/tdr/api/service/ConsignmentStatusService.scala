@@ -4,7 +4,6 @@ import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
@@ -66,26 +65,6 @@ class ConsignmentStatusService(
       rows <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
     } yield {
       rows.map(r => toConsignmentStatus(r)).toList
-    }
-  }
-
-  @deprecated("Use getConsignmentStatuses(consignmentId: UUID): Future[List[ConsignmentStatus]]")
-  def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
-    for {
-      consignmentStatuses <- getConsignmentStatuses(consignmentId)
-    } yield {
-      val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statusType, cs.value)).toMap
-      CurrentStatus(
-        consignmentStatusTypesAndVals.get("Series"),
-        consignmentStatusTypesAndVals.get("TransferAgreement"),
-        consignmentStatusTypesAndVals.get("Upload"),
-        consignmentStatusTypesAndVals.get("ClientChecks"),
-        consignmentStatusTypesAndVals.get("ServerAntivirus"),
-        consignmentStatusTypesAndVals.get("ServerChecksum"),
-        consignmentStatusTypesAndVals.get("ServerFFID"),
-        consignmentStatusTypesAndVals.get("ConfirmTransfer"),
-        consignmentStatusTypesAndVals.get("Export")
-      )
     }
   }
 

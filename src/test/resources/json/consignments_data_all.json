@@ -74,9 +74,6 @@
                 "filesProcessed": 1
               }
             },
-            "currentStatus": {
-              "upload": "Completed"
-            },
             "consignmentStatuses": [
               {
                 "consignmentStatusId": "d752ee66-514a-4076-a832-e627b0f855ad",
@@ -146,9 +143,6 @@
               "ffidProgress": {
                 "filesProcessed": 1
               }
-            },
-            "currentStatus": {
-              "upload": "Completed"
             },
             "consignmentStatuses": [
               {
