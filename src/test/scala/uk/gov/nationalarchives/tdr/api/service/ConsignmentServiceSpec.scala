@@ -121,7 +121,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     sortedValues.last.consignmentid should be(result.consignmentid)
     sortedValues.last.statustype should be(DescriptiveMetadata)
     sortedValues.last.value should be(NotEntered)
-
   }
 
   "addConsignment" should "link a consignment to the user's ID" in {
