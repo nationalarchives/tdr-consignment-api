@@ -1,14 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import cats.implicits.catsSyntaxOptionId
-
-import java.sql.Timestamp
-import java.time.{Instant, ZoneOffset, ZonedDateTime}
-import java.util.UUID
 import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
-import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.mockito.scalatest.ResetMocksAfterEachTest
+import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -20,7 +16,10 @@ import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
+import java.sql.Timestamp
 import java.time.Instant.now
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
@@ -525,7 +524,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val startUploadInput = StartUploadInput(consignmentId, parentFolder, true)
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
-    when(consignmentRepoMock.addUploadDetails(startUploadInputCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext])).thenReturn(Future.successful(parentFolder))
+    when(consignmentRepoMock.addUploadDetails(startUploadInputCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext]))
+      .thenReturn(Future.successful(parentFolder))
     consignmentService.startUpload(startUploadInput).futureValue
 
     startUploadInputCaptor.getValue should be(startUploadInput)
@@ -543,7 +543,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val startUploadInput = StartUploadInput(consignmentId, parentFolder, false)
 
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(Seq()))
-    when(consignmentRepoMock.addUploadDetails(startUploadInputCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext])).thenReturn(Future.successful(parentFolder))
+    when(consignmentRepoMock.addUploadDetails(startUploadInputCaptor.capture(), consignmentStatusCaptor.capture())(any[ExecutionContext]))
+      .thenReturn(Future.successful(parentFolder))
     consignmentService.startUpload(startUploadInput).futureValue
 
     startUploadInputCaptor.getValue should be(startUploadInput)

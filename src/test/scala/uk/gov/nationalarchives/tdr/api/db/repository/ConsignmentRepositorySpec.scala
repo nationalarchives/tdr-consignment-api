@@ -7,9 +7,9 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClientChecks, InProgress, Upload}
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
 
 import java.sql.Timestamp
@@ -305,13 +305,12 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     val startUploadInput = StartUploadInput(consignmentIdOne, "parentFolder", true)
 
-
     val consignmentStatusUploadRow = ConsignmentstatusRow(consignmentIdOne, startUploadInput.consignmentId, Upload, InProgress, Timestamp.from(Instant.now()))
     val response = consignmentRepository.addUploadDetails(startUploadInput, List(consignmentStatusUploadRow)).futureValue
 
     response should be(startUploadInput.parentFolder)
     val consignment = consignmentRepository.getConsignment(consignmentIdOne).futureValue
-    consignment.isEmpty should not be(true)
+    consignment.isEmpty should not be (true)
     consignment.head.parentfolder.get should be(startUploadInput.parentFolder)
     consignment.head.includetoplevelfolder.get should be(startUploadInput.includeTopLevelFolder)
 
