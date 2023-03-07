@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import cats.implicits._
 import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
@@ -79,17 +80,22 @@ class ConsignmentStatusService(
     )
   }
 
-  def updateMetadataConsignmentStatus(consignmentId: UUID, fileStatuses: List[FilestatusRow], statusType: String): Future[Int] = {
-    val fileStatusesForType = fileStatuses.filter(_.statustype == statusType)
-    val statusValue = if (fileStatusesForType.count(_.value == NotEntered) == fileStatusesForType.length) {
-      NotEntered
-    } else if (fileStatusesForType.exists(_.value == Incomplete)) {
-      Incomplete
-    } else {
-      Completed
-    }
-    val input = ConsignmentStatusInput(consignmentId, statusType, Option(statusValue))
-    updateConsignmentStatus(input)
+  def updateMetadataConsignmentStatus(consignmentId: UUID, fileStatuses: List[FilestatusRow], statusTypes: List[String]): Future[List[Int]] = {
+    statusTypes
+      .map(statusType => {
+        val fileStatusesForType = fileStatuses.filter(_.statustype == statusType)
+        val statusValue = if (fileStatusesForType.count(_.value == NotEntered) == fileStatusesForType.length) {
+          NotEntered
+        } else if (fileStatusesForType.exists(_.value == Incomplete)) {
+          Incomplete
+        } else {
+          Completed
+        }
+        val input = ConsignmentStatusInput(consignmentId, statusType, Option(statusValue))
+        updateConsignmentStatus(input)
+      })
+      .sequence
+
   }
 
   private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput): Boolean = {

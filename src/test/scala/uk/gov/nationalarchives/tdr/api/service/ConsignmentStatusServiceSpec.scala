@@ -11,13 +11,14 @@ import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.validStatusValues
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Completed, DescriptiveMetadata, Incomplete, NotEntered}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -402,17 +403,22 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     "updateMetadataConsignmentStatus" should s"add the expected consignment status rows for input ${statusValues.mkString(",")}" in {
       val statusCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
       val valueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+      val statusTypes = List(DescriptiveMetadata, ClosureMetadata)
 
       when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], statusCaptor.capture(), valueCaptor.capture(), any[Timestamp]))
         .thenReturn(Future.successful(1))
-      val statusRows = statusValues.map(statusValue => {
-        FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), DescriptiveMetadata, statusValue, Timestamp.from(FixedTimeSource.now))
+      val statusRows = statusValues.flatMap(statusValue => {
+        statusTypes.map(statusType => FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), statusType, statusValue, Timestamp.from(FixedTimeSource.now)))
+
       })
 
-      consignmentService.updateMetadataConsignmentStatus(UUID.randomUUID(), statusRows, DescriptiveMetadata).futureValue
+      consignmentService.updateMetadataConsignmentStatus(UUID.randomUUID(), statusRows, statusTypes).futureValue
 
-      statusCaptor.getValue should equal(DescriptiveMetadata)
-      valueCaptor.getValue should equal(expectedRowValue)
+      val allStatusValues = statusCaptor.getAllValues.asScala.sorted
+      allStatusValues should equal(List(ClosureMetadata, DescriptiveMetadata))
+      val allRowValues = valueCaptor.getAllValues.asScala
+      allRowValues.head should equal(expectedRowValue)
+      allRowValues.last should equal(expectedRowValue)
     }
   }
 

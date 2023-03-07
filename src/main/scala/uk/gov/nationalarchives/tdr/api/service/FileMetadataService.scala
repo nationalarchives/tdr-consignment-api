@@ -69,8 +69,7 @@ class FileMetadataService(
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
       fileStatuses <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, fileStatuses, DescriptiveMetadata)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, fileStatuses, ClosureMetadata)
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, fileStatuses, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
@@ -110,8 +109,7 @@ class FileMetadataService(
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
       fileStatuses <- validateFileMetadataService.validateAdditionalMetadata(fileIds, existingFileRows.map(_.consignmentid).head, allPropertiesToDelete)
       consignmentId = existingFileRows.map(_.consignmentid).headOption.getOrElse(throw InputDataException("No consignment id found for files"))
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, fileStatuses, DescriptiveMetadata)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, fileStatuses, ClosureMetadata)
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, fileStatuses, List(DescriptiveMetadata, ClosureMetadata))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
 
