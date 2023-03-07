@@ -4,14 +4,16 @@ import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateExportDataInput}
+import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
 
 import java.sql.Timestamp
-import java.time.{ZoneOffset, ZonedDateTime}
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
@@ -293,6 +295,27 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     response should have size 4
     consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
+  }
+
+  "addUploadDetails" should "add upload details and consignment statuses" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
+
+    val startUploadInput = StartUploadInput(consignmentIdOne, "parentFolder", true)
+
+    val consignmentStatusUploadRow = ConsignmentstatusRow(consignmentIdOne, startUploadInput.consignmentId, Upload, InProgress, Timestamp.from(Instant.now()))
+    val response = consignmentRepository.addUploadDetails(startUploadInput, List(consignmentStatusUploadRow)).futureValue
+
+    response should be(startUploadInput.parentFolder)
+    val consignment = consignmentRepository.getConsignment(consignmentIdOne).futureValue
+    consignment.isEmpty should not be (true)
+    consignment.head.parentfolder.get should be(startUploadInput.parentFolder)
+    consignment.head.includetoplevelfolder.get should be(startUploadInput.includeTopLevelFolder)
+
+    val consignmentStatusFromDb = utils.getConsignmentStatus(consignmentIdOne, Upload)
+    consignmentStatusFromDb.getString("Value") should be(InProgress)
   }
 
   private def createConsignments(utils: TestUtils): Unit = {

@@ -44,7 +44,10 @@ class ConsignmentService(
         val now = Timestamp.from(timeSource.now)
         val consignmentStatusUploadRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, Upload, InProgress, now)
         val consignmentStatusClientChecksRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, ClientChecks, InProgress, now)
-        consignmentRepository.addParentFolder(startUploadInput.consignmentId, startUploadInput.parentFolder, List(consignmentStatusUploadRow, consignmentStatusClientChecksRow))
+        consignmentRepository.addUploadDetails(
+          startUploadInput,
+          List(consignmentStatusUploadRow, consignmentStatusClientChecksRow)
+        )
       })
   }
 
