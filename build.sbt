@@ -62,7 +62,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.5.4",
   "com.typesafe.slick" %% "slick" % "3.4.0",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
-  "ch.megard" %% "akka-http-cors" % "1.1.3",
+  "ch.megard" %% "akka-http-cors" % "1.2.0",
   "ch.qos.logback" % "logback-classic" % "1.4.5",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.3",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
