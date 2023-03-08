@@ -212,92 +212,95 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
   }
 
-  "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and an Incomplete update" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val mandatoryClosure = "MandatoryClosure"
-    val optionalMetadata = "OptionalMetadata"
-    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    val fileThreeId = UUID.randomUUID()
+  "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and an Incomplete update" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val mandatoryClosure = "MandatoryClosure"
+      val optionalMetadata = "OptionalMetadata"
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.randomUUID()
 
-    utils.createFileProperty("TestProperty1", "", "Defined", "text", false, false, mandatoryClosure, "")
-    utils.createFileProperty("TestProperty2", "", "Defined", "text", false, false, mandatoryClosure, "")
-    utils.createFilePropertyValues("TestProperty1", "value1", false, 1, 2)
-    utils.createFilePropertyDependencies(1, "TestProperty2", "")
+      utils.createFileProperty("TestProperty1", "", "Defined", "text", false, false, mandatoryClosure, "")
+      utils.createFileProperty("TestProperty2", "", "Defined", "text", false, false, mandatoryClosure, "")
+      utils.createFilePropertyValues("TestProperty1", "value1", false, 1, 2)
+      utils.createFilePropertyDependencies(1, "TestProperty2", "")
 
-    utils.createFileProperty("TestProperty3", "", "Defined", "text", false, false, optionalMetadata, "")
-    utils.createFileProperty("TestProperty4", "", "Defined", "text", false, false, optionalMetadata, "")
-    utils.createFilePropertyValues("TestProperty3", "value2", false, 3, 4)
-    utils.createFilePropertyDependencies(3, "TestProperty4", "")
+      utils.createFileProperty("TestProperty3", "", "Defined", "text", false, false, optionalMetadata, "")
+      utils.createFileProperty("TestProperty4", "", "Defined", "text", false, false, optionalMetadata, "")
+      utils.createFilePropertyValues("TestProperty3", "value2", false, 3, 4)
+      utils.createFilePropertyDependencies(3, "TestProperty4", "")
 
-    utils.createFile(fileOneId, consignmentId)
-    utils.createFile(fileTwoId, consignmentId)
-    utils.createFile(fileThreeId, consignmentId)
-    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadata, Incomplete)
-    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadata, Incomplete)
+      utils.createFile(fileOneId, consignmentId)
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadata, Incomplete)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadata, Incomplete)
 
-    runUpdateBulkFileMetadataTestMutation("mutation_missing_property", validUserToken())
-    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
-    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
+      runUpdateBulkFileMetadataTestMutation("mutation_missing_property", validUserToken())
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
   }
 
-  "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and a Complete update" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
-    val closurePropertyGroup = "MandatoryClosure"
-    val descriptivePropertyGroup = "OptionalMetadata"
+  "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and a Complete update" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+      val closurePropertyGroup = "MandatoryClosure"
+      val descriptivePropertyGroup = "OptionalMetadata"
 
-    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
-    val fileFourId = UUID.randomUUID()
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      val fileFourId = UUID.randomUUID()
 
-    utils.addFileProperty("property1", closurePropertyGroup)
-    utils.addFileProperty("property2", descriptivePropertyGroup)
+      utils.addFileProperty("property1", closurePropertyGroup)
+      utils.addFileProperty("property2", descriptivePropertyGroup)
 
-    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
-    utils.createFile(fileTwoId, consignmentId)
-    utils.createFile(fileThreeId, consignmentId)
-    utils.createFile(fileFourId, consignmentId)
+      utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.createFile(fileFourId, consignmentId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Incomplete)
-    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Incomplete)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Incomplete)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Incomplete)
 
-    runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
-    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
-    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
+      runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
   }
 
-  "updateBulkFileMetadata" should "create a metadata consignment status of Complete if there are no existing Incomplete file statuses and a Complete update" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
-    val closurePropertyGroup = "MandatoryClosure"
-    val descriptivePropertyGroup = "OptionalMetadata"
+  "updateBulkFileMetadata" should "create a metadata consignment status of Complete if there are no existing Incomplete file statuses and a Complete update" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+      val closurePropertyGroup = "MandatoryClosure"
+      val descriptivePropertyGroup = "OptionalMetadata"
 
-    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
-    val fileFourId = UUID.randomUUID()
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      val fileFourId = UUID.randomUUID()
 
-    utils.addFileProperty("property1", closurePropertyGroup)
-    utils.addFileProperty("property2", descriptivePropertyGroup)
+      utils.addFileProperty("property1", closurePropertyGroup)
+      utils.addFileProperty("property2", descriptivePropertyGroup)
 
-    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
-    utils.createFile(fileTwoId, consignmentId)
-    utils.createFile(fileThreeId, consignmentId)
-    utils.createFile(fileFourId, consignmentId)
+      utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.createFile(fileFourId, consignmentId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Completed)
-    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Completed)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Completed)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Completed)
 
-    runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
-    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Completed)
-    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
+      runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Completed)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
   }
 
   "updateBulkFileMetadata" should "not allow bulk updating of file metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>

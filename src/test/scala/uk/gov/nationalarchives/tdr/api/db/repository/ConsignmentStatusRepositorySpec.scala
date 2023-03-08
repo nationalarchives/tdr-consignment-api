@@ -59,13 +59,15 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val consignmentStatuses = consignmentStatusRepository.addConsignmentStatuses(rows).futureValue
 
     consignmentStatuses.size should be(2)
-    rows.map(_.statustype).foreach(statusType => {
-      val consignmentStatus = consignmentStatuses.find(_.statustype == statusType).get
-      consignmentStatus.consignmentid should be(consignmentId)
-      consignmentStatus.statustype should be(statusType)
-      consignmentStatus.value should be(statusValue)
-      convertTimestampToSimpleDate(consignmentStatus.createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
-    })
+    rows
+      .map(_.statustype)
+      .foreach(statusType => {
+        val consignmentStatus = consignmentStatuses.find(_.statustype == statusType).get
+        consignmentStatus.consignmentid should be(consignmentId)
+        consignmentStatus.statustype should be(statusType)
+        consignmentStatus.value should be(statusValue)
+        convertTimestampToSimpleDate(consignmentStatus.createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
+      })
   }
 
   "getConsignmentStatus" should "return all data from the consignment status" in withContainers { case container: PostgreSQLContainer =>

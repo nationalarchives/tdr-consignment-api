@@ -415,7 +415,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       })
       when(fileStatusRepositoryMock.getFileStatus(any[UUID], any[Set[String]], any[Option[Set[UUID]]])).thenReturn(Future.successful(statusRows))
 
-
       consignmentService.updateMetadataConsignmentStatus(UUID.randomUUID(), statusTypes).futureValue
 
       val allStatusValues = statusCaptor.getAllValues.asScala.sorted
