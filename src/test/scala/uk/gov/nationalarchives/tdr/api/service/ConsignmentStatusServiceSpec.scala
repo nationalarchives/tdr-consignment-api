@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
 import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
+import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.validStatusValues
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered}
@@ -17,14 +17,17 @@ import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
 import java.util.UUID
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 60.seconds)
 
   val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
-  val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
+  val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
+  val consignmentService = new ConsignmentStatusService(consignmentStatusRepositoryMock, fileStatusRepositoryMock, new FixedUUIDSource(), FixedTimeSource)
 
   val statusTypes: TableFor1[String] = Table(
     "Types",
@@ -409,10 +412,11 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
         .thenReturn(Future.successful(1))
       val statusRows = statusValues.flatMap(statusValue => {
         statusTypes.map(statusType => FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), statusType, statusValue, Timestamp.from(FixedTimeSource.now)))
-
       })
+      when(fileStatusRepositoryMock.getFileStatus(any[UUID], any[Set[String]], any[Option[Set[UUID]]])).thenReturn(Future.successful(statusRows))
 
-      consignmentService.updateMetadataConsignmentStatus(UUID.randomUUID(), statusRows, statusTypes).futureValue
+
+      consignmentService.updateMetadataConsignmentStatus(UUID.randomUUID(), statusTypes).futureValue
 
       val allStatusValues = statusCaptor.getAllValues.asScala.sorted
       allStatusValues should equal(List(ClosureMetadata, DescriptiveMetadata))

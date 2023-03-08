@@ -83,11 +83,10 @@ class ConsignmentService(
         consignmenttype = consignmentType,
         bodyid = body.bodyId
       )
-      descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, "NotEntered", timestampNow, Option(timestampNow))
-      closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, "NotEntered", timestampNow, Option(timestampNow))
+      descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
+      closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, NotEntered, timestampNow, Option(timestampNow))
       consignment <- consignmentRepository.addConsignment(consignmentRow).map(row => convertRowToConsignment(row))
-      _ <- consignmentStatusRepository.addConsignmentStatus(descriptiveMetadataStatusRow)
-      _ <- consignmentStatusRepository.addConsignmentStatus(closureMetadataStatusRow)
+      _ <- consignmentStatusRepository.addConsignmentStatuses(Seq(descriptiveMetadataStatusRow, closureMetadataStatusRow))
     } yield consignment
   }
 

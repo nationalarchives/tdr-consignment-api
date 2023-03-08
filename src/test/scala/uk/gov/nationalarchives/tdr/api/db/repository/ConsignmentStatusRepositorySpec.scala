@@ -40,6 +40,34 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     convertTimestampToSimpleDate(consignmentStatus.createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
   }
 
+  "addConsignmentStatuses" should "add multiple consignment statuses" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentStatusRepository = new ConsignmentStatusRepository(db)
+    val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
+    val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
+    val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
+    val statusType = "Status"
+    val statusValue = "Value"
+    val createdTimestamp = Timestamp.from(now)
+
+    TestUtils(db).createConsignment(consignmentId, userId, includeStatusRows = false)
+    val rows = Seq(
+      ConsignmentstatusRow(UUID.randomUUID(), consignmentId, s"${statusType}1", statusValue, createdTimestamp),
+      ConsignmentstatusRow(UUID.randomUUID(), consignmentId, s"${statusType}2", statusValue, createdTimestamp)
+    )
+
+    val consignmentStatuses = consignmentStatusRepository.addConsignmentStatuses(rows).futureValue
+
+    consignmentStatuses.size should be(2)
+    rows.map(_.statustype).foreach(statusType => {
+      val consignmentStatus = consignmentStatuses.find(_.statustype == statusType).get
+      consignmentStatus.consignmentid should be(consignmentId)
+      consignmentStatus.statustype should be(statusType)
+      consignmentStatus.value should be(statusValue)
+      convertTimestampToSimpleDate(consignmentStatus.createddatetime) should be(convertTimestampToSimpleDate(createdTimestamp))
+    })
+  }
+
   "getConsignmentStatus" should "return all data from the consignment status" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)

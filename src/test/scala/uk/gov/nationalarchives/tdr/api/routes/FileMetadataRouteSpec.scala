@@ -5,9 +5,10 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, ClosureMetadata, Completed, DescriptiveMetadata, NotEntered, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -17,7 +18,7 @@ import java.sql.{PreparedStatement, ResultSet, Types}
 import java.util.UUID
 
 //scalastyle:off method.length
-class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
+class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest with TableDrivenPropertyChecks {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
   private val addFileMetadataJsonFilePrefix: String = "json/addfilemetadata_"
@@ -211,6 +212,94 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
   }
 
+  "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and an Incomplete update" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val mandatoryClosure = "MandatoryClosure"
+    val optionalMetadata = "OptionalMetadata"
+    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    val fileThreeId = UUID.randomUUID()
+
+    utils.createFileProperty("TestProperty1", "", "Defined", "text", false, false, mandatoryClosure, "")
+    utils.createFileProperty("TestProperty2", "", "Defined", "text", false, false, mandatoryClosure, "")
+    utils.createFilePropertyValues("TestProperty1", "value1", false, 1, 2)
+    utils.createFilePropertyDependencies(1, "TestProperty2", "")
+
+    utils.createFileProperty("TestProperty3", "", "Defined", "text", false, false, optionalMetadata, "")
+    utils.createFileProperty("TestProperty4", "", "Defined", "text", false, false, optionalMetadata, "")
+    utils.createFilePropertyValues("TestProperty3", "value2", false, 3, 4)
+    utils.createFilePropertyDependencies(3, "TestProperty4", "")
+
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFile(fileThreeId, consignmentId)
+    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadata, Incomplete)
+    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadata, Incomplete)
+
+    runUpdateBulkFileMetadataTestMutation("mutation_missing_property", validUserToken())
+    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
+    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
+  }
+
+  "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and a Complete update" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+    val closurePropertyGroup = "MandatoryClosure"
+    val descriptivePropertyGroup = "OptionalMetadata"
+
+    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+    val fileFourId = UUID.randomUUID()
+
+    utils.addFileProperty("property1", closurePropertyGroup)
+    utils.addFileProperty("property2", descriptivePropertyGroup)
+
+    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFile(fileThreeId, consignmentId)
+    utils.createFile(fileFourId, consignmentId)
+
+    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Incomplete)
+    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Incomplete)
+
+    runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
+    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
+    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
+  }
+
+  "updateBulkFileMetadata" should "create a metadata consignment status of Complete if there are no existing Incomplete file statuses and a Complete update" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+    val closurePropertyGroup = "MandatoryClosure"
+    val descriptivePropertyGroup = "OptionalMetadata"
+
+    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+    val fileFourId = UUID.randomUUID()
+
+    utils.addFileProperty("property1", closurePropertyGroup)
+    utils.addFileProperty("property2", descriptivePropertyGroup)
+
+    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFile(fileThreeId, consignmentId)
+    utils.createFile(fileFourId, consignmentId)
+
+    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Completed)
+    utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Completed)
+
+    runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
+    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Completed)
+    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
+  }
+
   "updateBulkFileMetadata" should "not allow bulk updating of file metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
@@ -336,6 +425,35 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkFileMetadataValue(id, utils, "ClosureType", "Open")
     }
   }
+
+  val statusValues: TableFor1[String] = Table(
+    "statusValues",
+    Incomplete,
+    Completed,
+    NotEntered
+  )
+
+  forAll(statusValues)(statusValue => {
+    "deleteFileMetadata" should s"set the consignment status to $statusValue if an existing file is $statusValue" in withContainers { case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val consignmentId = UUID.randomUUID()
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.randomUUID()
+      addDummyFileProperties(utils, consignmentId, userId)
+      createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadata, statusValue)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadata, statusValue)
+
+      runDeleteFileMetadataTestMutation("mutation_alldata", validUserToken())
+
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(statusValue)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(statusValue)
+    }
+
+  })
 
   "deleteFileMetadata" should "throw an error if the field fileIds is not provided" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
@@ -473,7 +591,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       "text",
       editable = false,
       multivalue = false,
-      "Test Dependency Group",
+      "MandatoryClosure",
       "Test Dependency",
       2,
       allowExport = true
