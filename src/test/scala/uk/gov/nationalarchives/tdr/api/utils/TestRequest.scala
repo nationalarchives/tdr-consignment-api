@@ -23,6 +23,8 @@ trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
     val route = new Routes(ConfigFactory.load(), slickSession).route
     val query: String = fromResource(prefix + s"$queryFileName.json").mkString
     Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(token) ~> route ~> check {
+      val c = responseAs[String]
+      print(c)
       responseAs[A]
     }
   }

@@ -125,14 +125,6 @@ class ConsignmentService(
     consignmentRepository.consignmentHasFiles(consignmentId)
   }
 
-  def getConsignmentFileProgress(consignmentId: UUID): Future[FileChecks] = {
-    for {
-      avMetadataCount <- fileRepository.countProcessedAvMetadataInConsignment(consignmentId)
-      checksumCount <- fileMetadataRepository.countProcessedChecksumInConsignment(consignmentId)
-      fileFormatIdCount <- ffidMetadataRepository.countProcessedFfidMetadata(consignmentId)
-    } yield FileChecks(AntivirusProgress(avMetadataCount), ChecksumProgress(checksumCount), FFIDProgress(fileFormatIdCount))
-  }
-
   def getConsignmentParentFolder(consignmentId: UUID): Future[Option[String]] = {
     consignmentRepository.getParentFolder(consignmentId)
   }
