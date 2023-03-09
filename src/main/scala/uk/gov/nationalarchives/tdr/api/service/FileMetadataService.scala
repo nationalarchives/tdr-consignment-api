@@ -1,8 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import com.typesafe.scalalogging.Logger
 import sangria.macros.derive.GraphQLDeprecated
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -12,7 +11,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatu
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
-import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -22,6 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FileMetadataService(
     fileMetadataRepository: FileMetadataRepository,
     fileRepository: FileRepository,
+    consignmentStatusService: ConsignmentStatusService,
     customMetadataService: CustomMetadataPropertiesService,
     validateFileMetadataService: ValidateFileMetadataService,
     timeSource: TimeSource,
@@ -33,8 +32,6 @@ class FileMetadataService(
       fileRows.collect { case fileRow if fileRow.filetype.get == NodeType.fileTypeIdentifier => fileRow.fileid }.toSet
     }
   }
-
-  val loggingUtils: LoggingUtils = LoggingUtils(Logger("FileMetadataService"))
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Int] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 
@@ -61,6 +58,7 @@ class FileMetadataService(
       throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
     }
 
+    val consignmentId = input.consignmentId
     val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
     val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
     val uniqueFileIds: Seq[UUID] = input.fileIds.distinct
@@ -71,6 +69,7 @@ class FileMetadataService(
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
       _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
@@ -109,6 +108,8 @@ class FileMetadataService(
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
       _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, existingFileRows.map(_.consignmentid).head, allPropertiesToDelete)
+      consignmentId = existingFileRows.map(_.consignmentid).headOption.getOrElse(throw InputDataException("No consignment id found for files"))
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
 
