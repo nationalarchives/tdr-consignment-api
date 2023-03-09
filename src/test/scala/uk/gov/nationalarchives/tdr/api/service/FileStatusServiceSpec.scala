@@ -6,10 +6,10 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
-import uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.FixedUUIDSource
 
@@ -304,8 +304,47 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "'defaultStatuses'" should "contain the correct statuses and values" in {
     FileStatusService.defaultStatuses.size shouldBe 2
-    FileStatusService.defaultStatuses.get(ClosureMetadata).get should equal(NotEntered)
-    FileStatusService.defaultStatuses.get(DescriptiveMetadata).get should equal(NotEntered)
+    FileStatusService.defaultStatuses(ClosureMetadata) should equal(NotEntered)
+    FileStatusService.defaultStatuses(DescriptiveMetadata) should equal(NotEntered)
+  }
+
+  "getConsignmentFileProgress" should "return total processed files if all checks are successful" in {
+    val rows = (1 to 5)
+      .flatMap(_ => Seq(fileStatusRow(FFID, Success), fileStatusRow(ChecksumMatch, Success), fileStatusRow(Antivirus, Success)))
+    mockResponse(Set(FFID, ChecksumMatch, Antivirus), rows)
+
+    val service = createFileStatusService()
+    val result = service.getConsignmentFileProgress(consignmentId).futureValue
+
+    result.antivirusProgress.filesProcessed should equal(5)
+    result.checksumProgress.filesProcessed should equal(5)
+    result.ffidProgress.filesProcessed should equal(5)
+  }
+
+  "getConsignmentFileProgress" should "return total processed files if some checks have failed" in {
+    val successfulRows: Seq[nationalarchives.Tables.FilestatusRow] = (1 to 4)
+      .flatMap(_ => Seq(fileStatusRow(FFID, Success), fileStatusRow(ChecksumMatch, Success), fileStatusRow(Antivirus, Success)))
+    val failedRows = Seq(fileStatusRow(FFID, Failed), fileStatusRow(ChecksumMatch, Failed), fileStatusRow(Antivirus, Failed))
+
+    mockResponse(Set(FFID, ChecksumMatch, Antivirus), successfulRows ++ failedRows)
+
+    val service = createFileStatusService()
+    val result = service.getConsignmentFileProgress(consignmentId).futureValue
+
+    result.antivirusProgress.filesProcessed should equal(5)
+    result.checksumProgress.filesProcessed should equal(5)
+    result.ffidProgress.filesProcessed should equal(5)
+  }
+
+  "getConsignmentFileProgress" should "return zero processed files if there are no file status rows" in {
+    mockResponse(Set(FFID, ChecksumMatch, Antivirus), Nil)
+
+    val service = createFileStatusService()
+    val result = service.getConsignmentFileProgress(consignmentId).futureValue
+
+    result.antivirusProgress.filesProcessed should equal(0)
+    result.checksumProgress.filesProcessed should equal(0)
+    result.ffidProgress.filesProcessed should equal(0)
   }
 
   def createFileStatusService(): FileStatusService =

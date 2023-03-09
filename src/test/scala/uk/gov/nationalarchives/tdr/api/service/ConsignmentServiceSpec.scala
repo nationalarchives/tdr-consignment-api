@@ -63,9 +63,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val consignmentService = new ConsignmentService(
     consignmentRepoMock,
     consignmentStatusRepoMock,
-    fileMetadataRepositoryMock,
-    fileRepositoryMock,
-    ffidMetadataRepositoryMock,
     transferringBodyServiceMock,
     FixedTimeSource,
     fixedUuidSource,
@@ -191,18 +188,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "updateExportData" should "update the export data for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
     val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
-    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-    val fileRepositoryMock = mock[FileRepository]
-    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(
       consignmentRepoMock,
       consignmentStatusRepoMock,
-      fileMetadataRepositoryMock,
-      fileRepositoryMock,
-      ffidMetadataRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
@@ -221,9 +212,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateTransferInitiated" should "update the transfer initiated fields for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
-    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-    val fileRepositoryMock = mock[FileRepository]
-    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
     val consignmentStatusCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
@@ -231,9 +219,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val service: ConsignmentService = new ConsignmentService(
       consignmentRepoMock,
       consignmentStatusRepoMock,
-      fileMetadataRepositoryMock,
-      fileRepositoryMock,
-      ffidMetadataRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
@@ -270,18 +255,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateSeriesIdOfConsignment" should "update the seriesId for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
-    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-    val fileRepositoryMock = mock[FileRepository]
-    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(
       consignmentRepoMock,
       consignmentStatusRepoMock,
-      fileMetadataRepositoryMock,
-      fileRepositoryMock,
-      ffidMetadataRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
@@ -549,9 +528,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "addSeriesStatus" should "update the consignment status for a series" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
-    val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-    val fileRepositoryMock = mock[FileRepository]
-    val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
     val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
@@ -562,9 +538,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val service: ConsignmentService = new ConsignmentService(
       consignmentRepoMock,
       consignmentStatusRepoMock,
-      fileMetadataRepositoryMock,
-      fileRepositoryMock,
-      ffidMetadataRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,

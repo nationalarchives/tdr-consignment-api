@@ -85,6 +85,7 @@ object FileStatusService {
 
   // Values
   val Success = "Success"
+  val Failed = "Failed"
   val Mismatch = "Mismatch"
   val VirusDetected = "VirusDetected"
   val PasswordProtected = "PasswordProtected"

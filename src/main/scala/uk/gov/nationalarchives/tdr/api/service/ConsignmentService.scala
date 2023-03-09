@@ -22,9 +22,6 @@ import scala.math.min
 class ConsignmentService(
     consignmentRepository: ConsignmentRepository,
     consignmentStatusRepository: ConsignmentStatusRepository,
-    fileMetadataRepository: FileMetadataRepository,
-    fileRepository: FileRepository,
-    ffidMetadataRepository: FFIDMetadataRepository,
     transferringBodyService: TransferringBodyService,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
