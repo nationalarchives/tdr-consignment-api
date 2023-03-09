@@ -6,7 +6,6 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -71,6 +70,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       consignmentType: Option[String],
       bodyId: Option[UUID] = None,
       consignmentStatuses: List[ConsignmentStatus] = Nil
+  )
+
+  case class ConsignmentStatus(
+      consignmentStatusId: Option[UUID],
+      consignmentId: UUID,
+      statusType: String,
+      value: String,
+      createdDatetime: ZonedDateTime,
+      modifiedDatetime: Option[ZonedDateTime]
   )
 
   case class PageInfo(startCursor: Option[String] = None, endCursor: Option[String] = None, hasNextPage: Boolean, hasPreviousPage: Boolean)
