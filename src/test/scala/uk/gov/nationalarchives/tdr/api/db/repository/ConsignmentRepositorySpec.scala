@@ -27,20 +27,6 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  "addParentFolder" should "add parent folder name to an existing consignment row" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-    val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
-    val utils = TestUtils(db)
-    utils.createConsignment(consignmentId, userId)
-
-    consignmentRepository.addParentFolder(consignmentId, "TEST ADD PARENT FOLDER NAME").futureValue
-
-    val parentFolderName = consignmentRepository.getConsignment(consignmentId).futureValue.map(consignment => consignment.parentfolder)
-
-    parentFolderName should contain only Some("TEST ADD PARENT FOLDER NAME")
-  }
-
   "updateExportData" should "update the export data for a given consignment" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
@@ -67,7 +53,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
     val utils = TestUtils(db)
     utils.createConsignment(consignmentId, userId)
-    consignmentRepository.addParentFolder(consignmentId, "TEST GET PARENT FOLDER NAME").futureValue
+    utils.addParentFolderName(consignmentId, "TEST GET PARENT FOLDER NAME")
 
     val parentFolderName = consignmentRepository.getParentFolder(consignmentId).futureValue
 

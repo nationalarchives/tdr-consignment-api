@@ -108,11 +108,6 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def addParentFolder(consignmentId: UUID, parentFolder: String)(implicit executionContext: ExecutionContext): Future[Unit] = {
-    val updateAction = Consignment.filter(_.consignmentid === consignmentId).map(c => c.parentfolder).update(Option(parentFolder))
-    db.run(updateAction).map(_ => ())
-  }
-
   def addUploadDetails(uploadInput: StartUploadInput, consignmentStatusRows: List[ConsignmentstatusRow])(implicit executionContext: ExecutionContext): Future[String] = {
     val updateAction =
       Consignment

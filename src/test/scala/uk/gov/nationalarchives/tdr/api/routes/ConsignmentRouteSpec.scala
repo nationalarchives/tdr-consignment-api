@@ -757,7 +757,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "startUpload" should "add the upload status and update the parent folder and 'IncludeTopLevelFolder' fields" in withContainers { case container: PostgreSQLContainer =>
+  "startUpload" should "add the upload status, update the parent folder and 'IncludeTopLevelFolder' fields" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val consignmentId = new FixedUUIDSource().uuid
     utils.createConsignment(consignmentId, userId)

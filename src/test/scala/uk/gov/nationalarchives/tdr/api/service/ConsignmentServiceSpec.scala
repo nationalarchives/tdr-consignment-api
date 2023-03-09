@@ -517,7 +517,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response.consignmentEdges should have size 0
   }
 
-  "startUpload" should "create an upload in progress status and add the parent folder" in {
+  "startUpload" should "create an upload in progress status, add the parent folder and 'IncludeTopLevelFolder'" in {
     val startUploadInputCaptor: ArgumentCaptor[StartUploadInput] = ArgumentCaptor.forClass(classOf[StartUploadInput])
     val consignmentStatusCaptor: ArgumentCaptor[List[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[List[ConsignmentstatusRow]])
     val parentFolder = "parentFolder"
