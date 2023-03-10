@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Invalid ConsignmentStatus input: either 'InvalidStatusType' or 'Completed'",
+      "message": "Invalid ConsignmentStatus input: either 'Unrecognised' or 'Completed'",
       "extensions": {
         "code": "INVALID_INPUT_DATA"
       }
