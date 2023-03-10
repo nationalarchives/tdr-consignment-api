@@ -449,6 +449,7 @@ type Series {
 input StartUploadInput {
   consignmentId: UUID!
   parentFolder: String!
+  includeTopLevelFolder: Boolean!
 }
 
 type TransferAgreementCompliance {

@@ -4,14 +4,16 @@ import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateExportDataInput}
+import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
-import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
 
 import java.sql.Timestamp
-import java.time.{ZoneOffset, ZonedDateTime}
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
@@ -24,20 +26,6 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
   val consignmentIdFour: UUID = UUID.fromString("47019574-8407-40c7-b618-bf2b8f8b0de7")
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
-
-  "addParentFolder" should "add parent folder name to an existing consignment row" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-    val consignmentId = UUID.fromString("0292019d-d112-465b-b31e-72dfb4d1254d")
-    val utils = TestUtils(db)
-    utils.createConsignment(consignmentId, userId)
-
-    consignmentRepository.addParentFolder(consignmentId, "TEST ADD PARENT FOLDER NAME").futureValue
-
-    val parentFolderName = consignmentRepository.getConsignment(consignmentId).futureValue.map(consignment => consignment.parentfolder)
-
-    parentFolderName should contain only Some("TEST ADD PARENT FOLDER NAME")
-  }
 
   "updateExportData" should "update the export data for a given consignment" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
@@ -65,7 +53,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val consignmentId = UUID.fromString("b6da7577-3800-4ebc-821b-9d33e52def9e")
     val utils = TestUtils(db)
     utils.createConsignment(consignmentId, userId)
-    consignmentRepository.addParentFolder(consignmentId, "TEST GET PARENT FOLDER NAME").futureValue
+    utils.addParentFolderName(consignmentId, "TEST GET PARENT FOLDER NAME")
 
     val parentFolderName = consignmentRepository.getParentFolder(consignmentId).futureValue
 
@@ -293,6 +281,27 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     response should have size 4
     consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
+  }
+
+  "addUploadDetails" should "add upload details and consignment statuses" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
+
+    val startUploadInput = StartUploadInput(consignmentIdOne, "parentFolder", true)
+
+    val consignmentStatusUploadRow = ConsignmentstatusRow(consignmentIdOne, startUploadInput.consignmentId, Upload, InProgress, Timestamp.from(Instant.now()))
+    val response = consignmentRepository.addUploadDetails(startUploadInput, List(consignmentStatusUploadRow)).futureValue
+
+    response should be(startUploadInput.parentFolder)
+    val consignment = consignmentRepository.getConsignment(consignmentIdOne).futureValue
+    consignment.isEmpty should not be (true)
+    consignment.head.parentfolder.get should be(startUploadInput.parentFolder)
+    consignment.head.includetoplevelfolder.get should be(startUploadInput.includeTopLevelFolder)
+
+    val consignmentStatusFromDb = utils.getConsignmentStatus(consignmentIdOne, Upload)
+    consignmentStatusFromDb.getString("Value") should be(InProgress)
   }
 
   private def createConsignments(utils: TestUtils): Unit = {
