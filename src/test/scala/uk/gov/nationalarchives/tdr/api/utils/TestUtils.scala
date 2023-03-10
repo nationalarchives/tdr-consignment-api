@@ -433,6 +433,13 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
   }
 
+  def addTopLevelFolder(consignmentId: UUID, includeTopLevelFolder: Boolean): Unit = {
+    val sql = s"""update "Consignment" set "IncludeTopLevelFolder"='$includeTopLevelFolder' where "ConsignmentId"='$consignmentId'"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+
+    ps.executeUpdate()
+  }
+
   def addTransferringBody(id: UUID, name: String, code: String): Unit = {
     val sql = s"""INSERT INTO "Body" ("BodyId", "Name", "TdrCode") VALUES (?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)

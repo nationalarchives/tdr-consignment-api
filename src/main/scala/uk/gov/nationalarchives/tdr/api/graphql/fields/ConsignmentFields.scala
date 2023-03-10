@@ -32,7 +32,8 @@ object ConsignmentFields {
       exportLocation: Option[String],
       consignmentReference: String,
       consignmentType: String,
-      bodyId: UUID
+      bodyId: UUID,
+      includeTopLevelFolder: Option[Boolean]
   )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
@@ -127,6 +128,7 @@ object ConsignmentFields {
       Field("exportDatetime", OptionType(ZonedDateTimeType), resolve = _.value.exportDatetime),
       Field("exportLocation", OptionType(StringType), resolve = _.value.exportLocation),
       Field("consignmentType", OptionType(StringType), resolve = _.value.consignmentType),
+      Field("includeTopLevelFolder", OptionType(BooleanType), resolve = _.value.includeTopLevelFolder),
       Field(
         "allChecksSucceeded",
         BooleanType,

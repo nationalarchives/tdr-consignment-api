@@ -17,6 +17,7 @@
       "consignmentReference": "TEST-TDR-2021-MTB",
       "totalFiles": 3,
       "totalFileSize": 6,
+      "includeTopLevelFolder": true,
       "files": [
         {
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
