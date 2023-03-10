@@ -22,9 +22,6 @@ import scala.math.min
 class ConsignmentService(
     consignmentRepository: ConsignmentRepository,
     consignmentStatusRepository: ConsignmentStatusRepository,
-    fileMetadataRepository: FileMetadataRepository,
-    fileRepository: FileRepository,
-    ffidMetadataRepository: FFIDMetadataRepository,
     transferringBodyService: TransferringBodyService,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
@@ -131,14 +128,6 @@ class ConsignmentService(
 
   def consignmentHasFiles(consignmentId: UUID): Future[Boolean] = {
     consignmentRepository.consignmentHasFiles(consignmentId)
-  }
-
-  def getConsignmentFileProgress(consignmentId: UUID): Future[FileChecks] = {
-    for {
-      avMetadataCount <- fileRepository.countProcessedAvMetadataInConsignment(consignmentId)
-      checksumCount <- fileMetadataRepository.countProcessedChecksumInConsignment(consignmentId)
-      fileFormatIdCount <- ffidMetadataRepository.countProcessedFfidMetadata(consignmentId)
-    } yield FileChecks(AntivirusProgress(avMetadataCount), ChecksumProgress(checksumCount), FFIDProgress(fileFormatIdCount))
   }
 
   def getConsignmentParentFolder(consignmentId: UUID): Future[Option[String]] = {

@@ -218,6 +218,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "FFID", "Success")
     utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileThreeId), "FFID", "Success")
 
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileOneId), "ChecksumMatch", "Failed")
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "ChecksumMatch", "Success")
+
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "Antivirus", "Failed")
+
     utils.addAntivirusMetadata(fileOneId)
 
     utils.addFileMetadata("06209e0d-95d0-4f13-8933-e5b9d00eb435", fileOneId, SHA256ServerSideChecksum)
@@ -628,6 +633,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     utils.createFileStatusValues(UUID.randomUUID(), file2Id, "Upload", "Success")
     utils.createFileStatusValues(UUID.randomUUID(), file3Id, "Upload", "Success")
+
+    utils.createFileStatusValues(UUID.randomUUID(), file1Id, "FFID", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), file1Id, "ChecksumMatch", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), file1Id, "Antivirus", "Failed")
+
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, "FFID", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, "ChecksumMatch", "Failed")
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, "Antivirus", "Success")
 
     val reportingAccessToken = validReportingToken("reporting")
 

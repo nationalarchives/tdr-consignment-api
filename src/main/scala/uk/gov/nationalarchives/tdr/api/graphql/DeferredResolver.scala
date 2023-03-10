@@ -19,7 +19,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case DeferTotalFiles(consignmentId)  => context.fileService.fileCount(consignmentId)
       case DeferFileSizeSum(consignmentId) => context.fileMetadataService.getSumOfFileSizes(consignmentId)
       case DeferFileChecksProgress(consignmentId) =>
-        context.consignmentService.getConsignmentFileProgress(consignmentId)
+        context.fileStatusService.getConsignmentFileProgress(consignmentId)
       case DeferParentFolder(consignmentId)        => context.consignmentService.getConsignmentParentFolder(consignmentId)
       case DeferParentFolderId(consignmentId)      => context.fileService.getConsignmentParentFolderId(consignmentId)
       case DeferConsignmentSeries(consignmentId)   => context.consignmentService.getSeriesOfConsignment(consignmentId)

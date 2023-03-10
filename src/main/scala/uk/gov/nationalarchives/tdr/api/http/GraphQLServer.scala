@@ -89,9 +89,6 @@ class GraphQLServer(slickSession: SlickSession) {
     val consignmentService = new ConsignmentService(
       consignmentRepository,
       consignmentStatusRepository,
-      fileMetadataRepository,
-      fileRepository,
-      ffidMetadataRepository,
       transferringBodyService,
       timeSource,
       uuidSource,

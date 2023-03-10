@@ -95,6 +95,16 @@
           "fileStatuses": [
             {
               "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
+              "statusType": "Antivirus",
+              "statusValue": "Failed"
+            },
+            {
+              "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
+              "statusType": "ChecksumMatch",
+              "statusValue": "Success"
+            },
+            {
+              "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
               "statusType": "FFID",
               "statusValue": "Success"
             }
@@ -176,6 +186,11 @@
             "binarySignatureFileVersion": "TEST DATA binary signature file version"
           },
           "fileStatuses": [
+            {
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "statusType": "ChecksumMatch",
+              "statusValue": "Failed"
+            },
             {
               "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
               "statusType": "FFID",

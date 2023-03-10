@@ -63,18 +63,6 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def countProcessedAvMetadataInConsignment(consignmentId: UUID): Future[Int] = {
-    val query = Avmetadata
-      .join(File)
-      .on(_.fileid === _.fileid)
-      .filter(_._2.consignmentid === consignmentId)
-      .filter(_._2.filetype === NodeType.fileTypeIdentifier)
-      .groupBy(_._1.fileid)
-      .map(_._1)
-      .length
-    db.run(query.result)
-  }
-
   def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[FileRepositoryMetadata]] = {
     val query = File
       .joinLeft(Filemetadata)

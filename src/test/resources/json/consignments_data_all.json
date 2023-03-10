@@ -56,6 +56,21 @@
                 "fileStatuses": [
                   {
                     "fileId": "62c53beb-84d6-4676-80ea-b43f5329de72",
+                    "statusType": "Antivirus",
+                    "statusValue": "Success"
+                  },
+                  {
+                    "fileId": "62c53beb-84d6-4676-80ea-b43f5329de72",
+                    "statusType": "ChecksumMatch",
+                    "statusValue": "Failed"
+                  },
+                  {
+                    "fileId": "62c53beb-84d6-4676-80ea-b43f5329de72",
+                    "statusType": "FFID",
+                    "statusValue": "Success"
+                  },
+                  {
+                    "fileId": "62c53beb-84d6-4676-80ea-b43f5329de72",
                     "statusType": "Upload",
                     "statusValue": "Success"
                   }
@@ -140,7 +155,24 @@
                   ],
                   "containerSignatureFileVersion": "TEST DATA container signature file version",
                   "binarySignatureFileVersion": "TEST DATA binary signature file version"
-                }
+                },
+                "fileStatuses": [
+                  {
+                    "fileId": "9b003759-a9a2-4bf9-8e34-14079bdaed58",
+                    "statusType": "Antivirus",
+                    "statusValue": "Failed"
+                  },
+                  {
+                    "fileId": "9b003759-a9a2-4bf9-8e34-14079bdaed58",
+                    "statusType": "ChecksumMatch",
+                    "statusValue": "Success"
+                  },
+                  {
+                    "fileId": "9b003759-a9a2-4bf9-8e34-14079bdaed58",
+                    "statusType": "FFID",
+                    "statusValue": "Success"
+                  }
+                ]
               }
             ],
             "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",

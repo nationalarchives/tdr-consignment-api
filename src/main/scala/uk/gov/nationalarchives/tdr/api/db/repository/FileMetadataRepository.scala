@@ -75,20 +75,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query)
   }
 
-  def countProcessedChecksumInConsignment(consignmentId: UUID): Future[Int] = {
-    val query = Filemetadata
-      .join(File)
-      .on(_.fileid === _.fileid)
-      .join(Fileproperty)
-      .on(_._1.propertyname === _.name)
-      .filter(_._1._2.consignmentid === consignmentId)
-      .filter(_._2.name === SHA256ServerSideChecksum)
-      .filter(_._1._2.filetype === NodeType.fileTypeIdentifier)
-      .groupBy(_._1._2.fileid)
-      .map(_._1)
-      .length
-    db.run(query.result)
-  }
 }
 
 case class FileMetadataUpdate(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID)
