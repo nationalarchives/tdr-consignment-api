@@ -5,9 +5,9 @@ import akka.stream.Materializer
 import io.circe.Decoder
 import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{ClosureMetadataType, DescriptiveMetadataType, NotEnteredValue, PasswordProtectedValue, ZipValue}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered, PasswordProtected, Zip}
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
@@ -195,10 +195,10 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
 
     createClientFileMetadata(defaultFileId)
 
-    createDisallowedPuids("fmt/289", "WARC", Zip)
-    createDisallowedPuids("fmt/329", "Shell Archive Format", Zip)
-    createDisallowedPuids("fmt/754", "Microsoft Word Document", PasswordProtected)
-    createDisallowedPuids("fmt/494", "Microsoft Office Encrypted Document", PasswordProtected)
+    createDisallowedPuids("fmt/289", "WARC", ZipValue.value)
+    createDisallowedPuids("fmt/329", "Shell Archive Format", ZipValue.value)
+    createDisallowedPuids("fmt/754", "Microsoft Word Document", PasswordProtectedValue.value)
+    createDisallowedPuids("fmt/494", "Microsoft Office Encrypted Document", PasswordProtectedValue.value)
 
     createAllowedPuids("fmt/412", "Microsoft Word for Windows", "judgment")
 
@@ -238,8 +238,8 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setInt(10, nextSequence)
     ps.executeUpdate()
     if (includeStatusRows) {
-      createConsignmentStatus(consignmentId, DescriptiveMetadata, NotEntered)
-      createConsignmentStatus(consignmentId, ClosureMetadata, NotEntered)
+      createConsignmentStatus(consignmentId, DescriptiveMetadataType.id, NotEnteredValue.value)
+      createConsignmentStatus(consignmentId, ClosureMetadataType.id, NotEnteredValue.value)
     }
     consignmentId
   }

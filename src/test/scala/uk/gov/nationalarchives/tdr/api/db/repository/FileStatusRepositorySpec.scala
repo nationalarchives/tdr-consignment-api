@@ -4,7 +4,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.FilestatusRow
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, FFID}
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{ChecksumMatchType, FFIDType}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
@@ -33,13 +33,13 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
     utils.createFile(fileOneId, consignmentId)
     utils.createFile(fileTwoId, consignmentId)
 
-    val fileRow1 = FilestatusRow(statusId1, fileOneId, FFID, "someFFIDStatus", Timestamp.from(FixedTimeSource.now))
-    val fileRow2 = FilestatusRow(statusId2, fileTwoId, ChecksumMatch, "someChecksumMatch", Timestamp.from(FixedTimeSource.now))
+    val fileRow1 = FilestatusRow(statusId1, fileOneId, FFIDType.id, "someFFIDStatus", Timestamp.from(FixedTimeSource.now))
+    val fileRow2 = FilestatusRow(statusId2, fileTwoId, ChecksumMatchType.id, "someChecksumMatch", Timestamp.from(FixedTimeSource.now))
     val response = fileStatusRepository.addFileStatuses(List(fileRow1, fileRow2)).futureValue
 
     response.size shouldBe 2
-    checkFileStatusExists(fileOneId, FFID, "someFFIDStatus", utils)
-    checkFileStatusExists(fileTwoId, ChecksumMatch, "someChecksumMatch", utils)
+    checkFileStatusExists(fileOneId, FFIDType.id, "someFFIDStatus", utils)
+    checkFileStatusExists(fileTwoId, ChecksumMatchType.id, "someChecksumMatch", utils)
   }
 
   "getFileStatus" should "return all the fileStatus rows for the consignment where no selected file ids provided" in withContainers { case container: PostgreSQLContainer =>

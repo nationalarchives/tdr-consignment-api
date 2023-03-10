@@ -12,8 +12,8 @@ import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, Consignmentstatu
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{ClosureMetadataType, DescriptiveMetadataType, NotEnteredValue}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -114,12 +114,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val sortedValues = rowCaptor.getAllValues.asScala.flatten.sortBy(r => r.statustype)
     sortedValues.head.consignmentid should be(result.consignmentid)
-    sortedValues.head.statustype should be(ClosureMetadata)
-    sortedValues.head.value should be(NotEntered)
+    sortedValues.head.statustype should be(ClosureMetadataType.id)
+    sortedValues.head.value should be(NotEnteredValue.value)
 
     sortedValues.last.consignmentid should be(result.consignmentid)
-    sortedValues.last.statustype should be(DescriptiveMetadata)
-    sortedValues.last.value should be(NotEntered)
+    sortedValues.last.statustype should be(DescriptiveMetadataType.id)
+    sortedValues.last.value should be(NotEnteredValue.value)
   }
 
   "addConsignment" should "link a consignment to the user's ID" in {

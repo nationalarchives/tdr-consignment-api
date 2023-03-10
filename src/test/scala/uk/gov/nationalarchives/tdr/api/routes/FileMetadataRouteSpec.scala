@@ -7,8 +7,8 @@ import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
+import uk.gov.nationalarchives.tdr.api.model.Statuses._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered, Success}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -204,12 +204,12 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
     runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
 
-    utils.getFileStatusResult(fileTwoId, DescriptiveMetadata).head should equal(NotEntered)
-    utils.getFileStatusResult(fileTwoId, ClosureMetadata).head should equal(Completed)
-    utils.getFileStatusResult(fileThreeId, DescriptiveMetadata).head should equal(NotEntered)
-    utils.getFileStatusResult(fileThreeId, ClosureMetadata).head should equal(Completed)
-    utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(NotEntered)
-    utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
+    utils.getFileStatusResult(fileTwoId, DescriptiveMetadataType.id).head should equal(NotEnteredValue.value)
+    utils.getFileStatusResult(fileTwoId, ClosureMetadataType.id).head should equal(CompletedValue.value)
+    utils.getFileStatusResult(fileThreeId, DescriptiveMetadataType.id).head should equal(NotEnteredValue.value)
+    utils.getFileStatusResult(fileThreeId, ClosureMetadataType.id).head should equal(CompletedValue.value)
+    utils.getConsignmentStatus(consignmentId, DescriptiveMetadataType.id).getString("Value") should equal(NotEnteredValue.value)
+    utils.getConsignmentStatus(consignmentId, ClosureMetadataType.id).getString("Value") should equal(CompletedValue.value)
   }
 
   "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and an Incomplete update" in withContainers {
@@ -235,12 +235,12 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createFile(fileOneId, consignmentId)
       utils.createFile(fileTwoId, consignmentId)
       utils.createFile(fileThreeId, consignmentId)
-      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadata, Incomplete)
-      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadata, Incomplete)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadataType.id, IncompleteValue.value)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadataType.id, IncompleteValue.value)
 
       runUpdateBulkFileMetadataTestMutation("mutation_missing_property", validUserToken())
-      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
-      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadataType.id).getString("Value") should equal(IncompleteValue.value)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadataType.id).getString("Value") should equal(IncompleteValue.value)
   }
 
   "updateBulkFileMetadata" should "create a metadata consignment status of Incomplete if there are existing Incomplete file statuses and a Complete update" in withContainers {
@@ -265,12 +265,12 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createFile(fileThreeId, consignmentId)
       utils.createFile(fileFourId, consignmentId)
 
-      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Incomplete)
-      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Incomplete)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadataType.id, IncompleteValue.value)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadataType.id, IncompleteValue.value)
 
       runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
-      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Incomplete)
-      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Incomplete)
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadataType.id).getString("Value") should equal(IncompleteValue.value)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadataType.id).getString("Value") should equal(IncompleteValue.value)
   }
 
   "updateBulkFileMetadata" should "create a metadata consignment status of Complete if there are no existing Incomplete file statuses and a Complete update" in withContainers {
@@ -295,12 +295,12 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.createFile(fileThreeId, consignmentId)
       utils.createFile(fileFourId, consignmentId)
 
-      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadata, Completed)
-      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadata, Completed)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, DescriptiveMetadataType.id, CompletedValue.value)
+      utils.createFileStatusValues(UUID.randomUUID(), fileFourId, ClosureMetadataType.id, CompletedValue.value)
 
       runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
-      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(Completed)
-      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(Completed)
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadataType.id).getString("Value") should equal(CompletedValue.value)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadataType.id).getString("Value") should equal(CompletedValue.value)
   }
 
   "updateBulkFileMetadata" should "not allow bulk updating of file metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
@@ -431,9 +431,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   val statusValues: TableFor1[String] = Table(
     "statusValues",
-    Incomplete,
-    Completed,
-    NotEntered
+    IncompleteValue.value,
+    CompletedValue.value,
+    NotEnteredValue.value
   )
 
   forAll(statusValues)(statusValue => {
@@ -447,13 +447,13 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       addDummyFileProperties(utils, consignmentId, userId)
       createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
       utils.createFile(fileThreeId, consignmentId)
-      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadata, statusValue)
-      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadata, statusValue)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadataType.id, statusValue)
+      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadataType.id, statusValue)
 
       runDeleteFileMetadataTestMutation("mutation_alldata", validUserToken())
 
-      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(statusValue)
-      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(statusValue)
+      utils.getConsignmentStatus(consignmentId, DescriptiveMetadataType.id).getString("Value") should equal(statusValue)
+      utils.getConsignmentStatus(consignmentId, ClosureMetadataType.id).getString("Value") should equal(statusValue)
     }
 
   })

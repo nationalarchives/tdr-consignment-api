@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.model.Statuses._
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -39,48 +39,58 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
   @deprecated("Use getFileStatuses(consignmentId: UUID, statusTypes: Set[String], selectedFileIds: Option[Set[UUID]] = None)")
   def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
     for {
-      ffidStatus <- getFileStatuses(consignmentId, Set(FFID), selectedFileIds)
+      ffidStatus <- getFileStatuses(consignmentId, Set(FFIDType.id), selectedFileIds)
       fileStatusMap = ffidStatus.flatMap(row => Map(row.fileId -> row.statusValue)).toMap
     } yield fileStatusMap
   }
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
-    val statusTypes = Set(ChecksumMatch, Antivirus, FFID, Redaction)
+    val statusTypes = Set(ChecksumMatchType.id, AntivirusType.id, FFIDType.id, RedactionType.id)
     fileStatusRepository
       .getFileStatus(consignmentId, statusTypes)
       .map(fileChecks => {
-        !fileChecks.map(_.value).exists(_ != Success) &&
-        Set(ChecksumMatch, Antivirus, FFID).forall(fileChecks.map(_.statustype).toSet.contains)
+        !fileChecks.map(_.value).exists(_ != SuccessValue.value) &&
+        Set(ChecksumMatchType.id, AntivirusType.id, FFIDType.id).forall(fileChecks.map(_.statustype).toSet.contains)
       })
   }
 }
 
 object FileStatusService {
   // Status types
-  val ChecksumMatch = "ChecksumMatch"
-  val Antivirus = "Antivirus"
-  val FFID = "FFID"
-  val Redaction = "Redaction"
-  val Upload = "Upload"
-  val ServerChecksum = "ServerChecksum"
-  val ClientChecks = "ClientChecks"
-  val ClosureMetadata = "ClosureMetadata"
-  val DescriptiveMetadata = "DescriptiveMetadata"
+//  val ChecksumMatch = "ChecksumMatch"
+//  val Antivirus = "Antivirus"
+//  val FFID = "FFID"
+//  val Redaction = "Redaction"
+//  val Upload = "Upload"
+//  val ServerChecksum = "ServerChecksum"
+//  val ClientChecks = "ClientChecks"
+//  val ClosureMetadata = "ClosureMetadata"
+//  val DescriptiveMetadata = "DescriptiveMetadata"
 
-  val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks, ClosureMetadata, DescriptiveMetadata)
+  val allFileStatusTypes: Set[String] = Set(
+    ChecksumMatchType.id,
+    AntivirusType.id,
+    FFIDType.id,
+    RedactionType.id,
+    UploadType.id,
+    ServerChecksumType.id,
+    ClientChecksType.id,
+    ClosureMetadataType.id,
+    DescriptiveMetadataType.id
+  )
 
   // Values
-  val Success = "Success"
-  val Mismatch = "Mismatch"
-  val VirusDetected = "VirusDetected"
-  val PasswordProtected = "PasswordProtected"
-  val Zip = "Zip"
-  val NonJudgmentFormat = "NonJudgmentFormat"
-  val ZeroByteFile = "ZeroByteFile"
-  val InProgress = "InProgress"
-  val Completed = "Completed"
-  val Incomplete = "Incomplete"
-  val NotEntered = "NotEntered"
+//  val Success = "Success"
+//  val Mismatch = "Mismatch"
+//  val VirusDetected = "VirusDetected"
+//  val PasswordProtected = "PasswordProtected"
+//  val Zip = "Zip"
+//  val NonJudgmentFormat = "NonJudgmentFormat"
+//  val ZeroByteFile = "ZeroByteFile"
+//  val InProgress = "InProgress"
+//  val Completed = "Completed"
+//  val Incomplete = "Incomplete"
+//  val NotEntered = "NotEntered"
 
-  val defaultStatuses: Map[String, String] = Map(ClosureMetadata -> NotEntered, DescriptiveMetadata -> NotEntered)
+  val defaultStatuses: Map[String, String] = Map(ClosureMetadataType.id -> NotEnteredValue.value, DescriptiveMetadataType.id -> NotEnteredValue.value)
 }

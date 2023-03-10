@@ -11,9 +11,9 @@ import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, Fi
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, Defined, Supplied, Text}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{ClosureMetadataType, DescriptiveMetadataType}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -253,7 +253,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     verify(consignmentStatusServiceMock, times(1))
       .updateMetadataConsignmentStatus(any[UUID], any[List[String]])
     consignmentIdCaptor.getValue should equal(testSetUp.consignmentId)
-    statusTypeCaptor.getValue.sorted should equal(List(ClosureMetadata, DescriptiveMetadata))
+    statusTypeCaptor.getValue.sorted should equal(List(ClosureMetadataType.id, DescriptiveMetadataType.id))
   }
 
   "getFileMetadata" should "call the repository with the correct arguments" in {
@@ -661,7 +661,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     verify(consignmentStatusServiceMock, times(1))
       .updateMetadataConsignmentStatus(any[UUID], any[List[String]])
     consignmentIdCaptor.getValue should equal(existingFileRows.head.consignmentid)
-    statusTypeCaptor.getValue.sorted should equal(List(ClosureMetadata, DescriptiveMetadata))
+    statusTypeCaptor.getValue.sorted should equal(List(ClosureMetadataType.id, DescriptiveMetadataType.id))
   }
 
   "file metadata property names" should "have the correct values" in {

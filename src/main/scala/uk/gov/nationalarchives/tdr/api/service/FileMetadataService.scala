@@ -8,9 +8,9 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.An
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{ClosureMetadataType, DescriptiveMetadataType}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -69,7 +69,7 @@ class FileMetadataService(
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
       _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadataType.id, ClosureMetadataType.id))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
@@ -109,7 +109,7 @@ class FileMetadataService(
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
       _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, existingFileRows.map(_.consignmentid).head, allPropertiesToDelete)
       consignmentId = existingFileRows.map(_.consignmentid).headOption.getOrElse(throw InputDataException("No consignment id found for files"))
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadataType.id, ClosureMetadataType.id))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
 

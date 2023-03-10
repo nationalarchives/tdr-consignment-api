@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.model.Statuses._
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -22,7 +22,7 @@ class ValidateFileMetadataService(
   def toAdditionalMetadataFieldGroups(fields: Seq[CustomMetadataField]): Seq[FieldGroup] = {
     val closureFields = fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
     val descriptiveFields = fields.filter(f => f.propertyGroup.contains("OptionalMetadata"))
-    Seq(FieldGroup(ClosureMetadata, closureFields), FieldGroup(DescriptiveMetadata, descriptiveFields))
+    Seq(FieldGroup(ClosureMetadataType.id, closureFields), FieldGroup(DescriptiveMetadataType.id, descriptiveFields))
   }
 
   def toValueDependenciesGroups(field: CustomMetadataField): Seq[FieldGroup] = {
@@ -50,7 +50,7 @@ class ValidateFileMetadataService(
               val filesWithNoAdditionalMetadataStatuses = fileIds
                 .filter(id => !states.map(_.fileId).contains(id))
                 .map(id => {
-                  FilestatusRow(uuidSource.uuid, id, group.groupName, NotEntered, Timestamp.from(timeSource.now))
+                  FilestatusRow(uuidSource.uuid, id, group.groupName, NotEnteredValue.value, Timestamp.from(timeSource.now))
                 })
 
               val statuses = states
@@ -58,9 +58,9 @@ class ValidateFileMetadataService(
                 .map(s => {
                   val (fileId, fileStates) = s
                   val status: String = s match {
-                    case _ if fileStates.forall(_.existingValueMatchesDefault == true) => NotEntered
-                    case _ if fileStates.forall(_.missingDependencies == false)        => Completed
-                    case _                                                             => Incomplete
+                    case _ if fileStates.forall(_.existingValueMatchesDefault == true) => NotEnteredValue.value
+                    case _ if fileStates.forall(_.missingDependencies == false)        => CompletedValue.value
+                    case _                                                             => IncompleteValue.value
                   }
                   FilestatusRow(uuidSource.uuid, fileId, group.groupName, status, Timestamp.from(timeSource.now))
                 })
@@ -69,7 +69,7 @@ class ValidateFileMetadataService(
             .toList
         }
 
-        fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
+        fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadataType.id, DescriptiveMetadataType.id))
         fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
         additionalMetadataStatuses
       }

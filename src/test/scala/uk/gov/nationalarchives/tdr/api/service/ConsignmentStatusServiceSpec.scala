@@ -10,8 +10,8 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
 import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{ClosureMetadataType, CompletedValue, DescriptiveMetadataType, IncompleteValue, NotEnteredValue}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.validStatusValues
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -395,18 +395,18 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
   val updateMetadataTable: TableFor2[List[String], String] = Table(
     ("statusValues", "expectedRowValue"),
-    (List(NotEntered, NotEntered), NotEntered),
-    (List(NotEntered, Incomplete), Incomplete),
-    (List(NotEntered, Incomplete, Completed), Incomplete),
-    (List(NotEntered, Completed), Completed),
-    (List(Completed, Completed), Completed)
+    (List(NotEnteredValue.value, NotEnteredValue.value), NotEnteredValue.value),
+    (List(NotEnteredValue.value, IncompleteValue.value), IncompleteValue.value),
+    (List(NotEnteredValue.value, IncompleteValue.value, CompletedValue.value), IncompleteValue.value),
+    (List(NotEnteredValue.value, CompletedValue.value), CompletedValue.value),
+    (List(CompletedValue.value, CompletedValue.value), CompletedValue.value)
   )
 
   forAll(updateMetadataTable) { (statusValues, expectedRowValue) =>
     "updateMetadataConsignmentStatus" should s"add the expected consignment status rows for input ${statusValues.mkString(",")}" in {
       val statusCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
       val valueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
-      val statusTypes = List(DescriptiveMetadata, ClosureMetadata)
+      val statusTypes = List(DescriptiveMetadataType.id, ClosureMetadataType.id)
 
       when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], statusCaptor.capture(), valueCaptor.capture(), any[Timestamp]))
         .thenReturn(Future.successful(1))
@@ -418,7 +418,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       consignmentService.updateMetadataConsignmentStatus(UUID.randomUUID(), statusTypes).futureValue
 
       val allStatusValues = statusCaptor.getAllValues.asScala.sorted
-      allStatusValues should equal(List(ClosureMetadata, DescriptiveMetadata))
+      allStatusValues should equal(List(ClosureMetadataType.id, DescriptiveMetadataType.id))
       val allRowValues = valueCaptor.getAllValues.asScala
       allRowValues.head should equal(expectedRowValue)
       allRowValues.last should equal(expectedRowValue)
