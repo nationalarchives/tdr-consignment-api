@@ -51,7 +51,7 @@ object ConsignmentFields {
 
   case class TransferringBody(name: String, tdrCode: String)
 
-  case class StartUploadInput(consignmentId: UUID, parentFolder: String, includeTopLevelFolder: Boolean) extends UserOwnsConsignment
+  case class StartUploadInput(consignmentId: UUID, parentFolder: String, includeTopLevelFolder: Boolean = false) extends UserOwnsConsignment
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
 
