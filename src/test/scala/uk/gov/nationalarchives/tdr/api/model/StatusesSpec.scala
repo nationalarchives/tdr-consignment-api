@@ -5,40 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableFor2
 import org.scalatest.prop.Tables.Table
-import uk.gov.nationalarchives.tdr.api.model.Statuses.{
-  AntivirusType,
-  ChecksumMatchType,
-  ClientChecksType,
-  ClosureMetadataType,
-  CompletedValue,
-  CompletedWithIssuesValue,
-  ConfirmTransferType,
-  DescriptiveMetadataType,
-  EnteredValue,
-  ExportType,
-  FFIDType,
-  FailedValue,
-  InProgressValue,
-  IncompleteValue,
-  MismatchValue,
-  NonJudgmentFormatValue,
-  NotEnteredValue,
-  PasswordProtectedValue,
-  RedactionType,
-  SeriesType,
-  ServerAntivirusType,
-  ServerChecksumType,
-  ServerFFIDType,
-  StatusType,
-  StatusValue,
-  SuccessValue,
-  TransferAgreementType,
-  Unrecognised,
-  UploadType,
-  VirusDetectedValue,
-  ZeroByteFileValue,
-  ZipValue
-}
+import uk.gov.nationalarchives.tdr.api.model.Statuses._
 
 class StatusesSpec extends AnyFlatSpec with ScalaFutures with Matchers {
 
