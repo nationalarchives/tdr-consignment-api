@@ -13,6 +13,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -21,12 +22,13 @@ import java.time.Instant.now
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   val fixedTimeSource: Instant = FixedTimeSource.now
-  val fixedUuidSource: UUIDSource = mock[UUIDSource]
+  val fixedUuidSource: FixedUUIDSource = new FixedUUIDSource()
   val bodyId: UUID = UUID.fromString("8eae8ed8-201c-11eb-adc1-0242ac120002")
   val userId: UUID = UUID.fromString("8d415358-f68b-403b-a90a-daab3fd60109")
   val seriesId: UUID = UUID.fromString("b6b19341-8c33-4272-8636-aafa1e3d98de")
@@ -75,6 +77,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockConsignmentSeq = 5L
     val mockToken = mock[Token]
     val mockBody = mock[TransferringBody]
+    val consignmentStatusRow = mock[ConsignmentstatusRow]
+    when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
     when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
@@ -90,17 +94,46 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     result.bodyId shouldBe bodyId
   }
 
-  "addConsignment" should "link a consignment to the user's ID" in {
+  "addConsignment" should "create the metadata consignment statuses" in {
+    fixedUuidSource.reset
+    val mockConsignmentSeq = 5L
     val mockToken = mock[Token]
     val mockBody = mock[TransferringBody]
+    val consignmentStatusRow = mock[ConsignmentstatusRow]
+    val rowCaptor: ArgumentCaptor[Seq[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[Seq[ConsignmentstatusRow]])
+    when(consignmentStatusRepoMock.addConsignmentStatuses(rowCaptor.capture())).thenReturn(Future.successful(Seq(consignmentStatusRow)))
+    when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
+    when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
+    when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
+    when(mockBody.bodyId).thenReturn(bodyId)
+    when(mockToken.transferringBody).thenReturn(Some("body-code"))
 
+    val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
+
+    verify(consignmentStatusRepoMock, times(1)).addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])
+
+    val sortedValues = rowCaptor.getAllValues.asScala.flatten.sortBy(r => r.statustype)
+    sortedValues.head.consignmentid should be(result.consignmentid)
+    sortedValues.head.statustype should be(ClosureMetadata)
+    sortedValues.head.value should be(NotEntered)
+
+    sortedValues.last.consignmentid should be(result.consignmentid)
+    sortedValues.last.statustype should be(DescriptiveMetadata)
+    sortedValues.last.value should be(NotEntered)
+  }
+
+  "addConsignment" should "link a consignment to the user's ID" in {
+    fixedUuidSource.reset
+    val mockToken = mock[Token]
+    val mockBody = mock[TransferringBody]
+    val consignmentStatusRow = mock[ConsignmentstatusRow]
+    when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
     when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
     when(mockBody.bodyId).thenReturn(bodyId)
     when(mockToken.transferringBody).thenReturn(Some("body-code"))
     when(mockToken.userId).thenReturn(userId)
-    when(fixedUuidSource.uuid).thenReturn(consignmentId)
     consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
     verify(consignmentRepoMock).addConsignment(mockConsignment)

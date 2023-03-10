@@ -1,0 +1,24 @@
+{
+  "query": "mutation updateBulkFileMetadata($updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!) {updateBulkFileMetadata(updateBulkFileMetadataInput:$updateBulkFileMetadataInput) {fileIds,metadataProperties {filePropertyName,value}}}",
+  "variables": {
+    "updateBulkFileMetadataInput" : {
+      "consignmentId": "eb197bfb-43f7-40ca-9104-8f6cbda88506",
+      "fileIds": [
+        "51c55218-1322-4453-9ef8-2300ef1c0fef",
+        "7076f399-b596-4161-a95d-e686c6435710"
+      ],
+      "metadataProperties": [
+        {
+          "filePropertyIsMultiValue": false,
+          "filePropertyName": "TestProperty1",
+          "value": "value1"
+        },
+        {
+          "filePropertyIsMultiValue": false,
+          "filePropertyName": "TestProperty3",
+          "value": "value2"
+        }
+      ]
+    }
+  }
+}
