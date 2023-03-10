@@ -3,6 +3,42 @@ package uk.gov.nationalarchives.tdr.api.model
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableFor2
+import org.scalatest.prop.Tables.Table
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{
+  AntivirusType,
+  ChecksumMatchType,
+  ClientChecksType,
+  ClosureMetadataType,
+  CompletedValue,
+  CompletedWithIssuesValue,
+  ConfirmTransferType,
+  DescriptiveMetadataType,
+  EnteredValue,
+  ExportType,
+  FFIDType,
+  FailedValue,
+  InProgressValue,
+  IncompleteValue,
+  MismatchValue,
+  NonJudgmentFormatValue,
+  NotEnteredValue,
+  PasswordProtectedValue,
+  RedactionType,
+  SeriesType,
+  ServerAntivirusType,
+  ServerChecksumType,
+  ServerFFIDType,
+  StatusType,
+  StatusValue,
+  SuccessValue,
+  TransferAgreementType,
+  Unrecognised,
+  UploadType,
+  VirusDetectedValue,
+  ZeroByteFileValue,
+  ZipValue
+}
 
 class StatusesSpec extends AnyFlatSpec with ScalaFutures with Matchers {
 
@@ -11,6 +47,57 @@ class StatusesSpec extends AnyFlatSpec with ScalaFutures with Matchers {
     result.size shouldBe 2
     result.head should equal("Antivirus")
     result.tail.head should equal("ConfirmTransfer")
+  }
+
+  "toStatusType" should "return the correct type for the provided 'id' value" in {
+    val idValueToExpectedType: TableFor2[String, StatusType] = Table(
+      ("id value", "expected status type"),
+      ("Antivirus", AntivirusType),
+      ("ChecksumMatch", ChecksumMatchType),
+      ("ClientChecks", ClientChecksType),
+      ("ClosureMetadata", ClosureMetadataType),
+      ("ConfirmTransfer", ConfirmTransferType),
+      ("DescriptiveMetadata", DescriptiveMetadataType),
+      ("Export", ExportType),
+      ("FFID", FFIDType),
+      ("Redaction", RedactionType),
+      ("Series", SeriesType),
+      ("ServerAntivirus", ServerAntivirusType),
+      ("ServerChecksum", ServerChecksumType),
+      ("ServerFFID", ServerFFIDType),
+      ("TransferAgreement", TransferAgreementType),
+      ("Upload", UploadType),
+      ("SomeRandomValue", Unrecognised)
+    )
+
+    idValueToExpectedType.foreach(v => {
+      Statuses.toStatusType(v._1) shouldBe v._2
+    })
+  }
+
+  "toStatusValue" should "return the correct status value for the provided  'value'" in {
+    val valueToExpectedStatusValue: TableFor2[String, StatusValue] = Table(
+      ("value", "expected status value"),
+      ("Completed", CompletedValue),
+      ("CompletedWithIssues", CompletedWithIssuesValue),
+      ("Entered", EnteredValue),
+      ("Failed", FailedValue),
+      ("Incomplete", IncompleteValue),
+      ("InProgress", InProgressValue),
+      ("Mismatch", MismatchValue),
+      ("NotEntered", NotEnteredValue),
+      ("NonJudgmentFormat", NonJudgmentFormatValue),
+      ("PasswordProtected", PasswordProtectedValue),
+      ("Success", SuccessValue),
+      ("VirusDetected", VirusDetectedValue),
+      ("ZeroByteFile", ZeroByteFileValue),
+      ("Zip", ZipValue),
+      ("SomeRandomValue", Unrecognised)
+    )
+
+    valueToExpectedStatusValue.foreach(v => {
+      Statuses.toStatusValue(v._1) shouldBe v._2
+    })
   }
 
   "StatusTypes" should "return the correct 'id'" in {

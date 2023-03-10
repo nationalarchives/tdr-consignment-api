@@ -7,7 +7,7 @@ object Statuses {
 
   trait ConsignmentType extends StatusType
 
-  trait FileType extends StatusType
+  trait FileStatusType extends StatusType
 
   trait StatusValue {
     val value: String
@@ -17,19 +17,60 @@ object Statuses {
     statusTypes.map(_.id)
   }
 
-  case object AntivirusType extends FileType {
+  def toStatusType(statusType: String): StatusType = {
+    statusType match {
+      case AntivirusType.id           => AntivirusType
+      case ChecksumMatchType.id       => ChecksumMatchType
+      case ClosureMetadataType.id     => ClosureMetadataType
+      case ClientChecksType.id        => ClientChecksType
+      case ConfirmTransferType.id     => ConfirmTransferType
+      case DescriptiveMetadataType.id => DescriptiveMetadataType
+      case ExportType.id              => ExportType
+      case FFIDType.id                => FFIDType
+      case RedactionType.id           => RedactionType
+      case SeriesType.id              => SeriesType
+      case ServerAntivirusType.id     => ServerAntivirusType
+      case ServerChecksumType.id      => ServerChecksumType
+      case ServerFFIDType.id          => ServerFFIDType
+      case TransferAgreementType.id   => TransferAgreementType
+      case UploadType.id              => UploadType
+      case _                          => Unrecognised
+    }
+  }
+
+  def toStatusValue(statusValue: String): StatusValue = {
+    statusValue match {
+      case CompletedWithIssuesValue.value => CompletedWithIssuesValue
+      case CompletedValue.value           => CompletedValue
+      case EnteredValue.value             => EnteredValue
+      case FailedValue.value              => FailedValue
+      case IncompleteValue.value          => IncompleteValue
+      case InProgressValue.value          => InProgressValue
+      case MismatchValue.value            => MismatchValue
+      case NotEnteredValue.value          => NotEnteredValue
+      case NonJudgmentFormatValue.value   => NonJudgmentFormatValue
+      case PasswordProtectedValue.value   => PasswordProtectedValue
+      case SuccessValue.value             => SuccessValue
+      case VirusDetectedValue.value       => VirusDetectedValue
+      case ZeroByteFileValue.value        => ZeroByteFileValue
+      case ZipValue.value                 => ZipValue
+      case _                              => Unrecognised
+    }
+  }
+
+  case object AntivirusType extends FileStatusType {
     val id: String = "Antivirus"
   }
 
-  case object ChecksumMatchType extends FileType {
+  case object ChecksumMatchType extends FileStatusType {
     val id: String = "ChecksumMatch"
   }
 
-  case object ClientChecksType extends ConsignmentType with FileType {
+  case object ClientChecksType extends ConsignmentType with FileStatusType {
     val id: String = "ClientChecks"
   }
 
-  case object ClosureMetadataType extends ConsignmentType with FileType {
+  case object ClosureMetadataType extends ConsignmentType with FileStatusType {
     val id: String = "ClosureMetadata"
   }
 
@@ -37,7 +78,7 @@ object Statuses {
     val id: String = "ConfirmTransfer"
   }
 
-  case object DescriptiveMetadataType extends ConsignmentType with FileType {
+  case object DescriptiveMetadataType extends ConsignmentType with FileStatusType {
     val id: String = "DescriptiveMetadata"
   }
 
@@ -45,11 +86,11 @@ object Statuses {
     val id: String = "Export"
   }
 
-  case object FFIDType extends FileType {
+  case object FFIDType extends FileStatusType {
     val id: String = "FFID"
   }
 
-  case object RedactionType extends FileType {
+  case object RedactionType extends FileStatusType {
     val id: String = "Redaction"
   }
 
@@ -61,7 +102,7 @@ object Statuses {
     val id: String = "ServerAntivirus"
   }
 
-  case object ServerChecksumType extends ConsignmentType with FileType {
+  case object ServerChecksumType extends ConsignmentType with FileStatusType {
     val id: String = "ServerChecksum"
   }
 
@@ -73,7 +114,11 @@ object Statuses {
     val id: String = "TransferAgreement"
   }
 
-  case object UploadType extends ConsignmentType with FileType {
+  case object Unrecognised extends StatusType with StatusValue {
+    val id, value: String = "Unrecognised"
+  }
+
+  case object UploadType extends ConsignmentType with FileStatusType {
     val id: String = "Upload"
   }
 

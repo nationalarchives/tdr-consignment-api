@@ -12,6 +12,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdg
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.model.Statuses
 import uk.gov.nationalarchives.tdr.api.model.Statuses.FFIDType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -96,7 +97,7 @@ class FileService(
       fileIds = matches.map(_.fileId).toSet
       statusInputs = fileIds
         .flatMap(id => {
-          defaultStatuses.map(ds => AddFileStatusInput(id, ds._1, ds._2))
+          defaultStatuses.map(ds => AddFileStatusInput(id, ds._1.id, ds._2.value))
         })
         .toList
       addedStatuses <- fileStatusService.addFileStatuses(AddMultipleFileStatusesInput(statusInputs))
@@ -140,7 +141,8 @@ class FileService(
       propertyNames <- getPropertyNames(filters.metadataFilters)
       ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFIDType.id), fileIds) else Future.successful(Nil)
       fileStatuses <-
-        if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future.successful(Nil)
+        if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, Statuses.typesToId(allFileStatusTypes.toList).toSet, fileIds)
+        else Future.successful(Nil)
     } yield {
       val ffidStatus = ffidStatuses.map(fs => fs.fileId -> fs.statusValue).toMap
       fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, propertyNames, fileStatuses).toList
@@ -163,7 +165,8 @@ class FileService(
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
       ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFIDType.id), fileIds) else Future(Nil)
-      fileStatuses <- if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
+      fileStatuses <-
+        if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, Statuses.typesToId(allFileStatusTypes.toList).toSet, fileIds) else Future(Nil)
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)
       val sortedFileRows = response.sortBy(row => natural(row.filename.getOrElse("")))

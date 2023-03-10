@@ -56,41 +56,17 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
 }
 
 object FileStatusService {
-  // Status types
-//  val ChecksumMatch = "ChecksumMatch"
-//  val Antivirus = "Antivirus"
-//  val FFID = "FFID"
-//  val Redaction = "Redaction"
-//  val Upload = "Upload"
-//  val ServerChecksum = "ServerChecksum"
-//  val ClientChecks = "ClientChecks"
-//  val ClosureMetadata = "ClosureMetadata"
-//  val DescriptiveMetadata = "DescriptiveMetadata"
-
-  val allFileStatusTypes: Set[String] = Set(
-    ChecksumMatchType.id,
-    AntivirusType.id,
-    FFIDType.id,
-    RedactionType.id,
-    UploadType.id,
-    ServerChecksumType.id,
-    ClientChecksType.id,
-    ClosureMetadataType.id,
-    DescriptiveMetadataType.id
+  val allFileStatusTypes: Set[StatusType] = Set(
+    ChecksumMatchType,
+    AntivirusType,
+    FFIDType,
+    RedactionType,
+    UploadType,
+    ServerChecksumType,
+    ClientChecksType,
+    ClosureMetadataType,
+    DescriptiveMetadataType
   )
 
-  // Values
-//  val Success = "Success"
-//  val Mismatch = "Mismatch"
-//  val VirusDetected = "VirusDetected"
-//  val PasswordProtected = "PasswordProtected"
-//  val Zip = "Zip"
-//  val NonJudgmentFormat = "NonJudgmentFormat"
-//  val ZeroByteFile = "ZeroByteFile"
-//  val InProgress = "InProgress"
-//  val Completed = "Completed"
-//  val Incomplete = "Incomplete"
-//  val NotEntered = "NotEntered"
-
-  val defaultStatuses: Map[String, String] = Map(ClosureMetadataType.id -> NotEnteredValue.value, DescriptiveMetadataType.id -> NotEnteredValue.value)
+  val defaultStatuses: Map[StatusType, StatusValue] = Map(ClosureMetadataType -> NotEnteredValue, DescriptiveMetadataType -> NotEnteredValue)
 }

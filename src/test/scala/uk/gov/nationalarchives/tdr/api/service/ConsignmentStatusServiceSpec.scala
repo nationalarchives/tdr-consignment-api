@@ -10,7 +10,16 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
 import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
-import uk.gov.nationalarchives.tdr.api.model.Statuses.{ClosureMetadataType, CompletedValue, DescriptiveMetadataType, IncompleteValue, NotEnteredValue}
+import uk.gov.nationalarchives.tdr.api.model.Statuses.{
+  ClosureMetadataType,
+  CompletedValue,
+  CompletedWithIssuesValue,
+  DescriptiveMetadataType,
+  FailedValue,
+  InProgressValue,
+  IncompleteValue,
+  NotEnteredValue
+}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.validStatusValues
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -149,7 +158,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "throw an exception if an incorrect statusType has been passed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "InvalidStatusType"
+    val expectedStatusType = "Unrecognised"
     val expectedStatusValue = "Completed"
 
     val updateConsignmentStatusInput =
@@ -166,7 +175,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "Upload"
-    val expectedStatusValue = "InvalidStatusValue"
+    val expectedStatusValue = "Unrecognised"
 
     val updateConsignmentStatusInput =
       ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue))
@@ -181,8 +190,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "throw an exception if an incorrect statusType and statusValue have been passed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "InvalidStatusType"
-    val expectedStatusValue = "InvalidStatusValue"
+    val expectedStatusType = "Unrecognised"
+    val expectedStatusValue = "Unrecognised"
 
     val updateConsignmentStatusInput =
       ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue))
@@ -289,7 +298,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "updateConsignmentStatus" should "throw an exception if an incorrect statusType has been passed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "InvalidStatusType"
+    val expectedStatusType = "Unrecognised"
     val expectedStatusValue = "Completed"
 
     val updateConsignmentStatusInput =
@@ -308,7 +317,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "Series"
-    val expectedStatusValue = "InvalidStatusValue"
+    val expectedStatusValue = "Unrecognised"
 
     val updateConsignmentStatusInput =
       ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue))
@@ -325,8 +334,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "updateConsignmentStatus" should "throw an exception if an incorrect statusType and statusValue have been passed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "InvalidStatusType"
-    val expectedStatusValue = "InvalidStatusValue"
+    val expectedStatusType = "Unrecognised"
+    val expectedStatusValue = "Unrecognised"
 
     val updateConsignmentStatusInput =
       ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue))
@@ -388,7 +397,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       }
 
       thrownException.getMessage should equal(
-        s"Invalid ConsignmentStatus input: either '$nonUploadStatusType' or ''"
+        s"Invalid ConsignmentStatus input: either '$nonUploadStatusType' or 'Unrecognised'"
       )
     }
   }
@@ -426,8 +435,14 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   }
 
   "validStatusValues" should "contain the correct values" in {
-    val expectedValues = List("Completed", "CompletedWithIssues", "Failed", "InProgress", "Incomplete", "NotEntered")
-    validStatusValues.toList.sorted should equal(expectedValues)
+    validStatusValues.size shouldBe 6
+    validStatusValues.contains(CompletedValue) shouldBe true
+    validStatusValues.contains(CompletedWithIssuesValue) shouldBe true
+    validStatusValues.contains(FailedValue) shouldBe true
+    validStatusValues.contains(InProgressValue) shouldBe true
+    validStatusValues.contains(IncompleteValue) shouldBe true
+    validStatusValues.contains(NotEnteredValue) shouldBe true
+
   }
 
   private def generateConsignmentStatusRow(

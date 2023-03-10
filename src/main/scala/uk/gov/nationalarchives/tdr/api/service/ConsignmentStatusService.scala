@@ -6,6 +6,7 @@ import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentSta
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
+import uk.gov.nationalarchives.tdr.api.model.Statuses
 import uk.gov.nationalarchives.tdr.api.model.Statuses._
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
@@ -106,29 +107,29 @@ class ConsignmentStatusService(
   }
 
   private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput): Boolean = {
-    val statusType: String = consignmentStatusInput.statusType
-    val statusValue: String = consignmentStatusInput.statusValueToString
+    val statusType: StatusType = Statuses.toStatusType(consignmentStatusInput.statusType)
+    val statusValue: StatusValue = Statuses.toStatusValue(consignmentStatusInput.statusValueToString)
 
     if (validStatusTypes.contains(statusType) && validStatusValues.contains(statusValue)) {
       true
     } else {
-      throw InputDataException(s"Invalid ConsignmentStatus input: either '$statusType' or '$statusValue'")
+      throw InputDataException(s"Invalid ConsignmentStatus input: either '${statusType.id}' or '${statusValue.value}'")
     }
   }
 }
 
 object ConsignmentStatusService {
-  val validConsignmentTypes: List[String] = List(
-    SeriesType.id,
-    TransferAgreementType.id,
-    UploadType.id,
-    ClientChecksType.id,
-    ClosureMetadataType.id,
-    DescriptiveMetadataType.id,
-    ConfirmTransferType.id,
-    ExportType.id
+  val validConsignmentTypes: List[StatusType] = List(
+    SeriesType,
+    TransferAgreementType,
+    UploadType,
+    ClientChecksType,
+    ClosureMetadataType,
+    DescriptiveMetadataType,
+    ConfirmTransferType,
+    ExportType
   )
-  val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set(ServerFFIDType.id, ServerChecksumType.id, ServerAntivirusType.id)
-  val validStatusValues: Set[String] =
-    Set(InProgressValue.value, CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value, NotEnteredValue.value, IncompleteValue.value)
+  val validStatusTypes: Set[StatusType] = validConsignmentTypes.toSet ++ Set(ServerFFIDType, ServerChecksumType, ServerAntivirusType)
+  val validStatusValues: Set[StatusValue] =
+    Set(InProgressValue, CompletedValue, CompletedWithIssuesValue, FailedValue, NotEnteredValue, IncompleteValue)
 }

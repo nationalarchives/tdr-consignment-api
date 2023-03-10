@@ -301,8 +301,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "'defaultStatuses'" should "contain the correct statuses and values" in {
     FileStatusService.defaultStatuses.size shouldBe 2
-    FileStatusService.defaultStatuses(ClosureMetadataType.id) should equal(NotEnteredValue.value)
-    FileStatusService.defaultStatuses(DescriptiveMetadataType.id) should equal(NotEnteredValue.value)
+    FileStatusService.defaultStatuses(ClosureMetadataType) should equal(NotEnteredValue)
+    FileStatusService.defaultStatuses(DescriptiveMetadataType) should equal(NotEnteredValue)
   }
 
   def createFileStatusService(): FileStatusService =
