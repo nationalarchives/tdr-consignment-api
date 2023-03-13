@@ -69,7 +69,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       paginatedFiles: Option[FileConnections],
       consignmentType: Option[String],
       bodyId: Option[UUID] = None,
-      consignmentStatuses: List[ConsignmentStatus] = Nil
+      consignmentStatuses: List[ConsignmentStatus] = Nil,
+      includeTopLevelFolder: Option[Boolean] = None
   )
 
   case class ConsignmentStatus(
@@ -254,6 +255,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.addFFIDMetadataMatches(fileThreeFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
 
     utils.addParentFolderName(defaultConsignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
+    utils.addTopLevelFolder(defaultConsignmentId, includeTopLevelFolder = true)
 
     utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed", statusId = UUID.fromString("21f3a11d-05f4-4565-b668-8586644fd441"))
 

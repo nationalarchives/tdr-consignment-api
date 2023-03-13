@@ -145,7 +145,8 @@ class ConsignmentService(
       row.exportlocation,
       row.consignmentreference,
       row.consignmenttype,
-      row.bodyid
+      row.bodyid,
+      row.includetoplevelfolder
     )
   }
 

@@ -119,6 +119,7 @@ type Consignment {
   exportDatetime: ZonedDateTime
   exportLocation: String
   consignmentType: String
+  includeTopLevelFolder: Boolean
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Int!

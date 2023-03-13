@@ -168,7 +168,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       consignmentsequence = consignmentSequence,
       consignmentreference = consignmentReference,
       consignmenttype = "standard",
-      bodyid = bodyId
+      bodyid = bodyId,
+      includetoplevelfolder = Some(true)
     )
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
     when(consignmentRepoMock.getConsignment(any[UUID])).thenReturn(mockResponse)
@@ -181,6 +182,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.seriesid should equal(Some(seriesId))
     consignment.userid should equal(userId)
     consignment.exportLocation should equal(consignmentRow.exportlocation)
+    consignment.includeTopLevelFolder should equal(consignmentRow.includetoplevelfolder)
   }
 
   "getConsignment" should "return none when consignment id does not exist" in {
