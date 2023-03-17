@@ -428,6 +428,8 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val mockFields = mockCustomMetadataFields()
 
     def stubMockResponses(metadataRows: List[FilemetadataRow] = List()): Unit = {
+      when(mockFileStatusRepository.addFileStatuses(any[List[FilestatusRow]])).thenReturn(Future.successful(Nil))
+      when(mockFileStatusRepository.deleteFileStatus(any[Set[UUID]], any[Set[String]])).thenReturn(Future.successful(1))
       when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
       when(mockFileMetadataRepository.getFileMetadata(any[UUID], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
     }
