@@ -44,7 +44,12 @@ class ValidateFileMetadataService(
     }
   }
 
-  private def addMetadataFileStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String], customMetadataFields: Seq[CustomMetadataField], existingMetadataProperties: Seq[Tables.FilemetadataRow]): Future[List[nationalarchives.Tables.FilestatusRow]] = {
+  private def addMetadataFileStatuses(
+      fileIds: Set[UUID],
+      propertiesToValidate: Set[String],
+      customMetadataFields: Seq[CustomMetadataField],
+      existingMetadataProperties: Seq[Tables.FilemetadataRow]
+  ): Future[List[nationalarchives.Tables.FilestatusRow]] = {
     val additionalMetadataFieldGroups: Seq[FieldGroup] = toAdditionalMetadataFieldGroups(customMetadataFields)
     val additionalMetadataPropertyNames: Set[String] = additionalMetadataFieldGroups.flatMap(g => toPropertyNames(g.fields)).toSet
 
@@ -67,8 +72,8 @@ class ValidateFileMetadataService(
                 val (fileId, fileStates) = s
                 val status: String = s match {
                   case _ if fileStates.forall(_.existingValueMatchesDefault == true) => NotEntered
-                  case _ if fileStates.forall(_.missingDependencies == false) => Completed
-                  case _ => Incomplete
+                  case _ if fileStates.forall(_.missingDependencies == false)        => Completed
+                  case _                                                             => Incomplete
                 }
                 FilestatusRow(uuidSource.uuid, fileId, group.groupName, status, Timestamp.from(timeSource.now))
               })
