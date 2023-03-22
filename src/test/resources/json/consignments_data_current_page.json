@@ -1,0 +1,20 @@
+{
+  "data": {
+    "consignments": {
+      "pageInfo": {
+        "startCursor": "consignment-ref1",
+        "endCursor": "consignment-ref1",
+        "hasNextPage": true,
+        "hasPreviousPage": false
+      },
+      "edges": [
+        {
+          "node": {
+            "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
+            "consignmentReference": "consignment-ref1"
+          }
+        }
+      ]
+    }
+  }
+}

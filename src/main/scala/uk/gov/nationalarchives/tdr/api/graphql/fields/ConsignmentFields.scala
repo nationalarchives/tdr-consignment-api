@@ -218,6 +218,7 @@ object ConsignmentFields {
   val LimitArg: Argument[Int] = Argument("limit", IntType)
   val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
+  val CurrentPageArg: Argument[Option[Int]] = Argument("currentPage", OptionInputType(IntType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
     Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
@@ -233,13 +234,14 @@ object ConsignmentFields {
     Field(
       "consignments",
       consignmentConnections,
-      arguments = List(LimitArg, CurrentCursorArg, ConsignmentFiltersInputArg),
+      arguments = List(LimitArg, CurrentCursorArg, CurrentPageArg, ConsignmentFiltersInputArg),
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
         val currentCursor = ctx.args.argOpt("currentCursor")
+        val currentPage = ctx.args.argOpt("currentPage")
         val consignmentFilters = ctx.args.argOpt("consignmentFiltersInput")
         ctx.ctx.consignmentService
-          .getConsignments(limit, currentCursor, consignmentFilters)
+          .getConsignments(limit, currentCursor, consignmentFilters, currentPage)
           .map(r => {
             val endCursor = r.lastCursor
             val edges = r.consignmentEdges

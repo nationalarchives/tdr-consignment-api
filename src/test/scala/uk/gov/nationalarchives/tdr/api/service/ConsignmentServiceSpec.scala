@@ -461,7 +461,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     exportLocations should contain(exportLocation2)
   }
 
-  "getConsignments" should "return filtered consignments when consignment filter is passed" in {
+  "getConsignments" should "return filtered consignments when currentPage and consignment filter are passed" in {
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
     val exportLocation2 = Some("Location2")
@@ -477,9 +477,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, None, 2.some, ConsignmentFilters(userId.some, None).some)).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some).futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some, 2.some).futureValue
 
     response.lastCursor should be(Some("consignment-ref3"))
     response.consignmentEdges should have size 2

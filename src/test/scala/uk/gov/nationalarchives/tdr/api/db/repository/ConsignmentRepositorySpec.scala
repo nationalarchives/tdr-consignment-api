@@ -228,7 +228,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-    val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(userId.some, None).some).futureValue
+    val response = consignmentRepository.getConsignments(10, None, consignmentFilters = ConsignmentFilters(userId.some, None).some).futureValue
 
     response should have size 1
     response.map(cr => cr.consignmentid).head should equal(consignmentIdOne)
@@ -243,7 +243,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", consignmentType = "judgment")
 
-    val response = consignmentRepository.getConsignments(10, None, ConsignmentFilters(None, "judgment".some).some).futureValue
+    val response = consignmentRepository.getConsignments(10, None, consignmentFilters = ConsignmentFilters(None, "judgment".some).some).futureValue
 
     response should have size 1
     response.map(cr => cr.consignmentid).head should equal(consignmentIdTwo)
@@ -261,7 +261,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-    val response = consignmentRepository.getConsignments(10, None, None).futureValue
+    val response = consignmentRepository.getConsignments(10, None).futureValue
 
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
@@ -275,12 +275,26 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(10, None, None).futureValue
+    val response = consignmentRepository.getConsignments(10, None).futureValue
 
     val consignmentReferences: List[String] = response.map(cr => cr.consignmentreference).toList
 
     response should have size 4
     consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
+  }
+
+  "getConsignments" should "return all consignments up to limit when current page is provided" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
+
+    val response = consignmentRepository.getConsignments(2, None, 1.some).futureValue
+
+    val consignmentReferences: List[String] = response.map(cr => cr.consignmentreference).toList
+
+    response should have size 2
+    consignmentReferences should equal(List("TDR-2021-B", "TDR-2021-A"))
   }
 
   "addUploadDetails" should "add upload details and consignment statuses" in withContainers { case container: PostgreSQLContainer =>

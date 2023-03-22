@@ -59,12 +59,14 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignments(limit: Int, after: Option[String], consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
+  def getConsignments(limit: Int, after: Option[String], currentPage: Option[Int] = None, consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
+    val offset = currentPage.map(_ * limit).getOrElse(0)
     val query = Consignment
       .filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
       .filterOpt(consignmentFilters.flatMap(_.consignmentType))(_.consignmenttype === _)
       .sortBy(_.consignmentreference.desc.nullsFirst)
       .filterOpt(after)(_.consignmentreference < _)
+      .drop(offset)
       .take(limit)
     db.run(query.result)
   }
