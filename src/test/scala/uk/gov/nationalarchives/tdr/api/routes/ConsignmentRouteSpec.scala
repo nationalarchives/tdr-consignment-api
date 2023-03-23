@@ -671,23 +671,22 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       response.data should equal(expectedResponse.data)
   }
 
-  "consignments" should "allow a user with reporting access to return requested fields for given page number" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val consignmentParams: List[ConsignmentParams] = List(
-        ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
-        ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
-        ConsignmentParams(UUID.fromString("e6dadac0-0666-4653-b462-adca0b988095"), "consignment-ref3", List())
-      )
+  "consignments" should "allow a user with reporting access to return requested fields for given page number" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentParams: List[ConsignmentParams] = List(
+      ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
+      ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
+      ConsignmentParams(UUID.fromString("e6dadac0-0666-4653-b462-adca0b988095"), "consignment-ref3", List())
+    )
 
-      setUpConsignments(consignmentParams, utils)
-      val reportingAccessToken = validReportingToken("reporting")
+    setUpConsignments(consignmentParams, utils)
+    val reportingAccessToken = validReportingToken("reporting")
 
-      val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_current_page")
-      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_current_page", reportingAccessToken)
-      response.data.get.consignments.edges.size should equal(1)
+    val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_current_page")
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_current_page", reportingAccessToken)
+    response.data.get.consignments.edges.size should equal(1)
 
-      response.data should equal(expectedResponse.data)
+    response.data should equal(expectedResponse.data)
   }
 
   "consignments" should "allow a user without reporting access to return only their consignments" in withContainers { case container: PostgreSQLContainer =>
