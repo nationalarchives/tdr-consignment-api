@@ -14,7 +14,8 @@
             "consignmentReference": "consignment-ref1"
           }
         }
-      ]
+      ],
+      "totalPages": 2
     }
   }
 }

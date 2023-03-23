@@ -87,7 +87,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class ConsignmentEdge(node: Consignment, cursor: Option[String] = None)
   case class FileEdge(node: File, cursor: String)
 
-  case class Consignments(pageInfo: PageInfo, edges: List[ConsignmentEdge])
+  case class Consignments(pageInfo: PageInfo, edges: List[ConsignmentEdge], totalPages: Option[Int] = None)
 
   case class ConsignmentConnections(consignments: Consignments)
   case class FileConnections(pageInfo: PageInfo, edges: List[FileEdge])

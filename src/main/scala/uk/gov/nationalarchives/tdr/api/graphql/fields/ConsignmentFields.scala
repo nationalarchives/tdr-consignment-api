@@ -206,9 +206,17 @@ object ConsignmentFields {
   implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val ConnectionDefinition(_, consignmentConnections) =
-    Connection.definition[RequestContext, Connection, Consignment](
+    Connection.definition[ConsignmentApiContext, Connection, Consignment](
       name = "Consignment",
-      nodeType = ConsignmentType
+      nodeType = ConsignmentType,
+      connectionFields = fields[ConsignmentApiContext, Connection[Consignment]](
+        Field(
+          "totalPages",
+          OptionType(IntType),
+          arguments = LimitArg :: Nil,
+          resolve = ctx => ctx.ctx.consignmentService.getTotalPages(ctx.arg(LimitArg))
+        )
+      )
     )
   implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
 

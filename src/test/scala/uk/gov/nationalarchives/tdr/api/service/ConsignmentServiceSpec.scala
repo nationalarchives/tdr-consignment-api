@@ -519,6 +519,15 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response.consignmentEdges should have size 0
   }
 
+  "getTotalPages" should "return total pages by limit" in {
+    val limit = 3
+    when(consignmentRepoMock.getTotalConsignments).thenReturn(Future.successful(7))
+
+    val response = consignmentService.getTotalPages(limit).futureValue
+
+    response should be(3)
+  }
+
   "startUpload" should "create an upload in progress status, add the parent folder and 'IncludeTopLevelFolder'" in {
     val startUploadInputCaptor: ArgumentCaptor[StartUploadInput] = ArgumentCaptor.forClass(classOf[StartUploadInput])
     val consignmentStatusCaptor: ArgumentCaptor[List[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[List[ConsignmentstatusRow]])

@@ -139,6 +139,10 @@ class ConsignmentService(
     consignmentRepository.getParentFolder(consignmentId)
   }
 
+  def getTotalPages(limit: Int): Future[Int] = {
+    consignmentRepository.getTotalConsignments.map(totalItems => Math.ceil(totalItems.toDouble / limit.toDouble).toInt)
+  }
+
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
     Consignment(
       row.consignmentid,

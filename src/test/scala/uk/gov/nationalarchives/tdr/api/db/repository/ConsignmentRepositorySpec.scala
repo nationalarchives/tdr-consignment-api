@@ -297,6 +297,17 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignmentReferences should equal(List("TDR-2021-B", "TDR-2021-A"))
   }
 
+  "totalConsignments" should "return total number of consignments" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    val expectedItems = createConsignments(utils)
+
+    val response = consignmentRepository.getTotalConsignments.futureValue
+
+    response should be(expectedItems)
+  }
+
   "addUploadDetails" should "add upload details and consignment statuses" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
@@ -318,10 +329,9 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignmentStatusFromDb.getString("Value") should be(InProgress)
   }
 
-  private def createConsignments(utils: TestUtils): Unit = {
-    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
-    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B")
-    utils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-C")
-    utils.createConsignment(consignmentIdFour, userId, consignmentRef = "TDR-2021-D")
+  private def createConsignments(utils: TestUtils): Int = {
+    val consignments = Map(consignmentIdOne -> "TDR-2021-A", consignmentIdTwo -> "TDR-2021-B", consignmentIdThree -> "TDR-2021-C", consignmentIdFour -> "TDR-2021-D")
+    consignments.foreach(item => utils.createConsignment(item._1, userId, consignmentRef = item._2))
+    consignments.size
   }
 }

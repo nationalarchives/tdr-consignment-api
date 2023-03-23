@@ -71,6 +71,11 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
+  def getTotalConsignments: Future[Int] = {
+    val query = Consignment.length
+    db.run(query.result)
+  }
+
   def getSeriesOfConsignment(consignmentId: UUID)(implicit executionContext: ExecutionContext): Future[Seq[SeriesRow]] = {
     val query = Consignment
       .join(Series)
