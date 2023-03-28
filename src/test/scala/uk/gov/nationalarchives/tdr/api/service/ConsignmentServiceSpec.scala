@@ -8,6 +8,9 @@ import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.prop.TableFor3
+import org.scalatest.prop.Tables.Table
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
@@ -519,13 +522,22 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response.consignmentEdges should have size 0
   }
 
-  "getTotalPages" should "return total pages by limit" in {
-    val limit = 3
-    when(consignmentRepoMock.getTotalConsignments).thenReturn(Future.successful(7))
+  val totalPagesTable: TableFor3[Int, Int, Int] = Table(
+    ("limit", "totalConsignments", "totalPages"),
+    (1, 3, 3),
+    (4, 5, 2),
+    (5, 3, 1),
+    (2, 6, 3)
+  )
 
-    val response = consignmentService.getTotalPages(limit).futureValue
+  forAll(totalPagesTable) { (limit, totalConsignments, totalPages) =>
+    "getTotalPages" should s"return total pages as $totalPages when the limit is $limit and totalConsignments are $totalConsignments" in {
+      when(consignmentRepoMock.getTotalConsignments).thenReturn(Future.successful(totalConsignments))
 
-    response should be(3)
+      val response = consignmentService.getTotalPages(limit).futureValue
+
+      response should be(totalPages)
+    }
   }
 
   "startUpload" should "create an upload in progress status, add the parent folder and 'IncludeTopLevelFolder'" in {

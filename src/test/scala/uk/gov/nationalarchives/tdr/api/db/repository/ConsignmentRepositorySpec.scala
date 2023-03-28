@@ -283,7 +283,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
   }
 
-  "getConsignments" should "return all consignments up to limit when current page is provided" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignments" should "return all consignments up to the limit, when current page is provided" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)

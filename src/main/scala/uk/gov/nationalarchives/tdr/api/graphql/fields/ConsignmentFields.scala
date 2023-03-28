@@ -205,6 +205,19 @@ object ConsignmentFields {
   implicit val AddConsignmentInputType: InputObjectType[AddConsignmentInput] = deriveInputObjectType[AddConsignmentInput]()
   implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
+  implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
+
+  val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
+  val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
+  val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
+  val LimitArg: Argument[Int] = Argument("limit", IntType)
+  val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
+  val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
+  val CurrentPageArg: Argument[Option[Int]] = Argument("currentPage", OptionInputType(IntType))
+  val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
+  val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
+    Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
+
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[ConsignmentApiContext, Connection, Consignment](
       name = "Consignment",
@@ -218,18 +231,6 @@ object ConsignmentFields {
         )
       )
     )
-  implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
-
-  val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
-  val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
-  val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
-  val LimitArg: Argument[Int] = Argument("limit", IntType)
-  val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
-  val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
-  val CurrentPageArg: Argument[Option[Int]] = Argument("currentPage", OptionInputType(IntType))
-  val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
-  val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
-    Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
