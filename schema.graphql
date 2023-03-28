@@ -141,6 +141,7 @@ type ConsignmentConnection {
 
   "A list of edges."
   edges: [ConsignmentEdge]
+  totalPages(limit: Int!): Int
 }
 
 "An edge in a connection."
@@ -432,7 +433,7 @@ enum PropertyType {
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
-  consignments(limit: Int!, currentCursor: String, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
+  consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
   getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   displayProperties(consignmentid: UUID!): [DisplayPropertyField!]!

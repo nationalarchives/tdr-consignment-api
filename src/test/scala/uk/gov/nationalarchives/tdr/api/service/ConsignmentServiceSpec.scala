@@ -8,6 +8,9 @@ import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.prop.TableFor3
+import org.scalatest.prop.Tables.Table
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
@@ -461,7 +464,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     exportLocations should contain(exportLocation2)
   }
 
-  "getConsignments" should "return filtered consignments when consignment filter is passed" in {
+  "getConsignments" should "return filtered consignments when currentPage and consignment filter are passed" in {
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
     val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
     val exportLocation2 = Some("Location2")
@@ -477,9 +480,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, None, 2.some, ConsignmentFilters(userId.some, None).some)).thenReturn(mockResponse)
 
-    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some).futureValue
+    val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some, 2.some).futureValue
 
     response.lastCursor should be(Some("consignment-ref3"))
     response.consignmentEdges should have size 2
@@ -517,6 +520,24 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     response.lastCursor should be(None)
     response.consignmentEdges should have size 0
+  }
+
+  val totalPagesTable: TableFor3[Int, Int, Int] = Table(
+    ("limit", "totalConsignments", "totalPages"),
+    (1, 3, 3),
+    (4, 5, 3),
+    (5, 3, 2),
+    (2, 6, 3)
+  )
+
+  forAll(totalPagesTable) { (limit, totalConsignments, totalPages) =>
+    "getTotalPages" should s"return total pages as $totalPages when the limit is $limit and totalConsignments are $totalConsignments" in {
+      when(consignmentRepoMock.getTotalConsignments).thenReturn(Future.successful(totalConsignments))
+
+      val response = consignmentService.getTotalPages(limit).futureValue
+
+      response should be(totalPages)
+    }
   }
 
   "startUpload" should "create an upload in progress status, add the parent folder and 'IncludeTopLevelFolder'" in {

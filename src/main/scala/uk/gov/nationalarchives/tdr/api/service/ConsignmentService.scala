@@ -1,8 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import java.sql.Timestamp
-import java.time.{LocalDate, ZoneOffset}
-import java.util.UUID
 import com.typesafe.config.Config
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
@@ -16,6 +13,9 @@ import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
+import java.sql.Timestamp
+import java.time.{LocalDate, ZoneOffset}
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.min
 
@@ -95,11 +95,16 @@ class ConsignmentService(
     consignments.map(rows => rows.headOption.map(row => convertRowToConsignment(row)))
   }
 
-  def getConsignments(limit: Int, currentCursor: Option[String], consignmentFilters: Option[ConsignmentFilters] = None): Future[PaginatedConsignments] = {
-    val maxConsignments: Int = min(limit, maxLimit)
+  def getConsignments(
+      limit: Int,
+      currentCursor: Option[String],
+      consignmentFilters: Option[ConsignmentFilters] = None,
+      currentPage: Option[Int] = None
+  ): Future[PaginatedConsignments] = {
 
+    val maxConsignments: Int = min(limit, maxLimit)
     for {
-      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, consignmentFilters)
+      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, currentPage, consignmentFilters)
       hasNextPage = response.nonEmpty
       lastCursor: Option[String] = if (hasNextPage) Some(response.last.consignmentreference) else None
       paginatedConsignments = convertToEdges(response)
@@ -132,6 +137,11 @@ class ConsignmentService(
 
   def getConsignmentParentFolder(consignmentId: UUID): Future[Option[String]] = {
     consignmentRepository.getParentFolder(consignmentId)
+  }
+
+  def getTotalPages(limit: Int): Future[Int] = {
+    val maxConsignmentsLimit: Int = min(limit, maxLimit)
+    consignmentRepository.getTotalConsignments.map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
   }
 
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
