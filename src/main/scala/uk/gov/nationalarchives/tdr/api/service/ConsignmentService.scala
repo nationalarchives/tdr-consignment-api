@@ -140,7 +140,8 @@ class ConsignmentService(
   }
 
   def getTotalPages(limit: Int): Future[Int] = {
-    consignmentRepository.getTotalConsignments.map(totalItems => Math.ceil(totalItems.toDouble / limit.toDouble).toInt)
+    val maxConsignmentsLimit: Int = min(limit, maxLimit)
+    consignmentRepository.getTotalConsignments.map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
   }
 
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {

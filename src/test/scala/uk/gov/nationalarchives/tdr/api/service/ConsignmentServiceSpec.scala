@@ -525,8 +525,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val totalPagesTable: TableFor3[Int, Int, Int] = Table(
     ("limit", "totalConsignments", "totalPages"),
     (1, 3, 3),
-    (4, 5, 2),
-    (5, 3, 1),
+    (4, 5, 3),
+    (5, 3, 2),
     (2, 6, 3)
   )
 
