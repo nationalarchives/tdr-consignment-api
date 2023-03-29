@@ -141,7 +141,7 @@ type ConsignmentConnection {
 
   "A list of edges."
   edges: [ConsignmentEdge]
-  totalPages(limit: Int!): Int
+  totalPages(limit: Int!, consignmentFiltersInput: ConsignmentFilters): Int
 }
 
 "An edge in a connection."

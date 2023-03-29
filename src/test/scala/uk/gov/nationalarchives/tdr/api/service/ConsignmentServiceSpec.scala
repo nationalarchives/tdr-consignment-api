@@ -532,9 +532,10 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   forAll(totalPagesTable) { (limit, totalConsignments, totalPages) =>
     "getTotalPages" should s"return total pages as $totalPages when the limit is $limit and totalConsignments are $totalConsignments" in {
-      when(consignmentRepoMock.getTotalConsignments).thenReturn(Future.successful(totalConsignments))
+      val consignmentFilters = Some(ConsignmentFilters(userId.some, None))
+      when(consignmentRepoMock.getTotalConsignments(consignmentFilters)).thenReturn(Future.successful(totalConsignments))
 
-      val response = consignmentService.getTotalPages(limit).futureValue
+      val response = consignmentService.getTotalPages(limit, consignmentFilters).futureValue
 
       response should be(totalPages)
     }

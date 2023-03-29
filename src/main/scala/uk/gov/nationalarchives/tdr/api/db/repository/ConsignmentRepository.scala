@@ -71,8 +71,11 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getTotalConsignments: Future[Int] = {
-    val query = Consignment.length
+  def getTotalConsignments(consignmentFilters: Option[ConsignmentFilters]): Future[Int] = {
+    val query = Consignment
+      .filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
+      .filterOpt(consignmentFilters.flatMap(_.consignmentType))(_.consignmenttype === _)
+      .length
     db.run(query.result)
   }
 
