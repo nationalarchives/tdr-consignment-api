@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
-import akka.http.scaladsl.server.RequestContext
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
@@ -226,8 +225,8 @@ object ConsignmentFields {
         Field(
           "totalPages",
           OptionType(IntType),
-          arguments = LimitArg :: Nil,
-          resolve = ctx => ctx.ctx.consignmentService.getTotalPages(ctx.arg(LimitArg))
+          arguments = LimitArg :: ConsignmentFiltersInputArg :: Nil,
+          resolve = ctx => ctx.ctx.consignmentService.getTotalPages(ctx.arg(LimitArg), ctx.arg(ConsignmentFiltersInputArg))
         )
       )
     )

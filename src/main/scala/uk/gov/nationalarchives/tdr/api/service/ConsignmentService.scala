@@ -139,9 +139,9 @@ class ConsignmentService(
     consignmentRepository.getParentFolder(consignmentId)
   }
 
-  def getTotalPages(limit: Int): Future[Int] = {
+  def getTotalPages(limit: Int, consignmentFilters: Option[ConsignmentFilters]): Future[Int] = {
     val maxConsignmentsLimit: Int = min(limit, maxLimit)
-    consignmentRepository.getTotalConsignments.map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
+    consignmentRepository.getTotalConsignments(consignmentFilters).map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
   }
 
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {

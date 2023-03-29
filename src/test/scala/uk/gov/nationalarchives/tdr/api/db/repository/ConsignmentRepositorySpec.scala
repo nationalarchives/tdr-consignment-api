@@ -301,9 +301,47 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
-    val expectedItems = createConsignments(utils)
+    val expectedItems = createConsignments(utils) + createStandardConsignmentsForReportingUser(utils)
 
-    val response = consignmentRepository.getTotalConsignments.futureValue
+    val response = consignmentRepository.getTotalConsignments(None).futureValue
+
+    response should be(expectedItems)
+  }
+
+  "totalConsignments" should "return total number of consignments which belong to given userId only" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    val expectedItems = createStandardConsignmentsForReportingUser(utils) + createJudgmentConsignmentsForReportingUser(utils)
+    createConsignments(utils)
+
+    val response = consignmentRepository.getTotalConsignments(ConsignmentFilters(reportingUser.some, None).some).futureValue
+
+    response should be(expectedItems)
+  }
+
+  "totalConsignments" should "return total number of consignments which belong to given userId and consignment type" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+
+    val expectedItems = createJudgmentConsignmentsForReportingUser(utils)
+    createStandardConsignmentsForReportingUser(utils)
+    createConsignments(utils)
+
+    val response = consignmentRepository.getTotalConsignments(ConsignmentFilters(reportingUser.some, "judgment".some).some).futureValue
+
+    response should be(expectedItems)
+  }
+
+  "totalConsignments" should "return total number of consignments which belong to given consignment type only" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    val expectedItems = createConsignments(utils) + createStandardConsignmentsForReportingUser(utils)
+    createJudgmentConsignmentsForReportingUser(utils)
+
+    val response = consignmentRepository.getTotalConsignments(ConsignmentFilters(None, "standard".some).some).futureValue
 
     response should be(expectedItems)
   }
@@ -332,6 +370,18 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
   private def createConsignments(utils: TestUtils): Int = {
     val consignments = Map(consignmentIdOne -> "TDR-2021-A", consignmentIdTwo -> "TDR-2021-B", consignmentIdThree -> "TDR-2021-C", consignmentIdFour -> "TDR-2021-D")
     consignments.foreach(item => utils.createConsignment(item._1, userId, consignmentRef = item._2))
+    consignments.size
+  }
+
+  private def createStandardConsignmentsForReportingUser(utils: TestUtils): Int = {
+    val consignments = Map(UUID.randomUUID() -> "TDR-2022-A", UUID.randomUUID() -> "TDR-2022-B")
+    consignments.foreach(item => utils.createConsignment(item._1, reportingUser, consignmentRef = item._2))
+    consignments.size
+  }
+
+  private def createJudgmentConsignmentsForReportingUser(utils: TestUtils): Int = {
+    val consignments = Map(UUID.randomUUID() -> "TDR-2022-C", UUID.randomUUID() -> "TDR-2022-D")
+    consignments.foreach(item => utils.createConsignment(item._1, reportingUser, consignmentRef = item._2, consignmentType = "judgment"))
     consignments.size
   }
 }
