@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.AvmetadataRow
 import uk.gov.nationalarchives.tdr.api.db.repository.AntivirusMetadataRepository
-import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.{AddAntivirusMetadataInput, AddAntivirusMetadataInputValues, AntivirusMetadata}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.{AddAntivirusMetadataInput, AntivirusMetadata}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -12,10 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class AntivirusMetadataService(antivirusMetadataRepository: AntivirusMetadataRepository, uuidSource: UUIDSource, timeSource: TimeSource)(implicit
     val executionContext: ExecutionContext
 ) {
-
-  @deprecated("Use addAntivirusMetadata(input: AddAntivirusMetadataInput): Future[List[AntivirusMetadata]] instead")
-  def addAntivirusMetadata(values: AddAntivirusMetadataInputValues): Future[AntivirusMetadata] =
-    addAntivirusMetadata(AddAntivirusMetadataInput(values :: Nil)).map(_.head)
 
   def addAntivirusMetadata(input: AddAntivirusMetadataInput): Future[List[AntivirusMetadata]] = {
     val inputRows = input.antivirusMetadata
