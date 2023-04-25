@@ -388,7 +388,6 @@ type Mutation {
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
   addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput!): ConsignmentStatus!
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
-  addAntivirusMetadata(addAntivirusMetadataInput: AddAntivirusMetadataInputValues!): AntivirusMetadata!
   addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
   addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInputValues!): FileMetadataWithFileId!
   addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
