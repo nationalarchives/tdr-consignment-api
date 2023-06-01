@@ -60,13 +60,6 @@ object FileMetadataFields {
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
-      "addFileMetadata",
-      FileMetadataWithFileIdType,
-      arguments = FileMetadataWithFileIdInputValuesArg :: Nil,
-      resolve = ctx => ctx.ctx.fileMetadataService.addFileMetadata(ctx.arg(FileMetadataWithFileIdInputValuesArg), ctx.ctx.accessToken.userId),
-      tags = List(ValidateHasChecksumMetadataAccess)
-    ),
-    Field(
       "addMultipleFileMetadata",
       ListType(FileMetadataWithFileIdType),
       arguments = FileMetadataWithFileIdInputArg :: Nil,

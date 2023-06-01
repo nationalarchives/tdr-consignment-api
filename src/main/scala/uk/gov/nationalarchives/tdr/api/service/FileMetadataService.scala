@@ -35,10 +35,6 @@ class FileMetadataService(
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Int] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 
-  @deprecated("Use addFileMetadata(input: AddFileMetadataWithFileIdInput): Future[List[FileMetadataWithFileId]]")
-  def addFileMetadata(addFileMetadataInput: AddFileMetadataWithFileIdInputValues, userId: UUID): Future[FileMetadataWithFileId] =
-    addFileMetadata(AddFileMetadataWithFileIdInput(addFileMetadataInput :: Nil), userId).map(_.head)
-
   def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     val metadataRow = input.metadataInputValues
       .map(addFileMetadataInput => {
