@@ -43,12 +43,27 @@ lazy val circeVersion = "0.14.5"
 lazy val testContainersVersion = "0.40.16"
 
 libraryDependencies ++= Seq(
+  "org.sangria-graphql" %% "sangria" % "4.0.0",
+  "org.sangria-graphql" %% "sangria-slowlog" % "2.0.5",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "3.0.1",
+  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+  "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-stream" % "2.6.20",
+  "io.circe" %% "circe-core" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
+  "io.circe" %% "circe-optics" % "0.14.1",
+  "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.3",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.28",
+  "org.postgresql" % "postgresql" % "42.6.0",
+  "com.typesafe.slick" %% "slick" % "3.4.0",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
+  "ch.megard" %% "akka-http-cors" % "1.2.0",
+  "ch.qos.logback" % "logback-classic" % "1.4.7",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.3",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
   "software.amazon.awssdk" % "rds" % "2.20.1",
@@ -69,7 +84,8 @@ libraryDependencies ++= Seq(
 
 dependencyOverrides ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.4.0",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0"
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
+  "org.sangria-graphql" %% "sangria" % "3.5.3",
 )
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
