@@ -75,7 +75,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.14" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
-  "com.tngtech.keycloakmock" % "mock" % "0.13.0" % Test,
+  "com.tngtech.keycloakmock" % "mock" % "0.14.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.134",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
@@ -85,7 +85,7 @@ libraryDependencies ++= Seq(
 dependencyOverrides ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.4.0",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
-  "org.sangria-graphql" %% "sangria" % "3.5.3",
+  "org.sangria-graphql" %% "sangria" % "3.5.3"
 )
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
