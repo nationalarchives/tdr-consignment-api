@@ -44,16 +44,8 @@ object FFIDMetadataFields {
   implicit val FFIDMetadataType: ObjectType[Unit, FFIDMetadata] = deriveObjectType[Unit, FFIDMetadata]()
 
   val FileFormatMetadataInputArg: Argument[FFIDMetadataInput] = Argument("addBulkFFIDMetadataInput", AddFFFIDMetadataInputType)
-  val FileFormatMetadataValuesInputArg: Argument[FFIDMetadataInputValues] = Argument("addFFIDMetadataInput", AddFFFIDMetadataInputValuesType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field(
-      "addFFIDMetadata",
-      FFIDMetadataType,
-      arguments = FileFormatMetadataValuesInputArg :: Nil,
-      resolve = ctx => ctx.ctx.ffidMetadataService.addFFIDMetadata(ctx.arg(FileFormatMetadataValuesInputArg)),
-      tags = List(ValidateHasFFIDMetadataAccess)
-    ),
     Field(
       "addBulkFFIDMetadata",
       ListType(FFIDMetadataType),

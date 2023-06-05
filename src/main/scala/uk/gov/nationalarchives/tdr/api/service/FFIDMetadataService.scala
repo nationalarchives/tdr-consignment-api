@@ -5,7 +5,7 @@ import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataInputValues, FFIDMetadataMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataInput, FFIDMetadataMatches}
 import uk.gov.nationalarchives.tdr.api.utils.LoggingUtils
 
 import java.sql.Timestamp
@@ -20,11 +20,6 @@ class FFIDMetadataService(
 )(implicit val executionContext: ExecutionContext) {
 
   val loggingUtils: LoggingUtils = LoggingUtils(Logger("FFIDMetadataService"))
-
-  @deprecated("Use addFFIDMetadata(ffidMetadataInput: FFIDMetadataInput)")
-  def addFFIDMetadata(ffidMetadataInputValues: FFIDMetadataInputValues): Future[FFIDMetadata] = {
-    addFFIDMetadata(FFIDMetadataInput(ffidMetadataInputValues :: Nil)).map(_.head)
-  }
 
   def addFFIDMetadata(ffidMetadataInput: FFIDMetadataInput): Future[List[FFIDMetadata]] = {
     val (metadataRows, matchRows) = ffidMetadataInput.metadataInputValues
