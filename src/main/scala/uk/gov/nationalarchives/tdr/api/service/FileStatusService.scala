@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddMultipleFileStatusesInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 
 import java.sql.Timestamp
@@ -37,11 +37,6 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
           FFIDProgress(statusMap.getOrElse(FFID, Nil).size)
         )
       })
-  }
-
-  @deprecated("Use addFileStatuses(addMultipleFileStatuses: List[AddFileStatusInput])")
-  def addFileStatus(addFileStatusInput: AddFileStatusInput): Future[FileStatus] = {
-    addFileStatuses(AddMultipleFileStatusesInput(addFileStatusInput :: Nil)).map(_.head)
   }
 
   def getFileStatuses(consignmentId: UUID, statusTypes: Set[String], selectedFileIds: Option[Set[UUID]] = None): Future[List[FileStatus]] = {

@@ -21,17 +21,9 @@ object FileStatusFields {
   implicit val AddFileStatusInputType: InputObjectType[AddFileStatusInput] = deriveInputObjectType[AddFileStatusInput]()
   implicit val AddMultipleFileStatusesInputType: InputObjectType[AddMultipleFileStatusesInput] = deriveInputObjectType[AddMultipleFileStatusesInput]()
 
-  implicit val FileStatusInputArg: Argument[AddFileStatusInput] = Argument("addFileStatusInput", AddFileStatusInputType)
   implicit val MultipleFileStatusesInputArg: Argument[AddMultipleFileStatusesInput] = Argument("addMultipleFileStatusesInput", AddMultipleFileStatusesInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field(
-      "addFileStatus",
-      FileStatusType,
-      arguments = FileStatusInputArg :: Nil,
-      resolve = ctx => ctx.ctx.fileStatusService.addFileStatus(ctx.arg(FileStatusInputArg)),
-      tags = List(ValidateUserOwnsFiles(FileStatusInputArg))
-    ),
     Field(
       "addMultipleFileStatuses",
       ListType(FileStatusType),

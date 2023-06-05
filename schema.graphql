@@ -389,14 +389,12 @@ type Mutation {
   addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput!): ConsignmentStatus!
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
-  addFileMetadata(addFileMetadataWithFileIdInput: AddFileMetadataWithFileIdInputValues!): FileMetadataWithFileId!
   addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
   updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
   deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
-  addFileStatus(addFileStatusInput: AddFileStatusInput!): FileStatus!
   addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
 }
 
