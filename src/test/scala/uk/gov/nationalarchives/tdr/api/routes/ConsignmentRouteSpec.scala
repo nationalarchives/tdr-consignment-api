@@ -6,6 +6,8 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -36,6 +38,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   val fileTwoId = "42910a85-85c3-40c3-888f-32f697bfadb6"
   val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
   val defaultBodyCode = "default-transferring-body-code"
+  val limit = 100
+  val currentPage = 0
+  val currentCursor = 0
+  val fileFilters = None
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -123,6 +129,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       parentId: Option[UUID],
       metadata: FileMetadataValues = FileMetadataValues(None, None, None, None, None, None, None, None, None),
       fileStatus: Option[String],
+      paginationInput: PaginationInput = PaginationInput(None, None, None, None),
       ffidMetadata: Option[FFIDMetadataValues],
       originalFilePath: Option[String],
       fileStatuses: List[FileStatus] = Nil

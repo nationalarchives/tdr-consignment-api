@@ -128,25 +128,6 @@ class FileService(
     fileRepository.countFilesInConsignment(consignmentId)
   }
 
-  @deprecated("Use getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: Option[QueriedFileFields] = None)")
-  def getFileMetadata(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields): Future[List[File]] = {
-    val filters = fileFilters.getOrElse(FileFilters())
-    val fileIds = filters.selectedFileIds.map(_.toSet)
-
-    for {
-      fileAndMetadataList <- fileRepository.getFiles(consignmentId, filters)
-      ffidMetadataList <- if (queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future.successful(Nil)
-      avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future.successful(Nil)
-      propertyNames <- getPropertyNames(filters.metadataFilters)
-      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future.successful(Nil)
-      fileStatuses <-
-        if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future.successful(Nil)
-    } yield {
-      val ffidStatus = ffidStatuses.map(fs => fs.fileId -> fs.statusValue).toMap
-      fileAndMetadataList.toFiles(avList, ffidMetadataList, ffidStatus, propertyNames, fileStatuses).toList
-    }
-  }
-
   def getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: QueriedFileFields): Future[TDRConnection[File]] = {
     val input = paginationInput.getOrElse(throw InputDataException("No pagination input argument provided for 'paginatedFiles' field query"))
     val filters = input.fileFilters.getOrElse(FileFilters())

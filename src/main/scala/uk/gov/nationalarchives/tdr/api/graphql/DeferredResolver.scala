@@ -1,7 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.graphql
 
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileChecks, PaginationInput, TransferringBody}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.SeriesFields._
@@ -25,8 +24,8 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case DeferConsignmentSeries(consignmentId)   => context.consignmentService.getSeriesOfConsignment(consignmentId)
       case DeferConsignmentBody(consignmentId)     => context.consignmentService.getTransferringBodyOfConsignment(consignmentId)
       case DeferConsignmentStatuses(consignmentId) => context.consignmentStatusService.getConsignmentStatuses(consignmentId)
-      case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
-        context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
+      case DeferFiles(consignmentId, paginationInput: Option[PaginationInput], queriedFileFields) =>
+        context.fileService.getPaginatedFiles(consignmentId, paginationInput, queriedFileFields)
       case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields) =>
         context.fileService.getPaginatedFiles(consignmentId, paginationInput, queriedFileFields)
       case DeferChecksSucceeded(consignmentId) => context.fileStatusService.allChecksSucceeded(consignmentId)
@@ -43,7 +42,7 @@ case class DeferParentFolder(consignmentId: UUID) extends Deferred[Option[String
 case class DeferParentFolderId(consignmentId: UUID) extends Deferred[Option[UUID]]
 case class DeferConsignmentSeries(consignmentId: UUID) extends Deferred[Option[Series]]
 case class DeferConsignmentBody(consignmentId: UUID) extends Deferred[TransferringBody]
-case class DeferFiles(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields) extends Deferred[List[File]]
+case class DeferFiles(consignmentId: UUID, paginationInput: Option[PaginationInput] = None, queriedFileFields: QueriedFileFields) extends Deferred[List[File]]
 case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: QueriedFileFields) extends Deferred[TDRConnection[File]]
 
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]
