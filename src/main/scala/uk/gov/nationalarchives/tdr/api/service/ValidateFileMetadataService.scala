@@ -38,6 +38,7 @@ class ValidateFileMetadataService(
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(toPropertyNames(customMetadataFields)))
+      existingStatuses <- fileStatusRepository.getFileStatus(consignmentId, Set(ClosureMetadata, DescriptiveMetadata), Some(fileIds))
       rows <- addMetadataFileStatuses(fileIds, propertiesToValidate, customMetadataFields, existingMetadataProperties)
     } yield {
       rows
@@ -48,7 +49,8 @@ class ValidateFileMetadataService(
       fileIds: Set[UUID],
       propertiesToValidate: Set[String],
       customMetadataFields: Seq[CustomMetadataField],
-      existingMetadataProperties: Seq[Tables.FilemetadataRow]
+      existingMetadataProperties: Seq[Tables.FilemetadataRow],
+      existingStatuses: Seq[FilestatusRow]
   ): Future[List[nationalarchives.Tables.FilestatusRow]] = {
     val additionalMetadataFieldGroups: Seq[FieldGroup] = toAdditionalMetadataFieldGroups(customMetadataFields)
     val additionalMetadataPropertyNames: Set[String] = additionalMetadataFieldGroups.flatMap(g => toPropertyNames(g.fields)).toSet
@@ -63,7 +65,9 @@ class ValidateFileMetadataService(
             val filesWithNoAdditionalMetadataStatuses = fileIds
               .filter(id => !states.map(_.fileId).contains(id))
               .map(id => {
-                FilestatusRow(uuidSource.uuid, id, group.groupName, NotEntered, Timestamp.from(timeSource.now))
+                val existingStatus = existingStatuses.find(e => e.fileid == id && e.statustype == group.groupName)
+                val fileStatusId = if (existingStatus.isDefined) { existingStatus.get.filestatusid } else { uuidSource.uuid }
+                FilestatusRow(fileStatusId, id, group.groupName, NotEntered, Timestamp.from(timeSource.now))
               })
 
             val statuses = states
@@ -75,7 +79,13 @@ class ValidateFileMetadataService(
                   case _ if fileStates.forall(_.missingDependencies == false)        => Completed
                   case _                                                             => Incomplete
                 }
-                FilestatusRow(uuidSource.uuid, fileId, group.groupName, status, Timestamp.from(timeSource.now))
+                val existingStatus = existingStatuses.find(e => e.fileid == fileId && e.statustype == group.groupName)
+                val fileStatusId = if (existingStatus.isDefined) {
+                  existingStatus.get.filestatusid
+                } else {
+                  uuidSource.uuid
+                }
+                FilestatusRow(fileStatusId, fileId, group.groupName, NotEntered, Timestamp.from(timeSource.now))
               })
             statuses ++ filesWithNoAdditionalMetadataStatuses
           })
@@ -83,8 +93,7 @@ class ValidateFileMetadataService(
       }
 
       for {
-        _ <- fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-        _ <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
+        _ <- fileStatusRepository.upsertFileStatuses(additionalMetadataStatuses)
       } yield additionalMetadataStatuses
 
     }
