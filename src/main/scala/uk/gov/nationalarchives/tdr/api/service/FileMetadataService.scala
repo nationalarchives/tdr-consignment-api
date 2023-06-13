@@ -27,11 +27,11 @@ class FileMetadataService(
     uuidSource: UUIDSource
 )(implicit val ec: ExecutionContext) {
 
-  implicit class FileRowsHelper(fileRows: Seq[FileRow]) {
-    def toFileTypeIds: Set[UUID] = {
-      fileRows.collect { case fileRow if fileRow.filetype.get == NodeType.fileTypeIdentifier => fileRow.fileid }.toSet
-    }
-  }
+//  implicit class FileRowsHelper(fileRows: Seq[FileRow]) {
+//    def toFileTypeIds: Set[UUID] = {
+//      fileRows.collect { case fileRow if fileRow.filetype.get == NodeType.fileTypeIdentifier => fileRow.fileid }.toSet
+//    }
+//  }
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Int] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 
@@ -47,6 +47,25 @@ class FileMetadataService(
       .recover(err => throw InputDataException(err.getMessage))
   }
 
+  def upsertBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID) = {
+    val emptyPropertyValues: Seq[String] = input.metadataProperties.filter(_.value.isEmpty).map(_.filePropertyName)
+
+    if (emptyPropertyValues.nonEmpty) {
+      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
+    }
+
+    val consignmentId = input.consignmentId
+    val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
+    val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
+    val fileIds: Set[UUID] = input.fileIds.distinct.toSet
+
+    for {
+      existingFileMetadata <- fileMetadataRepository.getFileMetadataByProperty(fileIds.toList, distinctPropertyNames.toList:_*)
+    } yield {
+
+    }
+  }
+
   def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
     val emptyPropertyValues: Seq[String] = input.metadataProperties.filter(_.value.isEmpty).map(_.filePropertyName)
 
@@ -57,24 +76,24 @@ class FileMetadataService(
     val consignmentId = input.consignmentId
     val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
     val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
-    val uniqueFileIds: Seq[UUID] = input.fileIds.distinct
+    val fileIds: Set[UUID] = input.fileIds.distinct.toSet
 
     for {
-      existingFileRows <- fileRepository.getAllDescendants(uniqueFileIds)
-      fileIds: Set[UUID] = existingFileRows.toFileTypeIds
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, distinctPropertyNames)
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(fileIds, distinctMetadataProperties, userId))
-      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds.toSet, input.consignmentId, distinctPropertyNames)
+      fileDetails <- fileRepository.getFiles(fileIds)
+      nonDirectoryIds = fileDetails.filter(_._2.contains(NodeType.fileTypeIdentifier)).map(_._1).toSet
+      _ <- fileMetadataRepository.deleteFileMetadata(nonDirectoryIds, distinctPropertyNames)
+      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(nonDirectoryIds, distinctMetadataProperties, userId))
+      _ <- validateFileMetadataService.validateAdditionalMetadata(nonDirectoryIds, input.consignmentId, distinctPropertyNames)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
-    } yield BulkFileMetadata(fileIds.toSeq, metadataPropertiesAdded.toSeq)
+    } yield BulkFileMetadata(nonDirectoryIds.toSeq, metadataPropertiesAdded.toSeq)
   }
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
     val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
     for {
-      existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
-      fileIds: Set[UUID] = existingFileRows.toFileTypeIds
+      existingFileDetails <- fileRepository.getFiles(input.fileIds.toSet)
+      nonDirectoryIds: Set[UUID] = existingFileDetails.filter(_._2.contains(NodeType.fileTypeIdentifier)).map(_._1).toSet
       customMetadataProperties <- customMetadataService.getCustomMetadata
       allPropertiesToDelete: Set[String] = customMetadataProperties
         .collect {
@@ -96,17 +115,17 @@ class FileMetadataService(
           (customMetadataProperty.name, customMetadataProperty.defaultValue.get)
       }
 
-      metadataToReset: Seq[FilemetadataRow] = fileIds.flatMap { id =>
+      metadataToReset: Seq[FilemetadataRow] = nonDirectoryIds.flatMap { id =>
         propertyDefaults.map { case (propertyName, defaultValue) =>
           FilemetadataRow(uuidSource.uuid, id, defaultValue, Timestamp.from(timeSource.now), userId, propertyName)
         }
       }.toSeq
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
+      consignmentId = existingFileDetails.map(_._4).headOption.getOrElse(throw InputDataException("No consignment id found for files"))
+      _ <- fileMetadataRepository.deleteFileMetadata(nonDirectoryIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, existingFileRows.map(_.consignmentid).head, allPropertiesToDelete)
-      consignmentId = existingFileRows.map(_.consignmentid).headOption.getOrElse(throw InputDataException("No consignment id found for files"))
+      _ <- validateFileMetadataService.validateAdditionalMetadata(nonDirectoryIds, consignmentId, allPropertiesToDelete)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
-    } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
+    } yield DeleteFileMetadata(nonDirectoryIds.toSeq, allPropertiesToDelete.toSeq)
   }
 
   private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
