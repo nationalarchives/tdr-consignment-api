@@ -39,7 +39,7 @@ class ValidateFileMetadataService(
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(toPropertyNames(customMetadataFields)))
       existingStatuses <- fileStatusRepository.getFileStatus(consignmentId, Set(ClosureMetadata, DescriptiveMetadata), Some(fileIds))
-      rows <- addMetadataFileStatuses(fileIds, propertiesToValidate, customMetadataFields, existingMetadataProperties)
+      rows <- addMetadataFileStatuses(fileIds, propertiesToValidate, customMetadataFields, existingMetadataProperties, existingStatuses)
     } yield {
       rows
     }
