@@ -198,14 +198,14 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     files.head.consignmentid shouldBe consignmentId
   }
 
-  "getFiles" should "return file fields for given file ids" in withContainers { case container: PostgreSQLContainer =>
+  "getFileFields" should "return all files fields for given file ids" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
     val fileRepository = new FileRepository(db)
     val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
     setUpFilesAndDirectories(consignmentId, utils)
 
-    val files = fileRepository.getFiles(Set(folderOneId, fileOneId, fileTwoId)).futureValue
+    val files = fileRepository.getFileFields(Set(folderOneId, fileOneId, fileTwoId), None).futureValue
     files.size shouldBe 3
     val folderInfo = files.filter(_._1 == folderOneId).head
     folderInfo._2.contains(NodeType.directoryTypeIdentifier) shouldBe true
@@ -218,6 +218,40 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val fileTwoInfo = files.filter(_._1 == fileTwoId).head
     fileTwoInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
     fileTwoInfo._3 shouldBe userId
+  }
+
+  "getFileFields" should "return nonDirectory file fields only for given file ids when 'file type' filter applied" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndDirectories(consignmentId, utils)
+
+    val files = fileRepository.getFileFields(Set(folderOneId, fileOneId, fileTwoId), Some(NodeType.fileTypeIdentifier)).futureValue
+    files.size shouldBe 2
+
+    val fileOneInfo = files.filter(_._1 == fileOneId).head
+    fileOneInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
+    fileOneInfo._3 shouldBe userId
+
+    val fileTwoInfo = files.filter(_._1 == fileTwoId).head
+    fileTwoInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
+    fileTwoInfo._3 shouldBe userId
+  }
+
+  "getFileFields" should "return directory file fields only for given file ids when 'directory type' filter applied" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndDirectories(consignmentId, utils)
+
+    val files = fileRepository.getFileFields(Set(folderOneId, fileOneId, fileTwoId), Some(NodeType.directoryTypeIdentifier)).futureValue
+    files.size shouldBe 1
+
+    val folderInfo = files.filter(_._1 == folderOneId).head
+    folderInfo._2.contains(NodeType.directoryTypeIdentifier) shouldBe true
+    folderInfo._3 shouldBe userId
   }
 
   "getFiles" should "return files, file metadata and folders where no type filter applied" in withContainers { case container: PostgreSQLContainer =>

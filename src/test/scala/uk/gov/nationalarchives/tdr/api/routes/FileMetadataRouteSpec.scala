@@ -153,9 +153,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     utils.addFileProperty("property2")
     utils.addFileProperty("property3")
 
-    // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata was applied to it
+    // folderOneId WILL be passed into updateBulkFileMetadata as it is inside but it will NOT be returned since no metadata can be added to it
     utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-    // fileOneId will NOT be passed into updateBulkFileMetadata as it is inside "folderName" but it WILL be returned since metadata was applied to it
+    // fileOneId will NOT be passed into updateBulkFileMetadata as it is inside "folderName" and WON'T be returned since no metadata can be added to it
     utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
     utils.createFile(fileTwoId, consignmentId)
     utils.createFile(fileThreeId, consignmentId)
@@ -171,11 +171,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
     val responseFileIds: Seq[UUID] = response.data.get.updateBulkFileMetadata.fileIds
     val responseFileMetadataProperties = response.data.get.updateBulkFileMetadata.metadataProperties
-    val parentIdOfFileOneId: UUID = UUID.fromString(getParentId(fileOneId, utils))
 
     responseFileIds.contains(folderOneId) should equal(false)
-    responseFileIds.contains(fileOneId) should equal(true)
-    parentIdOfFileOneId should equal(folderOneId)
+    responseFileIds.contains(fileOneId) should equal(false)
 
     val correctPropertiesWerePassedIn: Boolean = responseFileMetadataProperties.forall(fileMetadata => expectedResponseFileMetadata.contains(fileMetadata))
 

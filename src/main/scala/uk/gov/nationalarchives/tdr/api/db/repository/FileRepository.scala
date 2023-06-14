@@ -63,9 +63,10 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def getFiles(ids: Set[UUID]): Future[Seq[FileFields]] = {
+  def getFileFields(ids: Set[UUID], fileTypeIdentifier: Option[String]): Future[Seq[FileFields]] = {
     val query = File
       .filter(_.fileid inSet ids)
+      .filterOpt(fileTypeIdentifier)(_.filetype === _)
       .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid))
 
     db.run(query.result)

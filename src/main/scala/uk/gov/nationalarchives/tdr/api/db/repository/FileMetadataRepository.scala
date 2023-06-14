@@ -36,13 +36,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(insertFileMetadataQuery ++= rows)
   }
 
-  def upsertFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[Int]] = {
-    val dbUpsert: Seq[ProfileAction[Int, NoStream, Effect.Write]] = rows.map { row =>
-      Filemetadata.insertOrUpdate(row)
-    }
-    db.run(DBIO.sequence(dbUpsert).transactionally)
-  }
-
   def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
       .filter(_.fileid inSet fileIds)
