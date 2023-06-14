@@ -118,10 +118,9 @@ class FileService(
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
   }
 
-  def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
-    consignmentRepository
-      .getConsignmentsOfFiles(fileIds)
-      .map(_.map(consignmentByFile => FileOwnership(consignmentByFile._1, consignmentByFile._2.userid)))
+  def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[(UUID, Option[UUID])]] = {
+    fileRepository
+      .getUserIdFromFileId(fileIds)
   }
 
   def fileCount(consignmentId: UUID): Future[Int] = {

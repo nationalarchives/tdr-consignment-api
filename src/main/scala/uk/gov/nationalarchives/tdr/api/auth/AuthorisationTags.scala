@@ -8,7 +8,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{Delete
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
-import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
 import java.util.UUID
 import scala.concurrent._
@@ -182,23 +181,21 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
     for {
-      fileIdsAndOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
-      fileIdsBelongingToAConsignment: Seq[UUID] = fileIdsAndOwner.map(_.fileId)
-      filesThatDoNotBelongToAConsignment: Seq[UUID] = fileIds.filterNot(fileId => fileIdsBelongingToAConsignment.contains(fileId))
-      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileIdsAndOwner.collect {
-        case fileIdAndOwner if fileIdAndOwner.userId != userId => fileIdAndOwner.fileId
+      fileOwner: Seq[(UUID, Option[UUID])] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
+      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileOwner.collect {
+        case (fileId, Some(ownerId)) if ownerId != userId => fileId
       }
-      allFilesBelongToAConsignment = filesThatDoNotBelongToAConsignment.isEmpty
       allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
       result =
-        if ((allFilesBelongToAConsignment && allFilesBelongToTheUser) || exportAccess) {
+        if (allFilesBelongToTheUser || exportAccess) {
           continue
         } else {
-          val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
-          val message = s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")} or does not have export access"
-          throw AuthorisationException(message)
+          throw AuthorisationException(
+            s"User '$userId' does not own the files they are trying to access:\n${fileIdsThatDoNotBelongToTheUser.mkString("\n")} or does not have export access"
+          )
         }
     } yield result
+
   }
 }
 

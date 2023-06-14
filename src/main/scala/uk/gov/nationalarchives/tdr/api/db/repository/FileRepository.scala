@@ -74,6 +74,15 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
+  def getUserIdFromFileId(ids: Seq[UUID]): Future[Seq[(UUID, Option[UUID])]] = {
+    val query = File
+      .joinLeft(Filemetadata)
+      .on(_.fileid === _.fileid)
+      .filter(_._1.fileid inSet ids)
+      .map(res => (res._1.fileid, res._2.map(_.userid)))
+    db.run(query.result)
+  }
+
   def getPaginatedFiles(consignmentId: UUID, limit: Int, offset: Int, after: Option[String], fileFilters: FileFilters): Future[Seq[FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)
