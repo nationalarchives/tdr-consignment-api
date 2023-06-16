@@ -586,36 +586,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
   }
 
-  "addSeriesStatus" should "update the consignment status for a series" in {
-    val consignmentRepoMock = mock[ConsignmentRepository]
-    val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
-    val fixedUuidSource = new FixedUUIDSource()
-    val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
-    val statusType = "Series"
-    val statusValue = "Complete"
-    val createdTimestamp = Timestamp.from(now)
-
-    val service: ConsignmentService = new ConsignmentService(
-      consignmentRepoMock,
-      consignmentStatusRepoMock,
-      transferringBodyServiceMock,
-      FixedTimeSource,
-      fixedUuidSource,
-      ConfigFactory.load()
-    )
-
-    val mockResponse = Future.successful(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp))
-    when(consignmentStatusRepoMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockResponse)
-
-    val result = service.addSeriesStatus(consignmentId).futureValue
-
-    result.consignmentstatusid shouldBe consignmentStatusId
-    result.consignmentid shouldBe consignmentId
-    result.statustype shouldBe statusType
-    result.value shouldBe statusValue
-    result.createddatetime shouldBe createdTimestamp
-  }
-
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {
     ConsignmentRow(
       consignmentId,
