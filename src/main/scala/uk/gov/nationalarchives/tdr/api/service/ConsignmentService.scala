@@ -117,7 +117,9 @@ class ConsignmentService(
   }
 
   def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
-    addSeriesStatus(updateConsignmentSeriesIdInput.consignmentId)
+    //Should UpdateConsignmentSeriesIdInput have statusValue as a given value
+//    addSeriesStatus(updateConsignmentSeriesIdInput.consignmentId)
+    consignmentStatusRepository.updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, "Series", "Completed", Timestamp.from(timeSource.now))
     consignmentRepository.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput)
   }
 
