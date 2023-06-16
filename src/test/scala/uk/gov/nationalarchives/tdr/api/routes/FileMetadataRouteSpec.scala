@@ -373,7 +373,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "updateBulkFileMetadata" should "throw an error if a file id exists but belongs to another user" in withContainers { case container: PostgreSQLContainer =>
+  "updateBulkFileMetadata" should "throw a 'non-ownership' error if a file id exists but belongs to another user" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
 
@@ -403,6 +403,38 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFileMetadataAdded(utils, "property1")
     checkNoFileMetadataAdded(utils, "property2")
+  }
+
+  "updateBulkFileMetadata" should "throw a 'non-ownership' error if a file id belongs to another user and an inout error is also present" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("373ce1c5-6e06-423d-8b86-ca5eaebef457")
+      val fileFourId = UUID.fromString("5302acac-1396-44fe-9094-dc262414a03a")
+
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+
+      val consignmentId2 = UUID.fromString("3a4d1650-dc96-4b0d-a2e7-3551a682b46f")
+      val consignmentId3 = UUID.fromString("75ec3c85-ba66-4145-842f-0aa91b1a9972")
+      val userId2 = UUID.fromString("a2c292e8-e764-4dd5-99eb-23084c226013")
+      val userId3 = UUID.fromString("c83b64c8-b7f5-47e2-94a4-4b91bf76faea")
+      utils.createConsignment(consignmentId2, userId = userId2)
+      utils.createFile(fileThreeId, consignmentId2, userId = userId2)
+      utils.createConsignment(consignmentId3, userId = userId3)
+      utils.createFile(fileFourId, consignmentId3, userId = userId3)
+
+      val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData =
+        expectedUpdateBulkFileMetadataMutationResponse("data_error_not_file_owner")
+      val response: GraphqlUpdateBulkFileMetadataMutationData = runUpdateBulkFileMetadataTestMutation("mutation_notfileowner", validUserToken())
+
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      checkNoFileMetadataAdded(utils, "property1")
+      checkNoFileMetadataAdded(utils, "property2")
   }
 
   "deleteFileMetadata" should "delete file metadata or set the relevant default values for the given fileIds" in withContainers { case container: PostgreSQLContainer =>

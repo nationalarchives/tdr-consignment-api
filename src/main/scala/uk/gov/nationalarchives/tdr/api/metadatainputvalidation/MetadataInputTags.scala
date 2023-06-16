@@ -7,6 +7,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, Validatio
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
+import uk.gov.nationalarchives.tdr.api.service.FileService.FileDetails
 
 import java.util.UUID
 import scala.concurrent._
@@ -19,28 +20,30 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
 
-    val fileIds: Seq[UUID] = arg match {
+    val inputFileIds: Seq[UUID] = arg match {
       case input: UpdateBulkFileMetadataInput => input.fileIds
     }
 
     val userId = ctx.ctx.accessToken.userId
 
-    if (fileIds.isEmpty) {
+    if (inputFileIds.isEmpty) {
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
 
     for {
-      fileFields <- ctx.ctx.fileService.getFileDetails(fileIds)
-      ids = fileFields.map(_.fileId).toSet
+      fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)
       nonOwnership = fileFields.exists(_.userId != userId)
-      containsDirectoryIds = fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier))
-      missing = fileIds.toSet.size > ids.size
     } yield {
       nonOwnership match {
-        case true                                 => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
-        case _ if containsDirectoryIds || missing => throw InputDataException("Input contains directory id or contains non-existing file")
-        case _                                    => continue
+        case true                                           => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
+        case _ if secondaryErrors(fileFields, inputFileIds) => throw InputDataException("Input contains directory id or contains non-existing file")
+        case _                                              => continue
       }
     }
+  }
+
+  private def secondaryErrors(fileFields: Seq[FileDetails], inputIds: Seq[UUID]): Boolean = {
+    val existingIds = fileFields.map(_.fileId).toSet
+    inputIds.toSet.size > existingIds.size || fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier))
   }
 }
