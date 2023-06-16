@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "User '4ab14990-ed63-4615-8336-56fbb9960300' does not own the files they are trying to access:\n373ce1c5-6e06-423d-8b86-ca5eaebef457\n5302acac-1396-44fe-9094-dc262414a03a or does not have export access"
+      "message": "Input contains directory id or contains non-existing file"
     }
   ]
 }

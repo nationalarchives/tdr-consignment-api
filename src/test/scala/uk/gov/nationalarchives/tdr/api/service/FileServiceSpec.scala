@@ -21,6 +21,7 @@ import uk.gov.nationalarchives.Tables.{
   FilestatusRow
 }
 import uk.gov.nationalarchives.tdr.api.db.repository._
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileFields
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
@@ -149,6 +150,48 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     owners(1).userId should equal(userId2)
   }
   // scalastyle:on magic.number
+
+  "getFileDetails" should "return all the correct files details from the database response" in {
+    val fileRepositoryMock = mock[FileRepository]
+    val fixedUuidSource = new FixedUUIDSource()
+    val parentFolderId = UUID.randomUUID()
+    val fileIdOne = UUID.randomUUID()
+    val fileIdTwo = UUID.randomUUID()
+
+    val folderFields = new FileFields(parentFolderId, Some(NodeType.directoryTypeIdentifier), userId)
+    val fileOneFields = new FileFields(fileIdOne, Some(NodeType.fileTypeIdentifier), userId)
+    val fileTwoFields = new FileFields(fileIdTwo, Some(NodeType.fileTypeIdentifier), userId)
+     when(fileRepositoryMock.getFileFields(Set(fileIdOne, fileIdTwo, parentFolderId)))
+      .thenReturn(Future(Seq(folderFields, fileOneFields, fileTwoFields)))
+
+    val service = new FileService(
+      fileRepositoryMock,
+      mock[ConsignmentRepository],
+      mock[CustomMetadataPropertiesRepository],
+      mock[FFIDMetadataService],
+      mock[AntivirusMetadataService],
+      mock[FileStatusService],
+      mock[FileMetadataService],
+      FixedTimeSource,
+      fixedUuidSource,
+      ConfigFactory.load()
+    )
+
+    val response = service.getFileDetails(Seq(fileIdTwo, fileIdOne, parentFolderId)).futureValue
+    response.size shouldBe 3
+
+    val parentFolder = response.find(_.fileId == parentFolderId).get
+    parentFolder.fileType.get should equal(NodeType.directoryTypeIdentifier)
+    parentFolder.userId should equal(userId)
+
+    val fileOne = response.find(_.fileId == fileIdOne).get
+    fileOne.fileType.get should equal(NodeType.fileTypeIdentifier)
+    fileOne.userId should equal(userId)
+
+    val fileTwo = response.find(_.fileId == fileIdTwo).get
+    fileTwo.fileType.get should equal(NodeType.fileTypeIdentifier)
+    fileTwo.userId should equal(userId)
+  }
 
   "getFileMetadata" should "return all the correct files and folders with the correct metadata from the database response" in {
     val ffidMetadataRepositoryMock = mock[FFIDMetadataRepository]

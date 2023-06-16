@@ -118,6 +118,10 @@ class FileService(
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
   }
 
+  def getFileDetails(ids: Seq[UUID]): Future[Seq[FileDetails]] = {
+    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3)))
+  }
+
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
     consignmentRepository
       .getConsignmentsOfFiles(fileIds)
@@ -320,4 +324,6 @@ object FileService {
   case class FileOwnership(fileId: UUID, userId: UUID)
 
   case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
+
+  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID)
 }

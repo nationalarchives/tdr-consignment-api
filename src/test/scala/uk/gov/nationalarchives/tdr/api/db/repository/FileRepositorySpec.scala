@@ -198,6 +198,28 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     files.head.consignmentid shouldBe consignmentId
   }
 
+  "getFileFields" should "return all files fields for given file ids" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndDirectories(consignmentId, utils)
+
+    val files = fileRepository.getFileFields(Set(folderOneId, fileOneId, fileTwoId)).futureValue
+    files.size shouldBe 3
+    val folderInfo = files.filter(_._1 == folderOneId).head
+    folderInfo._2.contains(NodeType.directoryTypeIdentifier) shouldBe true
+    folderInfo._3 shouldBe userId
+
+    val fileOneInfo = files.filter(_._1 == fileOneId).head
+    fileOneInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
+    fileOneInfo._3 shouldBe userId
+
+    val fileTwoInfo = files.filter(_._1 == fileTwoId).head
+    fileTwoInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
+    fileTwoInfo._3 shouldBe userId
+  }
+
   "getFiles" should "return files, file metadata and folders where no type filter applied" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
