@@ -161,7 +161,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val folderFields = new FileFields(parentFolderId, Some(NodeType.directoryTypeIdentifier), userId)
     val fileOneFields = new FileFields(fileIdOne, Some(NodeType.fileTypeIdentifier), userId)
     val fileTwoFields = new FileFields(fileIdTwo, Some(NodeType.fileTypeIdentifier), userId)
-     when(fileRepositoryMock.getFileFields(Set(fileIdOne, fileIdTwo, parentFolderId)))
+    when(fileRepositoryMock.getFileFields(Set(fileIdOne, fileIdTwo, parentFolderId)))
       .thenReturn(Future(Seq(folderFields, fileOneFields, fileTwoFields)))
 
     val service = new FileService(

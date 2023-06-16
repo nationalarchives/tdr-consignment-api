@@ -36,11 +36,11 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
       containsDirectoryIds = fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier))
       missing = fileIds.toSet.size > ids.size
     } yield {
-        nonOwnership match {
-          case true => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
-          case _ if containsDirectoryIds || missing => throw InputDataException("Input contains directory id or contains non-existing file")
-          case _ => continue
-        }
+      nonOwnership match {
+        case true                                 => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
+        case _ if containsDirectoryIds || missing => throw InputDataException("Input contains directory id or contains non-existing file")
+        case _                                    => continue
+      }
     }
   }
 }
