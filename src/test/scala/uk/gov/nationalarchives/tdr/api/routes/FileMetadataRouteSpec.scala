@@ -186,7 +186,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   "updateBulkFileMetadata" should "set the expected consignment and file statuses for non-directories only" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
-    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
     val propertyGroup = "MandatoryClosure"
 
     val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
@@ -349,7 +349,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "updateBulkFileMetadata" should "throw an error if some file ids do not exist" in withContainers { case container: PostgreSQLContainer =>
+  "updateBulkFileMetadata" should "throw an 'invalid input data' error if some file ids do not exist" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
 
@@ -368,12 +368,13 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val response: GraphqlUpdateBulkFileMetadataMutationData =
       runUpdateBulkFileMetadataTestMutation("mutation_fileidnotexists", validUserToken())
 
+    response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFileMetadataAdded(utils, "property1")
     checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "updateBulkFileMetadata" should "throw a 'non-ownership' error if a file id exists but belongs to another user" in withContainers { case container: PostgreSQLContainer =>
+  "updateBulkFileMetadata" should "throw a 'not authorised' error if a file id exists but belongs to another user" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
 
@@ -400,12 +401,13 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       expectedUpdateBulkFileMetadataMutationResponse("data_error_not_file_owner")
     val response: GraphqlUpdateBulkFileMetadataMutationData = runUpdateBulkFileMetadataTestMutation("mutation_notfileowner", validUserToken())
 
+    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFileMetadataAdded(utils, "property1")
     checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "updateBulkFileMetadata" should "throw a 'non-ownership' error if a file id belongs to another user and an inout error is also present" in withContainers {
+  "updateBulkFileMetadata" should "throw a 'not authorised' error if a file id belongs to another user and an inout error is also present" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
@@ -432,6 +434,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
         expectedUpdateBulkFileMetadataMutationResponse("data_error_not_file_owner")
       val response: GraphqlUpdateBulkFileMetadataMutationData = runUpdateBulkFileMetadataTestMutation("mutation_notfileowner", validUserToken())
 
+      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
       response.errors.head.message should equal(expectedResponse.errors.head.message)
       checkNoFileMetadataAdded(utils, "property1")
       checkNoFileMetadataAdded(utils, "property2")

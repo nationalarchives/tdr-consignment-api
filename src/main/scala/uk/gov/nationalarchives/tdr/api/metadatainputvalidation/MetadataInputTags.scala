@@ -36,13 +36,13 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
     } yield {
       nonOwnership match {
         case true                                           => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
-        case _ if secondaryErrors(fileFields, inputFileIds) => throw InputDataException("Input contains directory id or contains non-existing file")
+        case _ if inputErrors(fileFields, inputFileIds) => throw InputDataException("Input contains directory id or contains non-existing file")
         case _                                              => continue
       }
     }
   }
 
-  private def secondaryErrors(fileFields: Seq[FileDetails], inputIds: Seq[UUID]): Boolean = {
+  private def inputErrors(fileFields: Seq[FileDetails], inputIds: Seq[UUID]): Boolean = {
     val existingIds = fileFields.map(_.fileId).toSet
     inputIds.toSet.size > existingIds.size || fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier))
   }
