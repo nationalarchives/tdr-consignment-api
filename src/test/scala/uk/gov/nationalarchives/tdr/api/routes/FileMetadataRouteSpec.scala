@@ -308,6 +308,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
     val token = validUserToken(wrongUserId)
     val response: GraphqlUpdateBulkFileMetadataMutationData = runUpdateBulkFileMetadataTestMutation("mutation_alldata", token)
+    println(s"auth error : ${response.errors}")
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
@@ -357,7 +358,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData = expectedUpdateBulkFileMetadataMutationResponse("data_fileid_not_exists")
     val response: GraphqlUpdateBulkFileMetadataMutationData =
       runUpdateBulkFileMetadataTestMutation("mutation_fileidnotexists", validUserToken())
-
+    println(s"expected response ${expectedResponse}")
+    println(s"actual response ${response}")
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFileMetadataAdded(utils, "property1")
     checkNoFileMetadataAdded(utils, "property2")
@@ -513,7 +515,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
     val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_error_not_file_owner")
     val response = runDeleteFileMetadataTestMutation("mutation_alldata", validUserToken(wrongUserId))
-
+    println(s"response : ${response.errors.head.message}")
+    println(s"expected message : ${expectedResponse.errors.head.message}")
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
 

@@ -136,19 +136,19 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       ConfigFactory.load()
     )
 
-    when(fileRepositoryMock.getUserIdFromFileId(Seq(fileId1)))
-      .thenReturn(Future.successful(Seq((fileId1, Some(userId1)), (fileId2, Some(userId2)))))
+    when(fileRepositoryMock.getFileFields(Seq(fileId1)))
+      .thenReturn(Future.successful(Seq((fileId1, userId1), (fileId2, userId2))))
     val mockFileMetadataResponse = Future.successful(Seq(FilemetadataRow(UUID.randomUUID(), fileId1, "value", Timestamp.from(Instant.now), userId1, "name")))
     when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
 
     val owners = fileService.getOwnersOfFiles(Seq(fileId1)).futureValue
 
-    println(s"Owners Object: $owners")
-
     owners should have size 2
 
-    owners.head._2 should equal(Some(userId1))
-    owners(1)._2 should equal(Some(userId2))
+    owners.head._2 should equal(userId1)
+    owners.head._1 should equal(fileId1)
+    owners(1)._1 should equal(fileId2)
+    owners(1)._2 should equal(userId2)
   }
   // scalastyle:on magic.number
 

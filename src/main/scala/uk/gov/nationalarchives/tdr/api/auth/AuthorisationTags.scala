@@ -181,13 +181,20 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
     for {
-      fileOwner: Seq[(UUID, Option[UUID])] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
+      fileOwner: Seq[(UUID, UUID)] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
       fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileOwner.collect {
-        case (fileId, Some(ownerId)) if ownerId != userId => fileId
+        case (fileId, ownerId) if ownerId != userId => fileId
       }
       allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
       result =
         if (allFilesBelongToTheUser || exportAccess) {
+          println(s"fileIds: $fileIds") // TODO remove debug statements
+          println(s"exportAccess: $exportAccess")
+          println(s"userId: $userId")
+          println(s"fileOwner: ${fileOwner}")
+          println(s"fileIdsThatDoNotBelongToTheUserVar: ${fileIdsThatDoNotBelongToTheUser}")
+          println(s"fileIdsThatDoNotBelongToTheUserBool: ${fileIdsThatDoNotBelongToTheUser.isEmpty}")
+          println(s"allFilesBelongToTheUser: ${allFilesBelongToTheUser}")
           continue
         } else {
           throw AuthorisationException(

@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
@@ -118,9 +118,9 @@ class FileService(
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
   }
 
-  def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[(UUID, Option[UUID])]] = {
+  def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileFields]] = {
     fileRepository
-      .getUserIdFromFileId(fileIds)
+      .getFileFields(fileIds)
   }
 
   def fileCount(consignmentId: UUID): Future[Int] = {
