@@ -43,6 +43,7 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
     utils.createConsignment(consignmentId, userId, fixedSeriesId)
     utils.createFile(defaultFileId, consignmentId, userId=userId)
 
+
     val expectedResponse: GraphqlAddFileStatusMutationData = expectedAddFileStatusMutationResponse("data_all")
     val response: GraphqlAddFileStatusMutationData = runAddFileStatusTestMutation("mutation_alldata", token)
     print(response)

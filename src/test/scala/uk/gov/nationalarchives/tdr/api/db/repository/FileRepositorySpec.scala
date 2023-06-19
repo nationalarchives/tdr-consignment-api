@@ -358,6 +358,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val fileRepository = new FileRepository(db)
     val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
 
+
     val files = fileRepository.getPaginatedFiles(consignmentId, 2, 2, Some(nonExistentFileId), FileFilters()).futureValue
     files.size shouldBe 0
   }
