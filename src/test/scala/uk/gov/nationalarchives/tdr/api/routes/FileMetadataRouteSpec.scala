@@ -402,7 +402,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   "deleteFileMetadata" should "delete file metadata or set the relevant default values for the given fileIds" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
-    val consignmentId = UUID.randomUUID()
+    val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
     val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
     val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
     val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
@@ -439,7 +439,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   forAll(statusValues)(statusValue => {
     "deleteFileMetadata" should s"set the consignment status to $statusValue if an existing file is $statusValue" in withContainers { case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
-      val consignmentId = UUID.randomUUID()
+      val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
       val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
       val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")

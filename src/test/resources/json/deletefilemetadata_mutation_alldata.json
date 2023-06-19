@@ -4,13 +4,14 @@
     "deleteFileMetadataInput" : {
       "fileIds": [
         "7076f399-b596-4161-a95d-e686c6435710",
-        "d74650ff-21b1-402d-8c59-b114698a8341"
+        "51c55218-1322-4453-9ef8-2300ef1c0fef"
       ],
       "propertyNames": [
         "TestDependency1",
         "TestDependency2",
         "ClosureType"
-      ]
+      ],
+      "consignmentId": "57a0b4cd-4dc1-4be4-a8c1-2d93fce54413"
     }
   }
 }

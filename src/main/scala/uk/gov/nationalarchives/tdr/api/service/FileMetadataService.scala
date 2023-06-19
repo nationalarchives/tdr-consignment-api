@@ -72,9 +72,9 @@ class FileMetadataService(
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
     val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
+    val consignmentId: UUID = input.consignmentId.getOrElse(throw InputDataException("No consignment id"))
+    val fileIds: Set[UUID] = input.fileIds.toSet
     for {
-      existingFileRows <- fileRepository.getAllDescendants(input.fileIds.distinct)
-      fileIds: Set[UUID] = existingFileRows.toFileTypeIds
       customMetadataProperties <- customMetadataService.getCustomMetadata
       allPropertiesToDelete: Set[String] = customMetadataProperties
         .collect {
@@ -103,8 +103,7 @@ class FileMetadataService(
       }.toSeq
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, existingFileRows.map(_.consignmentid).head, allPropertiesToDelete)
-      consignmentId = existingFileRows.map(_.consignmentid).headOption.getOrElse(throw InputDataException("No consignment id found for files"))
+      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, consignmentId, allPropertiesToDelete)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
