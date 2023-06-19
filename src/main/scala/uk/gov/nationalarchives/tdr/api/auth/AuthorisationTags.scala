@@ -185,24 +185,16 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileOwner.collect {
         case (fileId, ownerId) if ownerId != userId => fileId
       }
-      allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
+      fileIdsWithNoOwner: Seq[UUID] = fileIds.filterNot(fileId => fileOwner.exists(_._1 == fileId))
+      allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty && fileIdsWithNoOwner.isEmpty
       result =
-        if (allFilesBelongToTheUser || exportAccess) {
-          println(s"fileIds: $fileIds") // TODO remove debug statements
-          println(s"exportAccess: $exportAccess")
-          println(s"userId: $userId")
-          println(s"fileOwner: ${fileOwner}")
-          println(s"fileIdsThatDoNotBelongToTheUserVar: ${fileIdsThatDoNotBelongToTheUser}")
-          println(s"fileIdsThatDoNotBelongToTheUserBool: ${fileIdsThatDoNotBelongToTheUser.isEmpty}")
-          println(s"allFilesBelongToTheUser: ${allFilesBelongToTheUser}")
+        if (fileIdsWithNoOwner.isEmpty && (allFilesBelongToTheUser || exportAccess)) {
           continue
         } else {
-          throw AuthorisationException(
-            s"User '$userId' does not own the files they are trying to access:\n${fileIdsThatDoNotBelongToTheUser.mkString("\n")} or does not have export access"
-          )
+          val message = s"User '$userId' does not own the files they are trying to access:\n${fileIdsThatDoNotBelongToTheUser.mkString("\n")} or does not have export access"
+          throw AuthorisationException(message)
         }
     } yield result
-
   }
 }
 
