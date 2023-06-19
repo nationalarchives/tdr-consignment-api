@@ -37,7 +37,7 @@ object FileMetadataFields {
   case class DeleteFileMetadataInput(
       fileIds: Seq[UUID],
       propertyNames: Seq[String],
-      consignmentId: UUID
+      consignmentId: Option[UUID] = None
   )
 
   implicit val FileMetadataType: ObjectType[Unit, FileMetadata] = deriveObjectType[Unit, FileMetadata]()
