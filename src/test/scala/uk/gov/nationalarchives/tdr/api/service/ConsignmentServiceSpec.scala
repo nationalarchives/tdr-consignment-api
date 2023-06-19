@@ -16,7 +16,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Completed, DescriptiveMetadata, Failed, NotEntered}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -290,26 +290,42 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     series.description shouldBe mockSeries.head.description
   }
 
-  "updateSeriesIdOfConsignment" should "update the seriesId for a given consignment" in {
-    val consignmentRepoMock = mock[ConsignmentRepository]
-    val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
-    val fixedUuidSource = new FixedUUIDSource()
+  "updateSeriesIdOfConsignment" should "update the seriesId and status for a given consignment" in {
+    val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
+    val statusType = "Series"
+    val expectedSeriesStatus = Completed
+    val expectedResult = 1
+    when(consignmentRepoMock.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput))
+      .thenReturn(Future.successful(1))
+    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Completed, Timestamp.from(fixedTimeSource)))
+      .thenReturn(Future.successful(1))
 
-    val service: ConsignmentService = new ConsignmentService(
-      consignmentRepoMock,
-      consignmentStatusRepoMock,
-      transferringBodyServiceMock,
-      FixedTimeSource,
-      fixedUuidSource,
-      ConfigFactory.load()
-    )
+    val result = consignmentService.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput).futureValue
 
-    val input = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
-    when(consignmentRepoMock.updateSeriesIdOfConsignment(input)).thenReturn(Future(1))
+    verify(consignmentRepoMock).updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput)
+    verify(consignmentStatusRepoMock)
+      .updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, statusType, expectedSeriesStatus, Timestamp.from(fixedTimeSource))
 
-    val response = service.updateSeriesIdOfConsignment(input).futureValue
+    result should equal(expectedResult)
+  }
 
-    response should be(1)
+  "updateSeriesIdOfConsignment" should "update the status with 'Failed' if seriesId update fails for a given consignment" in {
+    val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
+    val statusType = "Series"
+    val expectedSeriesStatus = Failed
+    val expectedResult = 0
+    when(consignmentRepoMock.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput))
+      .thenReturn(Future.successful(0))
+    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Failed, Timestamp.from(fixedTimeSource)))
+      .thenReturn(Future.successful(1))
+
+    val result = consignmentService.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput).futureValue
+
+    verify(consignmentRepoMock).updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput)
+    verify(consignmentStatusRepoMock)
+      .updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, statusType, expectedSeriesStatus, Timestamp.from(fixedTimeSource))
+
+    result should equal(expectedResult)
   }
 
   "getTransferringBodyOfConsignment" should "return the transferring body for a given consignment" in {
