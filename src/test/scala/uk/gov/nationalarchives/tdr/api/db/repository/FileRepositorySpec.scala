@@ -270,11 +270,11 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
       val files = fileRepository.getFileFields(fileIds).futureValue
 
-      files.size shouldBe(2)
-      files.head._1 shouldBe(fileOneId)
-      files(1)._1 shouldBe(fileTwoId)
+      files.size shouldBe (2)
+      files.head._1 shouldBe (fileOneId)
+      files(1)._1 shouldBe (fileTwoId)
       files.head._2 shouldBe (userId)
-      files(1)._2 shouldBe(userId)
+      files(1)._2 shouldBe (userId)
   }
 
   "getAllDescendants" should "return all descendants" in withContainers { case container: PostgreSQLContainer =>
@@ -357,7 +357,6 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val db = container.database
     val fileRepository = new FileRepository(db)
     val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
-
 
     val files = fileRepository.getPaginatedFiles(consignmentId, 2, 2, Some(nonExistentFileId), FileFilters()).futureValue
     files.size shouldBe 0

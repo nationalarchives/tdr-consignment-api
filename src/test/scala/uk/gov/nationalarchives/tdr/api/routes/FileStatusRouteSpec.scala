@@ -41,8 +41,7 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
     val token = validUserToken(userId)
     val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
     utils.createConsignment(consignmentId, userId, fixedSeriesId)
-    utils.createFile(defaultFileId, consignmentId, userId=userId)
-
+    utils.createFile(defaultFileId, consignmentId, userId = userId)
 
     val expectedResponse: GraphqlAddFileStatusMutationData = expectedAddFileStatusMutationResponse("data_all")
     val response: GraphqlAddFileStatusMutationData = runAddFileStatusTestMutation("mutation_alldata", token)
@@ -56,7 +55,7 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
     val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
     val consignmentId = UUID.fromString("eb197bfb-43f7-40ca-9104-8f6cbda88506")
     utils.createConsignment(consignmentId, userId, fixedSeriesId)
-    utils.createFile(defaultFileId, consignmentId, userId=userId)
+    utils.createFile(defaultFileId, consignmentId, userId = userId)
 
     val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
     val token = validUserToken(wrongUserId)
