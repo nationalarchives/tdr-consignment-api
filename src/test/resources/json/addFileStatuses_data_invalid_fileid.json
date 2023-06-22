@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "User 'dfee3d4f-3bb1-492e-9c85-7db1685ab12f' does not own the files they are trying to access:\n or does not have export access",
+      "message": "User 'dfee3d4f-3bb1-492e-9c85-7db1685ab12f' does not own the files they are trying to access:\na8dc972d-58f9-4733-8bb2-4254b89a35f2 or does not have export access",
       "extensions": {
         "code": "NOT_AUTHORISED"
       }

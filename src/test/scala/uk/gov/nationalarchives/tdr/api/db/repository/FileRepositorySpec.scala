@@ -254,27 +254,63 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
       files.forall(_._1.fileid == fileOneId) shouldBe true
   }
 
-  "getFileFields" should "return userId(s) associated with a given fileId" in withContainers { // Change this
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val utils = TestUtils(db)
-      val fileRepository = new FileRepository(db)
-      val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
-      val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
-      val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
+  "getFileFields" should "return userId associated with a given fileId" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
 
-      utils.createConsignment(consignmentId, userId)
-      utils.createFile(fileOneId, consignmentId)
-      utils.createFile(fileTwoId, consignmentId)
-      val fileIds = Seq(fileOneId, fileTwoId)
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    val fileIds = Seq(fileOneId, fileTwoId)
 
-      val files = fileRepository.getFileFields(fileIds).futureValue
+    val files = fileRepository.getFileFields(fileIds).futureValue
 
-      files.size shouldBe (2)
-      files.head._1 shouldBe (fileOneId)
-      files(1)._1 shouldBe (fileTwoId)
-      files.head._2 shouldBe (userId)
-      files(1)._2 shouldBe (userId)
+    files.size shouldBe 2
+    files.head._1 shouldBe fileOneId
+    files(1)._1 shouldBe fileTwoId
+    files.head._2 shouldBe userId
+    files(1)._2 shouldBe userId
+  }
+  "getFileFields" should "return one file if given duplicate fileIds" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = fileOneId
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    val fileIds = Seq(fileOneId, fileTwoId)
+
+    val files = fileRepository.getFileFields(fileIds).futureValue
+
+    files.size shouldBe 1
+    files.head._1 shouldBe fileOneId
+    println(s" files : ${files.size}, ${files}")
+    files.head._2 shouldBe userId
+  }
+  "getFileFields" should "return an empty Seq if given no fileID" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    val fileIds = Seq()
+
+    val files = fileRepository.getFileFields(fileIds).futureValue
+
+    files.size shouldBe 0
+    files shouldBe Seq()
   }
 
   "getAllDescendants" should "return all descendants" in withContainers { case container: PostgreSQLContainer =>

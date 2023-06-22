@@ -8,6 +8,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{Delete
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
+import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
 import java.util.UUID
 import scala.concurrent._
@@ -181,17 +182,16 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
     for {
-      fileOwner: Seq[(UUID, UUID)] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
-      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileOwner.collect {
-        case (fileId, ownerId) if ownerId != userId => fileId
-      }
-      fileIdsWithNoOwner: Seq[UUID] = fileIds.filterNot(fileId => fileOwner.exists(_._1 == fileId))
-      allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty && fileIdsWithNoOwner.isEmpty
+      fileOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
+      invalidFileIds: Seq[UUID] = fileOwner.collect {
+        case FileOwnership(fileId, ownerId) if ownerId != userId => fileId
+      } ++ fileIds.filterNot(fileId => fileOwner.exists(_.fileId == fileId))
+
       result =
-        if (fileIdsWithNoOwner.isEmpty && (allFilesBelongToTheUser || exportAccess)) {
+        if (invalidFileIds.isEmpty || exportAccess) {
           continue
         } else {
-          val message = s"User '$userId' does not own the files they are trying to access:\n${fileIdsThatDoNotBelongToTheUser.mkString("\n")} or does not have export access"
+          val message = s"User '$userId' does not own the files they are trying to access:\n${invalidFileIds.mkString("\n")} or does not have export access"
           throw AuthorisationException(message)
         }
     } yield result

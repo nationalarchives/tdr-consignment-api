@@ -145,10 +145,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     owners should have size 2
 
-    owners.head._2 should equal(userId1)
-    owners.head._1 should equal(fileId1)
-    owners(1)._1 should equal(fileId2)
-    owners(1)._2 should equal(userId2)
+    owners.head.fileId should equal(fileId1)
+    owners.head.userId should equal(userId1)
+    owners(1).fileId should equal(fileId2)
+    owners(1).userId should equal(userId2)
   }
   // scalastyle:on magic.number
 
