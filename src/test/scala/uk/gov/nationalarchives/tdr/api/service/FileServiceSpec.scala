@@ -154,13 +154,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   "getFileDetails" should "return all the correct files details from the database response" in {
     val fileRepositoryMock = mock[FileRepository]
     val fixedUuidSource = new FixedUUIDSource()
+    val consignmentId = UUID.randomUUID()
     val parentFolderId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
     val fileIdTwo = UUID.randomUUID()
 
-    val folderFields = new FileFields(parentFolderId, Some(NodeType.directoryTypeIdentifier), userId)
-    val fileOneFields = new FileFields(fileIdOne, Some(NodeType.fileTypeIdentifier), userId)
-    val fileTwoFields = new FileFields(fileIdTwo, Some(NodeType.fileTypeIdentifier), userId)
+    val folderFields = new FileFields(parentFolderId, Some(NodeType.directoryTypeIdentifier), userId, consignmentId)
+    val fileOneFields = new FileFields(fileIdOne, Some(NodeType.fileTypeIdentifier), userId, consignmentId)
+    val fileTwoFields = new FileFields(fileIdTwo, Some(NodeType.fileTypeIdentifier), userId, consignmentId)
     when(fileRepositoryMock.getFileFields(Set(fileIdOne, fileIdTwo, parentFolderId)))
       .thenReturn(Future(Seq(folderFields, fileOneFields, fileTwoFields)))
 
@@ -183,14 +184,17 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val parentFolder = response.find(_.fileId == parentFolderId).get
     parentFolder.fileType.get should equal(NodeType.directoryTypeIdentifier)
     parentFolder.userId should equal(userId)
+    parentFolder.consignmentId should equal(consignmentId)
 
     val fileOne = response.find(_.fileId == fileIdOne).get
     fileOne.fileType.get should equal(NodeType.fileTypeIdentifier)
     fileOne.userId should equal(userId)
+    fileOne.consignmentId should equal(consignmentId)
 
     val fileTwo = response.find(_.fileId == fileIdTwo).get
     fileTwo.fileType.get should equal(NodeType.fileTypeIdentifier)
     fileTwo.userId should equal(userId)
+    fileTwo.consignmentId should equal(consignmentId)
   }
 
   "getFileMetadata" should "return all the correct files and folders with the correct metadata from the database response" in {

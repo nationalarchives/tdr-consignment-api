@@ -23,6 +23,9 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
     val inputFileIds: Seq[UUID] = arg match {
       case input: UpdateBulkFileMetadataInput => input.fileIds
     }
+    val inputConsignmentId: UUID = arg match {
+      case input: UpdateBulkFileMetadataInput => input.consignmentId
+    }
 
     val userId = ctx.ctx.accessToken.userId
 
@@ -35,15 +38,18 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
       nonOwnership = fileFields.exists(_.userId != userId)
     } yield {
       nonOwnership match {
-        case true                                       => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
-        case _ if inputErrors(fileFields, inputFileIds) => throw InputDataException("Input contains directory id or contains non-existing file")
-        case _                                          => continue
+        case true => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
+        case _ if inputErrors(fileFields, inputFileIds, inputConsignmentId) =>
+          throw InputDataException("Input contains directory id or contains non-existing file id or consignment id is incorrect")
+        case _ => continue
       }
     }
   }
 
-  private def inputErrors(fileFields: Seq[FileDetails], inputIds: Seq[UUID]): Boolean = {
+  private def inputErrors(fileFields: Seq[FileDetails], inputIds: Seq[UUID], inputConsignmentId: UUID): Boolean = {
     val existingIds = fileFields.map(_.fileId).toSet
-    inputIds.toSet.size > existingIds.size || fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier))
+    val consignmentIds = fileFields.map(_.consignmentId).toSet
+    val consignmentIdMismatch = consignmentIds.size != 1 || !consignmentIds.contains(inputConsignmentId)
+    inputIds.toSet.size > existingIds.size || fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier)) || consignmentIdMismatch
   }
 }

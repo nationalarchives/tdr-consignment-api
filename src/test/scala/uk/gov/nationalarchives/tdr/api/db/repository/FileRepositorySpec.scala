@@ -210,14 +210,17 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val folderInfo = files.filter(_._1 == folderOneId).head
     folderInfo._2.contains(NodeType.directoryTypeIdentifier) shouldBe true
     folderInfo._3 shouldBe userId
+    folderInfo._4 shouldBe consignmentId
 
     val fileOneInfo = files.filter(_._1 == fileOneId).head
     fileOneInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
     fileOneInfo._3 shouldBe userId
+    fileOneInfo._4 shouldBe consignmentId
 
     val fileTwoInfo = files.filter(_._1 == fileTwoId).head
     fileTwoInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
     fileTwoInfo._3 shouldBe userId
+    fileTwoInfo._4 shouldBe consignmentId
   }
 
   "getFiles" should "return files, file metadata and folders where no type filter applied" in withContainers { case container: PostgreSQLContainer =>

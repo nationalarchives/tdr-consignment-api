@@ -374,6 +374,16 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     checkNoFileMetadataAdded(utils, "property2")
   }
 
+  "updateBulkFileMetadata" should "throw an 'invalid input data' error if the consignment input id does not match the files' consignment id" in withContainers {
+    case container: PostgreSQLContainer =>
+    // TODO
+  }
+
+  "updateBulkFileMetadata" should "throw an 'invalid input data' error if input file ids belong to different consignments" in withContainers {
+    case container: PostgreSQLContainer =>
+    // TODO
+  }
+
   "updateBulkFileMetadata" should "throw a 'not authorised' error if a file id exists but belongs to another user" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
@@ -407,7 +417,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "updateBulkFileMetadata" should "throw a 'not authorised' error if a file id belongs to another user and an inout error is also present" in withContainers {
+  "updateBulkFileMetadata" should "throw a 'not authorised' error if a file id belongs to another user and an input error is also present" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file

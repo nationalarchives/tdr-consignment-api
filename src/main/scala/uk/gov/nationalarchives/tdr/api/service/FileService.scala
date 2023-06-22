@@ -119,7 +119,7 @@ class FileService(
   }
 
   def getFileDetails(ids: Seq[UUID]): Future[Seq[FileDetails]] = {
-    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3)))
+    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3, f._4)))
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
@@ -325,5 +325,5 @@ object FileService {
 
   case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
 
-  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID)
+  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID, consignmentId: UUID)
 }

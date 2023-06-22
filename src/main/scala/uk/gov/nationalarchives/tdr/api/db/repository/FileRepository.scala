@@ -66,7 +66,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   def getFileFields(ids: Set[UUID]): Future[Seq[FileFields]] = {
     val query = File
       .filter(_.fileid inSet ids)
-      .map(res => (res.fileid, res.filetype, res.userid))
+      .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid))
 
     db.run(query.result)
   }
@@ -142,5 +142,5 @@ case class FileFilters(
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
-  type FileFields = (UUID, Option[String], UUID)
+  type FileFields = (UUID, Option[String], UUID, UUID)
 }
