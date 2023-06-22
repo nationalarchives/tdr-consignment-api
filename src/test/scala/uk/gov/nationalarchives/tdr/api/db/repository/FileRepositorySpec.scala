@@ -275,6 +275,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     files.head._2 shouldBe userId
     files(1)._2 shouldBe userId
   }
+
   "getFileFields" should "return one file if given duplicate fileIds" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
@@ -291,9 +292,10 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
     files.size shouldBe 1
     files.head._1 shouldBe fileOneId
-    println(s" files : ${files.size}, ${files}")
+
     files.head._2 shouldBe userId
   }
+
   "getFileFields" should "return an empty Seq if given no fileID" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
@@ -310,7 +312,6 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val files = fileRepository.getFileFields(fileIds).futureValue
 
     files.size shouldBe 0
-    files shouldBe Seq()
   }
 
   "getAllDescendants" should "return all descendants" in withContainers { case container: PostgreSQLContainer =>
