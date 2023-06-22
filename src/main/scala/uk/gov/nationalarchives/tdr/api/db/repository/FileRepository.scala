@@ -4,7 +4,7 @@ import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 
 import java.util.UUID
@@ -74,6 +74,13 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
+  def getFileFields(ids: Seq[UUID]): Future[Seq[FileFields]] = {
+    val query = File
+      .filter(_.fileid inSet ids)
+      .map(res => (res.fileid, res.userid))
+    db.run(query.result)
+  }
+
   def getPaginatedFiles(consignmentId: UUID, limit: Int, offset: Int, after: Option[String], fileFilters: FileFilters): Future[Seq[FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)
@@ -134,4 +141,5 @@ case class FileFilters(
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
+  type FileFields = (UUID, UUID)
 }
