@@ -211,6 +211,7 @@ type DeleteFileMetadata {
 input DeleteFileMetadataInput {
   fileIds: [UUID!]!
   propertyNames: [String!]!
+  consignmentId: UUID
 }
 
 type DisplayAttribute {
