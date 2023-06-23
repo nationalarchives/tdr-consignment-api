@@ -304,9 +304,21 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   }
 
   "updateBulkFileMetadata" should "not allow bulk updating of file metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
     val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
     val token = validUserToken(wrongUserId)
+    val utils = TestUtils(container.database)
+    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+
+    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+    utils.addFileProperty("property1")
+    utils.addFileProperty("property2")
+
+    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFile(fileThreeId, consignmentId)
     val response: GraphqlUpdateBulkFileMetadataMutationData = runUpdateBulkFileMetadataTestMutation("mutation_alldata", token)
 
     response.errors should have size 1
