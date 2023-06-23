@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -528,6 +528,28 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+
+    List(fileOneId, fileTwoId).foreach(id => {
+      checkFileMetadataExists(id, utils, "TestDependency2")
+      checkFileMetadataValue(id, utils, "TestDependency1", "newValue")
+      checkFileMetadataValue(id, utils, "ClosureType", "Closed")
+    })
+  }
+
+  "deleteFileMetadata" should "throw an error if no consignment id argument passed" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.randomUUID()
+    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    addDummyFileProperties(utils, consignmentId, userId)
+    createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
+
+    val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_error_no_consignmentid")
+    val response = runDeleteFileMetadataTestMutation("mutation_no_consignmentid", validUserToken())
+
+    response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
 
     List(fileOneId, fileTwoId).foreach(id => {
       checkFileMetadataExists(id, utils, "TestDependency2")
