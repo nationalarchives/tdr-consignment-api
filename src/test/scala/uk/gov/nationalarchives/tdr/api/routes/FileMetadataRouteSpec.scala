@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered, Success}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -376,12 +376,58 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   "updateBulkFileMetadata" should "throw an 'invalid input data' error if the consignment input id does not match the files' consignment id" in withContainers {
     case container: PostgreSQLContainer =>
-    // TODO
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      utils.addFileProperty("property1")
+      utils.addFileProperty("property2")
+
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+
+      val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData = expectedUpdateBulkFileMetadataMutationResponse("data_fileid_not_exists")
+      val response: GraphqlUpdateBulkFileMetadataMutationData =
+        runUpdateBulkFileMetadataTestMutation("mutation_different_consignmentid", validUserToken())
+
+      response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      checkNoFileMetadataAdded(utils, "property1")
+      checkNoFileMetadataAdded(utils, "property2")
   }
 
   "updateBulkFileMetadata" should "throw an 'invalid input data' error if input file ids belong to different consignments" in withContainers {
     case container: PostgreSQLContainer =>
-    // TODO
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+
+      val differentConsignmentId = UUID.fromString("7ece007d-6f47-4be2-895f-511a607e4074")
+      utils.createConsignment(differentConsignmentId)
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      utils.addFileProperty("property1")
+      utils.addFileProperty("property2")
+
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, differentConsignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+
+      val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData =
+        expectedUpdateBulkFileMetadataMutationResponse("data_fileid_not_exists")
+      val response: GraphqlUpdateBulkFileMetadataMutationData =
+        runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
+
+      response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      checkNoFileMetadataAdded(utils, "property1")
+      checkNoFileMetadataAdded(utils, "property2")
   }
 
   "updateBulkFileMetadata" should "throw a 'not authorised' error if a file id exists but belongs to another user" in withContainers { case container: PostgreSQLContainer =>
