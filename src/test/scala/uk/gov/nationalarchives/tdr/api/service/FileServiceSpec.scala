@@ -136,8 +136,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       ConfigFactory.load()
     )
 
-    when(consignmentRepositoryMock.getConsignmentsOfFiles(Seq(fileId1)))
-      .thenReturn(Future.successful(Seq((fileId1, consignment1), (fileId2, consignment2))))
+    when(fileRepositoryMock.getFileFields(Seq(fileId1)))
+      .thenReturn(Future.successful(Seq((fileId1, userId1), (fileId2, userId2))))
     val mockFileMetadataResponse = Future.successful(Seq(FilemetadataRow(UUID.randomUUID(), fileId1, "value", Timestamp.from(Instant.now), userId1, "name")))
     when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
 
@@ -145,7 +145,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     owners should have size 2
 
+    owners.head.fileId should equal(fileId1)
     owners.head.userId should equal(userId1)
+    owners(1).fileId should equal(fileId2)
     owners(1).userId should equal(userId2)
   }
   // scalastyle:on magic.number
