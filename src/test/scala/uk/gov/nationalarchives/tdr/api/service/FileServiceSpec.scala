@@ -138,9 +138,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
 
     when(fileRepositoryMock.getFileFields(Set(fileId1)))
-      .thenReturn(Future.successful(Seq(
-        (fileId1, Some(NodeType.fileTypeIdentifier), userId1, consignmentId1),
-        (fileId2, Some(NodeType.fileTypeIdentifier), userId2, consignmentId1))))
+      .thenReturn(
+        Future.successful(Seq((fileId1, Some(NodeType.fileTypeIdentifier), userId1, consignmentId1), (fileId2, Some(NodeType.fileTypeIdentifier), userId2, consignmentId1)))
+      )
     val mockFileMetadataResponse = Future.successful(Seq(FilemetadataRow(UUID.randomUUID(), fileId1, "value", Timestamp.from(Instant.now), userId1, "name")))
     when(fileMetadataRepositoryMock.addFileMetadata(any[Seq[FilemetadataRow]])).thenReturn(mockFileMetadataResponse)
 
