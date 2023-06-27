@@ -63,6 +63,14 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
+  def getFileFields(ids: Set[UUID]): Future[Seq[FileFields]] = {
+    val query = File
+      .filter(_.fileid inSet ids)
+      .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid))
+
+    db.run(query.result)
+  }
+
   def getFiles(consignmentId: UUID, fileFilters: FileFilters): Future[Seq[FileRepositoryMetadata]] = {
     val query = File
       .joinLeft(Filemetadata)
@@ -71,13 +79,6 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       .filterOpt(fileFilters.fileTypeIdentifier)(_._1.filetype === _)
       .filterOpt(fileFilters.selectedFileIds)(_._1.fileid inSet _)
       .map(res => (res._1, res._2))
-    db.run(query.result)
-  }
-
-  def getFileFields(ids: Seq[UUID]): Future[Seq[FileFields]] = {
-    val query = File
-      .filter(_.fileid inSet ids)
-      .map(res => (res.fileid, res.userid))
     db.run(query.result)
   }
 
@@ -141,5 +142,5 @@ case class FileFilters(
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
-  type FileFields = (UUID, UUID)
+  type FileFields = (UUID, Option[String], UUID, UUID)
 }

@@ -20,6 +20,7 @@ import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, DeferredResolver, ErrorCodes, GraphQlTypes}
+import uk.gov.nationalarchives.tdr.api.metadatainputvalidation.MetadataInputValidator
 import uk.gov.nationalarchives.tdr.api.service._
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -162,7 +163,7 @@ class GraphQLServer(slickSession: SlickSession) {
         variables = vars,
         operationName = operation,
         deferredResolver = new DeferredResolver,
-        middleware = new ValidationAuthoriser :: new ConsignmentStateValidator :: Nil,
+        middleware = new ValidationAuthoriser :: new ConsignmentStateValidator :: new MetadataInputValidator :: Nil,
         exceptionHandler = exceptionHandler
       )
       .map(OK -> _)
