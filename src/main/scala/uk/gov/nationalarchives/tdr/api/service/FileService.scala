@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.service
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileRepositoryMetadata}
+import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
@@ -12,7 +12,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdg
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
@@ -118,10 +117,14 @@ class FileService(
     fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
   }
 
+  def getFileDetails(ids: Seq[UUID]): Future[Seq[FileDetails]] = {
+    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3, f._4)))
+  }
+
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
     fileRepository
-      .getFileFields(fileIds)
-      .map(_.map { case (fileId, userId) => FileOwnership(fileId, userId) })
+      .getFileFields(fileIds.toSet)
+      .map(_.map { case (fileId, _, userId, _) => FileOwnership(fileId, userId) })
   }
 
   def fileCount(consignmentId: UUID): Future[Int] = {
@@ -320,4 +323,6 @@ object FileService {
   case class FileOwnership(fileId: UUID, userId: UUID)
 
   case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
+
+  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID, consignmentId: UUID)
 }

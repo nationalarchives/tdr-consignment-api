@@ -117,7 +117,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "updateBulkFileMetadata" should "delete existing metadata rows and add new metadata rows based on the input" in {
     val testSetUp = new UpdateBulkMetadataTestSetUp()
     val customMetadataSetUp = new CustomMetadataTestSetUp()
-    val existingFileRows: Seq[FileRow] = generateFileRows(testSetUp.inputFileIds, testSetUp.folderAndChildrenIds, testSetUp.userId)
+    val fileIds = Seq(testSetUp.fileId1, testSetUp.childFileId1, testSetUp.childFileId2)
+    val existingFileRows: Seq[FileRow] = generateFileRows(fileIds, Seq(), testSetUp.userId)
 
     testSetUp.stubRepoResponses(existingFileRows)
     customMetadataSetUp.stubResponse()
@@ -132,11 +133,11 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.fixedUUIDSource
     )
 
-    val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.newMetadataProperties)
+    val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, fileIds, testSetUp.newMetadataProperties)
     val expectedPropertyNames = input.metadataProperties.map(_.filePropertyName).toSet
 
     service.updateBulkFileMetadata(input, testSetUp.userId).futureValue
-    verify(testSetUp.validateFileMetadataServiceMock, times(1)).validateAdditionalMetadata(testSetUp.inputFileIds.toSet, testSetUp.consignmentId, expectedPropertyNames)
+    verify(testSetUp.validateFileMetadataServiceMock, times(1)).validateAdditionalMetadata(fileIds.toSet, testSetUp.consignmentId, expectedPropertyNames)
 
     val deleteFileMetadataIdsArg: Set[UUID] = testSetUp.deleteFileMetadataIdsArgCaptor.getValue
     val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
@@ -161,29 +162,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val addedProperties = addFileMetadataArgument.map(_.propertyname).toSet
     addedProperties.size should equal(3)
     addedProperties.subsetOf(expectedUpdatedPropertyNames) should equal(true)
-  }
-
-  "updateBulkFileMetadata" should "pass the correct number of ids into getAllDescendants if there are duplicates present in input argument" in {
-    val testSetUp = new UpdateBulkMetadataTestSetUp()
-    testSetUp.stubRepoResponses()
-
-    val service = new FileMetadataService(
-      testSetUp.metadataRepositoryMock,
-      testSetUp.fileRepositoryMock,
-      testSetUp.consignmentStatusServiceMock,
-      testSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock,
-      FixedTimeSource,
-      testSetUp.fixedUUIDSource
-    )
-    val duplicateInputFileIds = testSetUp.inputFileIds ++ testSetUp.inputFileIds
-    val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, duplicateInputFileIds, testSetUp.newMetadataProperties)
-    service.updateBulkFileMetadata(input, testSetUp.userId).futureValue
-
-    verify(testSetUp.validateFileMetadataServiceMock, times(1)).validateAdditionalMetadata(any[Set[UUID]], any[UUID], any[Set[String]])
-
-    val getDescendentsFileIdsArgument: Seq[UUID] = testSetUp.getAllDescendentIdsCaptor.getValue
-    getDescendentsFileIdsArgument should equal(testSetUp.inputFileIds)
   }
 
   "updateBulkFileMetadata" should "not update properties, and throw an error if input contains an empty property value" in {
