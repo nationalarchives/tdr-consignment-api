@@ -20,11 +20,8 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
 
-    val inputFileIds: Seq[UUID] = arg match {
-      case input: UpdateBulkFileMetadataInput => input.fileIds
-    }
-    val inputConsignmentId: UUID = arg match {
-      case input: UpdateBulkFileMetadataInput => input.consignmentId
+    val (inputFileIds: Seq[UUID], inputConsignmentId: UUID) = arg match {
+      case input: UpdateBulkFileMetadataInput => (input.fileIds, input.consignmentId)
     }
 
     val userId = ctx.ctx.accessToken.userId
@@ -47,9 +44,12 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
   }
 
   private def inputErrors(fileFields: Seq[FileDetails], inputIds: Seq[UUID], inputConsignmentId: UUID): Boolean = {
-    val existingIds = fileFields.map(_.fileId).toSet
+    val existingFileIds = fileFields.map(_.fileId).toSet
     val consignmentIds = fileFields.map(_.consignmentId).toSet
+
     val consignmentIdMismatch = consignmentIds.size != 1 || !consignmentIds.contains(inputConsignmentId)
-    inputIds.toSet.size > existingIds.size || fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier)) || consignmentIdMismatch
+    lazy val fileIdsMismatch = inputIds.toSet.size > existingFileIds.size
+    lazy val containsDirectory = fileFields.exists(_.fileType.contains(NodeType.directoryTypeIdentifier))
+    consignmentIdMismatch || fileIdsMismatch || containsDirectory
   }
 }
