@@ -116,7 +116,10 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
 
   "The api" should "throw an error if the consignment id field is not provided for judgment user" in withContainers { case _: PostgreSQLContainer =>
     val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_consignmentid_missing")
+    println(s"exp : $expectedResponse")
     val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_missingconsignmentid", validUserToken())
+    println(s"act : $response")
+
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 

@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, serialisableEquality}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -65,10 +65,12 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
     )
 
     when(consignmentMetadataRepoMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
-
+    println(s"mock response ${mockResponse}")
     val service = new FinalTransferConfirmationService(consignmentMetadataRepoMock, consignmentStatusRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val result: FinalJudgmentTransferConfirmation =
-      service.addFinalJudgmentTransferConfirmation(AddFinalJudgmentTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId).futureValue
+    println(s"service : ${service}")
+    val result: FinalTransferConfirmation =
+      service.addFinalTransferConfirmation(AddFinalTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId).futureValue
+    println(s" result ${result}")
 
     result.consignmentId shouldBe consignmentId
     result.legalCustodyTransferConfirmed shouldBe true
