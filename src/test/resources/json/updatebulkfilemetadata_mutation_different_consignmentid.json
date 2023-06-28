@@ -2,7 +2,7 @@
   "query": "mutation updateBulkFileMetadata($updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!) {updateBulkFileMetadata(updateBulkFileMetadataInput:$updateBulkFileMetadataInput) {fileIds,metadataProperties {filePropertyName,value}}}",
   "variables": {
     "updateBulkFileMetadataInput" : {
-      "consignmentId": "eb197bfb-43f7-40ca-9104-8f6cbda88506",
+      "consignmentId": "7ece007d-6f47-4be2-895f-511a607e4074",
       "fileIds": [
         "7076f399-b596-4161-a95d-e686c6435710",
         "d2e64eed-faff-45ac-9825-79548f681323",

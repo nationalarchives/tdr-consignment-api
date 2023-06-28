@@ -182,20 +182,16 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
     for {
-      fileIdsAndOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
-      fileIdsBelongingToAConsignment: Seq[UUID] = fileIdsAndOwner.map(_.fileId)
-      filesThatDoNotBelongToAConsignment: Seq[UUID] = fileIds.filterNot(fileId => fileIdsBelongingToAConsignment.contains(fileId))
-      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileIdsAndOwner.collect {
-        case fileIdAndOwner if fileIdAndOwner.userId != userId => fileIdAndOwner.fileId
-      }
-      allFilesBelongToAConsignment = filesThatDoNotBelongToAConsignment.isEmpty
-      allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
+      fileOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
+      invalidFileIds: Seq[UUID] = fileOwner.collect {
+        case FileOwnership(fileId, ownerId) if ownerId != userId => fileId
+      } ++ fileIds.filterNot(fileId => fileOwner.exists(_.fileId == fileId))
+
       result =
-        if ((allFilesBelongToAConsignment && allFilesBelongToTheUser) || exportAccess) {
+        if (invalidFileIds.isEmpty || exportAccess) {
           continue
         } else {
-          val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
-          val message = s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")} or does not have export access"
+          val message = s"User '$userId' does not own the files they are trying to access:\n${invalidFileIds.mkString("\n")} or does not have export access"
           throw AuthorisationException(message)
         }
     } yield result

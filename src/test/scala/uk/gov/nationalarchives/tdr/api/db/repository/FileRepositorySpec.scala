@@ -198,6 +198,31 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     files.head.consignmentid shouldBe consignmentId
   }
 
+  "getFileFields" should "return all files fields for given file ids" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    setUpFilesAndDirectories(consignmentId, utils)
+
+    val files = fileRepository.getFileFields(Set(folderOneId, fileOneId, fileTwoId)).futureValue
+    files.size shouldBe 3
+    val folderInfo = files.filter(_._1 == folderOneId).head
+    folderInfo._2.contains(NodeType.directoryTypeIdentifier) shouldBe true
+    folderInfo._3 shouldBe userId
+    folderInfo._4 shouldBe consignmentId
+
+    val fileOneInfo = files.filter(_._1 == fileOneId).head
+    fileOneInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
+    fileOneInfo._3 shouldBe userId
+    fileOneInfo._4 shouldBe consignmentId
+
+    val fileTwoInfo = files.filter(_._1 == fileTwoId).head
+    fileTwoInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
+    fileTwoInfo._3 shouldBe userId
+    fileTwoInfo._4 shouldBe consignmentId
+  }
+
   "getFiles" should "return files, file metadata and folders where no type filter applied" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
@@ -252,6 +277,44 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
       val files = fileRepository.getFiles(consignmentId, FileFilters(Some(NodeType.fileTypeIdentifier), Some(List(fileOneId)))).futureValue
       files.forall(_._1.fileid == fileOneId) shouldBe true
+  }
+
+  "getFileFields" should "return userId associated with a given fileId" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    val fileIds = Set(fileOneId, fileTwoId)
+
+    val files = fileRepository.getFileFields(fileIds).futureValue
+
+    files.size shouldBe 2
+    files.head._1 shouldBe fileOneId
+    files.head._2 shouldBe Some(NodeType.fileTypeIdentifier)
+    files.head._3 shouldBe userId
+    files.head._4 shouldBe consignmentId
+
+    files(1)._1 shouldBe fileTwoId
+    files(1)._2 shouldBe Some(NodeType.fileTypeIdentifier)
+    files(1)._3 shouldBe userId
+    files(1)._4 shouldBe consignmentId
+  }
+
+  "getFileFields" should "return an empty Seq if given no fileID" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val fileRepository = new FileRepository(db)
+
+    val fileIds: Set[UUID] = Set()
+
+    val files = fileRepository.getFileFields(fileIds).futureValue
+
+    files.size shouldBe 0
   }
 
   "getAllDescendants" should "return all descendants" in withContainers { case container: PostgreSQLContainer =>
