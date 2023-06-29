@@ -80,7 +80,7 @@ object FileMetadataFields {
       DeleteFileMetadataType,
       arguments = DeleteFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.deleteFileMetadata(ctx.arg(DeleteFileMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags = List(ValidateUserOwnsFiles(DeleteFileMetadataInputArg))
+      tags = List(ValidateMetadataInput(DeleteFileMetadataInputArg))
     )
   )
 }
