@@ -620,43 +620,42 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     })
   }
 
-  "deleteFileMetadata" should "throw an 'invalid input data' error if input file ids belong to different consignments" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
+  "deleteFileMetadata" should "throw an 'invalid input data' error if input file ids belong to different consignments" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
 
-      val differentConsignmentId = UUID.fromString("7ece007d-6f47-4be2-895f-511a607e4074")
-      utils.createConsignment(differentConsignmentId)
+    val differentConsignmentId = UUID.fromString("7ece007d-6f47-4be2-895f-511a607e4074")
+    utils.createConsignment(differentConsignmentId)
 
-      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
 
-      addDummyFileProperties(utils, consignmentId, userId)
+    addDummyFileProperties(utils, consignmentId, userId)
 
-      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
-      utils.createFile(fileTwoId, differentConsignmentId)
-      utils.createFile(fileThreeId, consignmentId)
+    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+    utils.createFile(fileTwoId, differentConsignmentId)
+    utils.createFile(fileThreeId, consignmentId)
 
-      List(fileOneId, fileTwoId).foreach(id => {
-        utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "ClosureType", "Closed")
-        utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "TestDependency1", "newValue")
-        utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "TestDependency2", "someValue")
-      })
+    List(fileOneId, fileTwoId).foreach(id => {
+      utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "ClosureType", "Closed")
+      utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "TestDependency1", "newValue")
+      utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "TestDependency2", "someValue")
+    })
 
-      val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData =
-        expectedUpdateBulkFileMetadataMutationResponse("data_fileid_not_exists")
-      val response: GraphqlUpdateBulkFileMetadataMutationData =
-        runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
+    val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData =
+      expectedUpdateBulkFileMetadataMutationResponse("data_fileid_not_exists")
+    val response: GraphqlUpdateBulkFileMetadataMutationData =
+      runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
 
-      response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      List(fileOneId, fileTwoId).foreach(id => {
-        checkFileMetadataExists(id, utils, "TestDependency2")
-        checkFileMetadataValue(id, utils, "TestDependency1", "newValue")
-        checkFileMetadataValue(id, utils, "ClosureType", "Closed")
-      })
+    response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    List(fileOneId, fileTwoId).foreach(id => {
+      checkFileMetadataExists(id, utils, "TestDependency2")
+      checkFileMetadataValue(id, utils, "TestDependency1", "newValue")
+      checkFileMetadataValue(id, utils, "ClosureType", "Closed")
+    })
   }
 
   private def getParentId(fileId: UUID, utils: TestUtils): String = {
