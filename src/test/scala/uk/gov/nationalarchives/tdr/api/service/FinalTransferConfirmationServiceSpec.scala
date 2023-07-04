@@ -68,7 +68,7 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
 
     val service = new FinalTransferConfirmationService(consignmentMetadataRepoMock, consignmentStatusRepositoryMock, fixedUuidSource, FixedTimeSource)
     val result: FinalJudgmentTransferConfirmation =
-      service.addFinalJudgmentTransferConfirmation(AddFinalJudgmentTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId).futureValue
+      service.addFinalJudgmentTransferConfirmation(AddFinalTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId).futureValue
 
     result.consignmentId shouldBe consignmentId
     result.legalCustodyTransferConfirmed shouldBe true

@@ -38,24 +38,6 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addFinalTransferConfirmationJsonFilePrefix)
 
-  private val addFinalJudgmentTransferConfirmationJsonFilePrefix: String = "json/addfinaljudgmenttransferconfirmation_"
-
-  case class GraphqlJudgmentMutationData(data: Option[AddFinalJudgmentTransferConfirmation], errors: List[GraphqlError] = Nil)
-
-  case class GraphqlJudgmentQueryData(data: Option[FinalJudgmentTransferConfirmation], errors: List[GraphqlError] = Nil)
-
-  case class FinalJudgmentTransferConfirmation(
-      consignmentId: Option[UUID] = None,
-      legalCustodyTransferConfirmed: Option[Boolean] = None
-  )
-
-  case class AddFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmation: FinalJudgmentTransferConfirmation)
-
-  val runTestJudgmentMutation: (String, OAuth2BearerToken) => GraphqlJudgmentMutationData =
-    runTestRequest[GraphqlJudgmentMutationData](addFinalJudgmentTransferConfirmationJsonFilePrefix)
-  val expectedJudgmentMutationResponse: String => GraphqlJudgmentMutationData =
-    getDataFromFile[GraphqlJudgmentMutationData](addFinalJudgmentTransferConfirmationJsonFilePrefix)
-
   "The api" should "return all requested fields from inserted final transfer confirmation consignment metadata properties" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
@@ -76,9 +58,9 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
       utils.createConsignment(consignmentId, userId)
       (finalJudgmentTransferConfirmationProperties ++ finalTransferConfirmationProperties).foreach(utils.addConsignmentProperty)
 
-      val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_all")
-      val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_alldata", validUserToken())
-      response.data.get.addFinalJudgmentTransferConfirmation should equal(expectedResponse.data.get.addFinalJudgmentTransferConfirmation)
+      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
+      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken())
+      response.data.get.addFinalTransferConfirmation should equal(expectedResponse.data.get.addFinalTransferConfirmation)
 
       checkFinalJudgmentTransferConfirmationExists(consignmentId, utils)
   }
@@ -101,11 +83,11 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
       utils.createConsignment(consignmentId, userId)
       (finalJudgmentTransferConfirmationProperties ++ finalTransferConfirmationProperties).foreach(utils.addConsignmentProperty)
 
-      val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_some")
-      val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_somedata", validUserToken())
-      response.data.get.addFinalJudgmentTransferConfirmation should equal(expectedResponse.data.get.addFinalJudgmentTransferConfirmation)
+      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_some")
+      val response: GraphqlMutationData = runTestMutation("mutation_somedata", validUserToken())
+      response.data.get.addFinalTransferConfirmation should equal(expectedResponse.data.get.addFinalTransferConfirmation)
 
-      checkFinalJudgmentTransferConfirmationExists(response.data.get.addFinalJudgmentTransferConfirmation.consignmentId.get, utils)
+      checkFinalJudgmentTransferConfirmationExists(response.data.get.addFinalTransferConfirmation.consignmentId.get, utils)
   }
 
   "The api" should "throw an error if the consignment id field is not provided" in withContainers { case _: PostgreSQLContainer =>
@@ -115,8 +97,8 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
   }
 
   "The api" should "throw an error if the consignment id field is not provided for judgment user" in withContainers { case _: PostgreSQLContainer =>
-    val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_consignmentid_missing")
-    val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_missingconsignmentid", validUserToken())
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_consignmentid_missing")
+    val response: GraphqlMutationData = runTestMutation("mutation_missingconsignmentid", validUserToken())
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
@@ -136,8 +118,8 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
     val userTwoId = UUID.fromString("ef056fd5-22ab-4e01-9e1e-1e65e5907d99")
     utils.createConsignment(consignmentId, userTwoId)
 
-    val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_error_not_owner")
-    val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_alldata", validUserToken())
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_error_not_owner")
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken())
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)
   }
@@ -155,8 +137,10 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
     val utils = TestUtils(container.database)
     utils.createConsignment(consignmentId, userId)
 
-    val expectedResponse: GraphqlJudgmentMutationData = expectedJudgmentMutationResponse("data_error_invalid_consignmentid")
-    val response: GraphqlJudgmentMutationData = runTestJudgmentMutation("mutation_invalid_consignmentid", validUserToken())
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_error_invalid_consignmentid")
+    val response: GraphqlMutationData = runTestMutation("mutation_invalid_consignmentid", validUserToken())
+    println(s"exp : $expectedResponse")
+    println(s"act : $response")
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 

@@ -24,7 +24,7 @@ class FinalTransferConfirmationService(
     } yield consignmentMetadata
   }
 
-  def addFinalJudgmentTransferConfirmation(consignmentMetadataInputs: AddFinalJudgmentTransferConfirmationInput, userId: UUID): Future[FinalJudgmentTransferConfirmation] = {
+  def addFinalJudgmentTransferConfirmation(consignmentMetadataInputs: AddFinalTransferConfirmationInput, userId: UUID): Future[FinalJudgmentTransferConfirmation] = {
     consignmentMetadataRepository.addConsignmentMetadata(convertInputToPropertyRows(consignmentMetadataInputs, userId)).map { rows =>
       convertDbRowsToFinalJudgmentTransferConfirmation(consignmentMetadataInputs.consignmentId, rows)
     }
@@ -42,7 +42,7 @@ class FinalTransferConfirmationService(
         Seq(
           ConsignmentmetadataRow(uuidSource.uuid, standard.consignmentId, LegalCustodyTransferConfirmed, standard.legalCustodyTransferConfirmed.toString, time, userId)
         )
-      case judgment: AddFinalJudgmentTransferConfirmationInput =>
+      case judgment: AddFinalTransferConfirmationInput =>
         Seq(
           ConsignmentmetadataRow(uuidSource.uuid, judgment.consignmentId, LegalCustodyTransferConfirmed, judgment.legalCustodyTransferConfirmed.toString, time, userId)
         )
