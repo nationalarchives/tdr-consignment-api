@@ -139,8 +139,6 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_error_invalid_consignmentid")
     val response: GraphqlMutationData = runTestMutation("mutation_invalid_consignmentid", validUserToken())
-    println(s"exp : $expectedResponse")
-    println(s"act : $response")
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 

@@ -51,6 +51,7 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
     result.consignmentId shouldBe consignmentId
     result.legalCustodyTransferConfirmed shouldBe true
   }
+
   "addConsignmentMetadata" should "create consignment metadata given correct arguments for a judgment user" in {
     val fixedUuidSource = new FixedUUIDSource()
     val metadataId: UUID = fixedUuidSource.uuid
@@ -64,11 +65,17 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
       )
     )
 
+    val confirmTransferStatusRow = ConsignmentstatusRow(metadataId, consignmentId, "ConfirmTransfer", "Completed", Timestamp.from(FixedTimeSource.now), None)
+
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow]))
+      .thenReturn(Future.successful(confirmTransferStatusRow))
+
     when(consignmentMetadataRepoMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
 
     val service = new FinalTransferConfirmationService(consignmentMetadataRepoMock, consignmentStatusRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val result: FinalJudgmentTransferConfirmation =
-      service.addFinalJudgmentTransferConfirmation(AddFinalTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId).futureValue
+    val result: FinalTransferConfirmation = service
+      .addFinalTransferConfirmation(AddFinalTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId)
+      .futureValue
 
     result.consignmentId shouldBe consignmentId
     result.legalCustodyTransferConfirmed shouldBe true

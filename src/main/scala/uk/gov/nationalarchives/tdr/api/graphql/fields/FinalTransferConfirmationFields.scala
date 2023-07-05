@@ -17,8 +17,6 @@ object FinalTransferConfirmationFields {
 
   case class AddFinalTransferConfirmationInput(consignmentId: UUID, legalCustodyTransferConfirmed: Boolean) extends UserOwnsConsignment
 
-  case class FinalJudgmentTransferConfirmation(consignmentId: UUID, legalCustodyTransferConfirmed: Boolean)
-
   implicit val FinalTransferConfirmationType: ObjectType[Unit, FinalTransferConfirmation] =
     deriveObjectType[Unit, FinalTransferConfirmation]()
   implicit val AddFinalTransferConfirmationInputType: InputObjectType[AddFinalTransferConfirmationInput] =
@@ -26,9 +24,6 @@ object FinalTransferConfirmationFields {
 
   val FinalTransferConfirmationInputArg: Argument[AddFinalTransferConfirmationInput] =
     Argument("addFinalTransferConfirmationInput", AddFinalTransferConfirmationInputType)
-
-  implicit val addFinalTransferConfirmationType: ObjectType[Unit, FinalJudgmentTransferConfirmation] =
-    deriveObjectType[Unit, FinalJudgmentTransferConfirmation]()
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
