@@ -38,11 +38,6 @@ input AddFileStatusInput {
   statusValue: String!
 }
 
-input AddFinalJudgmentTransferConfirmationInput {
-  consignmentId: UUID!
-  legalCustodyTransferConfirmed: Boolean!
-}
-
 input AddFinalTransferConfirmationInput {
   consignmentId: UUID!
   legalCustodyTransferConfirmed: Boolean!
@@ -363,11 +358,6 @@ type FileStatus {
   statusValue: String!
 }
 
-type FinalJudgmentTransferConfirmation {
-  consignmentId: UUID!
-  legalCustodyTransferConfirmed: Boolean!
-}
-
 type FinalTransferConfirmation {
   consignmentId: UUID!
   legalCustodyTransferConfirmed: Boolean!
@@ -395,7 +385,6 @@ type Mutation {
   deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
-  addFinalJudgmentTransferConfirmation(addFinalJudgmentTransferConfirmationInput: AddFinalJudgmentTransferConfirmationInput!): FinalJudgmentTransferConfirmation!
   addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
 }
 
