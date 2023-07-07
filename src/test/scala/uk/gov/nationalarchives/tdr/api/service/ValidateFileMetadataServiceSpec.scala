@@ -431,7 +431,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       when(mockFileStatusRepository.addFileStatuses(any[List[FilestatusRow]])).thenReturn(Future.successful(Nil))
       when(mockFileStatusRepository.deleteFileStatus(any[Set[UUID]], any[Set[String]])).thenReturn(Future.successful(1))
       when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
-      when(mockFileMetadataRepository.getFileMetadata(any[UUID], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
+      when(mockFileMetadataRepository.getFileMetadata(Some(any[UUID]), any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
     }
   }
 

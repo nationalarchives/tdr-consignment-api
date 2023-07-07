@@ -37,7 +37,7 @@ class ValidateFileMetadataService(
   def validateAdditionalMetadata(fileIds: Set[UUID], consignmentId: UUID, propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
-      existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(consignmentId, Some(fileIds), Some(toPropertyNames(customMetadataFields)))
+      existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(fileIds), Some(toPropertyNames(customMetadataFields)))
       rows <- addMetadataFileStatuses(fileIds, propertiesToValidate, customMetadataFields, existingMetadataProperties)
     } yield {
       rows
