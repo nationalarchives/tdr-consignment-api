@@ -1183,7 +1183,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val mockResponse: Future[Seq[FileRow]] = Future.successful(fileRows)
 
-    when(fileMetadataRepositoryMock.getFileMetadata(Some(ArgumentMatchers.eq(consignmentId)), any[Option[Set[UUID]]], any[Option[Set[String]]]))
+    when(fileMetadataRepositoryMock.getFileMetadata(ArgumentMatchers.eq(Some(consignmentId)), any[Option[Set[UUID]]], any[Option[Set[String]]]))
       .thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(ArgumentMatchers.eq(consignmentId), any[Option[Set[UUID]]]())).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(ArgumentMatchers.eq(consignmentId), any())).thenReturn(Future.successful(Seq()))
