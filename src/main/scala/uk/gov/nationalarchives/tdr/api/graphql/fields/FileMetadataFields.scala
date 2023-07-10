@@ -38,7 +38,7 @@ object FileMetadataFields {
   case class DeleteFileMetadataInput(
       fileIds: Seq[UUID],
       propertyNames: Seq[String],
-      consignmentId: Option[UUID] = None
+      consignmentId: UUID
   )
 
   implicit val FileMetadataType: ObjectType[Unit, FileMetadata] = deriveObjectType[Unit, FileMetadata]()
@@ -80,7 +80,7 @@ object FileMetadataFields {
       DeleteFileMetadataType,
       arguments = DeleteFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.deleteFileMetadata(ctx.arg(DeleteFileMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags = List(ValidateUserOwnsFiles(DeleteFileMetadataInputArg))
+      tags = List(ValidateMetadataInput(DeleteFileMetadataInputArg))
     )
   )
 }
