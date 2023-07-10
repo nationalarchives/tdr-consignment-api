@@ -70,7 +70,7 @@ class FileMetadataService(
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
     val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
-    val consignmentId: UUID = input.consignmentId.getOrElse(throw InputDataException("No consignment id"))
+    val consignmentId: UUID = input.consignmentId
     val fileIds: Set[UUID] = input.fileIds.toSet
     for {
       customMetadataProperties <- customMetadataService.getCustomMetadata
