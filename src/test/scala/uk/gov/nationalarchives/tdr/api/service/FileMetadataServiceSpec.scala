@@ -264,7 +264,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         new FixedUUIDSource()
       )
 
-    service.getFileMetadata(consignmentId).futureValue
+    service.getFileMetadata(Some(consignmentId)).futureValue
     consignmentIdCaptor.getValue should equal(Some(consignmentId))
     selectedFileIdsCaptor.getValue should equal(None)
   }
@@ -304,7 +304,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         FixedTimeSource,
         new FixedUUIDSource()
       )
-    val response = service.getFileMetadata(consignmentId).futureValue
+    val response = service.getFileMetadata(Some(consignmentId)).futureValue
 
     response.size should equal(2)
     response.contains(fileIdOne) should equal(true)
