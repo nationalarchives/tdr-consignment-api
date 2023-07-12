@@ -77,7 +77,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses()
 
     val service = testSetUp.service
-    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("nonAdditionalMetadataProperty")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("nonAdditionalMetadataProperty")).futureValue
 
     response.size shouldBe 0
 
@@ -112,7 +112,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
-    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
 
@@ -151,7 +151,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
-    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
 
@@ -190,7 +190,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
-    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
 
@@ -218,7 +218,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses()
 
     val service = testSetUp.service
-    val response = service.validateAdditionalMetadata(fileIds, testSetUp.consignmentId, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
 
