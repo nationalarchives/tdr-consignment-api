@@ -62,7 +62,7 @@ class FileMetadataService(
     for {
       _ <- fileMetadataRepository.deleteFileMetadata(uniqueFileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(uniqueFileIds, distinctMetadataProperties, userId))
-      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, input.consignmentId, distinctPropertyNames)
+      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, distinctPropertyNames)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(uniqueFileIds.toSeq, metadataPropertiesAdded.toSeq)
@@ -101,7 +101,7 @@ class FileMetadataService(
       }.toSeq
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, consignmentId, allPropertiesToDelete)
+      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, allPropertiesToDelete)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
@@ -126,7 +126,7 @@ class FileMetadataService(
       .toList
   }
 
-  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
+  def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
     fileMetadataRepository.getFileMetadata(consignmentId, selectedFileIds).map { rows =>
       rows.groupBy(_.fileid).map { case (fileId, fileMetadata) =>
         fileId -> getFileMetadataValues(fileMetadata)

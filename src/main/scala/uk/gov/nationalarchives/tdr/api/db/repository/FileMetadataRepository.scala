@@ -43,11 +43,11 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None, propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
+  def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None, propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
       .join(File)
       .on(_.fileid === _.fileid)
-      .filter(_._2.consignmentid === consignmentId)
+      .filterOpt(consignmentId)(_._2.consignmentid === _)
       .filterOpt(propertyNames)(_._1.propertyname inSetBind _)
       .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)
       .map(_._1)

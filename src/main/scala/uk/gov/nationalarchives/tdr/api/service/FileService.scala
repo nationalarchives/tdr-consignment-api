@@ -162,7 +162,7 @@ class FileService(
       response: Seq[FileRow] <- fileRepository.getPaginatedFiles(consignmentId, maxFiles, offset, currentCursor, filters)
       totalItems: Int <- fileRepository.countFilesInConsignment(consignmentId, filters.parentId, filters.fileTypeIdentifier)
       fileIds = Some(response.map(_.fileid).toSet)
-      fileMetadata <- fileMetadataService.getFileMetadata(consignmentId, fileIds)
+      fileMetadata <- fileMetadataService.getFileMetadata(None, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
       ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future(Nil)

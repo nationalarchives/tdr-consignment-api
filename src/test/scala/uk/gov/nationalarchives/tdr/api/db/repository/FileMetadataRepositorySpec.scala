@@ -94,7 +94,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "FilePropertyTwo")
     utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "FilePropertyOne")
 
-    val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
+    val response = fileMetadataRepository.getFileMetadata(Some(consignmentId)).futureValue
 
     response.length should equal(3)
     val filesMap: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
@@ -124,7 +124,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "FilePropertyOne")
 
     val selectedFileIds: Set[UUID] = Set(fileIdTwo)
-    val response = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds)).futureValue
+    val response = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(selectedFileIds)).futureValue
 
     response.length should equal(1)
     val filesMap: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
@@ -155,7 +155,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val selectedFileIds: Set[UUID] = Set(fileIdOne, fileIdTwo)
     val response = fileMetadataRepository
       .getFileMetadata(
-        consignmentId,
+        Some(consignmentId),
         Some(selectedFileIds),
         Some(Set(filePropertyOne))
       )
@@ -240,7 +240,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.addFileMetadata(metadataId3.toString, fileIdTwo.toString, "FilePropertyOne")
     val newValue = "newValue"
 
-    val response = fileMetadataRepository.getFileMetadata(consignmentId).futureValue
+    val response = fileMetadataRepository.getFileMetadata(Some(consignmentId)).futureValue
 
     val updateResponse = fileMetadataRepository
       .updateFileMetadataProperties(
@@ -276,10 +276,10 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val deleteResponse = fileMetadataRepository.deleteFileMetadata(selectedFileIds, Set(filePropertyOne)).futureValue
     deleteResponse should equal(2)
 
-    val response = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds), Some(Set(filePropertyOne))).futureValue
+    val response = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(selectedFileIds), Some(Set(filePropertyOne))).futureValue
     response.length should equal(0)
 
-    val response2 = fileMetadataRepository.getFileMetadata(consignmentId, Some(selectedFileIds), Some(Set(filePropertyTwo))).futureValue
+    val response2 = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(selectedFileIds), Some(Set(filePropertyTwo))).futureValue
     response2.length should equal(1)
   }
 
@@ -313,7 +313,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
   }
 
   private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {
-    val response = fileMetadataRepository.getFileMetadata(filePropertyUpdates.consignmentId).futureValue
+    val response = fileMetadataRepository.getFileMetadata(Some(filePropertyUpdates.consignmentId)).futureValue
     val metadataRowById: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
 
     filePropertyUpdates.changedProperties.foreach { case (fileId, propertiesChanged) =>
