@@ -45,7 +45,7 @@ class FileStatusRouteSpec extends TestContainerUtils with Matchers with TestRequ
 
     val expectedResponse: GraphqlAddFileStatusMutationData = expectedAddFileStatusMutationResponse("data_all")
     val response: GraphqlAddFileStatusMutationData = runAddFileStatusTestMutation("mutation_alldata", token)
-    print(response)
+
     response.data.get.addMultipleFileStatuses.head should equal(expectedResponse.data.get.addMultipleFileStatuses.head)
     checkFileStatusExists(defaultFileId, utils, expectedResponse.data.get.addMultipleFileStatuses.head)
   }

@@ -348,5 +348,5 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   def createFileStatusService(): FileStatusService =
-    new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    new FileStatusService(fileStatusRepositoryMock)
 }

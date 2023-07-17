@@ -11,7 +11,7 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: UUIDSource)(implicit
+class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
     val executionContext: ExecutionContext
 ) {
 
@@ -20,8 +20,9 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
   }
 
   def addFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput): Future[List[FileStatus]] = {
+    val defaultValue = UUID.fromString("00000000-0000-0000-0000-000000000000")
     val rows = addMultipleFileStatusesInput.statuses.map(addFileStatusInput => {
-      FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now()))
+      FilestatusRow(defaultValue, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now()))
     })
     fileStatusRepository.addFileStatuses(rows).map(_.map(row => FileStatus(row.fileid, row.statustype, row.value)).toList)
   }

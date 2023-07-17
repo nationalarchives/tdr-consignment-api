@@ -122,7 +122,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fixedUuidSource
     )
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val fileService = new FileService(
       fileRepositoryMock,
@@ -245,7 +245,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
     val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
     val fileStatusService =
-      new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+      new FileStatusService(fileStatusRepositoryMock)
 
     val service = new FileService(
       fileRepositoryMock,
@@ -384,7 +384,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       )
       val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
       val fileStatusService =
-        new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+        new FileStatusService(fileStatusRepositoryMock)
 
       val service = new FileService(
         fileRepositoryMock,
@@ -483,7 +483,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fixedUuidSource
     )
     val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val service = new FileService(
       fileRepositoryMock,
@@ -595,7 +595,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fixedUuidSource
     )
     val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val service = new FileService(
       fileRepositoryMock,
@@ -683,7 +683,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fixedUuidSource
     )
     val antivirusMetadataService = new AntivirusMetadataService(antivirusRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val service = new FileService(
       fileRepositoryMock,
@@ -831,7 +831,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         new FixedUUIDSource()
       )
     val fixedUuidSource = new FixedUUIDSource()
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val userId = UUID.randomUUID()
 
@@ -1282,7 +1282,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fixedUuidSource
     )
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, fixedUuidSource, FixedTimeSource)
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     new FileService(
       fileRepositoryMock,
