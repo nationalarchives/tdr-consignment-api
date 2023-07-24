@@ -2,9 +2,11 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
+import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -18,38 +20,45 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
   private val insertFileStatusQuery =
     Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
+  def getSumOfFileSizes(consignmentId: UUID): Future[Int] = {
+    val query = Filemetadata
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .filter(_._2.consignmentid === consignmentId)
+      .filter(_._1.propertyname === ClientSideFileSize)
+      .map(_._1.value.asColumnOf[Int])
+      .sum
+      .getOrElse(0)
+    db.run(query.result)
+  }
+
   def addFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[FilemetadataRow]] = {
     db.run(insertFileMetadataQuery ++= rows)
   }
 
-  def addChecksumMetadata(fileMetadataRow: FilemetadataRow, fileStatusRow: Seq[FilestatusRow]): Future[FilemetadataRow] = {
-    val allUpdates = DBIO.seq(insertFileMetadataQuery += fileMetadataRow, insertFileStatusQuery ++= fileStatusRow).transactionally
-    db.run(allUpdates).map(_ => fileMetadataRow)
-  }
-
-  def getFileMetadataByProperty(fileId: UUID, propertyName: String*): Future[Seq[FilemetadataRow]] = {
+  def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
-      .filter(_.fileid === fileId)
+      .filter(_.fileid inSet fileIds)
       .filter(_.propertyname inSet propertyName.toSet)
     db.run(query.result)
   }
 
-  def getFileMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None,
-                      propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
-    val query = Filemetadata.join(File)
+  def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None, propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
+    val query = Filemetadata
+      .join(File)
       .on(_.fileid === _.fileid)
-      .filter(_._2.consignmentid === consignmentId)
+      .filterOpt(consignmentId)(_._2.consignmentid === _)
       .filterOpt(propertyNames)(_._1.propertyname inSetBind _)
       .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)
       .map(_._1)
     db.run(query.result)
   }
 
-  def updateFileMetadataProperties(updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
-    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map {
-      case (propertyName, update) => Filemetadata
+  def updateFileMetadataProperties(selectedFileIds: Set[UUID], updatesByPropertyName: Map[String, FileMetadataUpdate]): Future[Seq[Int]] = {
+    val dbUpdate: Seq[ProfileAction[Int, NoStream, Effect.Write]] = updatesByPropertyName.map { case (propertyName, update) =>
+      Filemetadata
+        .filter(fm => fm.fileid inSetBind selectedFileIds)
         .filter(fm => fm.propertyname === propertyName)
-        .filter(fm => fm.metadataid inSet update.metadataIds)
         .map(fm => (fm.value, fm.userid, fm.datetime))
         .update((update.value, update.userId, update.dateTime))
     }.toSeq
@@ -57,18 +66,15 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(DBIO.sequence(dbUpdate).transactionally)
   }
 
-  def countProcessedChecksumInConsignment(consignmentId: UUID): Future[Int] = {
-    val query = Filemetadata.join(File)
-      .on(_.fileid === _.fileid).join(Fileproperty)
-      .on(_._1.propertyname === _.name)
-      .filter(_._1._2.consignmentid === consignmentId)
-      .filter(_._2.name === SHA256ServerSideChecksum)
-      .filter(_._1._2.filetype === NodeType.fileTypeIdentifier)
-      .groupBy(_._1._2.fileid)
-      .map(_._1)
-      .length
-    db.run(query.result)
+  def deleteFileMetadata(selectedFileIds: Set[UUID], propertyNames: Set[String]): Future[Int] = {
+    val query = Filemetadata
+      .filter(_.fileid inSetBind selectedFileIds)
+      .filter(_.propertyname inSetBind propertyNames)
+      .delete
+
+    db.run(query)
   }
+
 }
 
 case class FileMetadataUpdate(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID)

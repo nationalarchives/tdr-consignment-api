@@ -55,3 +55,6 @@ To generate the Graphql schema locally run the following command:
 `sbt graphqlSchemaGen`
 
 The generated schema file will be placed in the following location: `target/sbt-graphql/schema.graphql`. You can copy the contents of this file into `./schema.graphql` and commit the changes to allow the build to pass.
+
+After this file is merged into master, it will only be used by the generated-graphql project when that project is next deployed.
+In order to manually deploy the generated-graphql, follow [these instructions](https://github.com/nationalarchives/tdr-generated-graphql).

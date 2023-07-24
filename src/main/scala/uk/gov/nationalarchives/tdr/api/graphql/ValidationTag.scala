@@ -8,8 +8,7 @@ import scala.language.postfixOps
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait ValidationTag extends FieldTag {
-  def validate(ctx: Context[ConsignmentApiContext, _])
-              (implicit executionContext: ExecutionContext): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+  def validate(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): BeforeFieldResult[ConsignmentApiContext, Unit] = {
     val validationResult = validateAsync(ctx)
 
     // Awaiting a Future is risky because the thread will block until the response is returned or the timeout is reached.
@@ -18,11 +17,10 @@ trait ValidationTag extends FieldTag {
     //
     // We are only using Await because Sangria middleware does not support Futures like the main resolvers do. We should
     // remove it when we find a way to do authorisation in a completely async way in Sangria.
-    Await.result(validationResult, 5 seconds)
+    Await.result(validationResult, 120 seconds)
   }
 
-  def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                   (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]]
+  def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]]
 
   val continue: BeforeFieldResult[ConsignmentApiContext, Unit] = BeforeFieldResult(())
 }

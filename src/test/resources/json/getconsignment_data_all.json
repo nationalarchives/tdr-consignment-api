@@ -16,6 +16,8 @@
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",
       "totalFiles": 3,
+      "totalFileSize": 6,
+      "includeTopLevelFolder": true,
       "files": [
         {
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
@@ -23,10 +25,52 @@
           "fileName": "fileTwoName",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
           "originalFilePath": null,
+          "fileMetadata": [
+            {
+              "name": "SHA256ServerSideChecksum",
+              "value": "Result of FileMetadata processing"
+            },
+            {
+              "name": "SHA256ClientSideChecksum",
+              "value": "SHA256ClientSideChecksum value"
+            },
+            {
+              "name": "ClientSideOriginalFilepath",
+              "value": "ClientSideOriginalFilepath value"
+            },
+            {
+              "name": "ClientSideFileLastModifiedDate",
+              "value": "2021-03-11 12:30:30.592853"
+            },
+            {
+              "name": "ClientSideFileSize",
+              "value": "2"
+            },
+            {
+              "name": "RightsCopyright",
+              "value": "RightsCopyright value"
+            },
+            {
+              "name": "LegalStatus",
+              "value": "LegalStatus value"
+            },
+            {
+              "name": "HeldBy",
+              "value": "HeldBy value"
+            },
+            {
+              "name": "Language",
+              "value": "Language value"
+            },
+            {
+              "name": "FoiExemptionCode",
+              "value": "FoiExemptionCode value"
+            }
+          ],
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 1,
+            "clientSideFileSize": 2,
             "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
             "rightsCopyright": "RightsCopyright value",
             "heldBy": "HeldBy value",
@@ -48,7 +92,24 @@
             ],
             "containerSignatureFileVersion": "TEST DATA container signature file version",
             "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          }
+          },
+          "fileStatuses": [
+            {
+              "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
+              "statusType": "Antivirus",
+              "statusValue": "Failed"
+            },
+            {
+              "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
+              "statusType": "ChecksumMatch",
+              "statusValue": "Success"
+            },
+            {
+              "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
         },
         {
           "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
@@ -59,7 +120,7 @@
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 1,
+            "clientSideFileSize": 2,
             "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
             "rightsCopyright": "RightsCopyright value",
             "heldBy": "HeldBy value",
@@ -67,7 +128,8 @@
             "ClosurePeriod": 1,
             "ClosureStartDate": "2021-04-11T12:30:30.592853",
             "FoiExemptionAsserted": "2021-03-12T12:30:30.592853",
-            "TitlePublic": true,
+            "TitleClosed": true,
+            "DescriptionClosed": true,
             "language": "Language value"
           },
           "ffidMetadata": {
@@ -84,7 +146,14 @@
             ],
             "containerSignatureFileVersion": "TEST DATA container signature file version",
             "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          }
+          },
+          "fileStatuses": [
+            {
+              "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
         },
         {
           "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
@@ -95,7 +164,7 @@
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
             "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 1,
+            "clientSideFileSize": 2,
             "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
             "rightsCopyright": "RightsCopyright value",
             "heldBy": "HeldBy value",
@@ -116,7 +185,19 @@
             ],
             "containerSignatureFileVersion": "TEST DATA container signature file version",
             "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          }
+          },
+          "fileStatuses": [
+            {
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "statusType": "ChecksumMatch",
+              "statusValue": "Failed"
+            },
+            {
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
         }
       ],
       "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
@@ -131,10 +212,26 @@
           "filesProcessed": 3
         }
       },
-      "currentStatus": {
-        "transferAgreement": "Completed",
-        "upload": "Completed"
-      }
+      "consignmentStatuses": [
+        {
+          "createdDatetime": "2020-01-01T09:00:00Z",
+          "statusType": "DescriptiveMetadata",
+          "value": "NotEntered",
+          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
+        },
+        {
+          "createdDatetime": "2020-01-01T09:00:00Z",
+          "statusType": "ClosureMetadata",
+          "value": "NotEntered",
+          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
+        },
+        {
+          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
+          "statusType": "Upload",
+          "value": "Completed",
+          "createdDatetime": "2020-01-01T09:00:00Z"
+        }
+      ]
     }
   }
 }

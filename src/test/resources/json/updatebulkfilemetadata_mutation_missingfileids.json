@@ -5,10 +5,12 @@
       "consignmentId": "eb197bfb-43f7-40ca-9104-8f6cbda88506",
       "metadataProperties": [
         {
+          "filePropertyIsMultiValue": false,
           "filePropertyName": "property1",
           "value": "value1"
         },
         {
+          "filePropertyIsMultiValue": false,
           "filePropertyName": "property2",
           "value": "value2"
         }

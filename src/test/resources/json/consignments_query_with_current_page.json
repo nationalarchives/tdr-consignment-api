@@ -1,0 +1,3 @@
+{
+  "query": "{ consignments(limit: 2, currentPage: 1) { pageInfo { startCursor, endCursor, hasNextPage, hasPreviousPage }, edges { node { consignmentid, consignmentReference }}, totalPages(limit: 2)}}"
+}

@@ -1,22 +1,40 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentStatusRepository
-import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.CurrentStatus
-import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import cats.implicits._
+import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
+import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRepository,
-                               uuidSource: UUIDSource,
-                               timeSource: TimeSource)
-                              (implicit val executionContext: ExecutionContext) {
+class ConsignmentStatusService(
+    consignmentStatusRepository: ConsignmentStatusRepository,
+    fileStatusRepository: FileStatusRepository,
+    uuidSource: UUIDSource,
+    timeSource: TimeSource
+)(implicit val executionContext: ExecutionContext) {
+
+  implicit class ConsignmentStatusInputHelper(input: ConsignmentStatusInput) {
+    def statusValueToString: String = input.statusValue.getOrElse("")
+  }
+
+  private def toConsignmentStatus(row: ConsignmentstatusRow): ConsignmentStatus = {
+    ConsignmentStatus(
+      row.consignmentstatusid,
+      row.consignmentid,
+      row.statustype,
+      row.value,
+      row.createddatetime.toZonedDateTime,
+      row.modifieddatetime.map(timestamp => timestamp.toZonedDateTime)
+    )
+  }
 
   def addConsignmentStatus(addConsignmentStatusInput: ConsignmentStatusInput): Future[ConsignmentStatus] = {
     validateStatusTypeAndValue(addConsignmentStatusInput)
@@ -26,7 +44,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
       statusType = addConsignmentStatusInput.statusType
       existingConsignmentStatusRow = consignmentStatuses.find(csr => csr.statustype == statusType)
       consignmentStatusRow <- {
-        if(existingConsignmentStatusRow.isDefined) {
+        if (existingConsignmentStatusRow.isDefined) {
           throw ConsignmentStateException(
             s"Existing consignment $statusType status is '${existingConsignmentStatusRow.get.value}'; new entry cannot be added"
           )
@@ -35,34 +53,21 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
           uuidSource.uuid,
           addConsignmentStatusInput.consignmentId,
           addConsignmentStatusInput.statusType,
-          addConsignmentStatusInput.statusValue,
+          addConsignmentStatusInput.statusValueToString,
           Timestamp.from(timeSource.now)
         )
         consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
       }
     } yield {
-        ConsignmentStatus(
-          consignmentStatusRow.consignmentstatusid,
-          consignmentStatusRow.consignmentid,
-          consignmentStatusRow.statustype,
-          consignmentStatusRow.value,
-          consignmentStatusRow.createddatetime.toZonedDateTime,
-          consignmentStatusRow.modifieddatetime.map(timestamp => timestamp.toZonedDateTime)
-        )
-      }
+      toConsignmentStatus(consignmentStatusRow)
     }
+  }
 
-  def getConsignmentStatus(consignmentId: UUID): Future[CurrentStatus] = {
+  def getConsignmentStatuses(consignmentId: UUID): Future[List[ConsignmentStatus]] = {
     for {
-      consignmentStatuses <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
+      rows <- consignmentStatusRepository.getConsignmentStatus(consignmentId)
     } yield {
-      val consignmentStatusTypesAndVals = consignmentStatuses.map(cs => (cs.statustype, cs.value)).toMap
-      CurrentStatus(consignmentStatusTypesAndVals.get("Series"),
-        consignmentStatusTypesAndVals.get("TransferAgreement"),
-        consignmentStatusTypesAndVals.get("Upload"),
-        consignmentStatusTypesAndVals.get("ConfirmTransfer"),
-        consignmentStatusTypesAndVals.get("Export")
-      )
+      rows.map(r => toConsignmentStatus(r)).toList
     }
   }
 
@@ -71,16 +76,37 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
     consignmentStatusRepository.updateConsignmentStatus(
       updateConsignmentStatusInput.consignmentId,
       updateConsignmentStatusInput.statusType,
-      updateConsignmentStatusInput.statusValue,
+      updateConsignmentStatusInput.statusValue.get,
       Timestamp.from(timeSource.now)
     )
   }
 
-  private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput) = {
-    val statusType: String = consignmentStatusInput.statusType
-    val statusValue: String = consignmentStatusInput.statusValue
+  def updateMetadataConsignmentStatus(consignmentId: UUID, statusTypes: List[String]): Future[List[Int]] = {
+    fileStatusRepository
+      .getFileStatus(consignmentId, statusTypes.toSet)
+      .flatMap(fileStatuses => {
+        statusTypes
+          .map(statusType => {
+            val fileStatusesForType = fileStatuses.filter(_.statustype == statusType)
+            val statusValue = if (fileStatusesForType.count(_.value == NotEntered) == fileStatusesForType.length) {
+              NotEntered
+            } else if (fileStatusesForType.exists(_.value == Incomplete)) {
+              Incomplete
+            } else {
+              Completed
+            }
+            val input = ConsignmentStatusInput(consignmentId, statusType, Option(statusValue))
+            updateConsignmentStatus(input)
+          })
+          .sequence
+      })
+  }
 
-    if(validStatusTypes.contains(statusType) && validStatusValues.contains(statusValue)) {
+  private def validateStatusTypeAndValue(consignmentStatusInput: ConsignmentStatusInput): Boolean = {
+    val statusType: String = consignmentStatusInput.statusType
+    val statusValue: String = consignmentStatusInput.statusValueToString
+
+    if (validStatusTypes.contains(statusType) && validStatusValues.contains(statusValue)) {
       true
     } else {
       throw InputDataException(s"Invalid ConsignmentStatus input: either '$statusType' or '$statusValue'")
@@ -89,6 +115,7 @@ class ConsignmentStatusService(consignmentStatusRepository: ConsignmentStatusRep
 }
 
 object ConsignmentStatusService {
-  val validStatusTypes = Set("Series", "TransferAgreement", "Upload", "ConfirmTransfer", "Export")
-  val validStatusValues = Set("InProgress", "Completed", "Failed")
+  val validConsignmentTypes: List[String] = List("Series", "TransferAgreement", "Upload", "ClientChecks", "ClosureMetadata", "DescriptiveMetadata", "ConfirmTransfer", "Export")
+  val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set("ServerFFID", "ServerChecksum", "ServerAntivirus")
+  val validStatusValues: Set[String] = Set("InProgress", "Completed", "CompletedWithIssues", "Failed", "NotEntered", "Incomplete")
 }

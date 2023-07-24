@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Field 'AddAntivirusMetadataInput.fileId' of required type 'UUID!' was not provided. (line 1, column 59):\nmutation {addAntivirusMetadata(addAntivirusMetadataInput: {softwareVersion: \"0.1\"}) {fileId, softwareVersion}}\n                                                          ^"
+      "message": "Field 'AddAntivirusMetadataInputValues.fileId' of required type 'UUID!' was not provided. (line 1, column 88):\nmutation {addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: {antivirusMetadata: [{softwareVersion: \"0.1\"}]}) {fileId, softwareVersion}}\n                                                                                       ^"
     }
   ]
 }

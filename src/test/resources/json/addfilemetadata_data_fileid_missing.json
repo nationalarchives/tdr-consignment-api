@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Field 'AddFileMetadataWithFileIdInput.fileId' of required type 'UUID!' was not provided. (line 1, column 57):\nmutation{addFileMetadata(addFileMetadataWithFileIdInput:{filePropertyName:\"SHA256ServerSideChecksum\",value:\"value\"}){filePropertyName,fileId,value}}\n                                                        ^",
+      "message": "Field 'AddFileMetadataWithFileIdInputValues.fileId' of required type 'UUID!' was not provided. (line 1, column 88):\nmutation{addMultipleFileMetadata(addMultipleFileMetadataInput: { metadataInputValues: [{filePropertyName:\"SHA256ServerSideChecksum\",value:\"value\"}]}){filePropertyName,fileId,value}}\n                                                                                       ^",
       "locations": [
         {
           "column": 47,

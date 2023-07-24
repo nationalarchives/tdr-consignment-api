@@ -1,0 +1,3 @@
+{
+  "query": "{ consignments(limit: 2, consignmentFiltersInput: { userId: \"4ab14990-ed63-4615-8336-56fbb9960300\" }) { pageInfo { startCursor, endCursor, hasNextPage, hasPreviousPage }, edges { node { consignmentid, consignmentReference }}}}"
+}

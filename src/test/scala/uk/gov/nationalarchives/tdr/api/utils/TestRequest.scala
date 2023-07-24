@@ -22,9 +22,8 @@ import scala.reflect.ClassTag
 
 trait TestRequest extends AnyFlatSpec with Matchers {
 
-  def runTestRequest[A](prefix: String)(queryFileName: String, token: String)
-                       (implicit decoder: Decoder[A], classTag: ClassTag[A])
-  : A = {
+  def runTestRequest[A](prefix: String)(queryFileName: String, token: String)(implicit decoder: Decoder[A], classTag: ClassTag[A]): A = {
+    //implicit val unmarshaller: FromResponseUnmarshaller[A] = unmarshalResponse[A]()
     val database = Database.forConfig("consignmentapi.db")
     val query: String = fromResource(prefix + s"$queryFileName.json").mkString
     val body: Stream[Pure, Byte] = encode(Stream(query))

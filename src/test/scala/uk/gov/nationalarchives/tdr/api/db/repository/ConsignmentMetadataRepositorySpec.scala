@@ -23,35 +23,32 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  "addConsignmentMetadata" should "add consignment metadata with the correct values" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val utils = TestUtils(db)
-      utils.addConsignmentProperty(consignmentMetadataProperty)
-      val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
-      val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
-      utils.createConsignment(consignmentId, userId)
-      val input = Seq(ConsignmentmetadataRow(
-        UUID.randomUUID(), consignmentId, consignmentMetadataProperty, "value", Timestamp.from(Instant.now()), UUID.randomUUID()))
-      val result = consignmentMetadataRepository.addConsignmentMetadata(input).futureValue.head
-      result.propertyname should equal(consignmentMetadataProperty)
-      result.value should equal("value")
-      checkMetadataAddedExists(consignmentId, db.source.createConnection())
+  "addConsignmentMetadata" should "add consignment metadata with the correct values" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    utils.addConsignmentProperty(consignmentMetadataProperty)
+    val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
+    val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
+    utils.createConsignment(consignmentId, userId)
+    val input = Seq(ConsignmentmetadataRow(UUID.randomUUID(), consignmentId, consignmentMetadataProperty, "value", Timestamp.from(Instant.now()), UUID.randomUUID()))
+    val result = consignmentMetadataRepository.addConsignmentMetadata(input).futureValue.head
+    result.propertyname should equal(consignmentMetadataProperty)
+    result.value should equal("value")
+    checkMetadataAddedExists(consignmentId, db.source.createConnection())
   }
 
-  "getConsignmentMetadata" should "return the correct metadata" in withContainers {
-    case container: PostgreSQLContainer =>
-      val db = container.database
-      val utils = TestUtils(db)
-      utils.addConsignmentProperty(consignmentMetadataProperty)
-      val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
-      val consignmentId = UUID.fromString("d511ecee-89ac-4643-b62d-76a41984a92b")
-      utils.createConsignment(consignmentId, userId)
-      utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, consignmentMetadataProperty)
-      val response = consignmentMetadataRepository.getConsignmentMetadata(consignmentId, consignmentMetadataProperty).futureValue.head
-      response.value should equal("Result of ConsignmentMetadata processing")
-      response.propertyname should equal(consignmentMetadataProperty)
-      response.consignmentid should equal(consignmentId)
+  "getConsignmentMetadata" should "return the correct metadata" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    utils.addConsignmentProperty(consignmentMetadataProperty)
+    val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
+    val consignmentId = UUID.fromString("d511ecee-89ac-4643-b62d-76a41984a92b")
+    utils.createConsignment(consignmentId, userId)
+    utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, consignmentMetadataProperty)
+    val response = consignmentMetadataRepository.getConsignmentMetadata(consignmentId, consignmentMetadataProperty).futureValue.head
+    response.value should equal("Result of ConsignmentMetadata processing")
+    response.propertyname should equal(consignmentMetadataProperty)
+    response.consignmentid should equal(consignmentId)
   }
 
   def checkMetadataAddedExists(consignmentId: UUID, connection: Connection): Unit = {

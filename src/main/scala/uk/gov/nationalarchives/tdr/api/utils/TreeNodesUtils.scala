@@ -24,10 +24,12 @@ class TreeNodesUtils(uuidSource: UUIDSource) {
   }
 
   def generateNodes(filePaths: Set[String], typeIdentifier: String): Map[String, TreeNode] = {
-    filePaths.flatMap(path => {
-      val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
-      innerFunction(pathWithoutInitialSlash, typeIdentifier, Map())
-    }).toMap
+    filePaths
+      .flatMap(path => {
+        val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
+        innerFunction(pathWithoutInitialSlash, typeIdentifier, Map())
+      })
+      .toMap
   }
 }
 

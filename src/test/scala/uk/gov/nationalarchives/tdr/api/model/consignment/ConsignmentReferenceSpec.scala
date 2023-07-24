@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 class ConsignmentReferenceSpec extends AnyFlatSpec with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  //scalastyle:off magic.number
+  // scalastyle:off magic.number
   val testCases = List(
     ReferenceTestCase(2020, 5000L, "TDR-2020-LBB"),
     ReferenceTestCase(2020, 9223372036854775807L, "TDR-2020-JGXSCT7Q66HVKK"),
@@ -21,10 +21,10 @@ class ConsignmentReferenceSpec extends AnyFlatSpec with ScalaFutures with Matche
     "createConsignmentReference" should s"generated consignment reference ${testCase.expectedReference} from " +
       s"year ${testCase.year} and sequence number ${testCase.sequenceNum}" in {
 
-      val result: String = ConsignmentReference.createConsignmentReference(testCase.year, testCase.sequenceNum)
+        val result: String = ConsignmentReference.createConsignmentReference(testCase.year, testCase.sequenceNum)
 
-      result should equal (testCase.expectedReference)
-    }
+        result should equal(testCase.expectedReference)
+      }
   })
 }
 

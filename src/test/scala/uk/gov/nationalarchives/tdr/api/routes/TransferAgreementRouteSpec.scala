@@ -27,17 +27,18 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
   case class GraphqlTAComplianceMutationData(data: Option[AddTransferAgreementCompliance], errors: List[GraphqlError] = Nil)
 
   case class TransferAgreementPrivateBeta(
-                                           consignmentId: Option[UUID] = None,
-                                           allPublicRecords: Option[Boolean] = None,
-                                           allCrownCopyright: Option[Boolean] = None,
-                                           allEnglish: Option[Boolean] = None
-                                         )
+      consignmentId: Option[UUID] = None,
+      allPublicRecords: Option[Boolean] = None,
+      allCrownCopyright: Option[Boolean] = None,
+      allEnglish: Option[Boolean] = None
+  )
 
   case class TransferAgreementCompliance(
-                                          consignmentId: Option[UUID] = None,
-                                          appraisalSelectionSignedOff: Option[Boolean] = None,
-                                          initialOpenRecords: Option[Boolean] = None,
-                                          sensitivityReviewSignedOff: Option[Boolean] = None)
+      consignmentId: Option[UUID] = None,
+      appraisalSelectionSignedOff: Option[Boolean] = None,
+      initialOpenRecords: Option[Boolean] = None,
+      sensitivityReviewSignedOff: Option[Boolean] = None
+  )
 
   case class AddTransferAgreementPrivateBeta(addTransferAgreementPrivateBeta: TransferAgreementPrivateBeta) extends TestRequest
 
@@ -52,7 +53,6 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
     runTestRequest[GraphqlTAComplianceMutationData](addTransferAgreementComplianceJsonFilePrefix)
   val expectedTAComplianceMutationResponse: String => GraphqlTAComplianceMutationData =
     getDataFromFile[GraphqlTAComplianceMutationData](addTransferAgreementComplianceJsonFilePrefix)
-
 
   "addTransferAgreementPrivateBeta" should "return all requested fields from inserted transfer agreement consignment metadata properties" in withContainers {
     case container: PostgreSQLContainer =>
@@ -87,11 +87,10 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
       checkTransferAgreementExists(consignmentId, utils)
   }
 
-  "addTransferAgreementPrivateBeta" should "throw an error if the consignment id field is not provided" in withContainers {
-    case _: PostgreSQLContainer =>
-      val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_consignmentid_missing")
-      val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_missingconsignmentid", validUserToken())
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+  "addTransferAgreementPrivateBeta" should "throw an error if the consignment id field is not provided" in withContainers { case _: PostgreSQLContainer =>
+    val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_consignmentid_missing")
+    val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_missingconsignmentid", validUserToken())
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "addTransferAgreementPrivateBeta" should "return an error if a user does not own the transfer agreement's consignment id" in withContainers {
@@ -108,16 +107,15 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
       response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)
   }
 
-  "addTransferAgreementPrivateBeta" should "return an error if an invalid consignment id is provided" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val fixedUUIDSource = new FixedUUIDSource()
-      val consignmentId: UUID = fixedUUIDSource.uuid
-      utils.createConsignment(consignmentId, userId)
+  "addTransferAgreementPrivateBeta" should "return an error if an invalid consignment id is provided" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val fixedUUIDSource = new FixedUUIDSource()
+    val consignmentId: UUID = fixedUUIDSource.uuid
+    utils.createConsignment(consignmentId, userId)
 
-      val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_error_invalid_consignmentid")
-      val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_invalid_consignmentid", validUserToken())
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+    val expectedResponse: GraphqlTAPrivateBetaMutationData = expectedTAPrivateBetaMutationResponse("data_error_invalid_consignmentid")
+    val response: GraphqlTAPrivateBetaMutationData = runTAPrivateBetaTestMutation("mutation_invalid_consignmentid", validUserToken())
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "addTransferAgreementCompliance" should "return all requested fields from inserted transfer agreement consignment metadata properties" in withContainers {
@@ -153,11 +151,10 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
       checkTransferAgreementExists(consignmentId, utils)
   }
 
-  "addTransferAgreementCompliance" should "throw an error if the consignment id field is not provided" in withContainers {
-    case _: PostgreSQLContainer =>
-      val expectedResponse: GraphqlTAComplianceMutationData = expectedTAComplianceMutationResponse("data_consignmentid_missing")
-      val response: GraphqlTAComplianceMutationData = runTAComplianceTestMutation("mutation_missingconsignmentid", validUserToken())
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+  "addTransferAgreementCompliance" should "throw an error if the consignment id field is not provided" in withContainers { case _: PostgreSQLContainer =>
+    val expectedResponse: GraphqlTAComplianceMutationData = expectedTAComplianceMutationResponse("data_consignmentid_missing")
+    val response: GraphqlTAComplianceMutationData = runTAComplianceTestMutation("mutation_missingconsignmentid", validUserToken())
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "addTransferAgreementCompliance" should "return an error if a user does not own the transfer agreement's consignment id" in withContainers {
@@ -174,16 +171,15 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
       response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)
   }
 
-  "addTransferAgreementCompliance" should "return an error if an invalid consignment id is provided" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val fixedUUIDSource = new FixedUUIDSource()
-      val consignmentId: UUID = fixedUUIDSource.uuid
-      utils.createConsignment(consignmentId, userId)
+  "addTransferAgreementCompliance" should "return an error if an invalid consignment id is provided" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val fixedUUIDSource = new FixedUUIDSource()
+    val consignmentId: UUID = fixedUUIDSource.uuid
+    utils.createConsignment(consignmentId, userId)
 
-      val expectedResponse: GraphqlTAComplianceMutationData = expectedTAComplianceMutationResponse("data_error_invalid_consignmentid")
-      val response: GraphqlTAComplianceMutationData = runTAComplianceTestMutation("mutation_invalid_consignmentid", validUserToken())
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+    val expectedResponse: GraphqlTAComplianceMutationData = expectedTAComplianceMutationResponse("data_error_invalid_consignmentid")
+    val response: GraphqlTAComplianceMutationData = runTAComplianceTestMutation("mutation_invalid_consignmentid", validUserToken())
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   private def checkTransferAgreementExists(consignmentId: UUID, utils: TestUtils): Unit = {
@@ -191,8 +187,8 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
       """WHERE "ConsignmentId" = ? AND cp."Name" IN (?,?,?,?,?,?);"""
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
-    transferAgreementProperties.zipWithIndex.foreach {
-      case (a, b) => ps.setString(b + 2, a)
+    transferAgreementProperties.zipWithIndex.foreach { case (a, b) =>
+      ps.setString(b + 2, a)
     }
     val rs: ResultSet = ps.executeQuery()
     rs.next()

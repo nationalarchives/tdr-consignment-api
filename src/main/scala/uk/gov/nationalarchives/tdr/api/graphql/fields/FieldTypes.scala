@@ -17,50 +17,53 @@ object FieldTypes {
 
   private def parseUuid(s: String): Either[ValueCoercionViolation, UUID] = Try(UUID.fromString(s)) match {
     case Success(uuid) => Right(uuid)
-    case Failure(_) => Left(UuidCoercionViolation)
+    case Failure(_)    => Left(UuidCoercionViolation)
   }
 
   private def parseZonedDatetime(s: String): Either[ValueCoercionViolation, ZonedDateTime] = Try(ZonedDateTime.parse(s)) match {
     case Success(zonedDateTime) => Right(zonedDateTime)
-    case Failure(_) => Left(ZonedDateTimeCoercionViolation)
+    case Failure(_)             => Left(ZonedDateTimeCoercionViolation)
   }
 
   private def parseLocalDatetime(s: String): Either[ValueCoercionViolation, LocalDateTime] =
     Try(LocalDateTime.parse(s)).toEither.left.map(_ => LocalDateTimeCoercionViolation)
 
-  implicit val ZonedDateTimeType: ScalarType[ZonedDateTime] = ScalarType[ZonedDateTime]("ZonedDateTime",
+  implicit val ZonedDateTimeType: ScalarType[ZonedDateTime] = ScalarType[ZonedDateTime](
+    "ZonedDateTime",
     coerceOutput = (zdt, _) => zdt.toSecondsPrecisionString,
     coerceUserInput = {
       case s: String => parseZonedDatetime(s)
-      case _ => Left(ZonedDateTimeCoercionViolation)
+      case _         => Left(ZonedDateTimeCoercionViolation)
     },
     coerceInput = {
       case StringValue(s, _, _, _, _) => parseZonedDatetime(s)
-      case _ => Left(ZonedDateTimeCoercionViolation)
+      case _                          => Left(ZonedDateTimeCoercionViolation)
     }
   )
 
-  implicit val LocalDateTimeType: ScalarType[LocalDateTime] = ScalarType[LocalDateTime]("LocalDateTime",
+  implicit val LocalDateTimeType: ScalarType[LocalDateTime] = ScalarType[LocalDateTime](
+    "LocalDateTime",
     coerceOutput = (ldt, _) => ldt.toString,
     coerceUserInput = {
       case s: String => parseLocalDatetime(s)
-      case _ => Left(LocalDateTimeCoercionViolation)
+      case _         => Left(LocalDateTimeCoercionViolation)
     },
     coerceInput = {
       case StringValue(s, _, _, _, _) => parseLocalDatetime(s)
-      case _ => Left(LocalDateTimeCoercionViolation)
+      case _                          => Left(LocalDateTimeCoercionViolation)
     }
   )
 
-  implicit val UuidType: ScalarType[UUID] = ScalarType[UUID]("UUID",
+  implicit val UuidType: ScalarType[UUID] = ScalarType[UUID](
+    "UUID",
     coerceOutput = (u, _) => u.toString,
     coerceUserInput = {
       case s: String => parseUuid(s)
-      case _ => Left(UuidCoercionViolation)
+      case _         => Left(UuidCoercionViolation)
     },
     coerceInput = {
       case StringValue(s, _, _, _, _) => parseUuid(s)
-      case _ => Left(UuidCoercionViolation)
+      case _                          => Left(UuidCoercionViolation)
     }
   )
 }

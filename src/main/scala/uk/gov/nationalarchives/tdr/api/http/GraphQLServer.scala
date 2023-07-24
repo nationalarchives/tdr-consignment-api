@@ -17,6 +17,7 @@ import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, DeferredResolver, ErrorCodes, GraphQlTypes}
+import uk.gov.nationalarchives.tdr.api.metadatainputvalidation.MetadataInputValidator
 import uk.gov.nationalarchives.tdr.api.service._
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -57,49 +58,72 @@ class GraphQLServer() {
     val ffidMetadataMatchesRepository = new FFIDMetadataMatchesRepository(db)
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val antivirusMetadataRepository = new AntivirusMetadataRepository(db)
-    val disallowedPuidsRepository = new DisallowedPuidsRepository(db)
-    val allowedPuidsRepository = new AllowedPuidsRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
+    val displayPropertiesRepository = new DisplayPropertiesRepository(db)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
-    val consignmentService = new ConsignmentService(consignmentRepository, consignmentStatusRepository, fileMetadataRepository, fileRepository,
-      ffidMetadataRepository, transferringBodyService, timeSource, uuidSource, config)
+    val consignmentService = new ConsignmentService(
+      consignmentRepository,
+      consignmentStatusRepository,
+      transferringBodyService,
+      timeSource,
+      uuidSource,
+      config
+    )
     val seriesService = new SeriesService(new SeriesRepository(db), uuidSource)
-    val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), new ConsignmentStatusRepository(db),
-      uuidSource, timeSource)
-    val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository,
-      uuidSource, timeSource)
+    val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), new ConsignmentStatusRepository(db), uuidSource, timeSource)
+    val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
-    val fileMetadataService = new FileMetadataService(fileMetadataRepository, fileRepository, customMetadataPropertiesRepository, timeSource, uuidSource)
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, fileRepository,
-      allowedPuidsRepository, disallowedPuidsRepository, timeSource, uuidSource)
-    val fileStatusService = new FileStatusService(fileRepository, fileStatusRepository, disallowedPuidsRepository, uuidSource)
-    val fileService = new FileService(fileRepository, fileStatusRepository, consignmentRepository, ffidMetadataService,
-      antivirusMetadataService, fileStatusService, fileMetadataService, new CurrentTimeSource, uuidSource, config)
-    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, uuidSource, timeSource)
     val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-
-    IO(
-      ConsignmentApiContext(
-        accessToken,
-        antivirusMetadataService,
-        clientFileMetadataService,
-        consignmentService,
-        ffidMetadataService,
-        fileMetadataService,
-        fileService,
-        finalTransferConfirmationService,
-        seriesService,
-        transferAgreementService,
-        transferringBodyService,
-        consignmentStatusService,
-        fileStatusService,
-        customMetadataPropertiesService
+    val validateFileMetadataService = new ValidateFileMetadataService(customMetadataPropertiesService, fileMetadataRepository, fileStatusRepository, timeSource, uuidSource)
+    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
+    val fileMetadataService = new FileMetadataService(
+      fileMetadataRepository,
+      fileRepository,
+      consignmentStatusService,
+      customMetadataPropertiesService,
+      validateFileMetadataService,
+      timeSource,
+      uuidSource
+    )
+    val ffidMetadataService =
+      new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
+    val fileStatusService = new FileStatusService(fileStatusRepository, uuidSource)
+    val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
+    val fileService = new FileService(
+      fileRepository,
+      consignmentRepository,
+      customMetadataPropertiesRepository,
+      ffidMetadataService,
+      antivirusMetadataService,
+      fileStatusService,
+      fileMetadataService,
+      new CurrentTimeSource,
+      uuidSource,
+      config
+    )
+  IO(
+    ConsignmentApiContext(
+      accessToken,
+      antivirusMetadataService,
+      clientFileMetadataService,
+      consignmentService,
+      ffidMetadataService,
+      fileMetadataService,
+      fileService,
+      finalTransferConfirmationService,
+      seriesService,
+      transferAgreementService,
+      transferringBodyService,
+      consignmentStatusService,
+      fileStatusService,
+      customMetadataPropertiesService,
+      displayPropertiesService
       )
     )
   }
-  //scalastyle:on method.length
+  // scalastyle:on method.length
 
   def executeGraphQLQuery(query: Document, operation: Option[String], vars: Json, accessToken: Token, database: JdbcBackend#DatabaseDef)
                                  (implicit ec: ExecutionContext): IO[Json] = {

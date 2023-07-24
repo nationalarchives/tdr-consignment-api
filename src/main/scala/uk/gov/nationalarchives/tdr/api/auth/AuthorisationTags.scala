@@ -2,10 +2,10 @@ package uk.gov.nationalarchives.tdr.api.auth
 
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
-import uk.gov.nationalarchives.tdr.api.auth.ValidateUserOwnsFiles.continue
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.UpdateConsignmentSeriesIdInput
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.BulkFileMetadataInputArg
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatusInputArg
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
@@ -24,8 +24,7 @@ trait AuthorisationTag extends ValidationTag {
 }
 
 trait SyncAuthorisationTag extends AuthorisationTag {
-  final def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                         (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+  final def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     Future.successful(validateSync(ctx))
   }
 
@@ -49,12 +48,10 @@ object ValidateBody extends SyncAuthorisationTag {
 
 object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
-    val userBody = token.transferringBody.getOrElse(
-      throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
+    val userBody = token.transferringBody.getOrElse(throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
     val consignmentSeriesInput = ctx.arg[UpdateConsignmentSeriesIdInput]("updateConsignmentSeriesId")
     val seriesId: UUID = consignmentSeriesInput.seriesId
     val consignmentId: UUID = consignmentSeriesInput.consignmentId
@@ -77,8 +74,7 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 }
 
 case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends AuthorisationTag {
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
     val exportAccess = token.backendChecksRoles.contains(exportRole)
@@ -86,7 +82,7 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends 
     val arg: T = ctx.arg[T](argument.name)
     val consignmentId: UUID = arg match {
       case uoc: UserOwnsConsignment => uoc.consignmentId
-      case id: UUID => id
+      case id: UUID                 => id
     }
 
     ctx.ctx.consignmentService
@@ -170,60 +166,48 @@ object ValidateHasExportAccess extends SyncAuthorisationTag {
   }
 }
 
-object ValidateUserOwnsFiles extends AuthorisationTag {
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
-    val addBulkMetadataInput = ctx.arg(BulkFileMetadataInputArg)
-    val fileIds = addBulkMetadataInput.fileIds.toSeq
-
-    ValidateFiles.validate(ctx, fileIds)
-  }
-}
-
-object ValidateUserOwnsFilesForFileStatusInput extends AuthorisationTag {
-  override def validateAsync(ctx: Context[ConsignmentApiContext, _])
-                            (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
-    val addFileStatusInput = ctx.arg(FileStatusInputArg)
-    val fileIds = Seq(addFileStatusInput.fileId)
-
-    ValidateFiles.validate(ctx, fileIds)
-  }
-}
-
-object ValidateFiles {
-
-  def validate(ctx: Context[ConsignmentApiContext, _], fileIds: Seq[UUID])
-              (implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends AuthorisationTag {
+  override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
+    val arg: T = ctx.arg[T](argument.name)
+    val fileIds: Seq[UUID] = arg match {
+      case input: DeleteFileMetadataInput      => input.fileIds
+      case input: UpdateBulkFileMetadataInput  => input.fileIds
+      case input: AddFileStatusInput           => Seq(input.fileId)
+      case input: AddMultipleFileStatusesInput => input.statuses.map(_.fileId)
+    }
+    val exportAccess: Boolean = ctx.ctx.accessToken.backendChecksRoles.contains(exportRole)
     val userId = ctx.ctx.accessToken.userId
 
+    if (fileIds.isEmpty) {
+      throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
+    }
     for {
-      fileIdsAndOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
-      fileIdsBelongingToAConsignment: Seq[UUID] = fileIdsAndOwner.map(_.fileId)
-      filesThatDoNotBelongToAConsignment: Seq[UUID] = fileIds.filterNot(fileId => fileIdsBelongingToAConsignment.contains(fileId))
-      fileIdsThatDoNotBelongToTheUser: Seq[UUID] = fileIdsAndOwner.collect {
-        case fileIdAndOwner if fileIdAndOwner.userId != userId => fileIdAndOwner.fileId
-      }
-      allFilesBelongToAConsignment = filesThatDoNotBelongToAConsignment.isEmpty
-      allFilesBelongToTheUser = fileIdsThatDoNotBelongToTheUser.isEmpty
-      result = if (allFilesBelongToAConsignment && allFilesBelongToTheUser) {
-        continue
-      } else {
-        val fileIdsNotOwnedByUser: Seq[UUID] = filesThatDoNotBelongToAConsignment ++ fileIdsThatDoNotBelongToTheUser
-        throw AuthorisationException(s"User '$userId' does not own the files they are trying to access:\n${fileIdsNotOwnedByUser.mkString("\n")}")
-      }
+      fileOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
+      invalidFileIds: Seq[UUID] = fileOwner.collect {
+        case FileOwnership(fileId, ownerId) if ownerId != userId => fileId
+      } ++ fileIds.filterNot(fileId => fileOwner.exists(_.fileId == fileId))
+
+      result =
+        if (invalidFileIds.isEmpty || exportAccess) {
+          continue
+        } else {
+          val message = s"User '$userId' does not own the files they are trying to access:\n${invalidFileIds.mkString("\n")} or does not have export access"
+          throw AuthorisationException(message)
+        }
     } yield result
   }
 }
 
-object ValidateHasReportingAccess extends SyncAuthorisationTag {
+object ValidateHasConsignmentsAccess extends SyncAuthorisationTag {
   override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+    val consignmentFilters: Option[ConsignmentFilters] = ctx.args.argOpt("consignmentFiltersInput")
     val token = ctx.ctx.accessToken
     val reportingAccess = token.reportingRoles.contains(reportingRole)
-    if (reportingAccess) {
+    if (reportingAccess || consignmentFilters.exists(_.userId.contains(token.userId))) {
       continue
     } else {
       val tokenUserId = token.userId
-      throw AuthorisationException(s"User $tokenUserId does not have permission to run reporting")
+      throw AuthorisationException(s"User $tokenUserId does not have permission to access the consignments")
     }
   }
 }

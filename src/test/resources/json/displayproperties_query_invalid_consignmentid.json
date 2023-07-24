@@ -1,0 +1,6 @@
+{
+  "query": "query displayProperties($consignmentId:UUID!){displayProperties(consignmentid:$consignmentId){propertyName, attributes {attribute, value, type}}}",
+  "variables": {
+    "consignmentId": "f67d1337-cbd0-4fd1-9eac-611489e7113f"
+  }
+}

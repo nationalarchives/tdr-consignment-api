@@ -1,0 +1,17 @@
+{
+  "query": "mutation addFilesAndMetadata($addFilesAndMetadataInput: AddFileAndMetadataInput!) {addFilesAndMetadata(addFilesAndMetadataInput: $addFilesAndMetadataInput) {fileId,matchId}}",
+  "variables": {
+    "addFilesAndMetadataInput" : {
+      "consignmentId": "f1a9269d-157b-402c-98d8-1633393634c5",
+      "metadataInput": [
+        {
+          "originalPath": "",
+          "checksum": "",
+          "lastModified": 1,
+          "fileSize": 0,
+          "matchId": 1
+        }
+      ]
+    }
+  }
+}

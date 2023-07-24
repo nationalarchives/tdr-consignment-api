@@ -1,0 +1,14 @@
+{
+  "query": "mutation addMultipleFileStatuses($addMultipleFileStatusesInput: AddMultipleFileStatusesInput!){addMultipleFileStatuses(addMultipleFileStatusesInput: $addMultipleFileStatusesInput) {fileId,statusType,statusValue}}",
+  "variables": {
+    "addMultipleFileStatusesInput": {
+      "statuses": [
+        {
+          "fileId": "07a3a4bd-0281-4a6d-a4c1-8fa3239e1313",
+          "statusType": "Upload",
+          "statusValue": "Success"
+        }
+      ]
+    }
+  }
+}

@@ -5,7 +5,7 @@ import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{PasswordProtected, Zip}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered, PasswordProtected, Zip}
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
@@ -155,12 +155,21 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
   }
 
-  def createFileProperty(name: String, description: String, propertytype: String,
-                         datatype: String, editable: Boolean, multivalue: Boolean,
-                         propertygroup: String, fullname: String): Unit = {
+  def createFileProperty(
+      name: String,
+      description: String,
+      propertytype: String,
+      datatype: String,
+      editable: Boolean,
+      multivalue: Boolean,
+      propertygroup: String,
+      fullname: String,
+      exportOrdinal: Int = 1,
+      allowExport: Boolean = false
+  ): Unit = {
     val sql =
       s"""INSERT INTO "FileProperty" ("Name", "Description", "CreatedDatetime", "ModifiedDatetime",""" +
-        s""" "PropertyType", "Datatype", "Editable", "MultiValue", "PropertyGroup", "FullName") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        s""" "PropertyType", "Datatype", "Editable", "MultiValue", "PropertyGroup", "FullName", "ExportOrdinal", "AllowExport") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
     ps.setString(2, description)
@@ -172,6 +181,8 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setBoolean(8, multivalue)
     ps.setString(9, propertygroup)
     ps.setString(10, fullname)
+    ps.setInt(11, exportOrdinal)
+    ps.setBoolean(12, allowExport)
     ps.executeUpdate()
   }
 
@@ -193,12 +204,14 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
   }
 
   def createConsignment(
-                         consignmentId: UUID,
-                         userId: UUID = userId,
-                         seriesId: UUID = fixedSeriesId,
-                         consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
-                         consignmentType: String = "standard",
-                         bodyId: UUID = fixedBodyId): UUID = {
+      consignmentId: UUID,
+      userId: UUID = userId,
+      seriesId: UUID = fixedSeriesId,
+      consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
+      consignmentType: String = "standard",
+      bodyId: UUID = fixedBodyId,
+      includeStatusRows: Boolean = true
+  ): UUID = {
     val sql =
       """INSERT INTO "Consignment" """ +
         """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
@@ -222,6 +235,10 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setObject(9, bodyId, Types.OTHER)
     ps.setInt(10, nextSequence)
     ps.executeUpdate()
+    if (includeStatusRows) {
+      createConsignmentStatus(consignmentId, DescriptiveMetadata, NotEntered)
+      createConsignmentStatus(consignmentId, ClosureMetadata, NotEntered)
+    }
     consignmentId
   }
 
@@ -234,15 +251,17 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     result
   }
 
-  def createConsignmentStatus(consignmentId: UUID,
-                              statusType: String,
-                              statusValue: String,
-                              createdDate: Timestamp = Timestamp.from(FixedTimeSource.now)
-                             ): Unit = {
+  def createConsignmentStatus(
+      consignmentId: UUID,
+      statusType: String,
+      statusValue: String,
+      createdDate: Timestamp = Timestamp.from(FixedTimeSource.now),
+      statusId: UUID = UUID.randomUUID()
+  ): Unit = {
     val sql =
       s"""INSERT INTO "ConsignmentStatus" ("ConsignmentStatusId", "ConsignmentId", "StatusType", "Value", "CreatedDatetime") VALUES (?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setObject(1, UUID.randomUUID(), Types.OTHER)
+    ps.setObject(1, statusId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setString(3, statusType)
     ps.setString(4, statusValue)
@@ -260,12 +279,14 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     result
   }
 
-  def createFile(fileId: UUID,
-                 consignmentId: UUID,
-                 fileType: String = NodeType.fileTypeIdentifier,
-                 fileName: String = "fileName",
-                 parentId: Option[UUID] = None,
-                 userId: UUID = userId): Unit = {
+  def createFile(
+      fileId: UUID,
+      consignmentId: UUID,
+      fileType: String = NodeType.fileTypeIdentifier,
+      fileName: String = "fileName",
+      parentId: Option[UUID] = None,
+      userId: UUID = userId
+  ): Unit = {
     val sql = s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId") VALUES (?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
@@ -280,11 +301,13 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
   }
 
   def getAntivirusMetadata(fileId: Option[UUID] = None): ResultSet = {
-    val ps = fileId.map(id => {
-      val ps = connection.prepareStatement("""SELECT * FROM "AVMetadata" WHERE "FileId" = ?; """)
-      ps.setObject(1, id, Types.OTHER)
-      ps
-    }).getOrElse(connection.prepareStatement("""SELECT * FROM "AVMetadata";"""))
+    val ps = fileId
+      .map(id => {
+        val ps = connection.prepareStatement("""SELECT * FROM "AVMetadata" WHERE "FileId" = ?; """)
+        ps.setObject(1, id, Types.OTHER)
+        ps
+      })
+      .getOrElse(connection.prepareStatement("""SELECT * FROM "AVMetadata";"""))
     ps.executeQuery()
   }
 
@@ -313,13 +336,14 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.executeUpdate()
   }
 
-  def addFFIDMetadata(fileId: String,
-                      software: String = "TEST DATA software",
-                      softwareVersion: String = "TEST DATA software version",
-                      binarySigFileVersion: String = "TEST DATA binary signature file version",
-                      containerSigFileVersion: String = "TEST DATA container signature file version",
-                      method: String = "TEST DATA method"
-                     ): UUID = {
+  def addFFIDMetadata(
+      fileId: String,
+      software: String = "TEST DATA software",
+      softwareVersion: String = "TEST DATA software version",
+      binarySigFileVersion: String = "TEST DATA binary signature file version",
+      containerSigFileVersion: String = "TEST DATA container signature file version",
+      method: String = "TEST DATA method"
+  ): UUID = {
     val ffidMetadataId = java.util.UUID.randomUUID()
     val sql =
       s"""INSERT INTO "FFIDMetadata" """ +
@@ -340,11 +364,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ffidMetadataId // ffidMetadataId has to be returned so that the addFFIDMetadataMatches method can be called with it
   }
 
-  def addFFIDMetadataMatches(ffidMetadataId: String,
-                             extension: String = "txt",
-                             identificationBasis: String = "TEST DATA identification",
-                             puid: String = "TEST DATA puid"
-                            ): Unit = {
+  def addFFIDMetadataMatches(ffidMetadataId: String, extension: String = "txt", identificationBasis: String = "TEST DATA identification", puid: String = "TEST DATA puid"): Unit = {
     val sql =
       s"""INSERT INTO "FFIDMetadataMatches" """ +
         s"""("FFIDMetadataId", "Extension", "IdentificationBasis", "PUID")""" +
@@ -365,9 +385,9 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       addFileProperty(propertyName)
       val value = propertyName match {
         case ClientSideFileLastModifiedDate => Timestamp.from(Instant.now()).toString
-        case ClientSideFileSize => "1"
-        case SHA256ClientSideChecksum => "ddb1584d8cb5f07dc6602f58bd5e0184c87e223787af7b619ce04319727b83bf"
-        case _ => s"$propertyName Value"
+        case ClientSideFileSize             => "1"
+        case SHA256ClientSideChecksum       => "ddb1584d8cb5f07dc6602f58bd5e0184c87e223787af7b619ce04319727b83bf"
+        case _                              => s"$propertyName Value"
       }
       val ps: PreparedStatement = connection.prepareStatement(sql)
       ps.setObject(1, UUID.randomUUID(), Types.OTHER)
@@ -380,16 +400,39 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     })
   }
 
-  def addFileProperty(name: String): Unit = {
-    val sql = s"""INSERT INTO "FileProperty" ("Name") VALUES (?)"""
+  def addFileProperty(name: String, propertyGroup: String): Unit = {
+    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype", "PropertyGroup") VALUES (?, ?, ?, ?)"""
+    val defaultPropertyType = "System"
+    val defaultDataType = "text"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
+    ps.setString(2, defaultPropertyType)
+    ps.setString(3, defaultDataType)
+    ps.setString(4, propertyGroup)
+    ps.executeUpdate()
+  }
+
+  def addFileProperty(name: String): Unit = {
+    val defaultPropertyType = "System"
+    val defaultDataType = "text"
+    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype") VALUES (?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, name)
+    ps.setString(2, defaultPropertyType)
+    ps.setString(3, defaultDataType)
 
     ps.executeUpdate()
   }
 
   def addParentFolderName(consignmentId: UUID, parentFolderName: String): Unit = {
     val sql = s"""update "Consignment" set "ParentFolder"='$parentFolderName' where "ConsignmentId"='$consignmentId'"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+
+    ps.executeUpdate()
+  }
+
+  def addTopLevelFolder(consignmentId: UUID, includeTopLevelFolder: Boolean): Unit = {
+    val sql = s"""update "Consignment" set "IncludeTopLevelFolder"='$includeTopLevelFolder' where "ConsignmentId"='$consignmentId'"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
 
     ps.executeUpdate()
@@ -407,12 +450,12 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
   }
 
   def addSeries(
-                 seriesId: UUID,
-                 bodyId: UUID,
-                 code: String,
-                 name: String = "some-series-name",
-                 description: String = "some-series-description"
-               ): Unit = {
+      seriesId: UUID,
+      bodyId: UUID,
+      code: String,
+      name: String = "some-series-name",
+      description: String = "some-series-description"
+  ): Unit = {
     val sql = s"""INSERT INTO "Series" ("SeriesId", "BodyId", "Code", "Name", "Description") VALUES (?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, seriesId, Types.OTHER)
@@ -474,6 +517,16 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.executeUpdate()
   }
+
+  def createDisplayProperty(propertyName: String, attribute: String, value: String, attributeType: String): Unit = {
+    val sql = s"""INSERT INTO "DisplayProperties" ("PropertyName", "Attribute", "Value", "AttributeType") VALUES (?, ?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setString(1, propertyName)
+    ps.setString(2, attribute)
+    ps.setString(3, value)
+    ps.setString(4, attributeType)
+    ps.executeUpdate()
+  }
 }
 
 object TestUtils {
@@ -490,9 +543,15 @@ object TestUtils {
     val result: Either[io.circe.Error, A] = decode[A](dataString)
     result match {
       case Right(data) => data
-      case Left(e) => throw e
+      case Left(e)     => throw e
     }
   }
+
+  def unmarshalResponse[A]()(implicit mat: Materializer, ec: ExecutionContext, decoder: Decoder[A]): FromResponseUnmarshaller[A] = Unmarshaller(_ => { res =>
+    {
+      Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))
+    }
+  })
 
   case class GraphqlError(message: String, extensions: Option[GraphqlErrorExtensions])
 

@@ -12,6 +12,10 @@ class ConsignmentStatusRepository(db: Database) {
   private val insertQuery = Consignmentstatus returning Consignmentstatus.map(_.consignmentstatusid) into
     ((consignmentStatus, consignmentstatusid) => consignmentStatus.copy(consignmentstatusid = consignmentstatusid))
 
+  def addConsignmentStatuses(consignmentStatusRows: Seq[ConsignmentstatusRow]): Future[Seq[ConsignmentstatusRow]] = {
+    db.run(insertQuery ++= consignmentStatusRows)
+  }
+
   def addConsignmentStatus(consignmentStatusRow: ConsignmentstatusRow): Future[Tables.ConsignmentstatusRow] = {
     db.run(insertQuery += consignmentStatusRow)
   }
@@ -22,7 +26,8 @@ class ConsignmentStatusRepository(db: Database) {
   }
 
   def updateConsignmentStatus(consignmentId: UUID, statusType: String, statusValue: String, modifiedTimestamp: Timestamp): Future[Int] = {
-    val dbUpdate = Consignmentstatus.filter(cs => cs.consignmentid === consignmentId && cs.statustype === statusType)
+    val dbUpdate = Consignmentstatus
+      .filter(cs => cs.consignmentid === consignmentId && cs.statustype === statusType)
       .map(cs => (cs.value, cs.modifieddatetime))
       .update((statusValue, Option(modifiedTimestamp)))
     db.run(dbUpdate)

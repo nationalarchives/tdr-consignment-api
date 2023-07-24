@@ -13,7 +13,8 @@ import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 
 trait TestContainerUtils extends AnyFlatSpec with TestContainerForEach with BeforeAndAfterEach {
   override val containerDef: ContainerDef = PostgreSQLContainer.Def(
-    dockerImageName = DockerImageName.parse("tests")
+    dockerImageName = DockerImageName
+      .parse("tests")
       .asCompatibleSubstituteFor("postgres"),
     databaseName = "consignmentapi",
     username = "tdr",

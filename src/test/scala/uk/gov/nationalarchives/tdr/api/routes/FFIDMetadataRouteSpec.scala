@@ -24,7 +24,7 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   case class GraphqlMutationData(data: Option[AddFFIDMetadata], errors: List[GraphqlError] = Nil)
 
-  case class AddFFIDMetadata(addFFIDMetadata: FFIDMetadata)
+  case class AddFFIDMetadata(addBulkFFIDMetadata: List[FFIDMetadata])
 
   val runTestMutation: (String, String) => GraphqlMutationData =
     runTestRequest[GraphqlMutationData](addFfidMetadataJsonFilePrefix)
@@ -32,335 +32,82 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addFfidMetadataJsonFilePrefix)
 
-  "addFFIDMetadata" should "return all requested fields from inserted file format object" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
+  "addFFIDMetadata" should "return all requested fields from inserted file format object" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.seedDatabaseWithDefaultEntries()
 
-      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
-      val metadata: FFIDMetadata = response.data.get.addFFIDMetadata
-      val expectedMetadata = expectedResponse.data.get.addFFIDMetadata
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
+    val metadata: FFIDMetadata = response.data.get.addBulkFFIDMetadata.head
+    val expectedMetadata = expectedResponse.data.get.addBulkFFIDMetadata.head
 
-      metadata.fileId should equal(expectedMetadata.fileId)
-      metadata.software should equal(expectedMetadata.software)
-      metadata.softwareVersion should equal(expectedMetadata.softwareVersion)
-      metadata.binarySignatureFileVersion should equal(expectedMetadata.binarySignatureFileVersion)
-      metadata.containerSignatureFileVersion should equal(expectedMetadata.containerSignatureFileVersion)
-      metadata.method should equal(expectedMetadata.method)
+    metadata.fileId should equal(expectedMetadata.fileId)
+    metadata.software should equal(expectedMetadata.software)
+    metadata.softwareVersion should equal(expectedMetadata.softwareVersion)
+    metadata.binarySignatureFileVersion should equal(expectedMetadata.binarySignatureFileVersion)
+    metadata.containerSignatureFileVersion should equal(expectedMetadata.containerSignatureFileVersion)
+    metadata.method should equal(expectedMetadata.method)
 
-      metadata.matches.size should equal(1)
-      val matches = metadata.matches.head
-      val expectedMatches = expectedMetadata.matches.head
-      matches.extension should equal(expectedMatches.extension)
-      matches.identificationBasis should equal(expectedMatches.identificationBasis)
-      matches.puid should equal(expectedMatches.puid)
+    metadata.matches.size should equal(1)
+    val matches = metadata.matches.head
+    val expectedMatches = expectedMetadata.matches.head
+    matches.extension should equal(expectedMatches.extension)
+    matches.identificationBasis should equal(expectedMatches.identificationBasis)
+    matches.puid should equal(expectedMatches.puid)
 
-      checkFFIDMetadataExists(response.data.get.addFFIDMetadata.fileId, utils)
+    checkFFIDMetadataExists(response.data.get.addBulkFFIDMetadata.head.fileId, utils)
   }
 
-  "addFFIDMetadata" should "set a single file status to 'Success' when a success match only is found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
+  "addFFIDMetadata" should "not allow updating of file format metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.seedDatabaseWithDefaultEntries()
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", invalidBackendChecksToken())
 
-      runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Success)
+    response.errors should have size 1
+    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+    checkNoFFIDMetadataAdded(utils)
   }
 
-  "addFFIDMetadata" should "set a single file status to 'Success' when a success match only is found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
+  "addFFIDMetadata" should "not allow updating of file format metadata with incorrect client role" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.seedDatabaseWithDefaultEntries()
 
-      runTestMutation("mutation_status_judgment_format", validBackendChecksToken("file_format"))
+    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
 
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Success)
+    response.errors should have size 1
+    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+    checkNoFFIDMetadataAdded(utils)
   }
 
-  "addFFIDMetadata" should
-    "set a single file status to 'Success' when a non judgment match only is found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
+  "addFFIDMetadata" should "throw an error if mandatory fields are missing" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.seedDatabaseWithDefaultEntries()
 
-      runTestMutation("mutation_status_non_judgment_format", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Success)
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_mandatory_missing")
+    val response: GraphqlMutationData = runTestMutation("mutation_mandatorymissing", validBackendChecksToken("file_format"))
+    response.errors.map(e => e.message.trim) should equal(expectedResponse.errors.map(_.message.trim))
+    checkNoFFIDMetadataAdded(utils)
   }
 
-  "addFFIDMetadata" should
-    "set a single file status to 'NonJudgmentRecord' when a non judgment match only is found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
+  "addFFIDMetadata" should "throw an error if the file id does not exist" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.seedDatabaseWithDefaultEntries()
 
-      runTestMutation("mutation_status_non_judgment_format", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(NonJudgmentFormat)
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_fileid_not_exists")
+    val response: GraphqlMutationData = runTestMutation("mutation_fileidnotexists", validBackendChecksToken("file_format"))
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    checkNoFFIDMetadataAdded(utils)
   }
 
-  "addFFIDMetadata" should
-    "set a single file status of 'Success' when there are multiple success matches only found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
+  "addFFIDMetadata" should "throw an error if there are no ffid matches" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.seedDatabaseWithDefaultEntries()
 
-      runTestMutation("mutation_status_multiple_success", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Success)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'PasswordProtected' when a password protected match only is found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      runTestMutation("mutation_status_password_protected", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(PasswordProtected)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'PasswordProtected' when a password protected match only is found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
-
-      runTestMutation("mutation_status_password_protected", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(PasswordProtected)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'PasswordProtected' when multiple password protected matches are found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      runTestMutation("mutation_status_multiple_password_protected", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(PasswordProtected)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'PasswordProtected' when multiple password protected matches are found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
-
-      runTestMutation("mutation_status_multiple_password_protected", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(PasswordProtected)
-  }
-
-  "addFFIDMetadata" should
-    "set a single status of 'PasswordProtected' when password protected and success matches are found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      runTestMutation("mutation_status_password_protected_success", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.contains(PasswordProtected) should be(true)
-  }
-
-  "addFFIDMetadata" should
-    "set a single status of 'PasswordProtected' when password protected and success matches are found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
-
-      runTestMutation("mutation_status_judgment_password_protected_success", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.contains(PasswordProtected) should be(true)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'Zip' when a zip match only is found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      runTestMutation("mutation_status_zip", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.contains(Zip) should be(true)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'Zip' when a zip match only is found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
-
-      runTestMutation("mutation_status_zip", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.contains(Zip) should be(true)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'Zip' when multiple zip matches are found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      runTestMutation("mutation_status_multiple_zip", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Zip)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'Zip' when multiple zip matches are found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
-
-      runTestMutation("mutation_status_multiple_zip", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Zip)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'Zip' when zip and success matches are found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      runTestMutation("mutation_status_zip_success", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Zip)
-  }
-
-  "addFFIDMetadata" should
-    "set a single file status of 'Zip' when zip and success matches are found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
-
-      runTestMutation("mutation_status_judgment_zip_success", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(1)
-      result.head should equal(Zip)
-  }
-
-  "addFFIDMetadata" should
-    "set multiple file statuses when zip and password protected matches are found for 'standard' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      runTestMutation("mutation_status_zip_password_protected", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(2)
-      result.contains(Zip) should be(true)
-      result.contains(PasswordProtected) should be(true)
-  }
-
-  "addFFIDMetadata" should
-    "set multiple file statuses when zip and password protected matches are found for 'judgment' consignment type" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries("judgment")
-
-      runTestMutation("mutation_status_zip_password_protected", validBackendChecksToken("file_format"))
-
-      val result = utils.getFileStatusResult(defaultFileId, FFID)
-      result.size should be(2)
-      result.contains(Zip) should be(true)
-      result.contains(PasswordProtected) should be(true)
-  }
-
-  "addFFIDMetadata" should "not allow updating of file format metadata with incorrect authorisation" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-      val response: GraphqlMutationData = runTestMutation("mutation_alldata", invalidBackendChecksToken())
-
-      response.errors should have size 1
-      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
-      checkNoFFIDMetadataAdded(utils)
-  }
-
-  "addFFIDMetadata" should "not allow updating of file format metadata with incorrect client role" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
-
-      response.errors should have size 1
-      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
-      checkNoFFIDMetadataAdded(utils)
-  }
-
-  "addFFIDMetadata" should "throw an error if mandatory fields are missing" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_mandatory_missing")
-      val response: GraphqlMutationData = runTestMutation("mutation_mandatorymissing", validBackendChecksToken("file_format"))
-      response.errors.map(e => e.message.trim) should equal(expectedResponse.errors.map(_.message.trim))
-      checkNoFFIDMetadataAdded(utils)
-  }
-
-  "addFFIDMetadata" should "throw an error if the file id does not exist" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_fileid_not_exists")
-      val response: GraphqlMutationData = runTestMutation("mutation_fileidnotexists", validBackendChecksToken("file_format"))
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      checkNoFFIDMetadataAdded(utils)
-  }
-
-  "addFFIDMetadata" should "throw an error if there are no ffid matches" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      utils.seedDatabaseWithDefaultEntries()
-
-      val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_ffid_matches")
-      val response: GraphqlMutationData = runTestMutation("mutation_no_ffid_matches", validBackendChecksToken("file_format"))
-      response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
-      checkNoFFIDMetadataAdded(utils)
+    val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_ffid_matches")
+    val response: GraphqlMutationData = runTestMutation("mutation_no_ffid_matches", validBackendChecksToken("file_format"))
+    response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+    checkNoFFIDMetadataAdded(utils)
   }
 
   private def checkFFIDMetadataExists(fileId: UUID, utils: TestUtils): Unit = {

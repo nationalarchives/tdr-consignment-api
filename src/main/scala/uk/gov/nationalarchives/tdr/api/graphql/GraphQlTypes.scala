@@ -5,14 +5,17 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields._
 
 object GraphQlTypes {
 
-  private val QueryType = ObjectType("Query",
+  private val QueryType = ObjectType(
+    "Query",
     SeriesFields.queryFields ++
       ConsignmentFields.queryFields ++
       ClientFileMetadataFields.queryFields ++
       CustomMetadataFields.queryFields ++
+      DisplayPropertiesFields.queryFields ++
       FileFields.queryFields
   )
-  private val MutationType = ObjectType("Mutation",
+  private val MutationType = ObjectType(
+    "Mutation",
     ConsignmentFields.mutationFields ++
       TransferAgreementFields.mutationFields ++
       FileFields.mutationFields ++

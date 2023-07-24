@@ -19,7 +19,7 @@ class TransferringBodyService(transferringBodyRepository: TransferringBodyReposi
     val bodyRow = transferringBodyRepository.getTransferringBodyByCode(tdrCode)
     bodyRow.map {
       case Some(value) => TransferringBody(value.tdrcode, value.bodyid)
-      case _ => throw InputDataException(s"No transferring body found for code '$tdrCode'")
+      case _           => throw InputDataException(s"No transferring body found for code '$tdrCode'")
     }
   }
 }

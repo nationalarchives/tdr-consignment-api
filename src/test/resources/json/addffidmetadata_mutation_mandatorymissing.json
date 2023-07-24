@@ -1,3 +1,3 @@
 {
-  "query": "mutation { addFFIDMetadata(addFFIDMetadataInput:  { extension: \"txt\"  }) { fileId  } }"
+  "query": "mutation { addBulkFFIDMetadata(addBulkFFIDMetadataInput: {metadataInputValues: [{ extension: \"txt\" }]}) { fileId  } }"
 }
