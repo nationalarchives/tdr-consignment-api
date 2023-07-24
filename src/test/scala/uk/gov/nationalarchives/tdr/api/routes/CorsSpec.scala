@@ -21,16 +21,19 @@ class CorsSpec extends AnyFlatSpec with Matchers {
   private val crossOriginUrls = List(defaultCrossOriginDomain, secondaryCrossOriginDomain).asJava
   val database = Database.forConfig("consignmentapi.db")
 
-  private val config = ConfigFactory.load()
+  private val config = ConfigFactory
+    .load()
     .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
 
   "the pre-flight request" should "allow credentials, required headers and methods" in {
     val headers = Headers(
       `Content-Type`(MediaType.application.json)
     )
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+      )
+      .unsafeRunSync()
     response.headers.get[`Access-Control-Allow-Credentials`] should contain("true")
     response.headers.get[`Access-Control-Allow-Headers`] should contain("true")
     response.headers.get[`Access-Control-Allow-Methods`] should contain("true")
@@ -40,9 +43,11 @@ class CorsSpec extends AnyFlatSpec with Matchers {
     val headers = Headers(
       Header.Raw(ci"Origin", defaultCrossOriginDomain)
     )
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+      )
+      .unsafeRunSync()
     response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(defaultCrossOriginDomain)
   }
 
@@ -50,9 +55,11 @@ class CorsSpec extends AnyFlatSpec with Matchers {
     val headers = Headers(
       Header.Raw(ci"Origin", secondaryCrossOriginDomain)
     )
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+      )
+      .unsafeRunSync()
     response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(secondaryCrossOriginDomain)
   }
 
@@ -60,16 +67,20 @@ class CorsSpec extends AnyFlatSpec with Matchers {
     val headers = Headers(
       Header.Raw(ci"Origin", "https://yet-another-domain.example.com")
     )
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+      )
+      .unsafeRunSync()
     response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(defaultCrossOriginDomain)
   }
 
   "the pre-flight request" should "return the default origin if no origin is given" in {
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql")
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql")
+      )
+      .unsafeRunSync()
     response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(defaultCrossOriginDomain)
   }
 
@@ -79,12 +90,15 @@ class CorsSpec extends AnyFlatSpec with Matchers {
       Header.Raw(ci"Origin", allowedDomain)
     )
 
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+      )
+      .unsafeRunSync()
     val crossOriginUrls = List(allowedDomain).asJava
 
-    val testConfig = ConfigFactory.load()
+    val testConfig = ConfigFactory
+      .load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
 
     response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(allowedDomain)
@@ -97,12 +111,15 @@ class CorsSpec extends AnyFlatSpec with Matchers {
       Header.Raw(ci"Origin", domainWithOtherPort)
     )
 
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+      )
+      .unsafeRunSync()
     val crossOriginUrls = List(allowedDomain).asJava
 
-    val testConfig = ConfigFactory.load()
+    val testConfig = ConfigFactory
+      .load()
       .withValue("frontend.urls", ConfigValueFactory.fromIterable(crossOriginUrls))
 
     response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(allowedDomain)
@@ -115,9 +132,11 @@ class CorsSpec extends AnyFlatSpec with Matchers {
       Header.Raw(ci"Origin", "https://a-third-domain.example.com")
     )
 
-    val response: Response[IO] = Http4sServer(database).corsWrapper.run(
-      Request(method = Method.POST, uri = uri"/graphql", headers = headers)
-    ).unsafeRunSync()
+    val response: Response[IO] = Http4sServer(database).corsWrapper
+      .run(
+        Request(method = Method.POST, uri = uri"/graphql", headers = headers)
+      )
+      .unsafeRunSync()
     response.headers.headers.filter(_.name.toString == "Access-Control-Allow-Origin").map(_.value) should contain(secondaryCrossOriginDomain)
   }
 }

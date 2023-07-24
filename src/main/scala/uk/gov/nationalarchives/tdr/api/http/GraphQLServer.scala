@@ -46,7 +46,7 @@ class GraphQLServer() {
     case (_, ex: Throwable) => throw ex
   }
 
-  //scalastyle:off method.length
+  // scalastyle:off method.length
   private def generateConsignmentApiContext(accessToken: Token, db: JdbcBackend#DatabaseDef)(implicit ec: ExecutionContext): IO[ConsignmentApiContext] = {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
@@ -103,42 +103,48 @@ class GraphQLServer() {
       uuidSource,
       config
     )
-  IO(
-    ConsignmentApiContext(
-      accessToken,
-      antivirusMetadataService,
-      clientFileMetadataService,
-      consignmentService,
-      ffidMetadataService,
-      fileMetadataService,
-      fileService,
-      finalTransferConfirmationService,
-      seriesService,
-      transferAgreementService,
-      transferringBodyService,
-      consignmentStatusService,
-      fileStatusService,
-      customMetadataPropertiesService,
-      displayPropertiesService
+    IO(
+      ConsignmentApiContext(
+        accessToken,
+        antivirusMetadataService,
+        clientFileMetadataService,
+        consignmentService,
+        ffidMetadataService,
+        fileMetadataService,
+        fileService,
+        finalTransferConfirmationService,
+        seriesService,
+        transferAgreementService,
+        transferringBodyService,
+        consignmentStatusService,
+        fileStatusService,
+        customMetadataPropertiesService,
+        displayPropertiesService
       )
     )
   }
   // scalastyle:on method.length
 
-  def executeGraphQLQuery(query: Document, operation: Option[String], vars: Json, accessToken: Token, database: JdbcBackend#DatabaseDef)
-                                 (implicit ec: ExecutionContext): IO[Json] = {
+  def executeGraphQLQuery(query: Document, operation: Option[String], vars: Json, accessToken: Token, database: JdbcBackend#DatabaseDef)(implicit
+      ec: ExecutionContext
+  ): IO[Json] = {
     val context: IO[ConsignmentApiContext] = generateConsignmentApiContext(accessToken: Token, database)
     context.flatMap { ctx =>
-      IO.fromFuture(IO(Executor.execute(
-        GraphQlTypes.schema,
-        query, ctx,
-        variables = vars,
-        operationName = operation,
-        deferredResolver = new DeferredResolver,
-        middleware = new ValidationAuthoriser :: new ConsignmentStateValidator :: Nil,
-        exceptionHandler = exceptionHandler
-      ))).recover {
-        case error: QueryAnalysisError => error.resolveError
+      IO.fromFuture(
+        IO(
+          Executor.execute(
+            GraphQlTypes.schema,
+            query,
+            ctx,
+            variables = vars,
+            operationName = operation,
+            deferredResolver = new DeferredResolver,
+            middleware = new ValidationAuthoriser :: new ConsignmentStateValidator :: Nil,
+            exceptionHandler = exceptionHandler
+          )
+        )
+      ).recover { case error: QueryAnalysisError =>
+        error.resolveError
       }
 
       //        .map(OK -> _).recover {

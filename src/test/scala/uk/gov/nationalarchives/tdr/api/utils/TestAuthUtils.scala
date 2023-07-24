@@ -23,8 +23,8 @@ object TestAuthUtils {
         .withClaim("body", body)
         .withClaim("user_id", userId)
         .withClaim("standard_user", standardUser)
-        .build)
-
+        .build
+    )
 
   def validJudgmentUserToken(userId: UUID = userId, body: String = "Code", judgmentUser: String = "true"): String =
     tdrMock.getAccessToken(
@@ -40,8 +40,8 @@ object TestAuthUtils {
     aTokenConfig()
       .withResourceRole("tdr", "tdr_user")
       .withClaim("user_id", userId)
-      .build)
-
+      .build
+  )
 
   def validBackendChecksToken(role: String): String = tdrMock.getAccessToken(
     aTokenConfig()
@@ -53,7 +53,8 @@ object TestAuthUtils {
   def invalidBackendChecksToken(): String = tdrMock.getAccessToken(
     aTokenConfig()
       .withClaim("user_id", backendChecksUser)
-      .withResourceRole("tdr-backend-checks", "some_role").build
+      .withResourceRole("tdr-backend-checks", "some_role")
+      .build
   )
 
   def validReportingToken(role: String): String = tdrMock.getAccessToken(

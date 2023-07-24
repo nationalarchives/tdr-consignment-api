@@ -23,25 +23,26 @@ import scala.io.Source.fromResource
 class ErrorRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   val fields = List("getConsignment", "getSeries", "getTransferAgreement")
 
-  "getConsignment" should "return the field name in the error message" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      createDatabaseError(utils)
-      val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
-      val body: Stream[Pure, Byte] = encode(Stream(query))
-      val credentials = Token(ci"Bearer", validUserToken())
-      val headers = Headers(
-          `Content-Type`(MediaType.application.json),
-          Authorization(credentials)
-      )
-      val response: Response[IO] = Http4sServer(container.database).corsWrapper.run(
+  "getConsignment" should "return the field name in the error message" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    createDatabaseError(utils)
+    val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
+    val body: Stream[Pure, Byte] = encode(Stream(query))
+    val credentials = Token(ci"Bearer", validUserToken())
+    val headers = Headers(
+      `Content-Type`(MediaType.application.json),
+      Authorization(credentials)
+    )
+    val response: Response[IO] = Http4sServer(container.database).corsWrapper
+      .run(
         Request(method = Method.POST, uri = uri"/graphql", headers = headers, body = body)
-      ).unsafeRunSync()
+      )
+      .unsafeRunSync()
 
-      val entityResponse = response.as[String]
-      response.status should equal(500)
-      entityResponse should equal(s"Request with field getConsignment failed")
-      resetRenamedColumn(utils)
+    val entityResponse = response.as[String]
+    response.status should equal(500)
+    entityResponse should equal(s"Request with field getConsignment failed")
+    resetRenamedColumn(utils)
   }
 
   private def createDatabaseError(utils: TestUtils): Int = {

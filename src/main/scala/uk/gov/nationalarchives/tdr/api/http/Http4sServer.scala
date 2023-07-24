@@ -34,9 +34,9 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
   val fullHealthCheck = new FullHealthCheckService()
 
   def jsonApp: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case req@OPTIONS -> Root / "graphql" =>
+    case req @ OPTIONS -> Root / "graphql" =>
       req.headers.get[Origin].map(_ => Ok()).getOrElse(Forbidden())
-    case req@POST -> Root / "graphql" =>
+    case req @ POST -> Root / "graphql" =>
       for {
         query <- req.as[Query]
         auth <- IO.fromOption(req.headers.get[Authorization])(new Exception("No authorisation header provided"))
@@ -46,8 +46,8 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
           `Strict-Transport-Security`.unsafeFromLong(transportSecurityMaxAge),
           `Content-Type`(MediaType.application.json)
         )
-    case _@GET -> Root / "healthcheck" => Ok()
-    case _@GET -> Root / "healthcheck-full" =>
+    case _ @GET -> Root / "healthcheck" => Ok()
+    case _ @GET -> Root / "healthcheck-full" =>
       IO.fromFuture(IO(fullHealthCheck.checkDbIsUpAndRunning(DbConnection().db)))
         .flatMap(_ => Ok())
   }
@@ -57,7 +57,8 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
     .withAllowMethodsIn(Set(Method.GET, Method.POST))
     .withAllowCredentials(false)
     .withMaxAge(1.day)
-    .apply(jsonApp).orNotFound
+    .apply(jsonApp)
+    .orNotFound
 
   def processQuery(query: Query, token: String, database: JdbcBackend#DatabaseDef): IO[Response[IO]] = {
     KeycloakUtils().token(token) match {

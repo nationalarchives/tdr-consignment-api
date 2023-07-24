@@ -547,11 +547,11 @@ object TestUtils {
     }
   }
 
-  def unmarshalResponse[A]()(implicit mat: Materializer, ec: ExecutionContext, decoder: Decoder[A]): FromResponseUnmarshaller[A] = Unmarshaller(_ => { res =>
-    {
-      Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))
-    }
-  })
+//  def unmarshalResponse[A]()(implicit mat: Materializer, ec: ExecutionContext, decoder: Decoder[A]): FromResponseUnmarshaller[A] = Unmarshaller(_ => { res =>
+//    {
+//      Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))
+//    }
+//  })
 
   case class GraphqlError(message: String, extensions: Option[GraphqlErrorExtensions])
 

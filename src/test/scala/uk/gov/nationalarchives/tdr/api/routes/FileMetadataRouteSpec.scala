@@ -52,7 +52,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   val expectedUpdateBulkFileMetadataMutationResponse: String => GraphqlUpdateBulkFileMetadataMutationData =
     getDataFromFile[GraphqlUpdateBulkFileMetadataMutationData](updateBulkFileMetadataJsonFilePrefix)
 
-  val runDeleteFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlDeleteFileMetadataMutationData =
+  val runDeleteFileMetadataTestMutation: (String, String) => GraphqlDeleteFileMetadataMutationData =
     runTestRequest[GraphqlDeleteFileMetadataMutationData](deleteFileMetadataJsonFilePrefix)
 
   val expectedDeleteFileMetadataMutationResponse: String => GraphqlDeleteFileMetadataMutationData =
