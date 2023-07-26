@@ -20,11 +20,7 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
   }
 
   def addFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput): Future[List[FileStatus]] = {
-    val defaultValue = UUID.fromString("00000000-0000-0000-0000-000000000000")
-    val rows = addMultipleFileStatusesInput.statuses.map(addFileStatusInput => {
-      FilestatusRow(defaultValue, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now()))
-    })
-    fileStatusRepository.addFileStatuses(rows).map(_.map(row => FileStatus(row.fileid, row.statustype, row.value)).toList)
+    fileStatusRepository.addFileStatuses(addMultipleFileStatusesInput.statuses).map(_.map(row => FileStatus(row.fileid, row.statustype, row.value)).toList)
   }
 
   def getConsignmentFileProgress(consignmentId: UUID): Future[FileChecks] = {

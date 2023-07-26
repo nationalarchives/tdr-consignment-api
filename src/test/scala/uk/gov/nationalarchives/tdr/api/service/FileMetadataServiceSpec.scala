@@ -11,6 +11,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, Fi
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, Defined, Supplied, Text}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
@@ -630,9 +631,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FileMetadataFields.SHA256ServerSideChecksum should equal("SHA256ServerSideChecksum")
   }
 
-  private def generateFileStatusRows(fileIds: Seq[UUID], consignmentId: UUID = UUID.randomUUID()) = {
-    val timestamp: Timestamp = Timestamp.from(FixedTimeSource.now)
-    fileIds.map(id => FilestatusRow(consignmentId, id, "statusType", "value", timestamp))
+  private def generateFileStatusRows(fileIds: Seq[UUID]) = {
+    fileIds.map(id => AddFileStatusInput(id, "statusType", "value"))
   }
 
   private def generateFileRows(fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID], fixedUserId: UUID, consignmentId: UUID = UUID.randomUUID()): Seq[FileRow] = {
