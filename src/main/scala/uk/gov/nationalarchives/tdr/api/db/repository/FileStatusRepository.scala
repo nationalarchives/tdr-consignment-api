@@ -12,7 +12,7 @@ class FileStatusRepository(db: Database) {
   private val insertQuery =
     Filestatus.map(t => (t.fileid, t.statustype, t.value)) returning Filestatus.map(r => (r.filestatusid, r.createddatetime)) into ((fileStatus, dbGeneratedValues) =>
       FilestatusRow(dbGeneratedValues._1, fileStatus._1, fileStatus._2, fileStatus._3, dbGeneratedValues._2)
-      )
+    )
 
   def addFileStatuses(input: List[AddFileStatusInput]): Future[Seq[Tables.FilestatusRow]] = {
     db.run(insertQuery ++= input.map(i => (i.fileId, i.statusType, i.statusValue)))
