@@ -17,12 +17,15 @@ object ApiServer extends IOApp {
     if (blockHttp4s) {
       val akkaHttpServer = new AkkaHttpServer()
       val serverBindingFuture = akkaHttpServer.start
-      val finalIO = IO.fromFuture(IO(serverBindingFuture)).flatMap { serverBinding =>
-        logger.info(s"Consignment API is running using AKKA")
-        IO.never
-      }.guaranteeCase { exitCase =>
-        IO(akkaHttpServer.shutdown())
-      }
+      val finalIO = IO
+        .fromFuture(IO(serverBindingFuture))
+        .flatMap { serverBinding =>
+          logger.info(s"Consignment API is running using AKKA")
+          IO.never
+        }
+        .guaranteeCase { exitCase =>
+          IO(akkaHttpServer.shutdown())
+        }
 
       finalIO.as(ExitCode.Success)
     } else {

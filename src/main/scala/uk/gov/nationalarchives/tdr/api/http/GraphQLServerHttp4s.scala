@@ -123,7 +123,7 @@ class GraphQLServerHttp4s() {
   // scalastyle:on method.length
 
   def executeGraphQLQuery(query: Document, operation: Option[String], vars: Json, accessToken: Token, database: JdbcBackend#DatabaseDef)(implicit
-                                                                                                                                         ec: ExecutionContext
+      ec: ExecutionContext
   ): IO[Json] = {
     val context: IO[ConsignmentApiContext] = generateConsignmentApiContext(accessToken: Token, database)
     context.flatMap { ctx =>
