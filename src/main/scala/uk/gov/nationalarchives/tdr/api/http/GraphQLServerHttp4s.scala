@@ -43,7 +43,6 @@ class GraphQLServerHttp4s() {
     case (_, ex: Throwable) => throw ex
   }
 
-  // scalastyle:off method.length
   private def generateConsignmentApiContext(accessToken: Token, db: JdbcBackend#DatabaseDef)(implicit ec: ExecutionContext): IO[ConsignmentApiContext] = {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
@@ -120,7 +119,6 @@ class GraphQLServerHttp4s() {
       )
     )
   }
-  // scalastyle:on method.length
 
   def executeGraphQLQuery(query: Document, operation: Option[String], vars: Json, accessToken: Token, database: JdbcBackend#DatabaseDef)(implicit
       ec: ExecutionContext
