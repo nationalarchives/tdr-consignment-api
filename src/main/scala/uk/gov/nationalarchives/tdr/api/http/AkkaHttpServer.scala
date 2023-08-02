@@ -10,7 +10,7 @@ import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 class AkkaHttpServer {
-  val PORT = 8080
+  val port = 8080
 
   implicit val actorSystem: ActorSystem = ActorSystem("graphql-server")
   implicit val materializer: Materializer = Materializer(actorSystem)
@@ -24,7 +24,7 @@ class AkkaHttpServer {
   val routes = new Routes(ConfigFactory.load(), slickSession)
 
   def start: Future[Http.ServerBinding] = {
-    Http().newServerAt("0.0.0.0", PORT).bindFlow(routes.route)
+    Http().newServerAt("0.0.0.0", port).bindFlow(routes.route)
   }
 
   def shutdown(): Unit = {
