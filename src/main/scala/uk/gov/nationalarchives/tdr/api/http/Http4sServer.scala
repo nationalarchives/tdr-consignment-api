@@ -13,6 +13,7 @@ import org.http4s.headers.{Authorization, Origin, `Content-Type`, `Strict-Transp
 import org.http4s.implicits._
 import org.http4s.server.Server
 import org.http4s.server.middleware.CORS
+import org.http4s.server.middleware.Logger.httpApp
 import sangria.parser.QueryParser
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.db.DbConnectionHttp4s
@@ -22,6 +23,7 @@ import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeploymen
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
+import scala.jdk.CollectionConverters._
 
 class Http4sServer(database: JdbcBackend#DatabaseDef) {
   case class Query(query: String, operationName: Option[String], variables: Option[Json])
@@ -32,6 +34,13 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
   val graphqlServer: GraphQLServerHttp4s = GraphQLServerHttp4s()
   val transportSecurityMaxAge = 31536000
   val fullHealthCheck = new FullHealthCheckService()
+  val frontendUrls: Set[Origin.Host] = config.getStringList("frontend.urls").asScala.map(url => {
+    url.replaceAll("//", "").split(":") match {
+      case Array(scheme, host) => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host))
+      case Array(scheme, host, port) => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host), Option(port.toInt))
+    }
+  }).toSet
+  val loggingWrapper: HttpApp[IO] = httpApp[IO](logHeaders = true, logBody = false)(corsWrapper)
 
   def jsonApp: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ OPTIONS -> Root / "graphql" =>
@@ -53,7 +62,7 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
   }
 
   def corsWrapper: Http[IO, IO] = CORS.policy
-    .withAllowOriginHost(Set(Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Option(9001))))
+    .withAllowOriginHost(frontendUrls)
     .withAllowMethodsIn(Set(Method.GET, Method.POST))
     .withAllowCredentials(false)
     .withMaxAge(1.day)
@@ -77,7 +86,7 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
     .default[IO]
     .withHost(ipv4"0.0.0.0")
     .withPort(port"8080")
-    .withHttpApp(corsWrapper)
+    .withHttpApp(loggingWrapper)
     .build
 }
 
