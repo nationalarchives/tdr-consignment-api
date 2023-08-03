@@ -34,12 +34,16 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
   val graphqlServer: GraphQLServerHttp4s = GraphQLServerHttp4s()
   val transportSecurityMaxAge = 31536000
   val fullHealthCheck = new FullHealthCheckService()
-  val frontendUrls: Set[Origin.Host] = config.getStringList("frontend.urls").asScala.map(url => {
-    url.replaceAll("//", "").split(":") match {
-      case Array(scheme, host) => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host))
-      case Array(scheme, host, port) => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host), Option(port.toInt))
-    }
-  }).toSet
+  val frontendUrls: Set[Origin.Host] = config
+    .getStringList("frontend.urls")
+    .asScala
+    .map(url => {
+      url.replaceAll("//", "").split(":") match {
+        case Array(scheme, host)       => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host))
+        case Array(scheme, host, port) => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host), Option(port.toInt))
+      }
+    })
+    .toSet
   val loggingWrapper: HttpApp[IO] = httpApp[IO](logHeaders = true, logBody = false)(corsWrapper)
 
   def jsonApp: HttpRoutes[IO] = HttpRoutes.of[IO] {
