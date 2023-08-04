@@ -1,14 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.db
 
-import akka.stream.alpakka.slick.scaladsl.SlickSession
 import slick.jdbc.JdbcBackend
+import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 
 import scala.util.{Failure, Success}
 
-class DbConnection(slickSession: SlickSession) extends DbConnectionBase {
+class DbConnectionHttp4s() extends DbConnectionBase {
   override def db: JdbcBackend#DatabaseDef = {
-    val db = slickSession.db
+    val db = Database.forConfig("consignmentapi.db")
     db.source match {
       case hikariDataSource: HikariCPJdbcDataSource =>
         val configBean = hikariDataSource.ds.getHikariConfigMXBean
@@ -23,6 +23,7 @@ class DbConnection(slickSession: SlickSession) extends DbConnectionBase {
     }
   }
 }
-object DbConnection {
-  def apply(slickSession: SlickSession): DbConnection = new DbConnection(slickSession)
+
+object DbConnectionHttp4s {
+  def apply(): DbConnectionHttp4s = new DbConnectionHttp4s()
 }
