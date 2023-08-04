@@ -15,6 +15,7 @@ class FileStatusRepository(db: Database) {
     )
 
   def addFileStatuses(input: List[AddFileStatusInput]): Future[Seq[Tables.FilestatusRow]] = {
+    println("addFileStatuses function called")
     db.run(insertQuery ++= input.map(i => (i.fileId, i.statusType, i.statusValue)))
   }
 

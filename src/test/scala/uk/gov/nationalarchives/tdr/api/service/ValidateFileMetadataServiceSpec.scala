@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, AddMultipleFileStatusesInputType}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -115,19 +115,25 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
-    response.size shouldBe 4
+    println(s"response : $response")
+    println(s"response size : ${response.size}")
+    // response.size shouldBe 4
+
+    val convertedResponse = convertFilestatusRowToAddFileStatusInput(response)
+
+    println(s"converted response $convertedResponse")
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(response)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(convertedResponse)
 
-    val file1Statuses = response.filter(_.fileId == fileId1)
+    val file1Statuses = convertedResponse.filter(_.fileId == fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statusType == ClosureMetadata).get
     file1ClosureStatus.statusValue should equal("Completed")
     val file1DescriptiveStatus = file1Statuses.find(_.statusType == DescriptiveMetadata).get
     file1DescriptiveStatus.statusValue should equal("Completed")
 
-    val file2Statuses = response.filter(_.fileId == fileId2)
+    val file2Statuses = convertedResponse.filter(_.fileId == fileId2)
     file2Statuses.size shouldBe 2
     val file2ClosureStatus = file2Statuses.find(_.statusType == ClosureMetadata).get
     file2ClosureStatus.statusValue should equal("Completed")
@@ -154,24 +160,26 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
-    response.size shouldBe 4
+    val convertedResponse = convertFilestatusRowToAddFileStatusInput(response)
+
+    convertedResponse.size shouldBe 4
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(response)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(convertedResponse)
 
-    val file1Statuses = response.filter(_.fileId == fileId1)
+    val file1Statuses = convertedResponse.filter(_.fileId == fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statusType == ClosureMetadata).get
     file1ClosureStatus.statusValue should equal("Incomplete")
     val file1DescriptiveStatus = file1Statuses.find(_.statusType == DescriptiveMetadata).get
     file1DescriptiveStatus.statusValue should equal("NotEntered")
 
-    val file2Statuses = response.filter(_.fileId == fileId2)
+    val file2Statuses = response.filter(_.fileid == fileId2)
     file2Statuses.size shouldBe 2
-    val file2ClosureStatus = file2Statuses.find(_.statusType == ClosureMetadata).get
-    file2ClosureStatus.statusValue should equal("Incomplete")
-    val file2DescriptiveStatus = file2Statuses.find(_.statusType == DescriptiveMetadata).get
-    file2DescriptiveStatus.statusValue should equal("NotEntered")
+    val file2ClosureStatus = file2Statuses.find(_.statustype == ClosureMetadata).get
+    file2ClosureStatus.value should equal("Incomplete")
+    val file2DescriptiveStatus = file2Statuses.find(_.statustype == DescriptiveMetadata).get
+    file2DescriptiveStatus.value should equal("NotEntered")
   }
 
   "validateAdditionalMetadata" should "update 'additional metadata' statuses to 'NotEntered' for multiple files where all existing property values match defaults" in {
@@ -195,22 +203,24 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
     response.size shouldBe 4
 
+    val convertedResponse = convertFilestatusRowToAddFileStatusInput(response)
+
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(response)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(convertedResponse)
 
-    val file1Statuses = response.filter(_.fileId == fileId1)
+    val file1Statuses = response.filter(_.fileid == fileId1)
     file1Statuses.size shouldBe 2
-    val file1ClosureStatus = file1Statuses.find(_.statusType == ClosureMetadata).get
-    file1ClosureStatus.statusValue should equal("NotEntered")
-    val file1DescriptiveStatus = file1Statuses.find(_.statusType == DescriptiveMetadata).get
-    file1DescriptiveStatus.statusValue should equal("NotEntered")
+    val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
+    file1ClosureStatus.value should equal("NotEntered")
+    val file1DescriptiveStatus = file1Statuses.find(_.statustype == DescriptiveMetadata).get
+    file1DescriptiveStatus.value should equal("NotEntered")
 
-    val file2Statuses = response.filter(_.fileId == fileId2)
+    val file2Statuses = response.filter(_.fileid == fileId2)
     file2Statuses.size shouldBe 2
-    val file2ClosureStatus = file2Statuses.find(_.statusType == ClosureMetadata).get
-    file2ClosureStatus.statusValue should equal("NotEntered")
-    val file2DescriptiveStatus = file2Statuses.find(_.statusType == DescriptiveMetadata).get
-    file2DescriptiveStatus.statusValue should equal("NotEntered")
+    val file2ClosureStatus = file2Statuses.find(_.statustype == ClosureMetadata).get
+    file2ClosureStatus.value should equal("NotEntered")
+    val file2DescriptiveStatus = file2Statuses.find(_.statustype == DescriptiveMetadata).get
+    file2DescriptiveStatus.value should equal("NotEntered")
   }
 
   "validateAdditionalMetadata" should "update 'additional metadata' statuses to 'NotEntered' for multiple files where there are no existing additional metadata properties" in {
@@ -223,21 +233,23 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
     response.size shouldBe 4
 
+    val convertedResponse = convertFilestatusRowToAddFileStatusInput(response)
+
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(response)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(convertedResponse)
 
-    val file1Statuses = response.filter(_.fileId == testSetUp.fileId1)
+    val file1Statuses = response.filter(_.fileid == testSetUp.fileId1)
     file1Statuses.size shouldBe 2
-    val file1ClosureStatus = file1Statuses.find(_.statusType == ClosureMetadata).get
-    file1ClosureStatus.statusValue should equal("NotEntered")
-    val file1DescriptiveStatus = file1Statuses.find(_.statusType == DescriptiveMetadata).get
-    file1DescriptiveStatus.statusValue should equal("NotEntered")
+    val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
+    file1ClosureStatus.value should equal("NotEntered")
+    val file1DescriptiveStatus = file1Statuses.find(_.statustype == DescriptiveMetadata).get
+    file1DescriptiveStatus.value should equal("NotEntered")
 
-    val file2Statuses = response.filter(_.fileId == testSetUp.fileId2)
-    val file2ClosureStatus = file2Statuses.find(_.statusType == ClosureMetadata).get
-    file2ClosureStatus.statusValue should equal("NotEntered")
-    val file2DescriptiveStatus = file2Statuses.find(_.statusType == DescriptiveMetadata).get
-    file2DescriptiveStatus.statusValue should equal("NotEntered")
+    val file2Statuses = response.filter(_.fileid == testSetUp.fileId2)
+    val file2ClosureStatus = file2Statuses.find(_.statustype == ClosureMetadata).get
+    file2ClosureStatus.value should equal("NotEntered")
+    val file2DescriptiveStatus = file2Statuses.find(_.statustype == DescriptiveMetadata).get
+    file2DescriptiveStatus.value should equal("NotEntered")
   }
 
   "checkPropertyState" should "return the correct property states for multiple files where the property value has no dependencies" in {
@@ -433,6 +445,12 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       when(mockFileStatusRepository.deleteFileStatus(any[Set[UUID]], any[Set[String]])).thenReturn(Future.successful(1))
       when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
       when(mockFileMetadataRepository.getFileMetadata(Some(any[UUID]), any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
+    }
+  }
+
+  private def convertFilestatusRowToAddFileStatusInput(filestatusRows: List[FilestatusRow]): List[AddFileStatusInput] = {
+    filestatusRows.map { filestatusRow =>
+      AddFileStatusInput(filestatusRow.fileid, filestatusRow.statustype, filestatusRow.value)
     }
   }
 

@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
@@ -8,7 +7,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Cust
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 
-import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +33,7 @@ class ValidateFileMetadataService(
     })
   }
 
-  def validateAdditionalMetadata(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[AddFileStatusInput]] = {
+  def validateAdditionalMetadata(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(None, Some(fileIds), Some(toPropertyNames(customMetadataFields)))
@@ -50,14 +48,17 @@ class ValidateFileMetadataService(
       propertiesToValidate: Set[String],
       customMetadataFields: Seq[CustomMetadataField],
       existingMetadataProperties: Seq[Tables.FilemetadataRow]
-  ): Future[List[AddFileStatusInput]] = {
+  ): Future[List[Tables.FilestatusRow]] = {
     val additionalMetadataFieldGroups: Seq[FieldGroup] = toAdditionalMetadataFieldGroups(customMetadataFields)
     val additionalMetadataPropertyNames: Set[String] = additionalMetadataFieldGroups.flatMap(g => toPropertyNames(g.fields)).toSet
 
     if (!propertiesToValidate.subsetOf(additionalMetadataPropertyNames)) {
+
+      println("Properties to validate are not a subset of additional metadata property names.")
       Future.successful(List())
     } else {
       val additionalMetadataStatuses = {
+
         additionalMetadataFieldGroups
           .flatMap(group => {
             val states = group.fields.flatMap(f => checkPropertyState(fileIds, f, existingMetadataProperties))
@@ -82,19 +83,30 @@ class ValidateFileMetadataService(
           })
           .toList
       }
+      println("additionalMetadataStatuses:")
+      additionalMetadataStatuses.foreach(println)
+      println("statuses")
 
       for {
         _ <- fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-        _ <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
-      } yield additionalMetadataStatuses
+        rows <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
+      } yield {
+        println(s"rows : $rows")
+        rows.toList
+      }
     }
   }
 
   def checkPropertyState(fileIds: Set[UUID], fieldToCheck: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
+    println("this function happens")
     val propertyToCheckName: String = fieldToCheck.name
     val valueDependenciesGroups: Seq[FieldGroup] = toValueDependenciesGroups(fieldToCheck)
     val fieldDefaultValue: Option[String] = fieldToCheck.defaultValue
     val dependencyValues: Seq[String] = valueDependenciesGroups.map(_.groupName)
+    println(s"propertyToCheckName $propertyToCheckName")
+    println(s"valueDependenciesGroups $valueDependenciesGroups")
+    println(s"fieldDefaultValue $fieldDefaultValue")
+    println(s"dependencyValues $dependencyValues")
 
     fileIds
       .flatMap(id => {
@@ -109,6 +121,7 @@ class ValidateFileMetadataService(
           None
         } else {
           existingPropertiesToValidate.map(existingProperty => {
+            print("This also happens")
             val existingPropertyValue: String = existingProperty.value
             val missingDependencies: Boolean = actualDependencyProperties.size < expectedDependencies.size
             val matchesDefault: Boolean = fieldDefaultValue match {
