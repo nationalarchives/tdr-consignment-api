@@ -44,7 +44,6 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
       }
     })
     .toSet
-  val loggingWrapper: HttpApp[IO] = httpApp[IO](logHeaders = true, logBody = false)(corsWrapper)
 
   def jsonApp: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ OPTIONS -> Root / "graphql" =>
@@ -90,7 +89,7 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
     .default[IO]
     .withHost(ipv4"0.0.0.0")
     .withPort(port"8080")
-    .withHttpApp(loggingWrapper)
+    .withHttpApp(corsWrapper)
     .build
 }
 
