@@ -60,7 +60,7 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
         )
     case _ @GET -> Root / "healthcheck" => Ok()
     case _ @GET -> Root / "healthcheck-full" =>
-      IO.fromFuture(IO(fullHealthCheck.checkDbIsUpAndRunning(DbConnectionHttp4s().db)))
+      IO.fromFuture(IO(fullHealthCheck.checkDbIsUpAndRunning(database)))
         .flatMap(_ => Ok())
   }
 
