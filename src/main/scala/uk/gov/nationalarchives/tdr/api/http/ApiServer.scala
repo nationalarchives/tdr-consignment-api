@@ -16,12 +16,6 @@ object ApiServer extends IOApp {
   val config: Config = ConfigFactory.load()
   val blockHttp4s: Boolean = config.getBoolean("featureAccessBlock.http4s")
 
-  override protected def blockedThreadDetectionEnabled = true
-
-  override def runtimeConfig: IORuntimeConfig = {
-    super.runtimeConfig.copy(cpuStarvationCheckInterval = 2.seconds)
-  }
-
   override def run(args: List[String]): IO[ExitCode] = {
     if (blockHttp4s) {
       val akkaHttpServer = new AkkaHttpServer()
