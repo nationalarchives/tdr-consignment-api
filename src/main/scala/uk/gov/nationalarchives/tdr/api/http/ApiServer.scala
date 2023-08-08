@@ -1,13 +1,11 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import cats.effect.unsafe.IORuntimeConfig
 import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
 import org.postgresql.Driver
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 
-import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 
 object ApiServer extends IOApp {
