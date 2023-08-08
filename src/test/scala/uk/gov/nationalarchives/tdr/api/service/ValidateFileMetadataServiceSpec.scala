@@ -1,14 +1,15 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.MockitoSugar
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, AddMultipleFileStatusesInputType}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
@@ -113,15 +114,12 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
+
     val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
-    println(s"response : $response")
-    println(s"response size : ${response.size}")
-    // response.size shouldBe 4
+    response.size shouldBe 4
 
     val convertedResponse = convertFilestatusRowToAddFileStatusInput(response)
-
-    println(s"converted response $convertedResponse")
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
     verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(convertedResponse)
@@ -165,7 +163,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     convertedResponse.size shouldBe 4
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(convertedResponse)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[AddFileStatusInput]])
 
     val file1Statuses = convertedResponse.filter(_.fileId == fileId1)
     file1Statuses.size shouldBe 2
@@ -428,20 +426,42 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
   private class ValidatePropertiesSetUp() {
     val userId: UUID = UUID.randomUUID()
-    val consignmentId: UUID = UUID.randomUUID()
     val fileId1: UUID = UUID.randomUUID()
     val fileId2: UUID = UUID.randomUUID()
+    val metadataTypeValue1 = "ClosureMetadata"
+    val metadataTypeValue2 = "DescriptiveMetadata"
 
     val mockCustomMetadataService: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
     val mockFileMetadataRepository: FileMetadataRepository = mock[FileMetadataRepository]
     val mockFileStatusRepository: FileStatusRepository = mock[FileStatusRepository]
     val fixedUUIDSource = new FixedUUIDSource()
     fixedUUIDSource.reset
-    val service = new ValidateFileMetadataService(mockCustomMetadataService, mockFileMetadataRepository, mockFileStatusRepository, fixedTimeSource, fixedUUIDSource)
+    val service = new ValidateFileMetadataService(mockCustomMetadataService, mockFileMetadataRepository, mockFileStatusRepository)
     val mockFields = mockCustomMetadataFields()
 
+    def createExpectedFilestatusRow(fileId: UUID, statusType: String, statusValue: String): Seq[FilestatusRow] = {
+      val mappedMetadataTypeValue = (statusValue, statusType) match {
+        case ("Completed", _)                      => "Completed"
+        case ("Incomplete", "ClosureMetadata")     => "Incomplete"
+        case ("Incomplete", "DescriptiveMetadata") => "NotEntered"
+        case ("Incomplete", _)                     => "Incomplete"
+        case ("NotEntered", _)                     => "NotEntered"
+      }
+      Seq(FilestatusRow(null, fileId, statusType, mappedMetadataTypeValue, null))
+    }
+
     def stubMockResponses(metadataRows: List[FilemetadataRow] = List()): Unit = {
-      when(mockFileStatusRepository.addFileStatuses(any[List[AddFileStatusInput]])).thenReturn(Future.successful(Nil))
+      def generateExpectedRows(input: List[AddFileStatusInput]): Future[Seq[FilestatusRow]] = {
+        val expectedRows = input.flatMap { addStatusInput =>
+          createExpectedFilestatusRow(addStatusInput.fileId, addStatusInput.statusType, addStatusInput.statusValue)
+        }
+        Future.successful(expectedRows)
+      }
+
+      when(mockFileStatusRepository.addFileStatuses(any[List[AddFileStatusInput]])).thenAnswer { invocation: InvocationOnMock =>
+        val input: List[AddFileStatusInput] = invocation.getArgument(0)
+        generateExpectedRows(input)
+      }
       when(mockFileStatusRepository.deleteFileStatus(any[Set[UUID]], any[Set[String]])).thenReturn(Future.successful(1))
       when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
       when(mockFileMetadataRepository.getFileMetadata(Some(any[UUID]), any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
