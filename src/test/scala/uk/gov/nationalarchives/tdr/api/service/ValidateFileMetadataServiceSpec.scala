@@ -428,8 +428,6 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val userId: UUID = UUID.randomUUID()
     val fileId1: UUID = UUID.randomUUID()
     val fileId2: UUID = UUID.randomUUID()
-    val metadataTypeValue1 = "ClosureMetadata"
-    val metadataTypeValue2 = "DescriptiveMetadata"
 
     val mockCustomMetadataService: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
     val mockFileMetadataRepository: FileMetadataRepository = mock[FileMetadataRepository]
