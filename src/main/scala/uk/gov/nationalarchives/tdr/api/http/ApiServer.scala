@@ -1,10 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import com.typesafe.config.{Config, ConfigFactory}
+import cats.effect.unsafe.IORuntimeConfig
 import cats.effect.{ExitCode, IO, IOApp}
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
-import uk.gov.nationalarchives.tdr.api.db.DbConnectionHttp4s
+import org.postgresql.Driver
+import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 
+import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 
 object ApiServer extends IOApp {
@@ -14,6 +17,10 @@ object ApiServer extends IOApp {
   val blockHttp4s: Boolean = config.getBoolean("featureAccessBlock.http4s")
 
   override protected def blockedThreadDetectionEnabled = true
+
+  override def runtimeConfig: IORuntimeConfig = {
+    super.runtimeConfig.copy(cpuStarvationCheckInterval = 2.seconds)
+  }
 
   override def run(args: List[String]): IO[ExitCode] = {
     if (blockHttp4s) {
@@ -32,7 +39,10 @@ object ApiServer extends IOApp {
       finalIO.as(ExitCode.Success)
     } else {
       logger.info(s"Consignment API is running using HTTP4S")
-      val server = new Http4sServer(DbConnectionHttp4s().db).server
+      val dbConfig = config.getConfig("consignmentapi.db")
+      val postgresDriver = new Driver()
+      val dataSource = HikariCPJdbcDataSource.forConfig(dbConfig, postgresDriver, "consignmentApi", ClassLoader.getSystemClassLoader)
+      val server = new Http4sServer(dataSource).server
       server.use(_ => IO.never).as(ExitCode.Success)
     }
   }
