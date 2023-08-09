@@ -41,6 +41,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 lazy val akkaHttpVersion = "10.2.10"
 lazy val circeVersion = "0.14.5"
 lazy val testContainersVersion = "0.40.17"
+val http4sVersion = "0.23.22"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.0.1",
@@ -53,6 +54,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-stream" % "2.6.20",
+  "org.http4s" %% "http4s-core" % http4sVersion,
+  "org.http4s" %% "http4s-circe" % http4sVersion,
+  "org.http4s" %% "http4s-dsl" % http4sVersion,
+  "org.http4s" %% "http4s-ember-server" % http4sVersion,
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.14.1",
@@ -71,12 +76,13 @@ libraryDependencies ++= Seq(
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.3.0",
   "org.scalatest" %% "scalatest" % "3.2.16" % Test,
+  "org.typelevel" %% "cats-effect" % "3.3.14",
   "org.mockito" %% "mockito-scala" % "1.17.14" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.14" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.15.1" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.152",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.154",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test

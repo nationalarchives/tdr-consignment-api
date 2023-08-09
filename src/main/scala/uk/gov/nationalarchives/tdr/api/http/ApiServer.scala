@@ -1,36 +1,41 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.stream.Materializer
-import akka.stream.alpakka.slick.javadsl.SlickSession
-import com.typesafe.config.ConfigFactory
+import cats.effect.{ExitCode, IO, IOApp}
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
+import org.postgresql.Driver
+import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 
-import scala.concurrent.Await
 import scala.language.postfixOps
 
-object ApiServer extends App {
+object ApiServer extends IOApp {
 
-  val PORT = 8080
-  val logger = Logger("ApiServer")
+  val logger: Logger = Logger("ApiServer")
+  val config: Config = ConfigFactory.load()
+  val blockHttp4s: Boolean = config.getBoolean("featureAccessBlock.http4s")
 
-  implicit val actorSystem: ActorSystem = ActorSystem("graphql-server")
-  implicit val materializer: Materializer = Materializer(actorSystem)
+  override def run(args: List[String]): IO[ExitCode] = {
+    if (blockHttp4s) {
+      val akkaHttpServer = new AkkaHttpServer()
+      val serverBindingFuture = akkaHttpServer.start
+      val finalIO = IO
+        .fromFuture(IO(serverBindingFuture))
+        .flatMap { serverBinding =>
+          logger.info(s"Consignment API is running using AKKA")
+          IO.never
+        }
+        .guaranteeCase { exitCase =>
+          IO(akkaHttpServer.shutdown())
+        }
 
-  import scala.concurrent.duration._
-
-  scala.sys.addShutdownHook(() -> shutdown())
-
-  val slickSession = SlickSession.forConfig("consignmentapi")
-
-  val routes = new Routes(ConfigFactory.load(), slickSession)
-
-  Http().newServerAt("0.0.0.0", PORT).bindFlow(routes.route)
-  logger.info(s"Consignment API is running")
-
-  def shutdown(): Unit = {
-    actorSystem.terminate()
-    Await.result(actorSystem.whenTerminated, 30 seconds)
+      finalIO.as(ExitCode.Success)
+    } else {
+      logger.info(s"Consignment API is running using HTTP4S")
+      val dbConfig = config.getConfig("consignmentapi.db")
+      val postgresDriver = new Driver()
+      val dataSource = HikariCPJdbcDataSource.forConfig(dbConfig, postgresDriver, "consignmentApi", ClassLoader.getSystemClassLoader)
+      val server = new Http4sServer(dataSource).server
+      server.use(_ => IO.never).as(ExitCode.Success)
+    }
   }
 }
