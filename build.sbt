@@ -38,7 +38,6 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val akkaHttpVersion = "10.2.10"
 lazy val circeVersion = "0.14.5"
 lazy val testContainersVersion = "0.40.17"
 val http4sVersion = "0.23.22"
@@ -49,11 +48,6 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "4.0.0",
-  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-  "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
-  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream" % "2.6.19",
   "org.http4s" %% "http4s-core" % http4sVersion,
   "org.http4s" %% "http4s-circe" % http4sVersion,
   "org.http4s" %% "http4s-dsl" % http4sVersion,
@@ -79,8 +73,6 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-effect" % "3.3.14",
   "org.mockito" %% "mockito-scala" % "1.17.14" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.14" % Test,
-  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.15.1" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.154",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
