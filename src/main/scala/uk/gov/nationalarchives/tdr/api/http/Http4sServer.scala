@@ -14,24 +14,35 @@ import org.http4s.implicits._
 import org.http4s.server.Server
 import org.http4s.server.middleware.CORS
 import sangria.parser.QueryParser
-import slick.jdbc.JdbcBackend
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
+import slick.jdbc.JdbcBackend.Database
+import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 import uk.gov.nationalarchives.tdr.api.service.FullHealthCheckService
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
+import scala.jdk.CollectionConverters._
 
-class Http4sServer(database: JdbcBackend#DatabaseDef) {
+class Http4sServer(datasource: HikariCPJdbcDataSource) {
   case class Query(query: String, operationName: Option[String], variables: Option[Json])
   implicit val decoder: EntityDecoder[IO, Query] = jsonOf[IO, Query]
   val config: Config = ConfigFactory.load
   val url: String = config.getString("auth.url")
   implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(url, "tdr", 3600)
-  val graphqlServer: GraphQLServer = GraphQLServer()
+  val graphqlServer: GraphQLServerHttp4s = GraphQLServerHttp4s(datasource)
   val transportSecurityMaxAge = 31536000
   val fullHealthCheck = new FullHealthCheckService()
+  val frontendUrls: Set[Origin.Host] = config
+    .getStringList("frontend.urls")
+    .asScala
+    .map(url => {
+      url.replaceAll("//", "").split(":") match {
+        case Array(scheme, host)       => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host))
+        case Array(scheme, host, port) => Origin.Host(Uri.Scheme.unsafeFromString(scheme), Uri.Host.unsafeFromString(host), Option(port.toInt))
+      }
+    })
+    .toSet
 
   def jsonApp: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ OPTIONS -> Root / "graphql" =>
@@ -40,7 +51,7 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
       for {
         query <- req.as[Query]
         auth <- IO.fromOption(req.headers.get[Authorization])(new Exception("No authorisation header provided"))
-        resp <- processQuery(query, auth.value.stripPrefix("Bearer "), database)
+        resp <- processQuery(query, auth.value.stripPrefix("Bearer "))
       } yield resp
         .withHeaders(
           `Strict-Transport-Security`.unsafeFromLong(transportSecurityMaxAge),
@@ -48,25 +59,25 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
         )
     case _ @GET -> Root / "healthcheck" => Ok()
     case _ @GET -> Root / "healthcheck-full" =>
-      IO.fromFuture(IO(fullHealthCheck.checkDbIsUpAndRunning(DbConnection().db)))
+      IO.fromFuture(IO(fullHealthCheck.checkDbIsUpAndRunning(Database.forDataSource(datasource.ds, None))))
         .flatMap(_ => Ok())
   }
 
   def corsWrapper: Http[IO, IO] = CORS.policy
-    .withAllowOriginHost(Set(Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Option(9001))))
+    .withAllowOriginHost(frontendUrls)
     .withAllowMethodsIn(Set(Method.GET, Method.POST))
     .withAllowCredentials(false)
     .withMaxAge(1.day)
     .apply(jsonApp)
     .orNotFound
 
-  def processQuery(query: Query, token: String, database: JdbcBackend#DatabaseDef): IO[Response[IO]] = {
+  def processQuery(query: Query, token: String): IO[Response[IO]] = {
     KeycloakUtils().token(token) match {
       case Left(err) => Forbidden(err.getMessage)
       case Right(accessToken) =>
         QueryParser.parse(query.query) match {
           case Success(queryAst) =>
-            Ok(graphqlServer.executeGraphQLQuery(queryAst, query.operationName, query.variables.getOrElse(Json.fromJsonObject(JsonObject.empty)), accessToken, database))
+            Ok(graphqlServer.executeGraphQLQuery(queryAst, query.operationName, query.variables.getOrElse(Json.fromJsonObject(JsonObject.empty)), accessToken))
           case Failure(error) =>
             BadRequest(error.getMessage)
         }
@@ -81,5 +92,5 @@ class Http4sServer(database: JdbcBackend#DatabaseDef) {
     .build
 }
 object Http4sServer {
-  def apply(database: JdbcBackend#DatabaseDef) = new Http4sServer(database)
+  def apply(dataSource: HikariCPJdbcDataSource) = new Http4sServer(dataSource)
 }
