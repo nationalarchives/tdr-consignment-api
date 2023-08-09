@@ -1,14 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import sangria.macros.derive.GraphQLDeprecated
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.Tables.{FilemetadataRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 
@@ -19,19 +18,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataService(
     fileMetadataRepository: FileMetadataRepository,
-    fileRepository: FileRepository,
     consignmentStatusService: ConsignmentStatusService,
     customMetadataService: CustomMetadataPropertiesService,
     validateFileMetadataService: ValidateFileMetadataService,
     timeSource: TimeSource,
     uuidSource: UUIDSource
 )(implicit val ec: ExecutionContext) {
-
-  implicit class FileRowsHelper(fileRows: Seq[FileRow]) {
-    def toFileTypeIds: Set[UUID] = {
-      fileRows.collect { case fileRow if fileRow.filetype.get == NodeType.fileTypeIdentifier => fileRow.fileid }.toSet
-    }
-  }
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Int] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 

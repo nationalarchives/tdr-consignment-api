@@ -63,7 +63,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   val fileMetadataService =
     new FileMetadataService(
       fileMetadataRepositoryMock,
-      fileRepositoryMock,
       consignmentStatusService,
       customMetadataServiceMock,
       validateFileMetadataServiceMock,
@@ -108,7 +107,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(
         fileMetadataRepositoryMock,
-        fileRepositoryMock,
         consignmentStatusService,
         customMetadataServiceMock,
         validateFileMetadataServiceMock,
@@ -469,7 +467,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(
         fileMetadataRepositoryMock,
-        fileRepositoryMock,
         consignmentStatusService,
         customMetadataServiceMock,
         validateFileMetadataServiceMock,
@@ -581,7 +578,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(
         fileMetadataRepositoryMock,
-        fileRepositoryMock,
         consignmentStatusService,
         customMetadataServiceMock,
         validateFileMetadataServiceMock,
@@ -669,7 +665,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(
         fileMetadataRepositoryMock,
-        fileRepositoryMock,
         consignmentStatusService,
         customMetadataServiceMock,
         validateFileMetadataServiceMock,
@@ -716,7 +711,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(
         fileMetadataRepositoryMock,
-        fileRepositoryMock,
         consignmentStatusService,
         customMetadataServiceMock,
         validateFileMetadataServiceMock,
@@ -823,7 +817,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(
         fileMetadataRepositoryMock,
-        fileRepositoryMock,
         consignmentStatusService,
         customMetadataServiceMock,
         validateFileMetadataServiceMock,
