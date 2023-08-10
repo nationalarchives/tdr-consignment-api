@@ -6,18 +6,23 @@ import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 
 import scala.util.{Failure, Success}
 
-class DbConnectionHttp4s(dataSource: HikariCPJdbcDataSource) extends DbConnectionBase {
+class DbConnectionHttp4s(databaseDef: JdbcBackend#DatabaseDef) extends DbConnectionBase {
   override def db: JdbcBackend#DatabaseDef = {
-    val configBean = dataSource.ds.getHikariConfigMXBean
-    getPassword match {
-      case Failure(exception) => throw exception
-      case Success(password) =>
-        configBean.setPassword(password)
-        Database.forDataSource(dataSource.ds, Option(20))
+    databaseDef.source match {
+      case hikariDataSource: HikariCPJdbcDataSource =>
+        val configBean = hikariDataSource.ds.getHikariConfigMXBean
+        getPassword match {
+          case Failure(exception) => throw exception
+          case Success(password) =>
+            configBean.setPassword(password)
+            databaseDef
+        }
+      case _ =>
+        databaseDef
     }
   }
 }
 
 object DbConnectionHttp4s {
-  def apply(dataSource: HikariCPJdbcDataSource): DbConnectionHttp4s = new DbConnectionHttp4s(dataSource)
+  def apply(databaseDef: JdbcBackend#DatabaseDef): DbConnectionHttp4s = new DbConnectionHttp4s(databaseDef)
 }
