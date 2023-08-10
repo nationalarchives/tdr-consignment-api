@@ -1,15 +1,15 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import java.util.UUID
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
-import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
+
+import java.util.UUID
 
 class ClientFileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
@@ -34,7 +34,7 @@ class ClientFileMetadataRouteSpec extends TestContainerUtils with Matchers with 
 
   case class GetClientFileMetadata(getClientFileMetadata: ClientFileMetadata) extends TestRequest
 
-  val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData =
+  val runTestQuery: (String, String) => GraphqlQueryData =
     runTestRequest[GraphqlQueryData](getClientFileMetadataJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData =
     getDataFromFile[GraphqlQueryData](getClientFileMetadataJsonFilePrefix)

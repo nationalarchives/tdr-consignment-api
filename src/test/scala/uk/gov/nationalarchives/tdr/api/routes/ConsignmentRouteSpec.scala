@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
@@ -18,9 +17,6 @@ import java.sql.Timestamp
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
-//scalastyle:off number.of.methods
-//scalastyle:off number.of.types
-//scalastyle:off file.size.limit
 class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
@@ -154,12 +150,12 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class StartUpload(startUpload: String)
 
-  val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
-  val runConsignmentsTestQuery: (String, OAuth2BearerToken) => GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
-  val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
-  val runTestStartUploadMutation: (String, OAuth2BearerToken) => GraphqlMutationStartUpload =
+  val runTestQuery: (String, String) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
+  val runConsignmentsTestQuery: (String, String) => GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
+  val runTestMutation: (String, String) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
+  val runTestStartUploadMutation: (String, String) => GraphqlMutationStartUpload =
     runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
-  val runUpdateConsignmentSeriesIdMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateSeriesIdOfConsignment =
+  val runUpdateConsignmentSeriesIdMutation: (String, String) => GraphqlMutationUpdateSeriesIdOfConsignment =
     runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String => GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
@@ -200,7 +196,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.data.get.addConsignment.userid should contain(userId)
   }
 
-  // scalastyle:off magic.number
   "getConsignment" should "return all requested fields" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
@@ -264,7 +259,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     response should equal(expectedResponse)
   }
-  // scalastyle:off magic.number
 
   "getConsignment" should "return the file metadata" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)

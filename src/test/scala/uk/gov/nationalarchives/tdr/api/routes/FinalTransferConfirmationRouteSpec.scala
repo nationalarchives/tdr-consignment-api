@@ -1,17 +1,17 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import java.sql.{PreparedStatement, ResultSet, Types}
-import java.util.UUID
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
-import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
+
+import java.sql.{PreparedStatement, ResultSet, Types}
+import java.util.UUID
 
 class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
@@ -33,7 +33,7 @@ class FinalTransferConfirmationRouteSpec extends TestContainerUtils with Matcher
 
   private val consignmentId = UUID.fromString("b42dccf0-549a-4204-bc9e-c6b69560b7a5")
 
-  val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData =
+  val runTestMutation: (String, String) => GraphqlMutationData =
     runTestRequest[GraphqlMutationData](addFinalTransferConfirmationJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addFinalTransferConfirmationJsonFilePrefix)

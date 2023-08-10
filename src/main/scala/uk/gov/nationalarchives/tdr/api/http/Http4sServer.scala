@@ -30,7 +30,7 @@ class Http4sServer(datasource: HikariCPJdbcDataSource) {
   val config: Config = ConfigFactory.load
   val url: String = config.getString("auth.url")
   implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(url, "tdr", 3600)
-  val graphqlServer: GraphQLServerHttp4s = GraphQLServerHttp4s(datasource)
+  val graphqlServer: GraphQLServer = GraphQLServer(datasource)
   val transportSecurityMaxAge = 31536000
   val fullHealthCheck = new FullHealthCheckService()
   val frontendUrls: Set[Origin.Host] = config
@@ -91,6 +91,7 @@ class Http4sServer(datasource: HikariCPJdbcDataSource) {
     .withHttpApp(corsWrapper)
     .build
 }
+
 object Http4sServer {
   def apply(dataSource: HikariCPJdbcDataSource) = new Http4sServer(dataSource)
 }

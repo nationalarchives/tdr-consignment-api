@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
@@ -35,7 +34,7 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
 
   case class AddAntivirusMetadata(addBulkAntivirusMetadata: List[AntivirusMetadata]) extends TestRequest
 
-  val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData =
+  val runTestMutation: (String, String) => GraphqlMutationData =
     runTestRequest[GraphqlMutationData](addAVMetadataJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addAVMetadataJsonFilePrefix)

@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -17,7 +16,6 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, T
 import java.sql.{PreparedStatement, ResultSet, Types}
 import java.util.UUID
 
-//scalastyle:off method.length
 class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest with TableDrivenPropertyChecks {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
@@ -41,19 +39,19 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   case class DeletedFileMetadata(deleteFileMetadata: DeleteFileMetadata)
 
-  val runAddFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlAddFileMetadataMutationData =
+  val runAddFileMetadataTestMutation: (String, String) => GraphqlAddFileMetadataMutationData =
     runTestRequest[GraphqlAddFileMetadataMutationData](addFileMetadataJsonFilePrefix)
 
   val expectedAddFileMetadataMutationResponse: String => GraphqlAddFileMetadataMutationData =
     getDataFromFile[GraphqlAddFileMetadataMutationData](addFileMetadataJsonFilePrefix)
 
-  val runUpdateBulkFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlUpdateBulkFileMetadataMutationData =
+  val runUpdateBulkFileMetadataTestMutation: (String, String) => GraphqlUpdateBulkFileMetadataMutationData =
     runTestRequest[GraphqlUpdateBulkFileMetadataMutationData](updateBulkFileMetadataJsonFilePrefix)
 
   val expectedUpdateBulkFileMetadataMutationResponse: String => GraphqlUpdateBulkFileMetadataMutationData =
     getDataFromFile[GraphqlUpdateBulkFileMetadataMutationData](updateBulkFileMetadataJsonFilePrefix)
 
-  val runDeleteFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlDeleteFileMetadataMutationData =
+  val runDeleteFileMetadataTestMutation: (String, String) => GraphqlDeleteFileMetadataMutationData =
     runTestRequest[GraphqlDeleteFileMetadataMutationData](deleteFileMetadataJsonFilePrefix)
 
   val expectedDeleteFileMetadataMutationResponse: String => GraphqlDeleteFileMetadataMutationData =

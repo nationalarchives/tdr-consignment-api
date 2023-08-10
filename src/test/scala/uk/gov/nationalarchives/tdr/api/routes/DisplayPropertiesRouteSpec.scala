@@ -1,6 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -20,7 +19,7 @@ class DisplayPropertiesRouteSpec extends TestContainerUtils with Matchers with T
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
   private val displayPropertiesJsonFilePrefix: String = "json/displayproperties_"
-  val runDisplayPropertiesTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData =
+  val runDisplayPropertiesTestQuery: (String, String) => GraphqlQueryData =
     runTestRequest[GraphqlQueryData](displayPropertiesJsonFilePrefix)
   val expectedDisplayPropertiesQueryResponse: String => GraphqlQueryData =
     getDataFromFile[GraphqlQueryData](displayPropertiesJsonFilePrefix)
