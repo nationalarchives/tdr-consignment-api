@@ -5,7 +5,7 @@ import io.circe.Json
 import sangria.ast.Document
 import sangria.execution._
 import sangria.marshalling.circe._
-import slick.jdbc.hikaricp.HikariCPJdbcDataSource
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.auth.ValidationAuthoriser
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateValidator
 import uk.gov.nationalarchives.tdr.api.db.DbConnection
@@ -14,12 +14,12 @@ import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import scala.concurrent.ExecutionContext
 
-class GraphQLServer(dataSource: HikariCPJdbcDataSource) extends GraphQLServerBase {
+class GraphQLServer(databaseDef: JdbcBackend#DatabaseDef) extends GraphQLServerBase {
 
   def executeGraphQLQuery(query: Document, operation: Option[String], vars: Json, accessToken: Token)(implicit
-                                                                                                      ec: ExecutionContext
+      ec: ExecutionContext
   ): IO[Json] = {
-    val context: IO[ConsignmentApiContext] = IO(generateConsignmentApiContext(accessToken: Token, DbConnection(dataSource).db))
+    val context: IO[ConsignmentApiContext] = IO(generateConsignmentApiContext(accessToken: Token, DbConnection(databaseDef).db))
     context.flatMap { ctx =>
       IO.fromFuture(
         IO(
@@ -41,5 +41,5 @@ class GraphQLServer(dataSource: HikariCPJdbcDataSource) extends GraphQLServerBas
   }
 }
 object GraphQLServer {
-  def apply(dataSource: HikariCPJdbcDataSource): GraphQLServer = new GraphQLServer(dataSource)
+  def apply(databaseDef: JdbcBackend#DatabaseDef): GraphQLServer = new GraphQLServer(databaseDef)
 }

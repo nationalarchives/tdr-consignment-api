@@ -16,10 +16,9 @@ object ApiServer extends IOApp {
   val config: Config = ConfigFactory.load()
 
   override def run(args: List[String]): IO[ExitCode] = {
-      logger.info(s"Consignment API is running using HTTP4S")
-      val databaseConfig: JdbcBackend#DatabaseDef = DatabaseConfig.forConfig[JdbcProfile]("consignmentapi", config).db
-
-      val server = new Http4sServer(databaseConfig).server
-      server.use(_ => IO.never).as(ExitCode.Success)
+    logger.info(s"Consignment API is running using HTTP4S")
+    val databaseConfig: JdbcBackend#DatabaseDef = DatabaseConfig.forConfig[JdbcProfile]("consignmentapi", config).db
+    val server = new Http4sServer(databaseConfig).server
+    server.use(_ => IO.never).as(ExitCode.Success)
   }
 }
