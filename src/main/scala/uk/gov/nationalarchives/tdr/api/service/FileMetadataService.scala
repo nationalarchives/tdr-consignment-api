@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import sangria.macros.derive.GraphQLDeprecated
-import uk.gov.nationalarchives.Tables.{FilemetadataRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository}
+import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata

@@ -607,7 +607,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   }
 
   private def generateFileStatusRows(fileIds: Seq[UUID]) = {
-    fileIds.map(id => FilestatusRow(null, id, "statusType", "value", null))
+    fileIds.map(id => FilestatusRow(UUID.randomUUID(), id, "statusType", "value", Timestamp.from(FixedTimeSource.now)))
   }
 
   private def generateFileRows(fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID], fixedUserId: UUID, consignmentId: UUID = UUID.randomUUID()): Seq[FileRow] = {
