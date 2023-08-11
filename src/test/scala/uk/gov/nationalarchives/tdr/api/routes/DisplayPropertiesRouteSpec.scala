@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -19,8 +20,10 @@ class DisplayPropertiesRouteSpec extends TestContainerUtils with Matchers with T
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
   private val displayPropertiesJsonFilePrefix: String = "json/displayproperties_"
-  val runDisplayPropertiesTestQuery: (String, String) => GraphqlQueryData =
-    runTestRequest[GraphqlQueryData](displayPropertiesJsonFilePrefix)
+
+  def runDisplayPropertiesTestQuery(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlQueryData =
+    runTestRequest[GraphqlQueryData](displayPropertiesJsonFilePrefix, Some(db))
+
   val expectedDisplayPropertiesQueryResponse: String => GraphqlQueryData =
     getDataFromFile[GraphqlQueryData](displayPropertiesJsonFilePrefix)
 
@@ -38,48 +41,52 @@ class DisplayPropertiesRouteSpec extends TestContainerUtils with Matchers with T
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   "displayProperties" should "return all display properties" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDisplayProperties(utils, consignmentId, userId)
 
     val expectedResponse = expectedDisplayPropertiesQueryResponse("data_all")
-    val response = runDisplayPropertiesTestQuery("query_alldata", token)
+    val response = runDisplayPropertiesTestQuery(db)("query_alldata", token)
     response.data.get.displayProperties should equal(expectedResponse.data.get.displayProperties)
   }
 
   "displayProperties" should "return all requested fields" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDisplayProperties(utils, consignmentId, userId)
 
     val expectedResponse = expectedDisplayPropertiesQueryResponse("data_some")
-    val response = runDisplayPropertiesTestQuery("query_somedata", token)
+    val response = runDisplayPropertiesTestQuery(db)("query_somedata", token)
 
     response.data.get.displayProperties should equal(expectedResponse.data.get.displayProperties)
   }
 
   "displayProperties" should "return an error if the consignmentId was not provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDisplayProperties(utils, consignmentId, userId)
 
     val expectedResponse = expectedDisplayPropertiesQueryResponse("data_error_no_consignmentid")
-    val response = runDisplayPropertiesTestQuery("query_no_consignmentid", token)
+    val response = runDisplayPropertiesTestQuery(db)("query_no_consignmentid", token)
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "displayProperties" should "return an error if the consignmentId provided was not valid" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDisplayProperties(utils, consignmentId, userId)
 
     val expectedResponse = expectedDisplayPropertiesQueryResponse("data_invalid_consignmentid")
-    val response = runDisplayPropertiesTestQuery("query_invalid_consignmentid", token)
+    val response = runDisplayPropertiesTestQuery(db)("query_invalid_consignmentid", token)
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }

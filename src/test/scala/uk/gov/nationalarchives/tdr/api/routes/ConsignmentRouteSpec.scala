@@ -5,6 +5,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -150,13 +151,21 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class StartUpload(startUpload: String)
 
-  val runTestQuery: (String, String) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix)
-  val runConsignmentsTestQuery: (String, String) => GraphqlConsignmentsQueryData = runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
-  val runTestMutation: (String, String) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix)
-  val runTestStartUploadMutation: (String, String) => GraphqlMutationStartUpload =
-    runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
-  val runUpdateConsignmentSeriesIdMutation: (String, String) => GraphqlMutationUpdateSeriesIdOfConsignment =
-    runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
+  def runTestQuery(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlQueryData =
+    runTestRequest[GraphqlQueryData](getConsignmentJsonFilePrefix, Some(db))
+
+  def runConsignmentsTestQuery(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlConsignmentsQueryData =
+    runTestRequest[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix, Some(db))
+
+  def runTestMutation(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlMutationData =
+    runTestRequest[GraphqlMutationData](addConsignmentJsonFilePrefix, Some(db))
+
+  def runTestStartUploadMutation(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlMutationStartUpload =
+    runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix, Some(db))
+
+  def runUpdateConsignmentSeriesIdMutation(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlMutationUpdateSeriesIdOfConsignment =
+    runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix, Some(db))
+
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String => GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
@@ -164,9 +173,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
 
   "addConsignment" should "create a consignment of type 'standard' when standard consignment type provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = defaultBodyCode))
+    val response: GraphqlMutationData = runTestMutation(db)("mutation_alldata", validUserToken(body = defaultBodyCode))
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get, utils)
@@ -174,30 +184,32 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   "addConsignment" should "create a consignment of type 'judgment' when judgment consignment type provided and the user is a judgment user" in withContainers {
     case container: PostgreSQLContainer =>
+      val db = container.database
       val utils = TestUtils(container.database)
       val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_judgment_consignment_type")
-      val response: GraphqlMutationData = runTestMutation("mutation_judgment_consignment_type", validJudgmentUserToken(body = defaultBodyCode))
+      val response: GraphqlMutationData = runTestMutation(db)("mutation_judgment_consignment_type", validJudgmentUserToken(body = defaultBodyCode))
       response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
       checkConsignmentExists(response.data.get.addConsignment.consignmentid.get, utils)
   }
 
-  "addConsignment" should "throw an error if an invalid consignment type is provided" in withContainers { case _: PostgreSQLContainer =>
+  "addConsignment" should "throw an error if an invalid consignment type is provided" in withContainers { case container: PostgreSQLContainer =>
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_invalid_consignment_type")
-    val response: GraphqlMutationData = runTestMutation("mutation_invalid_consignment_type", validUserToken(body = defaultBodyCode))
+    val response: GraphqlMutationData = runTestMutation(container.database)("mutation_invalid_consignment_type", validUserToken(body = defaultBodyCode))
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  "addConsignment" should "link a new consignment to the creating user" in withContainers { case _: PostgreSQLContainer =>
+  "addConsignment" should "link a new consignment to the creating user" in withContainers { case container: PostgreSQLContainer =>
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = defaultBodyCode))
+    val response: GraphqlMutationData = runTestMutation(container.database)("mutation_alldata", validUserToken(body = defaultBodyCode))
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     response.data.get.addConsignment.userid should contain(userId)
   }
 
   "getConsignment" should "return all requested fields" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
 
     val extensionMatch = "txt"
@@ -255,13 +267,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed", statusId = UUID.fromString("21f3a11d-05f4-4565-b668-8586644fd441"))
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = defaultBodyCode))
+    val response: GraphqlQueryData = runTestQuery(db)("query_alldata", validUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return the file metadata" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
     val fileId = UUID.fromString("3ce8ef99-a999-4bae-8425-325a67f2d3da")
 
@@ -292,13 +305,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val fileOneFfidMetadataId = utils.addFFIDMetadata(fileId.toString)
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
 
-    val response: GraphqlQueryData = runTestQuery("query_filemetadata", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(db)("query_filemetadata", validUserToken())
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_file_metadata")
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return empty ffid metadata if the ffid metadata is missing" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
     val fileId = UUID.fromString("3ce8ef99-a999-4bae-8425-325a67f2d3da")
 
@@ -322,13 +336,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       )
     }
 
-    val response: GraphqlQueryData = runTestQuery("query_filemetadata", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(db)("query_filemetadata", validUserToken())
 
     response.data.get.getConsignment.get.files.get.head.ffidMetadata.isEmpty should be(true)
   }
 
   "getConsignment" should "return multiple droid matches" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
     val fileId = UUID.fromString("3ce8ef99-a999-4bae-8425-325a67f2d3da")
 
@@ -356,7 +371,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, "ext1", "identification1", "puid1")
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, "ext2", "identification2", "puid2")
 
-    val response: GraphqlQueryData = runTestQuery("query_filemetadata", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(db)("query_filemetadata", validUserToken())
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_file_metadata_multiple_matches")
 
@@ -364,46 +379,50 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   "getConsignment" should "return the expected data" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     utils.createConsignment(consignmentId, userId)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
-    val response: GraphqlQueryData = runTestQuery("query_somedata", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(db)("query_somedata", validUserToken())
     response.data should equal(expectedResponse.data)
   }
 
   "getConsignment" should "allow a user with export access to return data" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val exportAccessToken = validBackendChecksToken("export")
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     utils.createConsignment(consignmentId, userId)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
-    val response: GraphqlQueryData = runTestQuery("query_somedata", exportAccessToken)
+    val response: GraphqlQueryData = runTestQuery(db)("query_somedata", exportAccessToken)
     response.data should equal(expectedResponse.data)
   }
 
   "getConsignment" should "not allow a user to get a consignment that they did not create" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = UUID.fromString("f1dbc692-e56c-4d76-be94-d8d3d79bd38a")
     val otherUserId = "73abd1dc-294d-4068-b60d-c1cd4782d08d"
     utils.createConsignment(consignmentId, UUID.fromString(otherUserId))
 
-    val response: GraphqlQueryData = runTestQuery("query_somedata", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(db)("query_somedata", validUserToken())
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "getConsignment" should "return an error if a user queries without a consignment id argument" in withContainers { case _: PostgreSQLContainer =>
+  "getConsignment" should "return an error if a user queries without a consignment id argument" in withContainers { case container: PostgreSQLContainer =>
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_error_no_consignmentid")
-    val response: GraphqlQueryData = runTestQuery("query_no_consignmentid", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(container.database)("query_no_consignmentid", validUserToken())
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "getConsignment" should "return files and directories in the files list" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
     utils.createConsignment(consignmentId, userId)
     utils.addFileProperty(SHA256ServerSideChecksum)
@@ -417,47 +436,51 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     setUpFileAndStandardMetadata(consignmentId, fileId, utils, subDirectory.some)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_files_and_directories")
-    val response: GraphqlQueryData = runTestQuery("query_file_data", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(db)("query_file_data", validUserToken())
     response.data should equal(expectedResponse.data)
   }
 
   "getConsignment" should "return all the file edges after the cursor up to the limit value" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     setUpStandardConsignmentAndFiles(utils)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_cursor")
-    val response: GraphqlQueryData = runTestQuery("query_paginated_files_cursor", validUserToken(body = defaultBodyCode))
+    val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_cursor", validUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return all the file edges up to the limit where no cursor provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     setUpStandardConsignmentAndFiles(utils)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_cursor")
-    val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_cursor", validUserToken(body = defaultBodyCode))
+    val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_no_cursor", validUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return no file edges where limit set to 0" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     setUpStandardConsignmentAndFiles(utils)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_limit_0")
-    val response: GraphqlQueryData = runTestQuery("query_paginated_files_limit_0", validUserToken(body = defaultBodyCode))
+    val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_limit_0", validUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return all the file edges where non-existent cursor value provided, and filedId is greater than the cursor value" in withContainers {
     case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
+      val db = container.database
+      val utils = TestUtils(db)
       setUpStandardConsignmentAndFiles(utils)
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_non-existent_cursor")
-      val response: GraphqlQueryData = runTestQuery("query_paginated_files_non-existent_cursor", validUserToken(body = defaultBodyCode))
+      val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_non-existent_cursor", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }
@@ -465,91 +488,100 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   "getConsignment" should
     "return all the file edges after the cursor to the maximum limit where the requested limit is greater than the maximum" in withContainers {
       case container: PostgreSQLContainer =>
-        val utils = TestUtils(container.database)
+        val db = container.database
+        val utils = TestUtils(db)
         setUpStandardConsignmentAndFiles(utils)
 
         val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_limit_greater_max")
-        val response: GraphqlQueryData = runTestQuery("query_paginated_files_limit_greater_max", validUserToken(body = defaultBodyCode))
+        val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_limit_greater_max", validUserToken(body = defaultBodyCode))
 
         response should equal(expectedResponse)
     }
 
   "getConsignment" should "return an error where no 'paginationInput' argument provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     setUpStandardConsignmentAndFiles(utils)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_input")
-    val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_input", validUserToken(body = defaultBodyCode))
+    val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_no_input", validUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return all the file edges in file name alphabetical order, up to the limit where no offset provided" in withContainers {
     case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
+      val db = container.database
+      val utils = TestUtils(db)
       setUpStandardConsignmentAndFiles(utils)
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_no_offset")
-      val response: GraphqlQueryData = runTestQuery("query_paginated_files_no_offset", validUserToken(body = defaultBodyCode))
+      val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_no_offset", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }
 
   "getConsignment" should "return all the file edges in file name alphabetical order, using offset up to the limit value" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     setUpStandardConsignmentAndFiles(utils)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_offset")
-    val response: GraphqlQueryData = runTestQuery("query_paginated_files_offset", validUserToken(body = defaultBodyCode))
+    val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_offset", validUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return no file edges where offset provided is beyond number of files" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     setUpStandardConsignmentAndFiles(utils)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_offset_max")
-    val response: GraphqlQueryData = runTestQuery("query_paginated_files_offset_max", validUserToken(body = defaultBodyCode))
+    val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_offset_max", validUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignment" should "return file edges in folder name alphabetical order, up to the limit where a folder Filter is provided" in withContainers {
     case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
+      val db = container.database
+      val utils = TestUtils(db)
       setUpStandardConsignmentAndFiles(utils)
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_folder_filter")
-      val response: GraphqlQueryData = runTestQuery("query_paginated_files_folder_filter", validUserToken(body = defaultBodyCode))
+      val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_folder_filter", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }
 
   "getConsignment" should "return file edges in file name alphabetical order, up to the limit where a file Filter is provided" in withContainers {
     case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
+      val db = container.database
+      val utils = TestUtils(db)
       setUpStandardConsignmentAndFiles(utils)
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_file_filter")
-      val response: GraphqlQueryData = runTestQuery("query_paginated_files_file_filter", validUserToken(body = defaultBodyCode))
+      val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_file_filter", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }
 
   "getConsignment" should "return file edges in file name alphabetical order, up to the limit where a parentId Filter is provided" in withContainers {
     case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
+      val db = container.database
+      val utils = TestUtils(db)
       setUpStandardConsignmentAndFiles(utils)
 
       val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_paginated_files_parentid_filter")
-      val response: GraphqlQueryData = runTestQuery("query_paginated_files_parentid_filter", validUserToken(body = defaultBodyCode))
+      val response: GraphqlQueryData = runTestQuery(db)("query_paginated_files_parentid_filter", validUserToken(body = defaultBodyCode))
 
       response should equal(expectedResponse)
   }
 
   "getConsignment" should "return the original file ID when the file is a redacted one" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
     utils.createConsignment(consignmentId, userId)
     utils.addFileProperty(SHA256ServerSideChecksum)
@@ -564,7 +596,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createFile(redactedFileId, consignmentId, fileName = "original_R.txt", parentId = topDirectory.some)
     utils.addFileMetadata(UUID.randomUUID.toString, redactedFileId.toString, OriginalFilepath, originalFilePath)
 
-    val response: GraphqlQueryData = runTestQuery("query_redacted_original", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(db)("query_redacted_original", validUserToken())
     val originalFile = for {
       data <- response.data
       consignment <- data.getConsignment
@@ -576,13 +608,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   "updateExportData" should "update the export data correctly" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.createConsignment(new FixedUUIDSource().uuid, userId)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val prefix = "json/updateexportdata_"
     val expectedResponse = getDataFromFile[GraphqlMutationExportData](prefix)("data_all")
     val token = validBackendChecksToken("export")
-    val response: GraphqlMutationExportData = runTestRequest[GraphqlMutationExportData](prefix)("mutation_all", token)
+    val response: GraphqlMutationExportData = runTestRequest[GraphqlMutationExportData](prefix, Some(db))("mutation_all", token)
     response.data should equal(expectedResponse.data)
     val exportLocationField = getConsignmentField(consignmentId, "ExportLocation", utils)
     val exportDatetimeField = getConsignmentField(consignmentId, "ExportDatetime", utils)
@@ -594,11 +627,12 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   "updateTransferInitiated" should "update the transfer initiated date correctly" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.createConsignment(new FixedUUIDSource().uuid, userId)
     val prefix = "json/updatetransferinitiated_"
     val expectedResponse = getDataFromFile[GraphqlMutationTransferInitiated](prefix)("data_all")
-    val response: GraphqlMutationTransferInitiated = runTestRequest[GraphqlMutationTransferInitiated](prefix)("mutation_all", validUserToken())
+    val response: GraphqlMutationTransferInitiated = runTestRequest[GraphqlMutationTransferInitiated](prefix, Some(db))("mutation_all", validUserToken())
     response.data should equal(expectedResponse.data)
     val field = getConsignmentField(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"), _, utils)
     Option(field("TransferInitiatedDatetime")).isDefined should equal(true)
@@ -606,7 +640,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   "consignments" should "allow a user with reporting access to return consignments in a paginated format" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId1 = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
     val consignmentId2 = UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8")
     val consignmentId3 = UUID.fromString("614d0cba-380f-4b09-a6e4-542413dd7f4a")
@@ -641,14 +676,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val reportingAccessToken = validReportingToken("reporting")
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_all")
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_alldata", reportingAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_alldata", reportingAccessToken)
 
     response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
   "consignments" should "allow a user with reporting access to return requested fields for consignments in a paginated format" in withContainers {
     case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
+      val db = container.database
+      val utils = TestUtils(db)
       val consignmentParams: List[ConsignmentParams] = List(
         ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
         ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
@@ -659,14 +695,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val reportingAccessToken = validReportingToken("reporting")
 
       val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_some")
-      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", reportingAccessToken)
+      val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_somedata", reportingAccessToken)
       response.data.get.consignments.edges.size should equal(2)
 
       response.data should equal(expectedResponse.data)
   }
 
   "consignments" should "allow a user with reporting access to return requested fields for given page number" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentParams: List[ConsignmentParams] = List(
       ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List()),
       ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List()),
@@ -677,14 +714,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val reportingAccessToken = validReportingToken("reporting")
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_current_page")
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_current_page", reportingAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_with_current_page", reportingAccessToken)
     response.data.get.consignments.edges.size should equal(1)
 
     response.data should equal(expectedResponse.data)
   }
 
   "consignments" should "allow a user without reporting access to return only their consignments" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentParams: List[ConsignmentParams] = List(
       ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
       ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
@@ -700,13 +738,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val userAccessToken = validUserTokenNoBody
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_userId")
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_userId", userAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_with_userId", userAccessToken)
 
     response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
   "consignments" should "allow a user with reporting access to filter consignments by userId" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentParams: List[ConsignmentParams] = List(
       ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
       ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
@@ -722,13 +761,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val reportingAccessToken = validReportingToken("reporting")
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_userId")
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_userId", reportingAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_with_userId", reportingAccessToken)
 
     response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
   "consignments" should "not allow a user without reporting access to access consignments without passing userId" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentParams: List[ConsignmentParams] = List(
       ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
       ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
@@ -738,14 +778,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val userAccessToken = validUserTokenNoBody
 
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_no_userId", userAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_no_userId", userAccessToken)
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
   "consignments" should "not allow a user without reporting access to access other users' consignments" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentParams: List[ConsignmentParams] = List(
       ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", List(UUID.fromString("9b003759-a9a2-4bf9-8e34-14079bdaed58"))),
       ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", List(UUID.fromString("62c53beb-84d6-4676-80ea-b43f5329de72")))
@@ -760,14 +801,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val userAccessToken = validUserTokenNoBody
 
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_other_userId", userAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_other_userId", userAccessToken)
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
   "consignments" should "allow a user with reporting access to filter consignments by consignment type" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentParams: List[ConsignmentParams] = List(
       ConsignmentParams(UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c"), "consignment-ref1", Nil),
       ConsignmentParams(UUID.fromString("5c761efa-ae1a-4ec8-bb08-dc609fce51f8"), "consignment-ref2", Nil, "judgment")
@@ -779,24 +821,25 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val reportingAccessToken = validReportingToken("reporting")
 
     val expectedResponse: GraphqlConsignmentsQueryData = expectedConsignmentsQueryResponse("data_consignment_type")
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_with_consignment_type", reportingAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(db)("query_with_consignment_type", reportingAccessToken)
 
     response.data.get.consignments should equal(expectedResponse.data.get.consignments)
   }
 
-  "consignments" should "throw an error if user does not have reporting access" in withContainers { case _: PostgreSQLContainer =>
+  "consignments" should "throw an error if user does not have reporting access" in withContainers { case container: PostgreSQLContainer =>
     val exportAccessToken = invalidReportingToken()
-    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", exportAccessToken)
+    val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery(container.database)("query_somedata", exportAccessToken)
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
   "startUpload" should "add the upload status, update the parent folder and 'IncludeTopLevelFolder' fields" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = new FixedUUIDSource().uuid
     utils.createConsignment(consignmentId, userId)
-    runTestStartUploadMutation("mutation_alldata", validUserToken())
+    runTestStartUploadMutation(db)("mutation_alldata", validUserToken())
 
     val consignment = utils.getConsignment(consignmentId)
     consignment.getString("ParentFolder") should equal("parent")
@@ -805,31 +848,32 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   "startUpload" should "return an error if the upload is in progress" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = new FixedUUIDSource().uuid
     utils.createConsignment(consignmentId, userId)
     utils.createConsignmentStatus(consignmentId, "Upload", "InProgress")
-    val response = runTestStartUploadMutation("mutation_alldata", validUserToken())
+    val response = runTestStartUploadMutation(db)("mutation_alldata", validUserToken())
 
     response.errors.size should equal(1)
     response.errors.head.message should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
   }
 
   "startUpload" should "return an error if the upload is complete" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-
+    val db = container.database
+    val utils = TestUtils(db)
     val consignmentId = new FixedUUIDSource().uuid
     utils.createConsignment(consignmentId, userId)
     utils.createConsignmentStatus(consignmentId, "Upload", "Complete")
-    val response = runTestStartUploadMutation("mutation_alldata", validUserToken())
+    val response = runTestStartUploadMutation(db)("mutation_alldata", validUserToken())
 
     response.errors.size should equal(1)
     response.errors.head.message should equal("Existing consignment upload status is 'Complete', so cannot start new upload")
   }
 
   "updateSeriesIdOfConsignment" should "update the consignment with a series id" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.createConsignment(new FixedUUIDSource().uuid, userId)
 
     val seriesId = "4252c920-b1ac-4b0a-9711-33409b8fae6e"
@@ -837,7 +881,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val expectedResponse: GraphqlMutationUpdateSeriesIdOfConsignment = expectedUpdateConsignmentSeriesIdMutationResponse("data_all")
     val response: GraphqlMutationUpdateSeriesIdOfConsignment =
-      runUpdateConsignmentSeriesIdMutation("mutation_all", validUserToken(body = defaultBodyCode))
+      runUpdateConsignmentSeriesIdMutation(db)("mutation_all", validUserToken(body = defaultBodyCode))
 
     response.data.get.updateConsignmentSeriesId should equal(expectedResponse.data.get.updateConsignmentSeriesId)
     val field = getConsignmentField(UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e"), _, utils)
@@ -845,7 +889,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   "updateSeriesIdOfConsignment" should "throw an error if 'standard' user's body is not the same as the series body" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.createConsignment(new FixedUUIDSource().uuid, userId)
 
     val seriesId = "4252c920-b1ac-4b0a-9711-33409b8fae6b"
@@ -853,7 +898,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val expectedResponse: GraphqlMutationUpdateSeriesIdOfConsignment = expectedUpdateConsignmentSeriesIdMutationResponse("data_incorrect_body")
     val response: GraphqlMutationUpdateSeriesIdOfConsignment =
-      runUpdateConsignmentSeriesIdMutation("mutation_incorrect_body", validUserToken(body = "incorrect"))
+      runUpdateConsignmentSeriesIdMutation(db)("mutation_incorrect_body", validUserToken(body = "incorrect"))
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }

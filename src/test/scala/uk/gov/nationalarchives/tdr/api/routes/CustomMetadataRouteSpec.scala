@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -28,8 +29,10 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
   private val customMetadataJsonFilePrefix: String = "json/custommetadata_"
-  val runCustomMetadataTestQuery: (String, String) => GraphqlQueryData =
-    runTestRequest[GraphqlQueryData](customMetadataJsonFilePrefix)
+
+  def runCustomMetadataTestQuery(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlQueryData =
+    runTestRequest[GraphqlQueryData](customMetadataJsonFilePrefix, Some(db))
+
   val expectedCustomMetadataQueryResponse: String => GraphqlQueryData =
     getDataFromFile[GraphqlQueryData](customMetadataJsonFilePrefix)
 
@@ -55,48 +58,52 @@ class CustomMetadataRouteSpec extends TestContainerUtils with Matchers with Test
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   "customMetadata" should "return all of the closure metadata with the correct arguments" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId, Option(1))
 
     val expectedResponse = expectedCustomMetadataQueryResponse("data_all")
-    val response = runCustomMetadataTestQuery("query_alldata", token)
+    val response = runCustomMetadataTestQuery(db)("query_alldata", token)
     response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
   }
 
   "customMetadata" should "return all requested fields" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
     val expectedResponse = expectedCustomMetadataQueryResponse("data_some")
-    val response = runCustomMetadataTestQuery("query_somedata", token)
+    val response = runCustomMetadataTestQuery(db)("query_somedata", token)
 
     response.data.get.customMetadata.head should equal(expectedResponse.data.get.customMetadata.head)
   }
 
   "customMetadata" should "return an error if the consignmentId was not provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
     val expectedResponse = expectedCustomMetadataQueryResponse("data_error_no_consignmentid")
-    val response = runCustomMetadataTestQuery("query_no_consignmentid", token)
+    val response = runCustomMetadataTestQuery(db)("query_no_consignmentid", token)
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "customMetadata" should "return an error if the consignmentId provided was not valid" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     val token = validUserToken(userId)
 
     addDummyFilePropertiesAndValuesToDb(utils, consignmentId, userId)
 
     val expectedResponse = expectedCustomMetadataQueryResponse("data_invalid_consignmentid")
-    val response = runCustomMetadataTestQuery("query_invalid_consignmentid", token)
+    val response = runCustomMetadataTestQuery(db)("query_invalid_consignmentid", token)
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }

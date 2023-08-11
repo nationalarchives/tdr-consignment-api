@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -34,16 +35,17 @@ class ClientFileMetadataRouteSpec extends TestContainerUtils with Matchers with 
 
   case class GetClientFileMetadata(getClientFileMetadata: ClientFileMetadata) extends TestRequest
 
-  val runTestQuery: (String, String) => GraphqlQueryData =
-    runTestRequest[GraphqlQueryData](getClientFileMetadataJsonFilePrefix)
+  def runTestQuery(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlQueryData =
+    runTestRequest[GraphqlQueryData](getClientFileMetadataJsonFilePrefix, Some(db))
   val expectedQueryResponse: String => GraphqlQueryData =
     getDataFromFile[GraphqlQueryData](getClientFileMetadataJsonFilePrefix)
 
   "getClientFileMetadata" should "return the requested fields" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.seedDatabaseWithDefaultEntries()
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validBackendChecksToken("client_file_metadata"))
+    val response: GraphqlQueryData = runTestQuery(db)("query_alldata", validBackendChecksToken("client_file_metadata"))
     val responseData: ClientFileMetadata = response.data.get.getClientFileMetadata
     val expectedData = expectedResponse.data.get.getClientFileMetadata
     responseData.fileId should equal(expectedData.fileId)
@@ -53,17 +55,17 @@ class ClientFileMetadataRouteSpec extends TestContainerUtils with Matchers with 
     responseData.fileSize should equal(expectedData.fileSize)
   }
 
-  "getClientFileMetadata" should "throw an error if the file id does not exist" in withContainers { case _: PostgreSQLContainer =>
+  "getClientFileMetadata" should "throw an error if the file id does not exist" in withContainers { case container: PostgreSQLContainer =>
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_fileid_not_exists")
-    val response: GraphqlQueryData = runTestQuery("query_fileidnotexists", validBackendChecksToken("client_file_metadata"))
+    val response: GraphqlQueryData = runTestQuery(container.database)("query_fileidnotexists", validBackendChecksToken("client_file_metadata"))
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)
   }
 
-  "getClientFileMetadata" should "throw an error if the user does not have the file format role" in withContainers { case _: PostgreSQLContainer =>
+  "getClientFileMetadata" should "throw an error if the user does not have the file format role" in withContainers { case container: PostgreSQLContainer =>
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_no_file_format_role")
-    val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken())
+    val response: GraphqlQueryData = runTestQuery(container.database)("query_alldata", validUserToken())
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)

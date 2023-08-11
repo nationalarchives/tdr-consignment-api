@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -25,18 +26,19 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   case class AddFFIDMetadata(addBulkFFIDMetadata: List[FFIDMetadata])
 
-  val runTestMutation: (String, String) => GraphqlMutationData =
-    runTestRequest[GraphqlMutationData](addFfidMetadataJsonFilePrefix)
+  def runTestMutation(db: JdbcBackend#DatabaseDef): (String, String) => GraphqlMutationData =
+    runTestRequest[GraphqlMutationData](addFfidMetadataJsonFilePrefix, Some(db))
 
   val expectedMutationResponse: String => GraphqlMutationData =
     getDataFromFile[GraphqlMutationData](addFfidMetadataJsonFilePrefix)
 
   "addFFIDMetadata" should "return all requested fields from inserted file format object" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.seedDatabaseWithDefaultEntries()
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("file_format"))
+    val response: GraphqlMutationData = runTestMutation(db)("mutation_alldata", validBackendChecksToken("file_format"))
     val metadata: FFIDMetadata = response.data.get.addBulkFFIDMetadata.head
     val expectedMetadata = expectedResponse.data.get.addBulkFFIDMetadata.head
 
@@ -58,9 +60,10 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   }
 
   "addFFIDMetadata" should "not allow updating of file format metadata with incorrect authorisation" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.seedDatabaseWithDefaultEntries()
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", invalidBackendChecksToken())
+    val response: GraphqlMutationData = runTestMutation(db)("mutation_alldata", invalidBackendChecksToken())
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
@@ -68,10 +71,11 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   }
 
   "addFFIDMetadata" should "not allow updating of file format metadata with incorrect client role" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.seedDatabaseWithDefaultEntries()
 
-    val response: GraphqlMutationData = runTestMutation("mutation_alldata", validBackendChecksToken("antivirus"))
+    val response: GraphqlMutationData = runTestMutation(db)("mutation_alldata", validBackendChecksToken("antivirus"))
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
@@ -79,31 +83,34 @@ class FFIDMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   }
 
   "addFFIDMetadata" should "throw an error if mandatory fields are missing" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.seedDatabaseWithDefaultEntries()
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_mandatory_missing")
-    val response: GraphqlMutationData = runTestMutation("mutation_mandatorymissing", validBackendChecksToken("file_format"))
+    val response: GraphqlMutationData = runTestMutation(db)("mutation_mandatorymissing", validBackendChecksToken("file_format"))
     response.errors.map(e => e.message.trim) should equal(expectedResponse.errors.map(_.message.trim))
     checkNoFFIDMetadataAdded(utils)
   }
 
   "addFFIDMetadata" should "throw an error if the file id does not exist" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.seedDatabaseWithDefaultEntries()
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_fileid_not_exists")
-    val response: GraphqlMutationData = runTestMutation("mutation_fileidnotexists", validBackendChecksToken("file_format"))
+    val response: GraphqlMutationData = runTestMutation(db)("mutation_fileidnotexists", validBackendChecksToken("file_format"))
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFFIDMetadataAdded(utils)
   }
 
   "addFFIDMetadata" should "throw an error if there are no ffid matches" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
+    val db = container.database
+    val utils = TestUtils(db)
     utils.seedDatabaseWithDefaultEntries()
 
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_no_ffid_matches")
-    val response: GraphqlMutationData = runTestMutation("mutation_no_ffid_matches", validBackendChecksToken("file_format"))
+    val response: GraphqlMutationData = runTestMutation(db)("mutation_no_ffid_matches", validBackendChecksToken("file_format"))
     response.errors.head.extensions should equal(expectedResponse.errors.head.extensions)
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFFIDMetadataAdded(utils)
