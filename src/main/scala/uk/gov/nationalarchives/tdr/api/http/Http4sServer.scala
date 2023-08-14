@@ -14,8 +14,10 @@ import org.http4s.implicits._
 import org.http4s.server.Server
 import org.http4s.server.middleware.CORS
 import sangria.parser.QueryParser
+import slick.jdbc.JdbcBackend
 import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
+import uk.gov.nationalarchives.tdr.api.db.DbConnectionHttp4s
 import uk.gov.nationalarchives.tdr.api.service.FullHealthCheckService
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
 
@@ -24,13 +26,13 @@ import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters._
 
-class Http4sServer(datasource: HikariCPJdbcDataSource) {
+class Http4sServer(databaseDef: JdbcBackend#DatabaseDef) {
   case class Query(query: String, operationName: Option[String], variables: Option[Json])
   implicit val decoder: EntityDecoder[IO, Query] = jsonOf[IO, Query]
   val config: Config = ConfigFactory.load
   val url: String = config.getString("auth.url")
   implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(url, "tdr", 3600)
-  val graphqlServer: GraphQLServerHttp4s = GraphQLServerHttp4s(datasource)
+  val graphqlServer: GraphQLServerHttp4s = GraphQLServerHttp4s(databaseDef)
   val transportSecurityMaxAge = 31536000
   val fullHealthCheck = new FullHealthCheckService()
   val frontendUrls: Set[Origin.Host] = config
@@ -59,7 +61,7 @@ class Http4sServer(datasource: HikariCPJdbcDataSource) {
         )
     case _ @GET -> Root / "healthcheck" => Ok()
     case _ @GET -> Root / "healthcheck-full" =>
-      IO.fromFuture(IO(fullHealthCheck.checkDbIsUpAndRunning(Database.forDataSource(datasource.ds, None))))
+      IO.fromFuture(IO(fullHealthCheck.checkDbIsUpAndRunning(DbConnectionHttp4s(databaseDef).db)))
         .flatMap(_ => Ok())
   }
 
@@ -92,5 +94,5 @@ class Http4sServer(datasource: HikariCPJdbcDataSource) {
     .build
 }
 object Http4sServer {
-  def apply(dataSource: HikariCPJdbcDataSource) = new Http4sServer(dataSource)
+  def apply(databaseDef: JdbcBackend#DatabaseDef) = new Http4sServer(databaseDef)
 }
