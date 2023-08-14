@@ -4,6 +4,8 @@ import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
 import org.postgresql.Driver
+import slick.basic.DatabaseConfig
+import slick.jdbc.{JdbcBackend, JdbcProfile}
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 
 import scala.language.postfixOps
@@ -31,10 +33,9 @@ object ApiServer extends IOApp {
       finalIO.as(ExitCode.Success)
     } else {
       logger.info(s"Consignment API is running using HTTP4S")
-      val dbConfig = config.getConfig("consignmentapi.db")
-      val postgresDriver = new Driver()
-      val dataSource = HikariCPJdbcDataSource.forConfig(dbConfig, postgresDriver, "consignmentApi", ClassLoader.getSystemClassLoader)
-      val server = new Http4sServer(dataSource).server
+      val databaseConfig: JdbcBackend#DatabaseDef = DatabaseConfig.forConfig[JdbcProfile]("consignmentapi", config).db
+
+      val server = new Http4sServer(databaseConfig).server
       server.use(_ => IO.never).as(ExitCode.Success)
     }
   }
