@@ -38,7 +38,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "addFileStatus" should "add a file status row in the db" in {
 
-    val fileStatusCaptor: ArgumentCaptor[List[FilestatusRow]] = ArgumentCaptor.forClass(classOf[List[FilestatusRow]])
+    val fileStatusCaptor: ArgumentCaptor[List[AddFileStatusInput]] = ArgumentCaptor.forClass(classOf[List[AddFileStatusInput]])
 
     val addFileStatusInput = AddFileStatusInput(UUID.randomUUID(), "Upload", "Success")
     val repositoryReturnValue = Future(Seq(FilestatusRow(UUID.randomUUID(), addFileStatusInput.fileId, "Upload", "Success", Timestamp.from(Instant.now()))))
@@ -47,10 +47,9 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     val response = createFileStatusService().addFileStatuses(AddMultipleFileStatusesInput(addFileStatusInput :: Nil)).futureValue.head
 
     val fileStatusRowActual = fileStatusCaptor.getValue.head
-    fileStatusRowActual.statustype should equal(addFileStatusInput.statusType)
-    fileStatusRowActual.value should equal(addFileStatusInput.statusValue)
-    fileStatusRowActual.fileid should equal(addFileStatusInput.fileId)
-    fileStatusRowActual.createddatetime.before(Timestamp.from(Instant.now())) shouldBe true
+    fileStatusRowActual.statusType should equal(addFileStatusInput.statusType)
+    fileStatusRowActual.statusValue should equal(addFileStatusInput.statusValue)
+    fileStatusRowActual.fileId should equal(addFileStatusInput.fileId)
     response.fileId should equal(addFileStatusInput.fileId)
     response.statusValue should equal(addFileStatusInput.statusValue)
     response.statusType should equal(addFileStatusInput.statusType)
@@ -348,5 +347,5 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   def createFileStatusService(): FileStatusService =
-    new FileStatusService(fileStatusRepositoryMock, fixedUuidSource)
+    new FileStatusService(fileStatusRepositoryMock)
 }

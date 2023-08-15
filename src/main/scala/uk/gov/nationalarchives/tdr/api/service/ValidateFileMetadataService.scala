@@ -1,22 +1,19 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 
-import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ValidateFileMetadataService(
     customMetadataService: CustomMetadataPropertiesService,
     fileMetadataRepository: FileMetadataRepository,
-    fileStatusRepository: FileStatusRepository,
-    timeSource: TimeSource,
-    uuidSource: UUIDSource
+    fileStatusRepository: FileStatusRepository
 )(implicit val ec: ExecutionContext) {
 
   def toPropertyNames(fields: Seq[CustomMetadataField]): Set[String] = fields.map(_.name).toSet
@@ -49,7 +46,7 @@ class ValidateFileMetadataService(
       propertiesToValidate: Set[String],
       customMetadataFields: Seq[CustomMetadataField],
       existingMetadataProperties: Seq[Tables.FilemetadataRow]
-  ): Future[List[nationalarchives.Tables.FilestatusRow]] = {
+  ): Future[List[Tables.FilestatusRow]] = {
     val additionalMetadataFieldGroups: Seq[FieldGroup] = toAdditionalMetadataFieldGroups(customMetadataFields)
     val additionalMetadataPropertyNames: Set[String] = additionalMetadataFieldGroups.flatMap(g => toPropertyNames(g.fields)).toSet
 
@@ -57,13 +54,14 @@ class ValidateFileMetadataService(
       Future.successful(List())
     } else {
       val additionalMetadataStatuses = {
+
         additionalMetadataFieldGroups
           .flatMap(group => {
             val states = group.fields.flatMap(f => checkPropertyState(fileIds, f, existingMetadataProperties))
             val filesWithNoAdditionalMetadataStatuses = fileIds
               .filter(id => !states.map(_.fileId).contains(id))
               .map(id => {
-                FilestatusRow(uuidSource.uuid, id, group.groupName, NotEntered, Timestamp.from(timeSource.now))
+                AddFileStatusInput(id, group.groupName, NotEntered)
               })
 
             val statuses = states
@@ -75,7 +73,7 @@ class ValidateFileMetadataService(
                   case _ if fileStates.forall(_.missingDependencies == false)        => Completed
                   case _                                                             => Incomplete
                 }
-                FilestatusRow(uuidSource.uuid, fileId, group.groupName, status, Timestamp.from(timeSource.now))
+                AddFileStatusInput(fileId, group.groupName, status)
               })
             statuses ++ filesWithNoAdditionalMetadataStatuses
           })
@@ -84,9 +82,8 @@ class ValidateFileMetadataService(
 
       for {
         _ <- fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-        _ <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
-      } yield additionalMetadataStatuses
-
+        rows <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
+      } yield rows.toList
     }
   }
 

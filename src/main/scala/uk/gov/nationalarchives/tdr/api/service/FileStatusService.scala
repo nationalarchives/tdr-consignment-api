@@ -6,12 +6,10 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddMultipleFileStatusesInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 
-import java.sql.Timestamp
-import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: UUIDSource)(implicit
+class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
     val executionContext: ExecutionContext
 ) {
 
@@ -20,10 +18,7 @@ class FileStatusService(fileStatusRepository: FileStatusRepository, uuidSource: 
   }
 
   def addFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput): Future[List[FileStatus]] = {
-    val rows = addMultipleFileStatusesInput.statuses.map(addFileStatusInput => {
-      FilestatusRow(uuidSource.uuid, addFileStatusInput.fileId, addFileStatusInput.statusType, addFileStatusInput.statusValue, Timestamp.from(Instant.now()))
-    })
-    fileStatusRepository.addFileStatuses(rows).map(_.map(row => FileStatus(row.fileid, row.statustype, row.value)).toList)
+    fileStatusRepository.addFileStatuses(addMultipleFileStatusesInput.statuses).map(_.map(row => FileStatus(row.fileid, row.statustype, row.value)).toList)
   }
 
   def getConsignmentFileProgress(consignmentId: UUID): Future[FileChecks] = {
