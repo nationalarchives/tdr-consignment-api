@@ -119,19 +119,19 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
     response.size shouldBe 4
 
-    val fileStatusResponseConvertedToAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
+    val expectedAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(fileStatusResponseConvertedToAddFileStatusInput)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(expectedAddFileStatusInput)
 
-    val file1Statuses = fileStatusResponseConvertedToAddFileStatusInput.filter(_.fileId == fileId1)
+    val file1Statuses = expectedAddFileStatusInput.filter(_.fileId == fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statusType == ClosureMetadata).get
     file1ClosureStatus.statusValue should equal("Completed")
     val file1DescriptiveStatus = file1Statuses.find(_.statusType == DescriptiveMetadata).get
     file1DescriptiveStatus.statusValue should equal("Completed")
 
-    val file2Statuses = fileStatusResponseConvertedToAddFileStatusInput.filter(_.fileId == fileId2)
+    val file2Statuses = expectedAddFileStatusInput.filter(_.fileId == fileId2)
     file2Statuses.size shouldBe 2
     val file2ClosureStatus = file2Statuses.find(_.statusType == ClosureMetadata).get
     file2ClosureStatus.statusValue should equal("Completed")
@@ -158,14 +158,14 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val service = testSetUp.service
     val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
-    val fileStatusResponseConvertedToAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
+    val expectedAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
 
-    fileStatusResponseConvertedToAddFileStatusInput.size shouldBe 4
+    expectedAddFileStatusInput.size shouldBe 4
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
     verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[AddFileStatusInput]])
 
-    val file1Statuses = fileStatusResponseConvertedToAddFileStatusInput.filter(_.fileId == fileId1)
+    val file1Statuses = expectedAddFileStatusInput.filter(_.fileId == fileId1)
     file1Statuses.size shouldBe 2
     val file1ClosureStatus = file1Statuses.find(_.statusType == ClosureMetadata).get
     file1ClosureStatus.statusValue should equal("Incomplete")
@@ -201,10 +201,10 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
     response.size shouldBe 4
 
-    val fileStatusResponseConvertedToAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
+    val expectedAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(fileStatusResponseConvertedToAddFileStatusInput)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(expectedAddFileStatusInput)
 
     val file1Statuses = response.filter(_.fileid == fileId1)
     file1Statuses.size shouldBe 2
@@ -231,10 +231,10 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
     response.size shouldBe 4
 
-    val fileStatusResponseConvertedToAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
+    val expectedAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(fileStatusResponseConvertedToAddFileStatusInput)
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(expectedAddFileStatusInput)
 
     val file1Statuses = response.filter(_.fileid == testSetUp.fileId1)
     file1Statuses.size shouldBe 2
