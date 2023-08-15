@@ -163,7 +163,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     expectedAddFileStatusInput.size shouldBe 4
 
     verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(any[List[AddFileStatusInput]])
+    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(expectedAddFileStatusInput)
 
     val file1Statuses = expectedAddFileStatusInput.filter(_.fileId == fileId1)
     file1Statuses.size shouldBe 2
