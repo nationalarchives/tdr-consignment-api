@@ -249,6 +249,7 @@ input FFIDMetadataInputValues {
   containerSignatureFileVersion: String!
   method: String!
   matches: [FFIDMetadataInputMatches!]!
+  fileExtensionMismatch: Boolean = false
 }
 
 type FFIDMetadataMatches {
