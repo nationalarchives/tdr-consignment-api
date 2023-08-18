@@ -239,6 +239,7 @@ input FFIDMetadataInputMatches {
   extension: String
   identificationBasis: String!
   puid: String
+  fileExtensionMismatch: Boolean = false
 }
 
 input FFIDMetadataInputValues {
@@ -256,6 +257,7 @@ type FFIDMetadataMatches {
   extension: String
   identificationBasis: String!
   puid: String
+  fileExtensionMismatch: Boolean
 }
 
 type FFIDProgress {
