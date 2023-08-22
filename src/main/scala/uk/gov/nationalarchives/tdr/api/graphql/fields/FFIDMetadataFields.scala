@@ -31,12 +31,23 @@ object FFIDMetadataFields {
       binarySignatureFileVersion: String,
       containerSignatureFileVersion: String,
       method: String,
-      matches: List[FFIDMetadataInputMatches],
-      fileExtensionMismatch: Option[Boolean] = Some(false)
+      matches: List[FFIDMetadataInputMatches]
   )
 
-  case class FFIDMetadataInputMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
-  case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String])
+  case class FFIDMetadataInputMatches(
+      extension: Option[String] = None,
+      identificationBasis: String,
+      puid: Option[String],
+      fileExtensionMismatch: Option[Boolean] = Some(false),
+      formatName: Option[String] = Some("")
+  )
+  case class FFIDMetadataMatches(
+      extension: Option[String] = None,
+      identificationBasis: String,
+      puid: Option[String],
+      fileExtensionMismatch: Option[Boolean] = Some(false),
+      formatName: Option[String] = Some("")
+  )
 
   implicit val FFIDMetadataInputMatchesType: ObjectType[Unit, FFIDMetadataMatches] = deriveObjectType[Unit, FFIDMetadataMatches]()
   implicit val FFIDMetadataInputMatchesInputType: InputObjectType[FFIDMetadataInputMatches] = deriveInputObjectType[FFIDMetadataInputMatches]()

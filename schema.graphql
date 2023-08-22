@@ -239,6 +239,8 @@ input FFIDMetadataInputMatches {
   extension: String
   identificationBasis: String!
   puid: String
+  fileExtensionMismatch: Boolean = false
+  formatName: String = ""
 }
 
 input FFIDMetadataInputValues {
@@ -249,13 +251,14 @@ input FFIDMetadataInputValues {
   containerSignatureFileVersion: String!
   method: String!
   matches: [FFIDMetadataInputMatches!]!
-  fileExtensionMismatch: Boolean = false
 }
 
 type FFIDMetadataMatches {
   extension: String
   identificationBasis: String!
   puid: String
+  fileExtensionMismatch: Boolean
+  formatName: String
 }
 
 type FFIDProgress {
