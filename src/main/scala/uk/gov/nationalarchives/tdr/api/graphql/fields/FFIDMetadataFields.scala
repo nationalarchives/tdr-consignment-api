@@ -34,8 +34,20 @@ object FFIDMetadataFields {
       matches: List[FFIDMetadataInputMatches]
   )
 
-  case class FFIDMetadataInputMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String], fileExtensionMismatch: Option[Boolean] = Some(false))
-  case class FFIDMetadataMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String], fileExtensionMismatch: Option[Boolean] = Some(false))
+  case class FFIDMetadataInputMatches(
+      extension: Option[String] = None,
+      identificationBasis: String,
+      puid: Option[String],
+      fileExtensionMismatch: Option[Boolean] = Some(false),
+      formatName: Option[String] = Some("")
+  )
+  case class FFIDMetadataMatches(
+      extension: Option[String] = None,
+      identificationBasis: String,
+      puid: Option[String],
+      fileExtensionMismatch: Option[Boolean] = Some(false),
+      formatName: Option[String] = Some("")
+  )
 
   implicit val FFIDMetadataInputMatchesType: ObjectType[Unit, FFIDMetadataMatches] = deriveObjectType[Unit, FFIDMetadataMatches]()
   implicit val FFIDMetadataInputMatchesInputType: InputObjectType[FFIDMetadataInputMatches] = deriveInputObjectType[FFIDMetadataInputMatches]()
