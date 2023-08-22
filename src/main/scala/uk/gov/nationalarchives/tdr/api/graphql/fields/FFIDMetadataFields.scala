@@ -31,8 +31,7 @@ object FFIDMetadataFields {
       binarySignatureFileVersion: String,
       containerSignatureFileVersion: String,
       method: String,
-      matches: List[FFIDMetadataInputMatches],
-      fileExtensionMismatch: Option[Boolean] = Some(false)
+      matches: List[FFIDMetadataInputMatches]
   )
 
   case class FFIDMetadataInputMatches(extension: Option[String] = None, identificationBasis: String, puid: Option[String], fileExtensionMismatch: Option[Boolean] = Some(false))
