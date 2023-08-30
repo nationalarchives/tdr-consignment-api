@@ -47,7 +47,9 @@
                     {
                       "extension": "txt",
                       "identificationBasis": "TEST DATA identification",
-                      "puid": "TEST DATA puid"
+                      "puid": "TEST DATA puid",
+                      "extensionmismatch": false,
+                      "formatname": "TEST DATA format name"
                     }
                   ],
                   "containerSignatureFileVersion": "TEST DATA container signature file version",
@@ -150,7 +152,9 @@
                     {
                       "extension": "txt",
                       "identificationBasis": "TEST DATA identification",
-                      "puid": "TEST DATA puid"
+                      "puid": "TEST DATA puid",
+                      "extensionmismatch": false,
+                      "formatname": "TEST DATA format name"
                     }
                   ],
                   "containerSignatureFileVersion": "TEST DATA container signature file version",
