@@ -39,7 +39,8 @@ class FFIDMetadataService(
           ffidMetadata.method
         )
 
-        val matchRows = ffidMetadata.matches.map(m => FfidmetadatamatchesRow(metadataRow.ffidmetadataid, m.extension, m.identificationBasis, m.puid, m.fileExtensionMismatch, m.formatName))
+        val matchRows =
+          ffidMetadata.matches.map(m => FfidmetadatamatchesRow(metadataRow.ffidmetadataid, m.extension, m.identificationBasis, m.puid, m.fileExtensionMismatch, m.formatName))
 
         (metadataRow, matchRows)
       })
