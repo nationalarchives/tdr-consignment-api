@@ -39,7 +39,7 @@ enablePlugins(GraphQLSchemaPlugin)
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
 lazy val akkaHttpVersion = "10.2.10"
-lazy val circeVersion = "0.14.5"
+lazy val circeVersion = "0.14.6"
 lazy val testContainersVersion = "0.41.0"
 val http4sVersion = "0.23.23"
 
@@ -77,12 +77,12 @@ libraryDependencies ++= Seq(
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.3.0",
   "org.scalatest" %% "scalatest" % "3.2.16" % Test,
   "org.typelevel" %% "cats-effect" % "3.5.1",
-  "org.mockito" %% "mockito-scala" % "1.17.14" % Test,
-  "org.mockito" %% "mockito-scala-scalatest" % "1.17.14" % Test,
+  "org.mockito" %% "mockito-scala" % "1.17.22" % Test,
+  "org.mockito" %% "mockito-scala-scalatest" % "1.17.22" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.15.1" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.156",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.157",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
