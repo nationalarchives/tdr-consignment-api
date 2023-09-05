@@ -366,16 +366,25 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ffidMetadataId // ffidMetadataId has to be returned so that the addFFIDMetadataMatches method can be called with it
   }
 
-  def addFFIDMetadataMatches(ffidMetadataId: String, extension: String = "txt", identificationBasis: String = "TEST DATA identification", puid: String = "TEST DATA puid"): Unit = {
+  def addFFIDMetadataMatches(
+      ffidMetadataId: String,
+      extension: String = "txt",
+      identificationBasis: String = "TEST DATA identification",
+      puid: String = "TEST DATA puid",
+      extensionMismatch: Boolean = false,
+      formatName: String = "TEST DATA format name"
+  ): Unit = {
     val sql =
       s"""INSERT INTO "FFIDMetadataMatches" """ +
-        s"""("FFIDMetadataId", "Extension", "IdentificationBasis", "PUID")""" +
-        s"VALUES (?, ?, ?, ?)"
+        s"""("FFIDMetadataId", "Extension", "IdentificationBasis", "PUID", "ExtensionMismatch", "FormatName")""" +
+        s"VALUES (?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, ffidMetadataId, Types.OTHER)
     ps.setString(2, extension)
     ps.setString(3, identificationBasis)
     ps.setString(4, puid)
+    ps.setBoolean(5, extensionMismatch)
+    ps.setString(6, formatName)
 
     ps.executeUpdate()
   }

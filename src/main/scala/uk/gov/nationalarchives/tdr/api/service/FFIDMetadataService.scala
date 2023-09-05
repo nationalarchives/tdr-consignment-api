@@ -39,7 +39,8 @@ class FFIDMetadataService(
           ffidMetadata.method
         )
 
-        val matchRows = ffidMetadata.matches.map(m => FfidmetadatamatchesRow(metadataRow.ffidmetadataid, m.extension, m.identificationBasis, m.puid))
+        val matchRows =
+          ffidMetadata.matches.map(m => FfidmetadatamatchesRow(metadataRow.ffidmetadataid, m.extension, m.identificationBasis, m.puid, m.fileExtensionMismatch, m.formatName))
 
         (metadataRow, matchRows)
       })
@@ -76,7 +77,7 @@ class FFIDMetadataService(
       ffidMetadataRow.binarysignaturefileversion,
       ffidMetadataRow.containersignaturefileversion,
       ffidMetadataRow.method,
-      ffidMetadataMatchesRow.map(r => FFIDMetadataMatches(r.extension, r.identificationbasis, r.puid)).toList,
+      ffidMetadataMatchesRow.map(r => FFIDMetadataMatches(r.extension, r.identificationbasis, r.puid, r.extensionmismatch, r.formatname)).toList,
       ffidMetadataRow.datetime.getTime
     )
   }

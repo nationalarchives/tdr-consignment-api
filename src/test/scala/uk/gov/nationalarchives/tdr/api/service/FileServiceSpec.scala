@@ -531,7 +531,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
           "signaturefileversion",
           "signature",
           "pronom",
-          List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"))),
+          List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"), Some(false), Some("formatName"))),
           datetime.getTime
         )
       ),
@@ -628,7 +628,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
           "signaturefileversion",
           "signature",
           "pronom",
-          List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"))),
+          List(FFIDMetadataMatches(Some("txt"), "identification", Some("x-fmt/111"), Some(false), Some("formatName"))),
           datetime.getTime
         )
       ),
@@ -1295,7 +1295,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     FfidmetadataRow(ffidMetadataid, fileId, "pronom", "1.0", datetime, "signaturefileversion", "signature", "pronom")
 
   private def ffidMetadataMatchesRow(ffidMetadataid: UUID): FfidmetadatamatchesRow =
-    FfidmetadatamatchesRow(ffidMetadataid, Some("txt"), "identification", Some("x-fmt/111"))
+    FfidmetadatamatchesRow(ffidMetadataid, Some("txt"), "identification", Some("x-fmt/111"), Some(false), Some("formatName"))
 
   private def fileMetadataRow(fileId: UUID, propertyName: String, value: String): FilemetadataRow =
     FilemetadataRow(UUID.randomUUID(), fileId, value, Timestamp.from(Instant.now()), UUID.randomUUID(), propertyName)
