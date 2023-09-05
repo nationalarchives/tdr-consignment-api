@@ -371,20 +371,20 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       extension: String = "txt",
       identificationBasis: String = "TEST DATA identification",
       puid: String = "TEST DATA puid",
-      extensionmismatch: Boolean = false,
-      formatname: String = "TEST DATA format name"
+      extensionMismatch: Boolean = false,
+      formatName: String = "TEST DATA format name"
   ): Unit = {
     val sql =
       s"""INSERT INTO "FFIDMetadataMatches" """ +
-        s"""("FFIDMetadataId", "Extension", "IdentificationBasis", "PUID", "extensionmismatch", "formatname")""" +
+        s"""("FFIDMetadataId", "Extension", "IdentificationBasis", "PUID", "ExtensionMismatch", "FormatName")""" +
         s"VALUES (?, ?, ?, ?, ?, ?)"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, ffidMetadataId, Types.OTHER)
     ps.setString(2, extension)
     ps.setString(3, identificationBasis)
     ps.setString(4, puid)
-    ps.setBoolean(5, extensionmismatch)
-    ps.setString(6, formatname)
+    ps.setBoolean(5, extensionMismatch)
+    ps.setString(6, formatName)
 
     ps.executeUpdate()
   }
