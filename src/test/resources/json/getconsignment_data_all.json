@@ -18,6 +18,8 @@
       "totalFiles": 3,
       "totalFileSize": 6,
       "includeTopLevelFolder": true,
+      "seriesName": "seriesName",
+      "transferringBodyName": "transferringBodyName",
       "files": [
         {
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
