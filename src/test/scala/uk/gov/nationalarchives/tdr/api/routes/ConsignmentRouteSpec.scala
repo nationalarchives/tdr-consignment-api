@@ -262,7 +262,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_all")
     val response: GraphqlQueryData = runTestQuery("query_alldata", validUserToken(body = defaultBodyCode))
 
-    response.equals(expectedResponse)
+    response should equal(expectedResponse)
   }
   // scalastyle:off magic.number
 
