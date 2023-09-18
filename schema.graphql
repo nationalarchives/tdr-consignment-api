@@ -115,6 +115,8 @@ type Consignment {
   exportLocation: String
   consignmentType: String
   includeTopLevelFolder: Boolean
+  seriesName: String
+  transferringBodyName: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Int!

@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-optics" % "0.14.1",
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.3",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.34",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.36",
   "org.postgresql" % "postgresql" % "42.6.0",
   "com.typesafe.slick" %% "slick" % "3.4.0",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.15.2" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.162",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.165",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
