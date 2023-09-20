@@ -65,7 +65,6 @@ class ConsignmentService(
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
     val timestampNow = Timestamp.from(now)
     val consignmentType: String = addConsignmentInput.consignmentType.validateType
-
     val userBody = token.transferringBody.getOrElse(throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
 
     for {
@@ -73,15 +72,25 @@ class ConsignmentService(
       body <- transferringBodyService.getBodyByCode(userBody)
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentId = uuidSource.uuid
+      seriesid = addConsignmentInput.seriesid
+      transferringBodyResult <- getConsignment(consignmentId).map(_.flatMap(_.transferringBodyName))
+      val seriesIdToUpdate: UUID = seriesid.getOrElse(throw InputDataException(s"seriesId is missing for consignment $consignmentId"))
+      updateResult <- Future {
+        updateSeriesIdOfConsignment(UpdateConsignmentSeriesIdInput(consignmentId, seriesIdToUpdate))
+      }
+      seriesNameResult = if (updateResult == 1) Some(seriesIdToUpdate) else None
+
       consignmentRow = ConsignmentRow(
         consignmentId,
-        addConsignmentInput.seriesid,
+        seriesid,
         token.userId,
         timestampNow,
         consignmentsequence = sequence,
         consignmentreference = consignmentRef,
         consignmenttype = consignmentType,
-        bodyid = body.bodyId
+        bodyid = body.bodyId,
+        transferringbodyname = Some(transferringBodyResult.getOrElse(throw InputDataException(s"No transferring body found in consignment : $consignmentId"))),
+        seriesname = Some(seriesNameResult.getOrElse(throw InputDataException(s"No series name found in consignment : $consignmentId")).toString)
       )
       descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
       closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, NotEntered, timestampNow, Option(timestampNow))
