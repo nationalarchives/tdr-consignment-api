@@ -42,6 +42,7 @@ lazy val akkaHttpVersion = "10.2.10"
 lazy val circeVersion = "0.14.6"
 lazy val testContainersVersion = "0.41.0"
 val http4sVersion = "0.23.23"
+val sttpVersion = "3.9.0"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.0.2",
@@ -63,6 +64,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-optics" % "0.14.1",
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.3",
+  "com.softwaremill.sttp.client3" %% "core" % sttpVersion,
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.36",
   "org.postgresql" % "postgresql" % "42.6.0",
   "com.typesafe.slick" %% "slick" % "3.4.0",

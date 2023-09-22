@@ -7,6 +7,7 @@ import org.postgresql.Driver
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
+import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService
 
 import scala.language.postfixOps
 
@@ -18,6 +19,7 @@ object ApiServer extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
     if (blockHttp4s) {
+      new ReferenceGeneratorService()
       val akkaHttpServer = new AkkaHttpServer()
       val serverBindingFuture = akkaHttpServer.start
       val finalIO = IO
