@@ -22,6 +22,7 @@ import scala.math.min
 class ConsignmentService(
     consignmentRepository: ConsignmentRepository,
     consignmentStatusRepository: ConsignmentStatusRepository,
+    seriesRepository: SeriesRepository,
     transferringBodyService: TransferringBodyService,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
@@ -65,32 +66,28 @@ class ConsignmentService(
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
     val timestampNow = Timestamp.from(now)
     val consignmentType: String = addConsignmentInput.consignmentType.validateType
+
     val userBody = token.transferringBody.getOrElse(throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
+    val seriesId = addConsignmentInput.seriesid
 
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
       body <- transferringBodyService.getBodyByCode(userBody)
+      series <- if (seriesId.isDefined) seriesRepository.getSeries(seriesId.get) else Future(Seq())
+      seriesName = if (series.nonEmpty) Some(series.head.name) else None
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentId = uuidSource.uuid
-      seriesid = addConsignmentInput.seriesid
-      transferringBodyResult <- getConsignment(consignmentId).map(_.flatMap(_.transferringBodyName))
-      val seriesIdToUpdate: UUID = seriesid.getOrElse(throw InputDataException(s"seriesId is missing for consignment $consignmentId"))
-      updateResult <- Future {
-        updateSeriesIdOfConsignment(UpdateConsignmentSeriesIdInput(consignmentId, seriesIdToUpdate))
-      }
-      seriesNameResult = if (updateResult == 1) Some(seriesIdToUpdate) else None
-
       consignmentRow = ConsignmentRow(
         consignmentId,
-        seriesid,
+        seriesId,
         token.userId,
         timestampNow,
         consignmentsequence = sequence,
         consignmentreference = consignmentRef,
         consignmenttype = consignmentType,
         bodyid = body.bodyId,
-        transferringbodyname = Some(transferringBodyResult.getOrElse(throw InputDataException(s"No transferring body found in consignment : $consignmentId"))),
-        seriesname = Some(seriesNameResult.getOrElse(throw InputDataException(s"No series name found in consignment : $consignmentId")).toString)
+        seriesname = seriesName,
+        transferringbodyname = Some(body.name),
       )
       descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
       closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, NotEntered, timestampNow, Option(timestampNow))

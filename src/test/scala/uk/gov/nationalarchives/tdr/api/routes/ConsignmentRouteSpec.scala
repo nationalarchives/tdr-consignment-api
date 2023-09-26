@@ -173,8 +173,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val utils = TestUtils(container.database)
     val expectedResponse: GraphqlMutationData = expectedMutationResponse("data_all")
     val response: GraphqlMutationData = runTestMutation("mutation_alldata", validUserToken(body = defaultBodyCode))
-    println(s"expected : $expectedResponse")
-    println(s"act : $response")
     response.data.get.addConsignment should equal(expectedResponse.data.get.addConsignment)
 
     checkConsignmentExists(response.data.get.addConsignment.consignmentid.get, utils)
