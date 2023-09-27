@@ -87,7 +87,7 @@ class ConsignmentService(
         consignmenttype = consignmentType,
         bodyid = body.bodyId,
         seriesname = seriesName,
-        transferringbodyname = Some(body.name),
+        transferringbodyname = Some(body.name)
       )
       descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
       closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, NotEntered, timestampNow, Option(timestampNow))
