@@ -6,7 +6,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "The consignment API for TDR"
 
-scalaVersion := "2.13.11"
+scalaVersion := "2.13.12"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 (Compile / run / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
@@ -44,7 +44,7 @@ lazy val testContainersVersion = "0.41.0"
 val http4sVersion = "0.23.23"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.0.1",
+  "org.sangria-graphql" %% "sangria" % "4.0.2",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-ember-server" % http4sVersion,
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
-  "io.circe" %% "circe-optics" % "0.14.1",
+  "io.circe" %% "circe-optics" % "0.15.0",
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.3",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.36",
@@ -77,12 +77,12 @@ libraryDependencies ++= Seq(
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.3.0",
   "org.scalatest" %% "scalatest" % "3.2.17" % Test,
   "org.typelevel" %% "cats-effect" % "3.5.1",
-  "org.mockito" %% "mockito-scala" % "1.17.22" % Test,
-  "org.mockito" %% "mockito-scala-scalatest" % "1.17.22" % Test,
+  "org.mockito" %% "mockito-scala" % "1.17.27" % Test,
+  "org.mockito" %% "mockito-scala-scalatest" % "1.17.27" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.15.2" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.165",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.167",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test
