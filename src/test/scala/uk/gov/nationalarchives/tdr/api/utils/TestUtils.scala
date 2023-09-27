@@ -212,13 +212,15 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
       consignmentType: String = "standard",
       bodyId: UUID = fixedBodyId,
-      includeStatusRows: Boolean = true
+      includeStatusRows: Boolean = true,
+      seriesName: Option[String] = Some("seriesName"),
+      transferringBodyName: Option[String] = Some("transferringBodyName")
   ): UUID = {
     val sql =
       """INSERT INTO "Consignment" """ +
         """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
-          |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence")""".stripMargin +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+          |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence", "SeriesName", "TransferringBodyName")""".stripMargin +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     val nextValStatement = connection.prepareStatement("select nextval('consignment_sequence_id') as Seq")
     val nextResults: ResultSet = nextValStatement.executeQuery()
     nextResults.next()
@@ -236,6 +238,8 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setString(8, consignmentType)
     ps.setObject(9, bodyId, Types.OTHER)
     ps.setInt(10, nextSequence)
+    ps.setString(11, seriesName.orNull)
+    ps.setString(12, transferringBodyName.orNull)
     ps.executeUpdate()
     if (includeStatusRows) {
       createConsignmentStatus(consignmentId, DescriptiveMetadata, NotEntered)
