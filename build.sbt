@@ -76,7 +76,7 @@ libraryDependencies ++= Seq(
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.3.0",
   "org.scalatest" %% "scalatest" % "3.2.17" % Test,
-  "org.typelevel" %% "cats-effect" % "3.5.1",
+  "org.typelevel" %% "cats-effect" % "3.5.2",
   "org.mockito" %% "mockito-scala" % "1.17.27" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.27" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
