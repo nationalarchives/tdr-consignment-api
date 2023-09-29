@@ -70,7 +70,9 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       consignmentType: Option[String],
       bodyId: Option[UUID] = None,
       consignmentStatuses: List[ConsignmentStatus] = Nil,
-      includeTopLevelFolder: Option[Boolean] = None
+      includeTopLevelFolder: Option[Boolean] = None,
+      seriesName: Option[String],
+      transferringBodyName: Option[String]
   )
 
   case class ConsignmentStatus(
