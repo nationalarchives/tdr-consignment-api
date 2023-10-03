@@ -16,6 +16,7 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, dire
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes, defaultStatuses}
+import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.reference
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
@@ -53,10 +54,22 @@ class FileService(
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
-      ((allEmptyDirectoryNodes ++ allFileNodes) map { case (path, treeNode) =>
+      val filesAndFolderCombined = allEmptyDirectoryNodes ++ allFileNodes
+      val generatedReferences = new ReferenceGeneratorService().getReferences(filesAndFolderCombined.size)
+      val fileAndFolderAssignedRef: Map[String, (TreeNode, reference)] = filesAndFolderCombined.keys.zip(filesAndFolderCombined.values.zip(generatedReferences)).toMap
+      (fileAndFolderAssignedRef map { case (path, (treeNode, reference)) =>
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
         val fileId = treeNode.id
-        val fileRow = FileRow(fileId, consignmentId, userId, now, filetype = Some(treeNode.treeNodeType), filename = Some(treeNode.name), parentid = parentId)
+        val fileRow = FileRow(
+          fileId,
+          consignmentId,
+          userId,
+          now,
+          filetype = Some(treeNode.treeNodeType),
+          filename = Some(treeNode.name),
+          parentid = parentId,
+          filereference = Some(reference)
+        )
 
         val commonMetadataRows = List(
           row(fileId, path, ClientSideOriginalFilepath),

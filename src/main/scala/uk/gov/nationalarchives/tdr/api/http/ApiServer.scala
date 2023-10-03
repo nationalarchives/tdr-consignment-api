@@ -19,7 +19,6 @@ object ApiServer extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
     if (blockHttp4s) {
-      new ReferenceGeneratorService()
       val akkaHttpServer = new AkkaHttpServer()
       val serverBindingFuture = akkaHttpServer.start
       val finalIO = IO
