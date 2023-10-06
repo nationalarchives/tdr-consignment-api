@@ -73,8 +73,6 @@ class ConsignmentService(
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
       body <- transferringBodyService.getBodyByCode(userBody)
-      series <- if (seriesId.isDefined) seriesRepository.getSeries(seriesId.get) else Future(Seq())
-      seriesName = if (series.nonEmpty) Some(series.head.name) else None
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentId = uuidSource.uuid
       consignmentRow = ConsignmentRow(
@@ -86,7 +84,7 @@ class ConsignmentService(
         consignmentreference = consignmentRef,
         consignmenttype = consignmentType,
         bodyid = body.bodyId,
-        seriesname = seriesName,
+        seriesname = None,
         transferringbodyname = Some(body.name)
       )
       descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
@@ -125,7 +123,8 @@ class ConsignmentService(
 
   def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
     for {
-      result <- consignmentRepository.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput)
+      series <- seriesRepository.getSeries(updateConsignmentSeriesIdInput.seriesId)
+      result <- consignmentRepository.updateSeriesIdAndNameOfConsignment(updateConsignmentSeriesIdInput, Some(series.head.name))
       seriesStatus = if (result == 1) Completed else Failed
       _ <- consignmentStatusRepository.updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, "Series", seriesStatus, Timestamp.from(timeSource.now))
     } yield result
