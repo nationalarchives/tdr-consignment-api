@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.Logger
 import sangria.execution._
 import sangria.marshalling.ResultMarshaller
 import slick.jdbc.JdbcBackend
+import sttp.client3.SimpleHttpClient
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
@@ -81,6 +82,7 @@ trait GraphQLServerBase {
       new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
     val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
+    val referenceGeneratorService = new ReferenceGeneratorService(config, SimpleHttpClient())
     val fileService = new FileService(
       fileRepository,
       consignmentRepository,
@@ -89,6 +91,7 @@ trait GraphQLServerBase {
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorService,
       new CurrentTimeSource,
       uuidSource,
       config

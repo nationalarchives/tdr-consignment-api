@@ -59,6 +59,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val antivirusMetadataRepositoryMock: AntivirusMetadataRepository = mock[AntivirusMetadataRepository]
   val validateFileMetadataServiceMock: ValidateFileMetadataService = mock[ValidateFileMetadataService]
+  val referenceGeneratorServiceMock: ReferenceGeneratorService = mock[ReferenceGeneratorService]
   val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepositoryMock, fileStatusRepositoryMock, uuidSource, FixedTimeSource)
   val fileMetadataService =
     new FileMetadataService(
@@ -130,6 +131,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -175,6 +177,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       mock[AntivirusMetadataService],
       mock[FileStatusService],
       mock[FileMetadataService],
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -253,6 +256,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -392,6 +396,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         antivirusMetadataService,
         fileStatusService,
         fileMetadataService,
+        referenceGeneratorServiceMock,
         FixedTimeSource,
         fixedUuidSource,
         ConfigFactory.load()
@@ -490,6 +495,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -601,6 +607,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -688,6 +695,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -733,6 +741,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
     mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
 
     val service = new FileService(
@@ -743,6 +752,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusServiceMock,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -835,6 +845,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val metadataInputTwo = ClientSideMetadataInput("", "", 1L, 1L, 2)
 
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3"))
     mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
 
     val service = new FileService(
@@ -845,6 +856,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -1285,6 +1297,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       antivirusMetadataService,
       fileStatusService,
       fileMetadataService,
+      referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()

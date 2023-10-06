@@ -35,6 +35,7 @@ class FileService(
     avMetadataService: AntivirusMetadataService,
     fileStatusService: FileStatusService,
     fileMetadataService: FileMetadataService,
+    referenceGeneratorService: ReferenceGeneratorService,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
     config: Config
@@ -55,7 +56,7 @@ class FileService(
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
       val filesAndFolderCombined = allEmptyDirectoryNodes ++ allFileNodes
-      val generatedReferences = new ReferenceGeneratorService().getReferences(filesAndFolderCombined.size)
+      val generatedReferences = referenceGeneratorService.getReferences(filesAndFolderCombined.size)
       val fileAndFolderAssignedRef: Map[String, (TreeNode, reference)] = filesAndFolderCombined.keys.zip(filesAndFolderCombined.values.zip(generatedReferences)).toMap
       (fileAndFolderAssignedRef map { case (path, (treeNode, reference)) =>
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
