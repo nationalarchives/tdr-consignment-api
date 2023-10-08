@@ -16,7 +16,6 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, dire
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes, defaultStatuses}
-import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.reference
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
@@ -45,6 +44,7 @@ class FileService(
 
   private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
   private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
+  private val referenceGeneratorFeatureBlock: Boolean = config.getBoolean("featureAccessBlock.assignFileReferences")
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
@@ -56,8 +56,12 @@ class FileService(
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
       val filesAndFolderCombined = allEmptyDirectoryNodes ++ allFileNodes
-      val generatedReferences = referenceGeneratorService.getReferences(filesAndFolderCombined.size)
-      val fileAndFolderAssignedRef: Map[String, (TreeNode, reference)] = filesAndFolderCombined.keys.zip(filesAndFolderCombined.values.zip(generatedReferences)).toMap
+      val fileAndFolderAssignedRef = if (referenceGeneratorFeatureBlock) {
+        filesAndFolderCombined.keys.zip(filesAndFolderCombined.values.zip(List.fill(filesAndFolderCombined.size)(None))).toMap
+      } else {
+        val generatedReferences = referenceGeneratorService.getReferences(filesAndFolderCombined.size)
+        filesAndFolderCombined.keys.zip(filesAndFolderCombined.values.zip(generatedReferences.map(Some(_)))).toMap
+      }
       (fileAndFolderAssignedRef map { case (path, (treeNode, reference)) =>
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
         val fileId = treeNode.id
@@ -69,7 +73,7 @@ class FileService(
           filetype = Some(treeNode.treeNodeType),
           filename = Some(treeNode.name),
           parentid = parentId,
-          filereference = Some(reference)
+          filereference = reference
         )
 
         val commonMetadataRows = List(
