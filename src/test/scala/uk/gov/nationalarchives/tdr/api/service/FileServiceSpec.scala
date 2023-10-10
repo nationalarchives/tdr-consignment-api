@@ -49,7 +49,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   private val bodyId = UUID.randomUUID()
   val uuidSource: FixedUUIDSource = new FixedUUIDSource()
 
-  val consignmentRepositoryMock: ConsignmentRepository = mock[ConsignmentRepository]
   val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
   val customMetadataPropertiesRepositoryMock: CustomMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
   val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
@@ -125,7 +124,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val fileService = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -171,7 +169,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      mock[ConsignmentRepository],
       mock[CustomMetadataPropertiesRepository],
       mock[FFIDMetadataService],
       mock[AntivirusMetadataService],
@@ -250,7 +247,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -390,7 +386,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
       val service = new FileService(
         fileRepositoryMock,
-        consignmentRepositoryMock,
         customMetadataPropertiesRepositoryMock,
         ffidMetadataService,
         antivirusMetadataService,
@@ -489,7 +484,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -601,7 +595,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -689,7 +682,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -745,7 +737,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -837,7 +828,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -941,7 +931,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     val service = new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
@@ -1382,7 +1371,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     new FileService(
       fileRepositoryMock,
-      consignmentRepositoryMock,
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,

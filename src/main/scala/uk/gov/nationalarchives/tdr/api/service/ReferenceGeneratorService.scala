@@ -36,17 +36,17 @@ class ReferenceGeneratorService(config: Config, client: SimpleHttpClient) {
     }
 
     @tailrec
-    def recursivelyFetchReferences(numberOfRefs: Int, acc: List[reference]): List[reference] = {
+    def fetchReferences(numberOfRefs: Int, acc: List[reference]): List[reference] = {
       if (numberOfRefs <= 0) acc
       else {
         val batchSize = Math.min(numberOfRefs, refGeneratorLimit)
         val response: Response[Either[String, reference]] = client.send(basicRequest.get(uri"$refGeneratorUrl/$environment/counter?numberofrefs=$batchSize"))
-        recursivelyFetchReferences(numberOfRefs - batchSize, acc ++ processResponse(response))
+        fetchReferences(numberOfRefs - batchSize, acc ++ processResponse(response))
       }
     }
 
     if (numberOfRefs > refGeneratorLimit) {
-      recursivelyFetchReferences(numberOfRefs, Nil)
+      fetchReferences(numberOfRefs, Nil)
     } else {
       val response: Response[Either[String, reference]] = client.send(basicRequest.get(uri"$refGeneratorUrl/$environment/counter?numberofrefs=$numberOfRefs"))
       processResponse(response)

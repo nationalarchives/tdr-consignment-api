@@ -28,7 +28,6 @@ import scala.math.min
 
 class FileService(
     fileRepository: FileRepository,
-    consignmentRepository: ConsignmentRepository,
     customMetadataPropertiesRepository: CustomMetadataPropertiesRepository,
     ffidMetadataService: FFIDMetadataService,
     avMetadataService: AntivirusMetadataService,
@@ -55,14 +54,14 @@ class FileService(
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
-      val filesAndFolderCombined = allEmptyDirectoryNodes ++ allFileNodes
-      val fileAndFolderAssignedRef = if (referenceGeneratorFeatureBlock) {
-        filesAndFolderCombined.keys.zip(filesAndFolderCombined.values.zip(List.fill(filesAndFolderCombined.size)(None))).toMap
+      val allNodes = allEmptyDirectoryNodes ++ allFileNodes
+      val allNodesWithReference = if (referenceGeneratorFeatureBlock) {
+        allNodes.keys.zip(allNodes.values.zip(List.fill(allNodes.size)(None))).toMap
       } else {
-        val generatedReferences = referenceGeneratorService.getReferences(filesAndFolderCombined.size)
-        filesAndFolderCombined.keys.zip(filesAndFolderCombined.values.zip(generatedReferences.map(Some(_)))).toMap
+        val generatedReferences = referenceGeneratorService.getReferences(allNodes.size)
+        allNodes.keys.zip(allNodes.values.zip(generatedReferences.map(Some(_)))).toMap
       }
-      (fileAndFolderAssignedRef map { case (path, (treeNode, reference)) =>
+      (allNodesWithReference map { case (path, (treeNode, reference)) =>
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
         val fileId = treeNode.id
         val fileRow = FileRow(

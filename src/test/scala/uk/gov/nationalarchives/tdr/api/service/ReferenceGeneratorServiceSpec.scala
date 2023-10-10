@@ -24,7 +24,7 @@ class ReferenceGeneratorServiceSpec extends AnyFlatSpec with Matchers {
     getReferences shouldBe List("REF1", "REF2")
   }
 
-  "getReferences" should "return a list of references if referenceLimit is exceeded" in {
+  "getReferences" should "return the correct number of reference if 'referenceLimit' is exceeded in the request" in {
     val sttpBackendStub = SttpBackendStub.synchronous
       .whenRequestMatches(_.uri.path.startsWith(List("intg", "counter")))
       .thenRespondCyclic("""["REF1","REF2"]""", """["REF3"]""")
