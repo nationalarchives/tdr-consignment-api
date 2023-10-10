@@ -1,18 +1,15 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.ConfigFactory
-import org.mockito.MockitoSugar
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks
 import sttp.client3.SimpleHttpClient
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.Method
 
 import scala.concurrent.ExecutionContext
 
-class ReferenceGeneratorServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures with TableDrivenPropertyChecks {
+class ReferenceGeneratorServiceSpec extends AnyFlatSpec with Matchers  {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   case class User(id: String)

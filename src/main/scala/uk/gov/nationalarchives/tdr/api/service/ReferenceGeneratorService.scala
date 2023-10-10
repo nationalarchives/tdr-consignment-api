@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.circe.parser._
 import org.apache.http.client.HttpResponseException
@@ -21,8 +21,9 @@ class ReferenceGeneratorService(config: Config, client: SimpleHttpClient) {
       try {
         response.body match {
           case Left(body) =>
-            logger.error(s"Non-2xx response to GET with code ${response.code}:\n$body")
-            throw new HttpResponseException(response.code.code, "Failed to get references from reference generator api")
+            val message = "Failed to get references from reference generator api"
+            logger.error(s"${response.code} $message:\n$body")
+            throw new HttpResponseException(response.code.code, message)
           case Right(body) =>
             val references = parse(body).getOrElse(null)
             val listOfReferences = references.as[List[reference]].getOrElse(null)
@@ -47,10 +48,8 @@ class ReferenceGeneratorService(config: Config, client: SimpleHttpClient) {
     if (numberOfRefs > refGeneratorLimit) {
       recursivelyFetchReferences(numberOfRefs, Nil)
     } else {
-      try {
-        val response: Response[Either[String, reference]] = client.send(basicRequest.get(uri"$refGeneratorUrl/$environment/counter?numberofrefs=$numberOfRefs"))
-        processResponse(response)
-      } finally client.close()
+      val response: Response[Either[String, reference]] = client.send(basicRequest.get(uri"$refGeneratorUrl/$environment/counter?numberofrefs=$numberOfRefs"))
+      processResponse(response)
     }
   }
 }
