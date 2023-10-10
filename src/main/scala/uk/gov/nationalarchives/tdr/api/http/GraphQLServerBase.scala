@@ -43,6 +43,7 @@ trait GraphQLServerBase {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
     val timeSource = new CurrentTimeSource
+    val seriesRepository = new SeriesRepository(db)
     val consignmentRepository = new ConsignmentRepository(db, timeSource)
     val fileMetadataRepository = new FileMetadataRepository(db)
     val fileRepository = new FileRepository(db)
@@ -56,13 +57,14 @@ trait GraphQLServerBase {
     val consignmentService = new ConsignmentService(
       consignmentRepository,
       consignmentStatusRepository,
+      seriesRepository,
       transferringBodyService,
       timeSource,
       uuidSource,
       config
     )
-    val seriesService = new SeriesService(new SeriesRepository(db), uuidSource)
-    val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), new ConsignmentStatusRepository(db), uuidSource, timeSource)
+    val seriesService = new SeriesService(seriesRepository, uuidSource)
+    val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
     val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
     val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)

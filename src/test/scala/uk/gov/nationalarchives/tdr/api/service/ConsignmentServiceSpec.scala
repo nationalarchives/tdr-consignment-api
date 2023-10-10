@@ -46,6 +46,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val consignmentSequence: Long = 400L
   // scalastyle:on magic.number
   val consignmentReference = "TDR-2020-VB"
+  val mockSeries: SeriesRow = SeriesRow(seriesId, bodyId, seriesName, seriesCode)
   val mockConsignment: ConsignmentRow = ConsignmentRow(
     consignmentId,
     Some(seriesId),
@@ -54,7 +55,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignmentsequence = consignmentSequence,
     consignmentreference = consignmentReference,
     consignmenttype = "standard",
-    bodyid = bodyId
+    bodyid = bodyId,
+    seriesname = Some(seriesName),
+    transferringbodyname = Some(bodyName)
   )
 
   val consignmentRepoMock: ConsignmentRepository = mock[ConsignmentRepository]
@@ -63,10 +66,12 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val fileRepositoryMock: FileRepository = mock[FileRepository]
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
+  val seriesRepositoryMock: SeriesRepository = mock[SeriesRepository]
   val mockResponse: Future[ConsignmentRow] = Future.successful(mockConsignment)
   val consignmentService = new ConsignmentService(
     consignmentRepoMock,
     consignmentStatusRepoMock,
+    seriesRepositoryMock,
     transferringBodyServiceMock,
     FixedTimeSource,
     fixedUuidSource,
@@ -78,6 +83,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockToken = mock[Token]
     val mockBody = mock[TransferringBody]
     val consignmentStatusRow = mock[ConsignmentstatusRow]
+    when(seriesRepositoryMock.getSeries(seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
     when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
@@ -87,11 +93,15 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
+    verify(seriesRepositoryMock).getSeries(seriesId)
+
     result.consignmentid shouldBe consignmentId
     result.seriesid shouldBe Some(seriesId)
     result.userid shouldBe userId
     result.consignmentType shouldBe "standard"
     result.bodyId shouldBe bodyId
+    result.seriesName shouldBe Some(seriesName)
+    result.transferringBodyName shouldBe Some(bodyName)
   }
 
   "addConsignment" should "create the metadata consignment statuses" in {
@@ -101,6 +111,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockBody = mock[TransferringBody]
     val consignmentStatusRow = mock[ConsignmentstatusRow]
     val rowCaptor: ArgumentCaptor[Seq[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[Seq[ConsignmentstatusRow]])
+    when(seriesRepositoryMock.getSeries(seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
     when(consignmentStatusRepoMock.addConsignmentStatuses(rowCaptor.capture())).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
@@ -127,11 +138,13 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockToken = mock[Token]
     val mockBody = mock[TransferringBody]
     val consignmentStatusRow = mock[ConsignmentstatusRow]
+    when(seriesRepositoryMock.getSeries(seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
     when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
     when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
     when(mockBody.bodyId).thenReturn(bodyId)
+    when(mockBody.name).thenReturn(bodyName)
     when(mockToken.transferringBody).thenReturn(Some("body-code"))
     when(mockToken.userId).thenReturn(userId)
     consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
@@ -228,6 +241,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateExportData" should "update the export data for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
+    val seriesRepositoryMock = mock[SeriesRepository]
     val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
@@ -235,6 +249,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val service: ConsignmentService = new ConsignmentService(
       consignmentRepoMock,
       consignmentStatusRepoMock,
+      seriesRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
@@ -253,6 +268,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateTransferInitiated" should "update the transfer initiated fields for a given consignment" in {
     val consignmentRepoMock = mock[ConsignmentRepository]
+    val seriesRepositoryMock = mock[SeriesRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
     val fixedUuidSource = new FixedUUIDSource()
     val consignmentStatusCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
@@ -260,6 +276,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val service: ConsignmentService = new ConsignmentService(
       consignmentRepoMock,
       consignmentStatusRepoMock,
+      seriesRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,

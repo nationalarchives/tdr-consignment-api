@@ -22,6 +22,7 @@ import scala.math.min
 class ConsignmentService(
     consignmentRepository: ConsignmentRepository,
     consignmentStatusRepository: ConsignmentStatusRepository,
+    seriesRepository: SeriesRepository,
     transferringBodyService: TransferringBodyService,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
@@ -67,21 +68,26 @@ class ConsignmentService(
     val consignmentType: String = addConsignmentInput.consignmentType.validateType
 
     val userBody = token.transferringBody.getOrElse(throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
+    val seriesId = addConsignmentInput.seriesid
 
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
       body <- transferringBodyService.getBodyByCode(userBody)
+      series <- if (seriesId.isDefined) seriesRepository.getSeries(seriesId.get) else Future(Seq())
+      seriesName = if (series.nonEmpty) Some(series.head.name) else None
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentId = uuidSource.uuid
       consignmentRow = ConsignmentRow(
         consignmentId,
-        addConsignmentInput.seriesid,
+        seriesId,
         token.userId,
         timestampNow,
         consignmentsequence = sequence,
         consignmentreference = consignmentRef,
         consignmenttype = consignmentType,
-        bodyid = body.bodyId
+        bodyid = body.bodyId,
+        seriesname = seriesName,
+        transferringbodyname = Some(body.name)
       )
       descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
       closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, NotEntered, timestampNow, Option(timestampNow))

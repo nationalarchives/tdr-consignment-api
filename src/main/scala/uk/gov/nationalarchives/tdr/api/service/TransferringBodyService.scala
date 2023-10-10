@@ -12,13 +12,13 @@ class TransferringBodyService(transferringBodyRepository: TransferringBodyReposi
 
   def getBody(seriesId: UUID)(implicit executionContext: ExecutionContext): Future[TransferringBody] = {
     val bodyRow = transferringBodyRepository.getTransferringBody(seriesId)
-    bodyRow.map(body => TransferringBody(body.tdrcode, body.bodyid))
+    bodyRow.map(body => TransferringBody(body.tdrcode, body.bodyid, body.name))
   }
 
   def getBodyByCode(tdrCode: String)(implicit executionContext: ExecutionContext): Future[TransferringBody] = {
     val bodyRow = transferringBodyRepository.getTransferringBodyByCode(tdrCode)
     bodyRow.map {
-      case Some(value) => TransferringBody(value.tdrcode, value.bodyid)
+      case Some(value) => TransferringBody(value.tdrcode, value.bodyid, value.name)
       case _           => throw InputDataException(s"No transferring body found for code '$tdrCode'")
     }
   }
