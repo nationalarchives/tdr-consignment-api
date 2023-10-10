@@ -88,7 +88,7 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def updateSeriesIdAndNameOfConsignment(updateConsignmentSeriesIdInput: ConsignmentFields.UpdateConsignmentSeriesIdInput, seriesName: Option[String]): Future[Int] = {
+  def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: ConsignmentFields.UpdateConsignmentSeriesIdInput, seriesName: Option[String]): Future[Int] = {
     val update = Consignment
       .filter(_.consignmentid === updateConsignmentSeriesIdInput.consignmentId)
       .map(t => (t.seriesid, t.seriesname))

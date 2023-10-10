@@ -298,7 +298,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignmentReferences should equal(List("TDR-2021-B", "TDR-2021-A"))
   }
 
-  "updateSeriesIdAndNameOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>
+  "updateSeriesOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
@@ -312,7 +312,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     val input = ConsignmentFields.UpdateConsignmentSeriesIdInput(consignmentId = consignmentIdOne, seriesId = seriesId)
 
-    val response = consignmentRepository.updateSeriesIdAndNameOfConsignment(input, seriesName.some).futureValue
+    val response = consignmentRepository.updateSeriesOfConsignment(input, seriesName.some).futureValue
 
     response should be(1)
     val consignment = consignmentRepository.getConsignment(consignmentIdOne).futureValue.head

@@ -308,40 +308,40 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     series.description shouldBe mockSeries.head.description
   }
 
-  "updateSeriesIdOfConsignment" should "update the seriesId, seriesName and status for a given consignment" in {
+  "updateSeriesOfConsignment" should "update the seriesId, seriesName and status for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     val statusType = "Series"
     val expectedSeriesStatus = Completed
     val expectedResult = 1
-    when(consignmentRepoMock.updateSeriesIdAndNameOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
+    when(consignmentRepoMock.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
       .thenReturn(Future.successful(1))
     when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Completed, Timestamp.from(fixedTimeSource)))
       .thenReturn(Future.successful(1))
     when(seriesRepositoryMock.getSeries(updateConsignmentSeriesIdInput.seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
 
-    val result = consignmentService.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput).futureValue
+    val result = consignmentService.updateSeriesOfConsignment(updateConsignmentSeriesIdInput).futureValue
 
-    verify(consignmentRepoMock).updateSeriesIdAndNameOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName))
+    verify(consignmentRepoMock).updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName))
     verify(consignmentStatusRepoMock)
       .updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, statusType, expectedSeriesStatus, Timestamp.from(fixedTimeSource))
 
     result should equal(expectedResult)
   }
 
-  "updateSeriesIdOfConsignment" should "update the status with 'Failed' if seriesId update fails for a given consignment" in {
+  "updateSeriesOfConsignment" should "update the status with 'Failed' if seriesId update fails for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     val statusType = "Series"
     val expectedSeriesStatus = Failed
     val expectedResult = 0
-    when(consignmentRepoMock.updateSeriesIdAndNameOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
+    when(consignmentRepoMock.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
       .thenReturn(Future.successful(0))
     when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Failed, Timestamp.from(fixedTimeSource)))
       .thenReturn(Future.successful(1))
     when(seriesRepositoryMock.getSeries(updateConsignmentSeriesIdInput.seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
 
-    val result = consignmentService.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput).futureValue
+    val result = consignmentService.updateSeriesOfConsignment(updateConsignmentSeriesIdInput).futureValue
 
-    verify(consignmentRepoMock).updateSeriesIdAndNameOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName))
+    verify(consignmentRepoMock).updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName))
     verify(consignmentStatusRepoMock)
       .updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, statusType, expectedSeriesStatus, Timestamp.from(fixedTimeSource))
 

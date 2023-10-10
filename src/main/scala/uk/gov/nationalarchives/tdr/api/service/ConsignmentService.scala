@@ -121,10 +121,10 @@ class ConsignmentService(
     consignment.map(rows => rows.headOption.map(series => Series(series.seriesid, series.bodyid, series.name, series.code, series.description)))
   }
 
-  def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
+  def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
     for {
       series <- seriesRepository.getSeries(updateConsignmentSeriesIdInput.seriesId)
-      result <- consignmentRepository.updateSeriesIdAndNameOfConsignment(updateConsignmentSeriesIdInput, Some(series.head.name))
+      result <- consignmentRepository.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, series.headOption.map(_.name))
       seriesStatus = if (result == 1) Completed else Failed
       _ <- consignmentStatusRepository.updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, "Series", seriesStatus, Timestamp.from(timeSource.now))
     } yield result
