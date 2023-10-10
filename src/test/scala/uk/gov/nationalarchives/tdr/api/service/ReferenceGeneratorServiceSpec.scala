@@ -9,7 +9,7 @@ import sttp.model.Method
 
 import scala.concurrent.ExecutionContext
 
-class ReferenceGeneratorServiceSpec extends AnyFlatSpec with Matchers  {
+class ReferenceGeneratorServiceSpec extends AnyFlatSpec with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   case class User(id: String)
