@@ -88,11 +88,11 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: ConsignmentFields.UpdateConsignmentSeriesIdInput): Future[Int] = {
+  def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: ConsignmentFields.UpdateConsignmentSeriesIdInput, seriesName: Option[String]): Future[Int] = {
     val update = Consignment
       .filter(_.consignmentid === updateConsignmentSeriesIdInput.consignmentId)
-      .map(t => t.seriesid)
-      .update(Some(updateConsignmentSeriesIdInput.seriesId))
+      .map(t => (t.seriesid, t.seriesname))
+      .update(Some(updateConsignmentSeriesIdInput.seriesId), seriesName)
     db.run(update)
   }
 

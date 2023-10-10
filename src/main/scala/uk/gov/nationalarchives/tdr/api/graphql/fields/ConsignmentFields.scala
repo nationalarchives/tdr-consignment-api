@@ -309,7 +309,7 @@ object ConsignmentFields {
       "updateConsignmentSeriesId",
       OptionType(IntType),
       arguments = UpdateConsignmentSeriesIdArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentService.updateSeriesIdOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
+      resolve = ctx => ctx.ctx.consignmentService.updateSeriesOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)
     )
   )
