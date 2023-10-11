@@ -124,8 +124,8 @@ class ConsignmentService(
 
   def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
     for {
-      series <- seriesRepository.getSeries(updateConsignmentSeriesIdInput.seriesId)
-      result <- consignmentRepository.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, series.headOption.map(_.name))
+      seriesName <- getSeriesName(Some(updateConsignmentSeriesIdInput.seriesId))
+      result <- consignmentRepository.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, seriesName)
       seriesStatus = if (result == 1) Completed else Failed
       _ <- consignmentStatusRepository.updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, "Series", seriesStatus, Timestamp.from(timeSource.now))
     } yield result
