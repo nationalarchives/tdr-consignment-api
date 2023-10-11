@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: sbt scalafmtCheckAll 'graphqlValidateSchema "build" "consignmentApi"'
         env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
-      - run: sbt scalafmtCheckAll 'graphqlValidateSchema "build" "consignmentApi"'
   setup-tests:
     runs-on: ubuntu-latest
     outputs:
