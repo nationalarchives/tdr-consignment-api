@@ -73,8 +73,7 @@ class ConsignmentService(
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
       body <- transferringBodyService.getBodyByCode(userBody)
-      series <- if (seriesId.isDefined) seriesRepository.getSeries(seriesId.get) else Future(Seq())
-      seriesName = if (series.nonEmpty) Some(series.head.name) else None
+      seriesName <- getSeriesName(seriesId)
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentId = uuidSource.uuid
       consignmentRow = ConsignmentRow(
@@ -123,9 +122,10 @@ class ConsignmentService(
     consignment.map(rows => rows.headOption.map(series => Series(series.seriesid, series.bodyid, series.name, series.code, series.description)))
   }
 
-  def updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
+  def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
     for {
-      result <- consignmentRepository.updateSeriesIdOfConsignment(updateConsignmentSeriesIdInput)
+      seriesName <- getSeriesName(Some(updateConsignmentSeriesIdInput.seriesId))
+      result <- consignmentRepository.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, seriesName)
       seriesStatus = if (result == 1) Completed else Failed
       _ <- consignmentStatusRepository.updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, "Series", seriesStatus, Timestamp.from(timeSource.now))
     } yield result
@@ -172,6 +172,14 @@ class ConsignmentService(
     consignmentRows
       .map(cr => convertRowToConsignment(cr))
       .map(c => ConsignmentEdge(c, c.consignmentReference))
+  }
+
+  private def getSeriesName(seriesId: Option[UUID]): Future[Option[String]] = {
+    if (seriesId.isDefined) {
+      seriesRepository.getSeries(seriesId.get).map(_.headOption.map(_.name))
+    } else {
+      Future(None)
+    }
   }
 }
 

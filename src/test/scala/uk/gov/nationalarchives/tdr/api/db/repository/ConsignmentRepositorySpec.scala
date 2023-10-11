@@ -5,6 +5,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
@@ -295,6 +296,28 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     response should have size 2
     consignmentReferences should equal(List("TDR-2021-B", "TDR-2021-A"))
+  }
+
+  "updateSeriesOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    val seriesId: UUID = UUID.fromString("20e88b3c-d063-4a6e-8b61-187d8c51d11d")
+    val seriesName: String = "Mock1"
+    val bodyId: UUID = UUID.fromString("8a72cc59-7f2f-4e55-a263-4a4cb9f677f5")
+
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    utils.addTransferringBody(bodyId, "MOCK Department", "Code123")
+    utils.addSeries(seriesId, bodyId, "TDR-2020-XYZ", seriesName)
+
+    val input = ConsignmentFields.UpdateConsignmentSeriesIdInput(consignmentId = consignmentIdOne, seriesId = seriesId)
+
+    val response = consignmentRepository.updateSeriesOfConsignment(input, seriesName.some).futureValue
+
+    response should be(1)
+    val consignment = consignmentRepository.getConsignment(consignmentIdOne).futureValue.head
+    consignment.seriesid should be(seriesId.some)
+    consignment.seriesname should be(seriesName.some)
   }
 
   "totalConsignments" should "return total number of consignments" in withContainers { case container: PostgreSQLContainer =>
