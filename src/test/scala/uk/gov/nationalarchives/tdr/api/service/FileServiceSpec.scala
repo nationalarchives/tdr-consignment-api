@@ -977,6 +977,94 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
+  "addFile" should "not add files, directories, client and static metadata when reference generator throws an exception" in {
+    val ffidMetadataService = mock[FFIDMetadataService]
+    val antivirusMetadataService = mock[AntivirusMetadataService]
+    val fileRepositoryMock = mock[FileRepository]
+    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val fileMetadataService =
+      new FileMetadataService(
+        fileMetadataRepositoryMock,
+        consignmentStatusService,
+        customMetadataServiceMock,
+        validateFileMetadataServiceMock,
+        FixedTimeSource,
+        new FixedUUIDSource()
+      )
+    val fixedUuidSource = new FixedUUIDSource()
+    val fileStatusServiceMock = mock[FileStatusService]
+
+    val consignmentId = UUID.randomUUID()
+    val userId = UUID.randomUUID()
+    val file1Id = UUID.fromString("47e365a4-fc1e-4375-b2f6-dccb6d361f5f")
+    val file2Id = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+
+    val fileRowCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
+    val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
+
+    val metadataInputOne = ClientSideMetadataInput("/a/nested/path/OriginalPath1", "Checksum1", 1L, 1L, 1)
+    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, 2)
+
+    when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
+    when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenThrow(new Exception("some exception"))
+    mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
+
+    val service = new FileService(
+      fileRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
+      ffidMetadataService,
+      antivirusMetadataService,
+      fileStatusServiceMock,
+      fileMetadataService,
+      referenceGeneratorServiceMock,
+      FixedTimeSource,
+      fixedUuidSource,
+      ConfigFactory.load().withValue("featureAccessBlock.assignFileReferences", ConfigValueFactory.fromAnyRef("false"))
+    )
+
+    val expectedStatusInput = AddMultipleFileStatusesInput(
+      List(
+        AddFileStatusInput(file1Id, "ClosureMetadata", "NotEntered"),
+        AddFileStatusInput(file1Id, "DescriptiveMetadata", "NotEntered"),
+        AddFileStatusInput(file2Id, "ClosureMetadata", "NotEntered"),
+        AddFileStatusInput(file2Id, "DescriptiveMetadata", "NotEntered")
+      )
+    )
+
+    val thrown = intercept[Exception] {
+      service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
+    }
+    assert(thrown.getMessage === "The future returned an exception of type: java.lang.Exception, with message: some exception.")
+
+    verify(fileRepositoryMock, times(0)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    verify(fileStatusServiceMock, times(0)).addFileStatuses(expectedStatusInput)
+
+    val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
+    val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
+
+    val expectedFileRows = 0
+    fileRows.size should equal(expectedFileRows)
+    fileRows.foreach(row => {
+      row.consignmentid should equal(consignmentId)
+      row.userid should equal(userId)
+    })
+    val expectedSize = 0
+    metadataRows.size should equal(expectedSize)
+    staticMetadataProperties.foreach(prop => {
+      metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(0)
+    })
+
+    clientSideProperties.foreach(prop => {
+      val count = metadataRows.count(r => r.propertyname == prop)
+      prop match {
+        case ClientSideOriginalFilepath | Filename | FileType => count should equal(0) // Directories have this set
+        case _                                                => count should equal(0)
+      }
+    })
+    verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
+  }
+
   "getPaginatedFiles" should "return all the file edges after the cursor to the limit" in {
     val fileRepositoryMock = mock[FileRepository]
     val consignmentId = UUID.randomUUID()
