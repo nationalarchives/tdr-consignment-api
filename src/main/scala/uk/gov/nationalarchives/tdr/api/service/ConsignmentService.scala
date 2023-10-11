@@ -73,6 +73,7 @@ class ConsignmentService(
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
       body <- transferringBodyService.getBodyByCode(userBody)
+      seriesName <- getSeriesName(seriesId)
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentId = uuidSource.uuid
       consignmentRow = ConsignmentRow(
@@ -84,7 +85,7 @@ class ConsignmentService(
         consignmentreference = consignmentRef,
         consignmenttype = consignmentType,
         bodyid = body.bodyId,
-        seriesname = None,
+        seriesname = seriesName,
         transferringbodyname = Some(body.name)
       )
       descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
@@ -171,6 +172,14 @@ class ConsignmentService(
     consignmentRows
       .map(cr => convertRowToConsignment(cr))
       .map(c => ConsignmentEdge(c, c.consignmentReference))
+  }
+
+  private def getSeriesName(seriesId: Option[UUID]): Future[Option[String]] = {
+    if (seriesId.isDefined) {
+      seriesRepository.getSeries(seriesId.get).map(_.headOption.map(_.name))
+    } else {
+      Future(None)
+    }
   }
 }
 
