@@ -58,3 +58,11 @@ The generated schema file will be placed in the following location: `target/sbt-
 
 After this file is merged into master, it will only be used by the generated-graphql project when that project is next deployed.
 In order to manually deploy the generated-graphql, follow [these instructions](https://github.com/nationalarchives/tdr-generated-graphql).
+
+### Akka Licence
+
+The consignment-api makes use of a commercial Akka licence.
+
+The build requires a licence token which is stored as an SSM parameter in TDR management account: `/mgmt/akka/licence_token`
+
+Details about how to use the licence can be found here: https://www.lightbend.com/account/lightbend-platform/credentials
