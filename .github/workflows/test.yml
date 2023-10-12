@@ -34,6 +34,8 @@ jobs:
         file: ${{ fromJSON(needs.setup-tests.outputs.files) }}
     steps:
       - uses: actions/checkout@v3
-      - run: docker build -f Dockerfile-tests -t tests . sbt 'testOnly *${{ matrix.file }}*'
+      - run: |
+          docker build -f Dockerfile-tests -t tests .
+          sbt 'testOnly *${{ matrix.file }}*'
         env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
