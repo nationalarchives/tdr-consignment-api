@@ -63,6 +63,16 @@ In order to manually deploy the generated-graphql, follow [these instructions](h
 
 The consignment-api makes use of a commercial Akka licence.
 
-The build requires a licence token which is stored as an SSM parameter in TDR management account: `/mgmt/akka/licence_token`
+The build requires a licence token which is stored as an SSM parameter in TDR management account: `/mgmt/akka/licence_token`.
+
+The licence token is set as a repository secret `AKKA_TOKEN` which is then used by the Github actions where needed.
 
 Details about how to use the licence can be found here: https://www.lightbend.com/account/lightbend-platform/credentials
+
+#### Running locally
+
+The latest version of Akka can still be pulled down for local use. 
+
+To ensure when building locally an error is not thrown set the environment variable `AKKA_TOKEN` with some placeholder value.
+
+For example: `AKKA_TOKEN=dummyTokenValue`
