@@ -116,12 +116,6 @@ class ConsignmentService(
     } yield PaginatedConsignments(lastCursor, paginatedConsignments)
   }
 
-  @deprecated("method getSeriesOfConsignment in class ConsignmentService is deprecated: use getConsignment(consignmentId: UUID)")
-  def getSeriesOfConsignment(consignmentId: UUID): Future[Option[Series]] = {
-    val consignment: Future[Seq[SeriesRow]] = consignmentRepository.getSeriesOfConsignment(consignmentId)
-    consignment.map(rows => rows.headOption.map(series => Series(series.seriesid, series.bodyid, series.name, series.code, series.description)))
-  }
-
   def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
     for {
       seriesName <- getSeriesName(Some(updateConsignmentSeriesIdInput.seriesId))
@@ -131,7 +125,6 @@ class ConsignmentService(
     } yield result
   }
 
-  @deprecated("method getTransferringBodyOfConsignment in class ConsignmentService is deprecated: use getConsignment(consignmentId: UUID)")
   def getTransferringBodyOfConsignment(consignmentId: UUID): Future[Option[TransferringBody]] = {
     val consignment: Future[Seq[BodyRow]] = consignmentRepository.getTransferringBodyOfConsignment(consignmentId)
     consignment.map(rows => rows.headOption.map(transferringBody => TransferringBody(transferringBody.name, transferringBody.tdrcode)))
