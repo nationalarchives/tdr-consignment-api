@@ -56,7 +56,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignmentreference = consignmentReference,
     consignmenttype = "standard",
     bodyid = bodyId,
-    seriesname = None,
+    seriesname = Some(seriesName),
     transferringbodyname = Some(bodyName)
   )
 
@@ -93,12 +93,14 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
+    verify(seriesRepositoryMock).getSeries(seriesId)
+
     result.consignmentid shouldBe consignmentId
     result.seriesid shouldBe Some(seriesId)
     result.userid shouldBe userId
     result.consignmentType shouldBe "standard"
     result.bodyId shouldBe bodyId
-    result.seriesName shouldBe None
+    result.seriesName shouldBe Some(seriesName)
     result.transferringBodyName shouldBe Some(bodyName)
   }
 
@@ -136,6 +138,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockToken = mock[Token]
     val mockBody = mock[TransferringBody]
     val consignmentStatusRow = mock[ConsignmentstatusRow]
+    when(seriesRepositoryMock.getSeries(seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
     when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
