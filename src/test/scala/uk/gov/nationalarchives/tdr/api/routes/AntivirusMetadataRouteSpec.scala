@@ -22,8 +22,6 @@ class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with T
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
-  implicit def default(implicit system: ActorSystem) = RouteTestTimeout(new DurationInt(60).second.dilated(system))
-
   private val addAVMetadataJsonFilePrefix: String = "json/addavmetadata_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
