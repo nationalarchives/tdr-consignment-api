@@ -15,6 +15,7 @@ jobs:
     secrets:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+      AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
   deploy:
     needs: pre-deploy
     runs-on: ubuntu-latest
