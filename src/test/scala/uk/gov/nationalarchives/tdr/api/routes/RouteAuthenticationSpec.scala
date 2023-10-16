@@ -11,9 +11,9 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.http.Routes
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
-import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, TestUtils}
 
-class RouteAuthenticationSpec extends TestContainerUtils with Matchers with ScalatestRouteTest {
+class RouteAuthenticationSpec extends TestContainerUtils with Matchers with TestRequest {
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
