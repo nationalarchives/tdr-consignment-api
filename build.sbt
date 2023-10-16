@@ -38,7 +38,7 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val akkaHttpVersion = "10.5.2"
+lazy val akkaHttpVersion = "10.6.0-M1"
 lazy val circeVersion = "0.14.6"
 lazy val testContainersVersion = "0.41.0"
 val http4sVersion = "0.23.23"
@@ -53,7 +53,7 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream" % "2.6.19",
+  "com.typesafe.akka" %% "akka-stream" % "2.8.0",
   "org.http4s" %% "http4s-core" % http4sVersion,
   "org.http4s" %% "http4s-circe" % http4sVersion,
   "org.http4s" %% "http4s-dsl" % http4sVersion,
@@ -66,12 +66,12 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "core" % "3.9.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.36",
   "org.postgresql" % "postgresql" % "42.6.0",
-  "com.typesafe.slick" %% "slick" % "3.4.0",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
+  "com.typesafe.slick" %% "slick" % "3.4.1",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
   "ch.qos.logback" % "logback-classic" % "1.4.11",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
-  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "4.0.0",
+  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "5.0.0",
   "software.amazon.awssdk" % "rds" % "2.21.0",
   "software.amazon.awssdk" % "sts" % "2.21.0",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "1.17.27" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.27" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.6.19" % Test,
+  "com.typesafe.akka" %% "akka-testkit" % "2.8.0" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.16.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.170",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
@@ -90,8 +90,8 @@ libraryDependencies ++= Seq(
 )
 
 dependencyOverrides ++= Seq(
-  "com.typesafe.slick" %% "slick" % "3.4.0",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.0",
+  "com.typesafe.slick" %% "slick" % "3.4.1",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
   "org.sangria-graphql" %% "sangria" % "3.5.3"
 )
 
