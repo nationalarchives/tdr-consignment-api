@@ -1,6 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import akka.http.scaladsl.testkit.RouteTestTimeout
 import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
@@ -13,10 +15,13 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, T
 
 import java.sql.ResultSet
 import java.util.UUID
+import scala.concurrent.duration.DurationInt
 
 class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
+
+  implicit def default(implicit system: ActorSystem) = RouteTestTimeout(2.second)
 
   private val addAVMetadataJsonFilePrefix: String = "json/addavmetadata_"
 
