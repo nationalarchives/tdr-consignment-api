@@ -5,7 +5,6 @@ import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -14,14 +13,10 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, T
 
 import java.sql.ResultSet
 import java.util.UUID
-import java.time.Instant
-import scala.concurrent.duration.DurationInt
 
-class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest with ScalaFutures {
+class AntivirusMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
-
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 60.seconds)
 
   private val addAVMetadataJsonFilePrefix: String = "json/addavmetadata_"
 
