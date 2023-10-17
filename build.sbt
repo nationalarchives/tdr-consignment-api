@@ -38,7 +38,7 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val akkaHttpVersion = "10.5.1"
+lazy val akkaHttpVersion = "10.6.0-M1"
 lazy val circeVersion = "0.14.6"
 lazy val testContainersVersion = "0.41.0"
 val http4sVersion = "0.23.23"
@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "1.17.27" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.27" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.8.0" % Test,
+  "com.typesafe.akka" %% "akka-testkit" % "2.9.0-M2" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.16.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.170",
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,

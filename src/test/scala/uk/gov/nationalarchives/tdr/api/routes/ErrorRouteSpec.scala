@@ -16,18 +16,18 @@ import scala.io.Source.fromResource
 class ErrorRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   val fields = List("getConsignment", "getSeries", "getTransferAgreement")
 
-//  "getConsignment" should "return the field name in the error message" in withContainers { case container: PostgreSQLContainer =>
-//    val utils = TestUtils(container.database)
-//    val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
-//    createDatabaseError(utils)
-//    val route = new Routes(ConfigFactory.load, SlickSession.forConfig("consignmentapi")).route
-//    Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
-//      val entityResponse = entityAs[String]
-//      response.status should equal(StatusCodes.InternalServerError)
-//      entityResponse should equal(s"Request with field getConsignment failed")
-//    }
-//    resetRenamedColumn(utils)
-//  }
+  "getConsignment" should "return the field name in the error message" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val query: String = fromResource(s"json/getconsignment_query_alldata.json").mkString
+    createDatabaseError(utils)
+    val route = new Routes(ConfigFactory.load, SlickSession.forConfig("consignmentapi")).route
+    Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
+      val entityResponse = entityAs[String]
+      response.status should equal(StatusCodes.InternalServerError)
+      entityResponse should equal(s"Request with field getConsignment failed")
+    }
+    resetRenamedColumn(utils)
+  }
 
   private def createDatabaseError(utils: TestUtils): Int = {
     val sql = """ALTER TABLE "Consignment" RENAME COLUMN "ConsignmentReference" TO "ConsignmentReferenceOld";"""
