@@ -39,11 +39,10 @@ class FileService(
     config: Config
 )(implicit val executionContext: ExecutionContext) {
 
-  private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource)
+  private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource, referenceGeneratorService, config)
 
   private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
   private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
-  private val referenceGeneratorFeatureBlock: Boolean = config.getBoolean("featureAccessBlock.assignFileReferences")
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
@@ -54,16 +53,9 @@ class FileService(
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
-      val allNodes = allEmptyDirectoryNodes ++ allFileNodes
-      val allNodesWithReference = if (referenceGeneratorFeatureBlock) {
-        allNodes.keys.zip(allNodes.values.zip(List.fill(allNodes.size)(None))).toMap
-      } else {
-        val generatedReferences = referenceGeneratorService.getReferences(allNodes.size)
-        allNodes.keys.zip(allNodes.values.zip(generatedReferences.map(Some(_)))).toMap
-      }
-      (allNodesWithReference map { case (path, (treeNode, reference)) =>
+      ((allEmptyDirectoryNodes ++ allFileNodes) map { case (path, treeNode) =>
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
-        val parentReference = treeNode.parentPath.flatMap(path => allNodesWithReference.getOrElse(path, (treeNode, None))._2)
+        val parentFileReference = treeNode.parentPath.flatMap(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).reference)
         val fileId = treeNode.id
         val fileRow = FileRow(
           fileId,
@@ -73,8 +65,8 @@ class FileService(
           filetype = Some(treeNode.treeNodeType),
           filename = Some(treeNode.name),
           parentid = parentId,
-          filereference = reference,
-          parentreference = parentReference
+          filereference = treeNode.reference,
+          parentreference = parentFileReference
         )
 
         val commonMetadataRows = List(
