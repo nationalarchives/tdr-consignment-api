@@ -63,6 +63,7 @@ class FileService(
       }
       (allNodesWithReference map { case (path, (treeNode, reference)) =>
         val parentId = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)).id)
+        val parentReference = treeNode.parentPath.flatMap(path => allNodesWithReference.getOrElse(path, (treeNode, None))._2)
         val fileId = treeNode.id
         val fileRow = FileRow(
           fileId,
@@ -72,7 +73,8 @@ class FileService(
           filetype = Some(treeNode.treeNodeType),
           filename = Some(treeNode.name),
           parentid = parentId,
-          filereference = reference
+          filereference = reference,
+          parentreference = parentReference
         )
 
         val commonMetadataRows = List(
