@@ -867,7 +867,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     fileRows.foreach(row => {
       row.consignmentid should equal(consignmentId)
       row.userid should equal(userId)
-      row.filereference should be (defined)
+      row.filereference should be(defined)
     })
     val file = fileRows.find(_.filereference.contains("ref4"))
     file.get.parentreference should equal(Some("ref2"))

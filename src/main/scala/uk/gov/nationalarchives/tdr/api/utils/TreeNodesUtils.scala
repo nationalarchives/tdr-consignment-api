@@ -29,25 +29,26 @@ class TreeNodesUtils(uuidSource: UUIDSource, referenceGeneratorService: Referenc
   }
 
   def generateNodes(filePaths: Set[String], typeIdentifier: String): Map[String, TreeNode] = {
-    val generatedNodes = filePaths
-      .flatMap { path =>
-        val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
-        innerFunction(pathWithoutInitialSlash, typeIdentifier, Map())
-      }
-      .toMap
+    val generatedNodes = filePaths.flatMap { path =>
+      val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
+      innerFunction(pathWithoutInitialSlash, typeIdentifier, Map())
+    }.toMap
     if (referenceGeneratorFeatureBlock) {
       generatedNodes
     } else {
       val generatedReferences = referenceGeneratorService.getReferences(generatedNodes.size)
-      generatedReferences.zip(generatedNodes.view).map {
-        case (reference, (key, treenode)) =>
+      generatedReferences
+        .zip(generatedNodes.view)
+        .map { case (reference, (key, treenode)) =>
           key -> treenode.copy(reference = Some(reference))
-      }.toMap
+        }
+        .toMap
     }
   }
 }
 
 object TreeNodesUtils {
-  def apply(uuidSource: UUIDSource, referenceGeneratorService: ReferenceGeneratorService, config: Config): TreeNodesUtils = new TreeNodesUtils(uuidSource, referenceGeneratorService, config)
+  def apply(uuidSource: UUIDSource, referenceGeneratorService: ReferenceGeneratorService, config: Config): TreeNodesUtils =
+    new TreeNodesUtils(uuidSource, referenceGeneratorService, config)
   case class TreeNode(id: UUID, name: String, parentPath: Option[String], treeNodeType: String, reference: Option[Reference])
 }
