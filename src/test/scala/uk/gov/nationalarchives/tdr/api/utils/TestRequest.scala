@@ -19,9 +19,10 @@ import scala.io.Source.fromResource
 import scala.reflect.ClassTag
 
 trait TestRequest extends AnyFlatSpec with ScalatestRouteTest with Matchers {
+  implicit def default(implicit system: ActorSystem): RouteTestTimeout = RouteTestTimeout(new DurationInt(60).second.dilated(system))
 
   def runTestRequest[A](prefix: String)(queryFileName: String, token: OAuth2BearerToken)(implicit decoder: Decoder[A], classTag: ClassTag[A]): A = {
-    implicit def default(implicit system: ActorSystem): RouteTestTimeout = RouteTestTimeout(new DurationInt(300).second.dilated(system))
+
     implicit val unmarshaller: FromResponseUnmarshaller[A] = unmarshalResponse[A]()
     val slickSession = SlickSession.forConfig("consignmentapi")
     val route = new Routes(ConfigFactory.load(), slickSession).route
