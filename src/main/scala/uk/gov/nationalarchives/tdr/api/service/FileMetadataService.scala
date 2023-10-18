@@ -10,6 +10,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -185,7 +186,9 @@ object FileMetadataService {
       fileId: UUID,
       fileType: Option[String] = None,
       fileName: Option[String] = None,
+      fileReference: Option[Reference],
       parentId: Option[UUID] = None,
+      parentReference: Option[Reference],
       metadata: FileMetadataValues,
       @GraphQLDeprecated("Should use 'fileStatuses' field")
       fileStatus: Option[String] = None,

@@ -271,7 +271,9 @@ type File {
   fileId: UUID!
   fileType: String
   fileName: String
+  fileReference: String
   parentId: UUID
+  parentReference: String
   metadata: FileMetadataValues!
   fileStatus: String @deprecated(reason: "Should use 'fileStatuses' field")
   ffidMetadata: FFIDMetadata

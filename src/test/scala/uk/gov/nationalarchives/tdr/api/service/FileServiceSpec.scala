@@ -414,7 +414,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val consignmentId = UUID.randomUUID()
     val userId = UUID.randomUUID()
     val fileId = UUID.randomUUID()
+    val fileRef = "FILEREF"
     val parentId = UUID.randomUUID()
+    val parentRef = "REF1"
     val timestamp = Timestamp.from(FixedTimeSource.now)
     val datetime = Timestamp.from(Instant.now())
     val ffidMetadataId = UUID.randomUUID()
@@ -427,7 +429,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(ffidMetadataRows))
 
-    val fileRow = FileRow(fileId, consignmentId, userId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileName"), Some(parentId))
+    val fileRow =
+      FileRow(fileId, consignmentId, userId, timestamp, Some(true), Some(NodeType.fileTypeIdentifier), Some("fileName"), Some(parentId), Some(fileRef), Some(parentRef))
 
     val fileAndMetadataRows = Seq(
       (fileRow, Some(fileMetadataRow(fileId, "ClientSideFileLastModifiedDate", timestamp.toString))),
@@ -505,7 +508,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fileId,
       Some(NodeType.fileTypeIdentifier),
       Some("fileName"),
+      Some(fileRef),
       Some(parentId),
+      Some(parentRef),
       FileMetadataValues(
         Some("checksum"),
         Some("filePath"),
@@ -615,6 +620,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadata = fileAndMetadataRows.map(row => FileMetadataValue(row._2.get.propertyname, row._2.get.value)).toList
     val expectedFileMetadata = File(
       fileId,
+      None,
+      None,
       None,
       None,
       None,
