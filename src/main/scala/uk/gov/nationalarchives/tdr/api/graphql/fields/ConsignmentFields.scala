@@ -163,11 +163,6 @@ object ConsignmentFields {
         resolve = context => DeferParentFolderId(context.value.consignmentid)
       ),
       Field(
-        "series",
-        OptionType(SeriesFields.SeriesType),
-        resolve = context => DeferConsignmentSeries(context.value.consignmentid)
-      ),
-      Field(
         "transferringBody",
         OptionType(TransferringBodyType),
         resolve = context => DeferConsignmentBody(context.value.consignmentid)

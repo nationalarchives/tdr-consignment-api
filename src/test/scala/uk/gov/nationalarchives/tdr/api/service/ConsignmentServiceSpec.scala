@@ -299,18 +299,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response should be(1)
   }
 
-  "getSeriesOfConsignment" should "return the series for a given consignment" in {
-    val mockSeries = Seq(SeriesRow(seriesId, bodyId, seriesName, seriesCode, seriesDescription))
-    when(consignmentRepoMock.getSeriesOfConsignment(consignmentId)).thenReturn(Future.successful(mockSeries))
-
-    val series: SeriesFields.Series = consignmentService.getSeriesOfConsignment(consignmentId).futureValue.get
-    series.seriesid shouldBe mockSeries.head.seriesid
-    series.bodyid shouldBe mockSeries.head.bodyid
-    series.name shouldBe mockSeries.head.name
-    series.code shouldBe mockSeries.head.code
-    series.description shouldBe mockSeries.head.description
-  }
-
   "updateSeriesOfConsignment" should "update the seriesId, seriesName and status for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     val statusType = "Series"

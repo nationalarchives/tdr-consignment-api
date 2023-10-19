@@ -123,7 +123,6 @@ type Consignment {
   fileChecks: FileChecks!
   parentFolder: String
   parentFolderId: UUID
-  series: Series
   transferringBody: TransferringBody
   files(fileFiltersInput: FileFilters): [File!]!
   paginatedFiles(paginationInput: PaginationInput): FileConnection!

@@ -10,9 +10,6 @@
       "edges": [
         {
           "node": {
-            "series": {
-              "code": "MOCK1"
-            },
             "exportDatetime": "2020-01-01T09:00:00Z",
             "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
             "createdDatetime": "2020-01-01T09:00:00Z",
@@ -22,6 +19,8 @@
               "name": "Default transferring body name",
               "tdrCode": "default-transferring-body-code"
             },
+            "seriesName": "seriesName",
+            "transferringBodyName": "transferringBodyName",
             "consignmentid": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
             "consignmentReference": "consignment-ref2",
             "totalFiles": 1,
@@ -115,9 +114,6 @@
         },
         {
           "node": {
-            "series": {
-              "code": "MOCK1"
-            },
             "exportDatetime": "2020-01-01T09:00:00Z",
             "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
             "createdDatetime": "2020-01-01T09:00:00Z",
@@ -127,6 +123,8 @@
               "name": "Default transferring body name",
               "tdrCode": "default-transferring-body-code"
             },
+            "seriesName": "seriesName",
+            "transferringBodyName": "transferringBodyName",
             "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
             "consignmentReference": "consignment-ref1",
             "totalFiles": 1,
