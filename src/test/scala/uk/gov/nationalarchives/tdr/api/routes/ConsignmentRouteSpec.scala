@@ -201,7 +201,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.data.get.addConsignment.userid should contain(userId)
   }
 
-  // scalastyle:off magic.number
+  //TODO This test shouldn't be passing. It's meant to return fileReference and parentReference
   "getConsignment" should "return all requested fields" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
@@ -212,9 +212,9 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitleClosed, DescriptionClosed, ClosureStartDate).foreach(utils.addFileProperty)
 
-    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
-    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
-    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
+    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID, fileRef = Some("REF1"))
+    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID, fileRef = Some("REF2"))
+    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID, fileRef = Some("REF3"), parentRef = Some("REF1"))
 
     utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileOneId), "FFID", "Success")
     utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "FFID", "Success")
@@ -265,7 +265,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     response should equal(expectedResponse)
   }
-  // scalastyle:off magic.number
 
   "getConsignment" should "return the file metadata" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
@@ -409,6 +408,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
+  //TODO This test is flaky it keeps returning the files in a different order
   "getConsignment" should "return files and directories in the files list" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
