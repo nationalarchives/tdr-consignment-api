@@ -1,9 +1,6 @@
 {
   "data": {
     "getConsignment": {
-      "series": {
-        "code": "MOCK1"
-      },
       "exportDatetime": "2020-01-01T09:00:00Z",
       "seriesid": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
       "createdDatetime": "2020-01-01T09:00:00Z",
