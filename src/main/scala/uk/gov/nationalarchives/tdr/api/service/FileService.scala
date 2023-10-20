@@ -273,7 +273,7 @@ object FileService {
             statuses
           )
         }
-        .toSeq.sortBy(_.fileId)
+        .toSeq
     }
   }
 

@@ -18,9 +18,7 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.io.Source.fromResource
-import scala.util.Random
 
-//scalastyle:off number.of.methods
 class TestUtils(db: JdbcBackend#DatabaseDef) {
   val connection: Connection = db.source.createConnection()
 
@@ -286,7 +284,6 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     result
   }
 
-  // TODO This seems to be correct but for some reason FileReference and ParentReference are blank
   def createFile(
       fileId: UUID,
       consignmentId: UUID,
@@ -307,7 +304,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setString(5, fileType)
     ps.setString(6, fileName)
     ps.setObject(7, parentId.map(_.toString).orNull, Types.OTHER)
-    ps.setString(8, fileRef.getOrElse(Random.alphanumeric.take(4).mkString))
+    ps.setString(8, fileRef.orNull)
     ps.setString(9, parentRef.orNull)
     ps.executeUpdate()
   }
