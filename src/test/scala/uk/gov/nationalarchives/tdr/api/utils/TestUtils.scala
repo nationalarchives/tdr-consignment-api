@@ -286,7 +286,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     result
   }
 
-  //TODO This seems to be correct but for some reason FileReference and ParentReference are blank
+  // TODO This seems to be correct but for some reason FileReference and ParentReference are blank
   def createFile(
       fileId: UUID,
       consignmentId: UUID,

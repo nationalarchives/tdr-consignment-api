@@ -22,9 +22,9 @@
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
           "fileType": "File",
           "fileName": "fileTwoName",
-          "fileReference": "some file refence",
+          "fileReference": "REF2",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "parentReference": "some parent refence",
+          "parentReference": null,
           "originalFilePath": null,
           "fileMetadata": [
             {
@@ -116,9 +116,9 @@
           "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
           "fileType": "File",
           "fileName": "fileOneName",
-          "fileReference": "some file refence",
+          "fileReference": "REF1",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "parentReference": "some parent refence",
+          "parentReference": null,
           "fileStatus": "Success",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
@@ -162,9 +162,9 @@
           "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
           "fileType": "File",
           "fileName": "fileThreeName",
-          "fileReference": "some file refence",
+          "fileReference": "REF3",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "parentReference": "some parent refence",
+          "parentReference": "REF1",
           "fileStatus": "Success",
           "metadata": {
             "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",

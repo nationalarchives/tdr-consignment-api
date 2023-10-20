@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
+import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -121,7 +122,9 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       fileId: UUID,
       fileType: Option[String],
       fileName: Option[String],
+      fileReference: Option[Reference],
       parentId: Option[UUID],
+      parentReference: Option[Reference],
       metadata: FileMetadataValues = FileMetadataValues(None, None, None, None, None, None, None, None, None),
       fileStatus: Option[String],
       ffidMetadata: Option[FFIDMetadataValues],
@@ -201,7 +204,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.data.get.addConsignment.userid should contain(userId)
   }
 
-  //TODO This test shouldn't be passing. It's meant to return fileReference and parentReference
+  // TODO This test shouldn't be passing. It's meant to return fileReference and parentReference
   "getConsignment" should "return all requested fields" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
@@ -408,7 +411,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
-  //TODO This test is flaky it keeps returning the files in a different order
+  // TODO This test is flaky it keeps returning the files in a different order
   "getConsignment" should "return files and directories in the files list" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
