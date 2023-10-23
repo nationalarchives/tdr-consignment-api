@@ -19,7 +19,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.io.Source.fromResource
 
-//scalastyle:off number.of.methods
 class TestUtils(db: JdbcBackend#DatabaseDef) {
   val connection: Connection = db.source.createConnection()
 
@@ -291,18 +290,22 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       fileType: String = NodeType.fileTypeIdentifier,
       fileName: String = "fileName",
       parentId: Option[UUID] = None,
-      userId: UUID = userId
+      userId: UUID = userId,
+      fileRef: Option[String] = None,
+      parentRef: Option[String] = None
   ): Unit = {
-    val sql = s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId") VALUES (?, ?, ?, ?, ?, ?, ?)"""
+    val sql =
+      s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId", "FileReference", "ParentReference") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setObject(3, userId, Types.OTHER)
     ps.setTimestamp(4, Timestamp.from(FixedTimeSource.now))
     ps.setString(5, fileType)
-    ps.setString(6, parentId.toString)
     ps.setString(6, fileName)
     ps.setObject(7, parentId.map(_.toString).orNull, Types.OTHER)
+    ps.setString(8, fileRef.orNull)
+    ps.setString(9, parentRef.orNull)
     ps.executeUpdate()
   }
 
