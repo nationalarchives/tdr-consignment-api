@@ -73,7 +73,9 @@ class FileService(
         val commonMetadataRows = List(
           row(fileId, path, ClientSideOriginalFilepath),
           row(fileId, treeNode.treeNodeType, FileType),
-          row(fileId, treeNode.name, Filename)
+          row(fileId, treeNode.name, Filename),
+          row(fileId, treeNode.reference.getOrElse(""), FileReference),
+          row(fileId, parentFileReference.getOrElse(""), ParentReference)
         ) ++ filePropertyValue.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
 
         if (treeNode.treeNodeType.isFileType) {

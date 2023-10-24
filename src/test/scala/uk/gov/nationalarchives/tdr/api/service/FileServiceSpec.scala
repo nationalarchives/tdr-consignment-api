@@ -784,7 +784,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       row.consignmentid should equal(consignmentId)
       row.userid should equal(userId)
     })
-    val expectedSize = 46
+    val expectedSize = 56
     metadataRows.size should equal(expectedSize)
     staticMetadataProperties.foreach(prop => {
       metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(5)
@@ -878,7 +878,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     })
     val file = fileRows.find(_.filereference.contains("ref4"))
     file.get.parentreference should equal(Some("ref2"))
-    val expectedSize = 46
+    val expectedSize = 56
     metadataRows.size should equal(expectedSize)
     staticMetadataProperties.foreach(prop => {
       metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(5)
@@ -971,7 +971,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       row.consignmentid should equal(consignmentId)
       row.userid should equal(userId)
     })
-    val expectedSize = 30
+    val expectedSize = 36
     metadataRows.size should equal(expectedSize)
     staticMetadataProperties.foreach(prop => {
       metadataRows.count(r => r.propertyname == prop.name && r.value == prop.value) should equal(3)
