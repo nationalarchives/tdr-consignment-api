@@ -793,8 +793,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     clientSideProperties.foreach(prop => {
       val count = metadataRows.count(r => r.propertyname == prop)
       prop match {
-        case ClientSideOriginalFilepath | Filename | FileType => count should equal(5) // Directories have this set
-        case _                                                => count should equal(2)
+        case ClientSideOriginalFilepath | Filename | FileType | FileReference | ParentReference => count should equal(5) // Directories have this set
+        case _                                                                                  => count should equal(2)
       }
     })
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
@@ -887,8 +887,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     clientSideProperties.foreach(prop => {
       val count = metadataRows.count(r => r.propertyname == prop)
       prop match {
-        case ClientSideOriginalFilepath | Filename | FileType => count should equal(5) // Directories have this set
-        case _                                                => count should equal(2)
+        case ClientSideOriginalFilepath | Filename | FileType | FileReference | ParentReference => count should equal(5) // Directories have this set
+        case _                                                                                  => count should equal(2)
       }
     })
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
@@ -980,8 +980,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     clientSideProperties.foreach(prop => {
       val count = metadataRows.count(r => r.propertyname == prop)
       prop match {
-        case ClientSideOriginalFilepath | Filename | FileType => count should equal(3) // Directories have this set
-        case _                                                => count should equal(2)
+        case ClientSideOriginalFilepath | Filename | FileType | FileReference | ParentReference => count should equal(3) // Directories have this set
+        case _                                                                                  => count should equal(2)
       }
     })
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
