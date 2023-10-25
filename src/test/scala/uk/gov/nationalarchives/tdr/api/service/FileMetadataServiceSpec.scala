@@ -606,6 +606,36 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FileMetadataFields.SHA256ServerSideChecksum should equal("SHA256ServerSideChecksum")
   }
 
+  "The FileMetadataService property names" should "have the correct values" in {
+    FileMetadataService.SHA256ClientSideChecksum shouldEqual "SHA256ClientSideChecksum"
+    FileMetadataService.ClientSideOriginalFilepath shouldEqual "ClientSideOriginalFilepath"
+    FileMetadataService.OriginalFilepath shouldEqual "OriginalFilepath"
+    FileMetadataService.ClientSideFileLastModifiedDate shouldEqual "ClientSideFileLastModifiedDate"
+    FileMetadataService.ClientSideFileSize shouldEqual "ClientSideFileSize"
+    FileMetadataService.ClosurePeriod shouldEqual "ClosurePeriod"
+    FileMetadataService.ClosureStartDate shouldEqual "ClosureStartDate"
+    FileMetadataService.Filename shouldEqual "Filename"
+    FileMetadataService.FileType shouldEqual "FileType"
+    FileMetadataService.FileReference shouldEqual "FileReference"
+    FileMetadataService.ParentReference shouldEqual "ParentReference"
+    FileMetadataService.FoiExemptionAsserted shouldEqual "FoiExemptionAsserted"
+    FileMetadataService.TitleClosed shouldEqual "TitleClosed"
+    FileMetadataService.DescriptionClosed shouldEqual "DescriptionClosed"
+    FileMetadataService.ClosureType shouldEqual "ClosureType"
+    FileMetadataService.Description shouldEqual "description"
+    FileMetadataService.DescriptionAlternate shouldEqual "DescriptionAlternate"
+    FileMetadataService.RightsCopyright.name shouldEqual "RightsCopyright"
+    FileMetadataService.RightsCopyright.value shouldEqual "Crown Copyright"
+    FileMetadataService.LegalStatus.name shouldEqual "LegalStatus"
+    FileMetadataService.LegalStatus.value shouldEqual "Public Record"
+    FileMetadataService.HeldBy.name shouldEqual "HeldBy"
+    FileMetadataService.HeldBy.value shouldEqual "TNA"
+    FileMetadataService.Language.name shouldEqual "Language"
+    FileMetadataService.Language.value shouldEqual "English"
+    FileMetadataService.FoiExemptionCode.name shouldEqual "FoiExemptionCode"
+    FileMetadataService.FoiExemptionCode.value shouldEqual "open"
+  }
+
   private def generateFileStatusRows(fileIds: Seq[UUID]) = {
     fileIds.map(id => FilestatusRow(UUID.randomUUID(), id, "statusType", "value", Timestamp.from(FixedTimeSource.now)))
   }
