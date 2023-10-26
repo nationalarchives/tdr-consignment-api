@@ -138,6 +138,8 @@ object FileMetadataService {
   val ClosureStartDate = "ClosureStartDate"
   val Filename = "Filename"
   val FileType = "FileType"
+  val FileReference = "FileReference"
+  val ParentReference = "ParentReference"
   val FoiExemptionAsserted = "FoiExemptionAsserted"
   val TitleClosed = "TitleClosed"
   val DescriptionClosed = "DescriptionClosed"
@@ -154,7 +156,9 @@ object FileMetadataService {
   val HeldBy: StaticMetadata = StaticMetadata("HeldBy", "TNA")
   val Language: StaticMetadata = StaticMetadata("Language", "English")
   val FoiExemptionCode: StaticMetadata = StaticMetadata("FoiExemptionCode", "open")
-  val clientSideProperties: List[String] = List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize, Filename, FileType)
+  val clientSideProperties: List[String] =
+    List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize, Filename, FileType)
+  val serverSideProperties: List[String] = List(FileReference, ParentReference)
 
   def getFileMetadataValues(fileMetadataRow: Seq[FilemetadataRow]): FileMetadataValues = {
     val propertyNameMap: Map[String, String] = fileMetadataRow.groupBy(_.propertyname).transform { (_, value) =>
