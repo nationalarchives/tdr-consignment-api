@@ -6,7 +6,7 @@ RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
     apk upgrade p11-kit busybox libretls zlib openssl && \
     apk add ca-certificates && \
     chown -R apiuser /api && \
-    wget https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem && \
+    wget https://truststore.pki.rds.amazonaws.com/eu-west-2/eu-west-2-bundle.pem && \
     apk add openjdk15 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 COPY target/scala-2.13/consignmentapi.jar /api
 
