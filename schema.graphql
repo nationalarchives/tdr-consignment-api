@@ -119,7 +119,7 @@ type Consignment {
   transferringBodyName: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
-  totalFileSize: Int!
+  totalFileSize: Long!
   fileChecks: FileChecks!
   parentFolder: String
   parentFolderId: UUID
@@ -192,11 +192,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Integer
   DateTime
-  Text
   Boolean
+  Integer
   Decimal
+  Text
 }
 
 type DeleteFileMetadata {
