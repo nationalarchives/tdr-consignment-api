@@ -20,15 +20,15 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
   private val insertFileStatusQuery =
     Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
-  def getSumOfFileSizes(consignmentId: UUID): Future[Int] = {
+  def getSumOfFileSizes(consignmentId: UUID): Future[Long] = {
     val query = Filemetadata
       .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._1.propertyname === ClientSideFileSize)
-      .map(_._1.value.asColumnOf[Int])
+      .map(_._1.value.asColumnOf[Long])
       .sum
-      .getOrElse(0)
+      .getOrElse(0L)
     db.run(query.result)
   }
 
