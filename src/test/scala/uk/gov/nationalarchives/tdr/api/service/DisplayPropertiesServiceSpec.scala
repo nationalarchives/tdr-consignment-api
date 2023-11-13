@@ -93,4 +93,21 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
         "Invalid data type Some(unknownDataType)."
     )
   }
+
+  "getActiveDisplayPropertyNames" should "return all the active display property names" in {
+    val displayPropertiesRepository = mock[DisplayPropertiesRepository]
+    val mockPropertyResponse = Future(
+      Seq(
+        DisplaypropertiesRow(Some("propertyName1"), Some("Active"), Some("true"), Some("boolean")),
+        DisplaypropertiesRow(Some("propertyName3"), Some("Active"), Some("true"), Some("boolean")),
+      )
+    )
+
+    when(displayPropertiesRepository.getDisplayProperties("Active", "true")).thenReturn(mockPropertyResponse)
+
+    val service = new DisplayPropertiesService(displayPropertiesRepository)
+    val response: Seq[String] = service.getActiveDisplayPropertyNames.futureValue
+
+    response should be(List("propertyName1", "propertyName3"))
+  }
 }

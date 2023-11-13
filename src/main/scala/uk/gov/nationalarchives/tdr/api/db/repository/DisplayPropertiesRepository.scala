@@ -11,4 +11,11 @@ class DisplayPropertiesRepository(db: Database)(implicit val executionContext: E
     val query = Displayproperties
     db.run(query.result)
   }
+
+  def getDisplayProperties(attribute: String, value: String): Future[Seq[DisplaypropertiesRow]] = {
+    val query = Displayproperties
+      .filter(_.attribute === attribute)
+      .filter(_.value === value)
+    db.run(query.result)
+  }
 }

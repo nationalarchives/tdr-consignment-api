@@ -37,4 +37,12 @@ class DisplayPropertiesService(displayPropertiesRepository: DisplayPropertiesRep
       toDisplayProperty(displayProperties)
     }
   }
+
+  def getActiveDisplayPropertyNames: Future[Seq[String]] = {
+    for {
+      displayProperties <- displayPropertiesRepository.getDisplayProperties("Active", "true")
+    } yield {
+      displayProperties.flatMap(_.propertyname)
+    }
+  }
 }

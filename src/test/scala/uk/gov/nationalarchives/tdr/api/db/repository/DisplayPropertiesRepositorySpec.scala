@@ -36,4 +36,21 @@ class DisplayPropertiesRepositorySpec extends TestContainerUtils with ScalaFutur
     lastProperty.value.get should equal("description of language")
     lastProperty.attributetype.get should equal("text")
   }
+
+  "getDisplayProperties" should "return display properties by given attribute and value" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val displayPropertiesRepository = new DisplayPropertiesRepository(db)
+
+    utils.createFileProperty("Language", "description", "Defined", "text", true, false, "group", "Language")
+    utils.createDisplayProperty("Language", "active", "false", "boolean")
+    utils.createDisplayProperty("ClosureType", "active", "true", "boolean")
+
+    val result = displayPropertiesRepository.getDisplayProperties("active", "true").futureValue
+    result.size shouldBe 1
+    result.head.propertyname.get should equal("ClosureType")
+    result.head.attribute.get should equal("active")
+    result.head.value.get should equal("true")
+    result.head.attributetype.get should equal("boolean")
+  }
 }
