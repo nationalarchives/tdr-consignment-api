@@ -43,6 +43,7 @@ class DisplayPropertiesRepositorySpec extends TestContainerUtils with ScalaFutur
     val displayPropertiesRepository = new DisplayPropertiesRepository(db)
 
     utils.createFileProperty("Language", "description", "Defined", "text", true, false, "group", "Language")
+    utils.createFileProperty("ClosureType", "ClosureType", "Defined", "text", true, false, "group", "ClosureType")
     utils.createDisplayProperty("Language", "active", "false", "boolean")
     utils.createDisplayProperty("ClosureType", "active", "true", "boolean")
 
