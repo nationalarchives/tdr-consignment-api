@@ -192,11 +192,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  DateTime
-  Boolean
   Integer
-  Decimal
+  DateTime
   Text
+  Boolean
+  Decimal
 }
 
 type DeleteFileMetadata {

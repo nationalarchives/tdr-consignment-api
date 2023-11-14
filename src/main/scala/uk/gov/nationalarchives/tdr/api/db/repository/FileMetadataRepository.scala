@@ -2,10 +2,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
 
 import java.sql.Timestamp
@@ -16,9 +13,6 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
 
   private val insertFileMetadataQuery = Filemetadata returning Filemetadata.map(_.metadataid) into
     ((filemetadata, metadataid) => filemetadata.copy(metadataid = metadataid))
-
-  private val insertFileStatusQuery =
-    Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = {
     val query = Filemetadata
