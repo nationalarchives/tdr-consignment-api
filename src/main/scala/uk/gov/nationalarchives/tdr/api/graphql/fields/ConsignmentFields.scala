@@ -4,7 +4,22 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, Field, InputObjectType, IntType, ListType, ObjectType, OptionInputType, OptionType, ProjectedName, Projector, StringType, fields}
+import sangria.schema.{
+  Argument,
+  BooleanType,
+  Field,
+  InputObjectType,
+  IntType,
+  ListType,
+  LongType,
+  ObjectType,
+  OptionInputType,
+  OptionType,
+  ProjectedName,
+  Projector,
+  StringType,
+  fields
+}
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataFilters}
@@ -144,7 +159,7 @@ object ConsignmentFields {
       ),
       Field(
         "totalFileSize",
-        IntType,
+        LongType,
         resolve = context => DeferFileSizeSum(context.value.consignmentid)
       ),
       Field(
