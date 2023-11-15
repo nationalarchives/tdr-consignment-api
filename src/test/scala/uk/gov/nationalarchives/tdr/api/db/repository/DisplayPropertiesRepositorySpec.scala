@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -22,7 +23,7 @@ class DisplayPropertiesRepositorySpec extends TestContainerUtils with ScalaFutur
     utils.createDisplayProperty("Language", "Name", "Language", "text")
     utils.createDisplayProperty("Language", "Description", "description of language", "text")
 
-    val result = displayPropertiesRepository.getDisplayProperties.futureValue
+    val result = displayPropertiesRepository.getDisplayProperties().futureValue
     result.size shouldBe 2
     val firstProperty = result.head
     firstProperty.propertyname.get should equal("Language")
@@ -47,7 +48,7 @@ class DisplayPropertiesRepositorySpec extends TestContainerUtils with ScalaFutur
     utils.createDisplayProperty("Language", "active", "false", "boolean")
     utils.createDisplayProperty("ClosureType", "active", "true", "boolean")
 
-    val result = displayPropertiesRepository.getDisplayProperties("active", "true").futureValue
+    val result = displayPropertiesRepository.getDisplayProperties("active".some, "true".some).futureValue
     result.size shouldBe 1
     result.head.propertyname.get should equal("ClosureType")
     result.head.attribute.get should equal("active")

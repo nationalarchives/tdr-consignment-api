@@ -7,15 +7,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DisplayPropertiesRepository(db: Database)(implicit val executionContext: ExecutionContext) {
 
-  def getDisplayProperties: Future[Seq[DisplaypropertiesRow]] = {
+  def getDisplayProperties(attribute: Option[String] = None, value: Option[String] = None): Future[Seq[DisplaypropertiesRow]] = {
     val query = Displayproperties
-    db.run(query.result)
-  }
-
-  def getDisplayProperties(attribute: String, value: String): Future[Seq[DisplaypropertiesRow]] = {
-    val query = Displayproperties
-      .filter(_.attribute === attribute)
-      .filter(_.value === value)
+      .filterOpt(attribute)(_.attribute === _)
+      .filterOpt(value)(_.value === _)
     db.run(query.result)
   }
 }

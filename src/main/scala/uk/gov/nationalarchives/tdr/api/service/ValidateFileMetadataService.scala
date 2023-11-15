@@ -4,11 +4,10 @@ import com.typesafe.config.Config
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClosureType
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.utils.MetadataValidationUtils
 import uk.gov.nationalarchives.tdr.validation._
 
 import java.util.UUID
@@ -53,7 +52,7 @@ class ValidateFileMetadataService(
     }
   }
 
-  def validateAndAddAdditionalMetadataStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
+  private def validateAndAddAdditionalMetadataStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       propertyNames <- displayPropertiesService.getActiveDisplayPropertyNames
       result <- {
@@ -197,38 +196,4 @@ class ValidateFileMetadataService(
   case class FilePropertyState(fileId: UUID, propertyName: String, missingDependencies: Boolean, existingValueMatchesDefault: Boolean)
 
   case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
-}
-
-object MetadataValidationUtils {
-
-  def createMetadataValidation(fields: List[CustomMetadataField]): MetadataValidation = {
-
-    val closureFields = fields.filter(f => f.name == ClosureType)
-    val descriptiveFields = fields.filter(f => f.propertyGroup.contains("OptionalMetadata"))
-
-    val closureMetadataCriteria = createCriteria(closureFields, fields).head
-    val descriptiveMetadataCriteria = createCriteria(descriptiveFields, fields)
-    new MetadataValidation(closureMetadataCriteria, descriptiveMetadataCriteria)
-  }
-
-  private def createCriteria(customMetadata: List[CustomMetadataField], allCustomMetadata: List[CustomMetadataField]): List[MetadataCriteria] = {
-    customMetadata.map(cm => {
-      val (definedValues, defaultValue) = cm.dataType match {
-        case CustomMetadataFields.Boolean => (List("true", "false"), Some(cm.defaultValue.getOrElse("false")))
-        case CustomMetadataFields.Text    => (cm.values.map(_.value), cm.defaultValue)
-        case _                            => (List(), cm.defaultValue)
-      }
-      val requiredField: Boolean = cm.propertyGroup.contains("MandatoryClosure") || cm.propertyGroup.contains("MandatoryMetadata")
-      MetadataCriteria(
-        cm.name,
-        DataType.get(cm.dataType.toString),
-        requiredField,
-        isFutureDateAllowed = false,
-        isMultiValueAllowed = cm.multiValue,
-        definedValues,
-        defaultValue = defaultValue,
-        dependencies = Some(cm.values.map(v => v.value -> createCriteria(allCustomMetadata.filter(m => v.dependencies.exists(_.name == m.name)), allCustomMetadata)).toMap)
-      )
-    })
-  }
 }

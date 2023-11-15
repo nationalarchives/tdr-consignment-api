@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import cats.implicits.catsSyntaxOptionId
 import org.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
@@ -24,7 +25,7 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       )
     )
 
-    when(displayPropertiesRepository.getDisplayProperties).thenReturn(mockPropertyResponse)
+    when(displayPropertiesRepository.getDisplayProperties()).thenReturn(mockPropertyResponse)
 
     val service = new DisplayPropertiesService(displayPropertiesRepository)
     val response: Seq[DisplayPropertyField] = service.getDisplayProperties.futureValue
@@ -57,7 +58,7 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       )
     )
 
-    when(displayPropertiesRepository.getDisplayProperties).thenReturn(mockPropertyResponse)
+    when(displayPropertiesRepository.getDisplayProperties()).thenReturn(mockPropertyResponse)
 
     val service = new DisplayPropertiesService(displayPropertiesRepository)
 
@@ -79,7 +80,7 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       )
     )
 
-    when(displayPropertiesRepository.getDisplayProperties).thenReturn(mockPropertyResponse)
+    when(displayPropertiesRepository.getDisplayProperties()).thenReturn(mockPropertyResponse)
 
     val service = new DisplayPropertiesService(displayPropertiesRepository)
 
@@ -102,7 +103,7 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       )
     )
 
-    when(displayPropertiesRepository.getDisplayProperties("Active", "true")).thenReturn(mockPropertyResponse)
+    when(displayPropertiesRepository.getDisplayProperties("Active".some, "true".some)).thenReturn(mockPropertyResponse)
 
     val service = new DisplayPropertiesService(displayPropertiesRepository)
     val response: Seq[String] = service.getActiveDisplayPropertyNames.futureValue
