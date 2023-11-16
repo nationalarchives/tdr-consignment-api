@@ -4,8 +4,7 @@ import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddFileMetadataInput
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
 
 import java.sql.Timestamp
@@ -14,11 +13,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
 
-  private val insertFileMetadataQuery = Filemetadata returning Filemetadata.map(_.metadataid) into
-    ((filemetadata, metadataid) => filemetadata.copy(metadataid = metadataid))
-
-  private val insertFileStatusQuery =
-    Filestatus returning Filestatus.map(_.filestatusid) into ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
+  private val insertFileMetadataQuery = Filemetadata.map(t => (t.fileid, t.value, t.userid, t.propertyname)) returning Filemetadata
+    .map(r => (r.metadataid, r.datetime)) into ((fileMetadata, dbGeneratedValues) =>
+    FilemetadataRow(dbGeneratedValues._1, fileMetadata._1, fileMetadata._2, dbGeneratedValues._2, fileMetadata._3, fileMetadata._4)
+  )
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Int] = {
     val query = Filemetadata
@@ -32,8 +30,8 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def addFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[FilemetadataRow]] = {
-    db.run(insertFileMetadataQuery ++= rows)
+  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[Tables.FilemetadataRow]] = {
+    db.run(insertFileMetadataQuery ++= rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
   }
 
   def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {

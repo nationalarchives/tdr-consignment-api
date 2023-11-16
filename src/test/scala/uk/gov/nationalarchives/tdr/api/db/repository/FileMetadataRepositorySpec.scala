@@ -6,6 +6,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddFileMetadataInput
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -37,7 +38,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.addFileProperty("FileProperty")
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
-    val input = Seq(FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty"))
+    val input = Seq(AddFileMetadataInput(fileId, "value", UUID.randomUUID(), "FileProperty"))
     val result = fileMetadataRepository.addFileMetadata(input).futureValue.head
     result.propertyname should equal("FileProperty")
     result.value should equal("value")
@@ -54,7 +55,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
     val numberOfFileMetadataRows = 100
-    val input = (1 to numberOfFileMetadataRows).map(_ => FilemetadataRow(UUID.randomUUID(), fileId, "value", Timestamp.from(Instant.now()), UUID.randomUUID(), "FileProperty"))
+    val input = (1 to numberOfFileMetadataRows).map(_ => AddFileMetadataInput(fileId, "value", UUID.randomUUID(), "FileProperty"))
 
     val result = fileMetadataRepository.addFileMetadata(input).futureValue
 

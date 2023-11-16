@@ -21,9 +21,7 @@ class FileMetadataService(
     fileMetadataRepository: FileMetadataRepository,
     consignmentStatusService: ConsignmentStatusService,
     customMetadataService: CustomMetadataPropertiesService,
-    validateFileMetadataService: ValidateFileMetadataService,
-    timeSource: TimeSource,
-    uuidSource: UUIDSource
+    validateFileMetadataService: ValidateFileMetadataService
 )(implicit val ec: ExecutionContext) {
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Int] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
@@ -32,7 +30,7 @@ class FileMetadataService(
     val metadataRow = input.metadataInputValues
       .map(addFileMetadataInput => {
         val fileId = addFileMetadataInput.fileId
-        FilemetadataRow(uuidSource.uuid, fileId, addFileMetadataInput.value, Timestamp.from(timeSource.now), userId, addFileMetadataInput.filePropertyName)
+        AddFileMetadataInput(fileId, addFileMetadataInput.value, userId, addFileMetadataInput.filePropertyName)
       })
     fileMetadataRepository
       .addFileMetadata(metadataRow)
@@ -87,9 +85,9 @@ class FileMetadataService(
           (customMetadataProperty.name, customMetadataProperty.defaultValue.get)
       }
 
-      metadataToReset: Seq[FilemetadataRow] = fileIds.flatMap { id =>
+      metadataToReset: Seq[AddFileMetadataInput] = fileIds.flatMap { fileId =>
         propertyDefaults.map { case (propertyName, defaultValue) =>
-          FilemetadataRow(uuidSource.uuid, id, defaultValue, Timestamp.from(timeSource.now), userId, propertyName)
+          AddFileMetadataInput(fileId, defaultValue, userId, propertyName)
         }
       }.toSeq
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
@@ -109,11 +107,11 @@ class FileMetadataService(
     } else originalPropertyNames
   }
 
-  private def generateFileMetadataRows(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[FilemetadataRow] = {
+  private def generateFileMetadataRows(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[AddFileMetadataInput] = {
     fileIds
-      .flatMap(id =>
+      .flatMap(fileId =>
         {
-          inputs.map(i => FilemetadataRow(UUID.randomUUID(), id, i.value, Timestamp.from(timeSource.now), userId, i.filePropertyName))
+          inputs.map(i => AddFileMetadataInput(fileId, i.value, userId, i.filePropertyName))
         }.toList
       )
       .toList
