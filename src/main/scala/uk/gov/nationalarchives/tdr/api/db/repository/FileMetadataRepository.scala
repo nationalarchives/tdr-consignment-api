@@ -17,7 +17,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     FilemetadataRow(dbGeneratedValues._1, fileMetadata._1, fileMetadata._2, dbGeneratedValues._2, fileMetadata._3, fileMetadata._4)
   )
 
-  def getSumOfFileSizes(consignmentId: UUID): Future[Int] = {
+  def getSumOfFileSizes(consignmentId: UUID): Future[Long] = {
     val query = Filemetadata
       .join(File)
       .on(_.fileid === _.fileid)
@@ -29,7 +29,7 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[Tables.FilemetadataRow]] = {
+  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
     db.run(insertFileMetadataQuery ++= rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
   }
 
