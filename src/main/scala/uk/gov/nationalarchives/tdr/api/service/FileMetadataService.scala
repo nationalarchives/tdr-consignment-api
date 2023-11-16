@@ -24,7 +24,7 @@ class FileMetadataService(
     validateFileMetadataService: ValidateFileMetadataService
 )(implicit val ec: ExecutionContext) {
 
-  def getSumOfFileSizes(consignmentId: UUID): Future[Int] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
+  def getSumOfFileSizes(consignmentId: UUID): Future[Long] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 
   def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     val metadataRow = input.metadataInputValues

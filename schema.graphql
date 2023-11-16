@@ -119,7 +119,7 @@ type Consignment {
   transferringBodyName: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
-  totalFileSize: Int!
+  totalFileSize: Long!
   fileChecks: FileChecks!
   parentFolder: String
   parentFolderId: UUID

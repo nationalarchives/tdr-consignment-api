@@ -35,7 +35,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
 }
 
 case class DeferTotalFiles(consignmentId: UUID) extends Deferred[Int]
-case class DeferFileSizeSum(consignmentId: UUID) extends Deferred[Int]
+case class DeferFileSizeSum(consignmentId: UUID) extends Deferred[Long]
 case class DeferFileChecksProgress(consignmentId: UUID) extends Deferred[FileChecks]
 case class DeferParentFolder(consignmentId: UUID) extends Deferred[Option[String]]
 case class DeferParentFolderId(consignmentId: UUID) extends Deferred[Option[UUID]]

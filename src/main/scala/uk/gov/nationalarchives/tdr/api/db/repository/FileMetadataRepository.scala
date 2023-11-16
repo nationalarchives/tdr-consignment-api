@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddFileMetadataInput
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
@@ -24,9 +23,9 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._1.propertyname === ClientSideFileSize)
-      .map(_._1.value.asColumnOf[Int])
+      .map(_._1.value.asColumnOf[Long])
       .sum
-      .getOrElse(0)
+      .getOrElse(0L)
     db.run(query.result)
   }
 
