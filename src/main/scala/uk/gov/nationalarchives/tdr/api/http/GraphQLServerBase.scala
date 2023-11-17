@@ -70,7 +70,9 @@ trait GraphQLServerBase {
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
     val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val validateFileMetadataService = new ValidateFileMetadataService(customMetadataPropertiesService, fileMetadataRepository, fileStatusRepository)
+    val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
+    val validateFileMetadataService =
+      new ValidateFileMetadataService(customMetadataPropertiesService, displayPropertiesService, fileMetadataRepository, fileStatusRepository, config)
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
     val fileMetadataService = new FileMetadataService(
       fileMetadataRepository,
@@ -83,7 +85,6 @@ trait GraphQLServerBase {
     val ffidMetadataService =
       new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
-    val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
     val referenceGeneratorService = new ReferenceGeneratorService(config, SimpleHttpClient())
     val fileService = new FileService(
       fileRepository,
