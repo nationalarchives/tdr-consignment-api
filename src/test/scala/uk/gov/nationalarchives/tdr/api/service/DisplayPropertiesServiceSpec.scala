@@ -1,13 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import cats.implicits.catsSyntaxOptionId
 import org.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.DisplaypropertiesRow
 import uk.gov.nationalarchives.tdr.api.db.repository.DisplayPropertiesRepository
-import uk.gov.nationalarchives.tdr.api.graphql.fields.DisplayPropertiesFields.DisplayPropertyField
-import uk.gov.nationalarchives.tdr.api.graphql.fields.DisplayPropertiesFields.{Text, Integer, Boolean}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.DisplayPropertiesFields.{Boolean, DisplayPropertyField, Integer, Text}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,7 +25,7 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       )
     )
 
-    when(displayPropertiesRepository.getDisplayProperties).thenReturn(mockPropertyResponse)
+    when(displayPropertiesRepository.getDisplayProperties()).thenReturn(mockPropertyResponse)
 
     val service = new DisplayPropertiesService(displayPropertiesRepository)
     val response: Seq[DisplayPropertyField] = service.getDisplayProperties.futureValue
@@ -58,7 +58,7 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       )
     )
 
-    when(displayPropertiesRepository.getDisplayProperties).thenReturn(mockPropertyResponse)
+    when(displayPropertiesRepository.getDisplayProperties()).thenReturn(mockPropertyResponse)
 
     val service = new DisplayPropertiesService(displayPropertiesRepository)
 
@@ -80,7 +80,7 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       )
     )
 
-    when(displayPropertiesRepository.getDisplayProperties).thenReturn(mockPropertyResponse)
+    when(displayPropertiesRepository.getDisplayProperties()).thenReturn(mockPropertyResponse)
 
     val service = new DisplayPropertiesService(displayPropertiesRepository)
 
@@ -92,5 +92,22 @@ class DisplayPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       s"The future returned an exception of type: java.lang.Exception, with message: " +
         "Invalid data type Some(unknownDataType)."
     )
+  }
+
+  "getActiveDisplayPropertyNames" should "return all the active display property names" in {
+    val displayPropertiesRepository = mock[DisplayPropertiesRepository]
+    val mockPropertyResponse = Future(
+      Seq(
+        DisplaypropertiesRow(Some("propertyName1"), Some("Active"), Some("true"), Some("boolean")),
+        DisplaypropertiesRow(Some("propertyName3"), Some("Active"), Some("true"), Some("boolean"))
+      )
+    )
+
+    when(displayPropertiesRepository.getDisplayProperties("Active".some, "true".some)).thenReturn(mockPropertyResponse)
+
+    val service = new DisplayPropertiesService(displayPropertiesRepository)
+    val response: Seq[String] = service.getActiveDisplayPropertyNames.futureValue
+
+    response should be(List("propertyName1", "propertyName3"))
   }
 }
