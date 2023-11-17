@@ -43,7 +43,6 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-//scalastyle:off file.size.limit
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
@@ -65,7 +64,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusService, customMetadataServiceMock, validateFileMetadataServiceMock)
   val queriedFileFieldsWithoutOriginalPath: QueriedFileFields = QueriedFileFields()
 
-  // scalastyle:off magic.number
   "getOwnersOfFiles" should "find the owners of the given files" in {
     val fixedUuidSource = new FixedUUIDSource()
     val fileId1 = UUID.fromString("bc609dc4-e153-4620-a7ab-20e7fd5a4005")
@@ -137,7 +135,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     owners(1).fileId should equal(fileId2)
     owners(1).userId should equal(userId2)
   }
-  // scalastyle:on magic.number
 
   "getFileDetails" should "return all the correct files details from the database response" in {
     val fileRepositoryMock = mock[FileRepository]

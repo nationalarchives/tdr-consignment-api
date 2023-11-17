@@ -35,7 +35,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
     val fixedUUIDSource = new FixedUUIDSource()
-    val metadataId: UUID = fixedUUIDSource.uuid
     fixedUUIDSource.reset
 
     val addChecksumCaptor: ArgumentCaptor[List[AddFileMetadataInput]] = ArgumentCaptor.forClass(classOf[List[AddFileMetadataInput]])
@@ -59,8 +58,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     row.filePropertyName should equal(SHA256ServerSideChecksum)
     row.fileId should equal(fixedFileUuid)
     row.userId should equal(fixedUserId)
-//    row.datetime should equal(Timestamp.from(FixedTimeSource.now))
-//    row.metadataid.shouldBe(metadataId)
   }
 
   def createInput(propertyName: String, fileId: UUID, value: String): AddFileMetadataWithFileIdInput = {
@@ -272,7 +269,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
   "getSumOfFileSizes" should "return the sum of the file sizes" in {
     val fileMetadataRepository = mock[FileMetadataRepository]
     val consignmentId = UUID.randomUUID()
-    when(fileMetadataRepository.getSumOfFileSizes(any[UUID])).thenReturn(Future(1))
+    when(fileMetadataRepository.getSumOfFileSizes(any[UUID])).thenReturn(Future(1L))
 
     val service = new FileMetadataService(fileMetadataRepository, mock[ConsignmentStatusService], mock[CustomMetadataPropertiesService], mock[ValidateFileMetadataService])
     val result = service.getSumOfFileSizes(consignmentId).futureValue
@@ -441,7 +438,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     addFileMetadata.foreach { metadata =>
       expectedPropertyNames.contains(metadata.filePropertyName) shouldBe true
       expectedPropertyValues.contains(metadata.value) shouldBe true
-//      metadata.datetime != null shouldBe true
       metadata.userId should equal(userId)
     }
   }
