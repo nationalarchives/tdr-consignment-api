@@ -3,7 +3,7 @@ FROM alpine
 WORKDIR /api
 RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
     apk update && \
-    apk upgrade p11-kit busybox libretls zlib openssl && \
+    apk upgrade --no-cache p11-kit busybox libretls zlib libcrypto3 libssl3 openssl && \
     apk add ca-certificates && \
     chown -R apiuser /api && \
     wget https://truststore.pki.rds.amazonaws.com/eu-west-2/eu-west-2-bundle.pem && \
