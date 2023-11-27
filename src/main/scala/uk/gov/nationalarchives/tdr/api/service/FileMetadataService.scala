@@ -52,7 +52,7 @@ class FileMetadataService(
 
     for {
       _ <- fileMetadataRepository.deleteFileMetadata(uniqueFileIds, distinctPropertyNames)
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataRows(uniqueFileIds, distinctMetadataProperties, userId))
+      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(uniqueFileIds, distinctMetadataProperties, userId))
       _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, distinctPropertyNames)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
@@ -107,7 +107,7 @@ class FileMetadataService(
     } else originalPropertyNames
   }
 
-  private def generateFileMetadataRows(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[AddFileMetadataInput] = {
+  private def generateFileMetadataInput(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[AddFileMetadataInput] = {
     fileIds
       .flatMap(fileId =>
         {
@@ -183,6 +183,8 @@ object FileMetadataService {
   case class StaticMetadata(name: String, value: String)
 
   case class FileMetadataValue(name: String, value: String)
+
+  case class AddFileMetadataInput(fileId: UUID, value: String, userId: UUID, filePropertyName: String)
 
   case class File(
       fileId: UUID,

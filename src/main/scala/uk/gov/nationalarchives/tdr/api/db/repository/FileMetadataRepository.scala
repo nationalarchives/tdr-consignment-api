@@ -3,8 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddFileMetadataInput
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize}
 
 import java.sql.Timestamp
 import java.util.UUID

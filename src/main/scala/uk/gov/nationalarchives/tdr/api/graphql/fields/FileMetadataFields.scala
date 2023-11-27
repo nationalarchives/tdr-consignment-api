@@ -19,7 +19,6 @@ object FileMetadataFields {
 
   val SHA256ServerSideChecksum = "SHA256ServerSideChecksum"
 
-  case class AddFileMetadataInput(fileId: UUID, value: String, userId: UUID, filePropertyName: String)
   case class FileMetadata(filePropertyName: String, value: String) extends FileMetadataBase
   case class UpdateFileMetadataInput(filePropertyIsMultiValue: Boolean, filePropertyName: String, value: String) extends FileMetadataBase
   // Option[String] instead of String in case you want to delete all values of property or in case value does not have properties
