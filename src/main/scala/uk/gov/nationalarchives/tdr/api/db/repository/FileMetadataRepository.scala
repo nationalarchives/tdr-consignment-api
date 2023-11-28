@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClientSideFileSize
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -11,8 +11,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
 
-  private val insertFileMetadataQuery = Filemetadata returning Filemetadata.map(_.metadataid) into
-    ((filemetadata, metadataid) => filemetadata.copy(metadataid = metadataid))
+  private val insertFileMetadataQuery = Filemetadata.map(t => (t.fileid, t.value, t.userid, t.propertyname)) returning Filemetadata
+    .map(r => (r.metadataid, r.datetime)) into ((fileMetadata, dbGeneratedValues) =>
+    FilemetadataRow(dbGeneratedValues._1, fileMetadata._1, fileMetadata._2, dbGeneratedValues._2, fileMetadata._3, fileMetadata._4)
+  )
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = {
     val query = Filemetadata
@@ -26,8 +28,8 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def addFileMetadata(rows: Seq[FilemetadataRow]): Future[Seq[FilemetadataRow]] = {
-    db.run(insertFileMetadataQuery ++= rows)
+  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
+    db.run(insertFileMetadataQuery ++= rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
   }
 
   def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {
