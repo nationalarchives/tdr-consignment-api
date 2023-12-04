@@ -13,7 +13,7 @@ You need either a default profile set up or you need to set the AWS_ACCESS_KEY_I
 
 Set up the database
 ```
-docker run --name postgres -p 5432:5432 -e POSTGRES_USER=tdr -e POSTGRES_PASSWORD=password -e POSTGRES_DB=consignmentapi -d postgres:14.4
+docker run --name postgres -p 5432:5432 -e POSTGRES_USER=tdr -e POSTGRES_PASSWORD=password -e POSTGRES_DB=consignmentapi -d postgres:14.7
 git clone https://github.com/nationalarchives/tdr-consignment-api-data.git
 cd tdr-consignment-api-data.git
 sbt flywayMigrate
