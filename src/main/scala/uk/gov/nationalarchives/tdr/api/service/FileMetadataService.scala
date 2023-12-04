@@ -145,15 +145,16 @@ object FileMetadataService {
   val Description = "description"
   val DescriptionAlternate = "DescriptionAlternate"
 
-  /** Save default values for these properties because TDR currently only supports records which are Open, in English, etc. Users agree to these conditions at a consignment level,
+  /** Default values for these properties stored in FilePropertyValues table. (TDR-2207)
+    * Save default values for these properties because TDR currently only supports records which are Open, in English, etc. Users agree to these conditions at a consignment level,
     * so it's OK to save these as defaults for every file. They need to be saved so they can be included in the export package. The defaults may be removed in future once we let
     * users upload a wider variety of records.
     */
-  val RightsCopyright: StaticMetadata = StaticMetadata("RightsCopyright", "Crown Copyright")
-  val LegalStatus: StaticMetadata = StaticMetadata("LegalStatus", "Public Record")
-  val HeldBy: StaticMetadata = StaticMetadata("HeldBy", "TNA")
-  val Language: StaticMetadata = StaticMetadata("Language", "English")
-  val FoiExemptionCode: StaticMetadata = StaticMetadata("FoiExemptionCode", "open")
+  val RightsCopyright = "RightsCopyright"
+  val LegalStatus = "LegalStatus"
+  val HeldBy = "HeldBy"
+  val Language = "Language"
+  val FoiExemptionCode = "FoiExemptionCode"
   val clientSideProperties: List[String] =
     List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize, Filename, FileType)
   val serverSideProperties: List[String] = List(FileReference, ParentReference)
@@ -167,11 +168,11 @@ object FileMetadataService {
       propertyNameMap.get(ClientSideOriginalFilepath),
       propertyNameMap.get(ClientSideFileLastModifiedDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(ClientSideFileSize).map(_.toLong),
-      propertyNameMap.get(RightsCopyright.name),
-      propertyNameMap.get(LegalStatus.name),
-      propertyNameMap.get(HeldBy.name),
-      propertyNameMap.get(Language.name),
-      propertyNameMap.get(FoiExemptionCode.name),
+      propertyNameMap.get(RightsCopyright),
+      propertyNameMap.get(LegalStatus),
+      propertyNameMap.get(HeldBy),
+      propertyNameMap.get(Language),
+      propertyNameMap.get(FoiExemptionCode),
       propertyNameMap.get(ClosurePeriod).map(_.toInt),
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
