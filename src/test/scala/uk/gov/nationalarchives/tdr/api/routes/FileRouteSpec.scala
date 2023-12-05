@@ -6,7 +6,7 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{FileReference, FileType, Filename, ParentReference, clientSideProperties, serverSideProperties}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{FileReference, FileType, Filename, ParentReference, clientSideProperties}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -50,10 +50,10 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "add files and metadata entries for files and directories" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
+    (clientSideProperties ++ serverSideProperties ++ staticMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
-    staticMetadataProperties.foreach(staticMetadata => utils.createFilePropertyValues(staticMetadata.name, staticMetadata.value, default = true, 1, 1))
+    // staticMetadataProperties.foreach(staticMetadata => utils.createFilePropertyValues(staticMetadata.name, staticMetadata.value, default = true, 1, 1))
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
@@ -77,7 +77,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ staticMetadataProperties.map(_.name)).foreach(utils.addFileProperty)
+    (clientSideProperties ++ serverSideProperties ++ staticMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
     val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
@@ -171,17 +171,20 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     }
   }
 
-  def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {
-    staticMetadataProperties.map(property => {
-      val sql = """SELECT * FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?"""
-      val ps: PreparedStatement = utils.connection.prepareStatement(sql)
-      ps.setObject(1, fileId, Types.OTHER)
-      ps.setString(2, property.name)
-      val result = ps.executeQuery()
-      result.next()
-      result.getString("Value") should equal(property.value)
-    })
-  }
+  /* Doesn't appear to be referenced anywhere so could be removed
+    def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {
+      staticMetadataProperties.map(property => {
+        val sql = """SELECT * FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?"""
+        val ps: PreparedStatement = utils.connection.prepareStatement(sql)
+        ps.setObject(1, fileId, Types.OTHER)
+        ps.setString(2, property.name)
+        val result = ps.executeQuery()
+        result.next()
+        result.getString("Value") should equal(property.value)
+      })
+    }
+
+   */
 
   private def createConsignmentStructure(utils: TestUtils, userId: UUID = userId): Unit = {
     val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")

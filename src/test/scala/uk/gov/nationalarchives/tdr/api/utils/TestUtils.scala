@@ -578,5 +578,6 @@ object TestUtils {
   case class Locations(column: Int, line: Int)
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
-  val staticMetadataProperties: List[StaticMetadata] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
+  val serverSideProperties: List[String] = List(FileReference, ParentReference)
+  val staticMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
 }
