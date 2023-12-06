@@ -11,6 +11,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 
 import java.sql.{PreparedStatement, Types}
 import java.util.UUID
@@ -54,6 +55,22 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     utils.createConsignment(consignmentId, userId)
 
     // staticMetadataProperties.foreach(staticMetadata => utils.createFilePropertyValues(staticMetadata.name, staticMetadata.value, default = true, 1, 1))
+    // Currently hardcoding this to get the tests working (TH - TDR-2207)
+    staticMetadataProperties.foreach { smp =>
+      utils.createFilePropertyValues(
+        smp,
+        smp match {
+          case RightsCopyright  => "Crown Copyright"
+          case LegalStatus      => "Public Record"
+          case HeldBy           => "TNA"
+          case Language         => "English"
+          case FoiExemptionCode => "open"
+        },
+        default = true,
+        1,
+        1
+      )
+    }
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
