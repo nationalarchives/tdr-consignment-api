@@ -277,7 +277,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createConsignment(consignmentId, userId, fixedSeriesId)
     utils.createFile(fileId, consignmentId)
 
-    generateMetadataPropertiesForFile(fileId, utils)
+    generateMetadataPropertiesForFile(fileId, utils, true)
 
     val fileOneFfidMetadataId = utils.addFFIDMetadata(fileId.toString)
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
@@ -294,7 +294,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     utils.createConsignment(consignmentId, userId, fixedSeriesId)
     utils.createFile(fileId, consignmentId)
-    generateMetadataPropertiesForFile(fileId, utils)
+    generateMetadataPropertiesForFile(fileId, utils, true)
 
     val response: GraphqlQueryData = runTestQuery("query_filemetadata", validUserToken())
 
@@ -308,7 +308,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     utils.createConsignment(consignmentId, userId, fixedSeriesId)
     utils.createFile(fileId, consignmentId)
-    generateMetadataPropertiesForFile(fileId, utils)
+    generateMetadataPropertiesForFile(fileId, utils, true)
 
     val fileOneFfidMetadataId = utils.addFFIDMetadata(fileId.toString)
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, "ext1", "identification1", "puid1")
@@ -375,11 +375,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createFile(subDirectory, consignmentId, NodeType.directoryTypeIdentifier, "subDirectory", parentId = subDirectory.some, fileRef = Some("REF2"), parentRef = Some("REF1"))
 
     // staticMetadataProperties.foreach(p => utils.addFileMetadata(UUID.randomUUID().toString, topDirectory.toString, p.name, p.value))
-    addStaticMetaData(utils, topDirectory)
+    addStaticMetaData(utils, topDirectory, false)
     utils.addFileMetadata(UUID.randomUUID.toString, topDirectory.toString, ClientSideOriginalFilepath, "directory")
 
     // staticMetadataProperties.foreach(p => utils.addFileMetadata(UUID.randomUUID().toString, subDirectory.toString, p.name, p.value))
-    addStaticMetaData(utils, subDirectory)
+    addStaticMetaData(utils, subDirectory, false)
     utils.addFileMetadata(UUID.randomUUID.toString, subDirectory.toString, ClientSideOriginalFilepath, "directory")
 
     setUpFileAndStandardMetadata(consignmentId, fileId, utils, subDirectory.some, fileRef = Some("REF3"))
@@ -868,15 +868,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       parentRef: Option[Reference] = None
   ): Unit = {
     utils.createFile(fileId, consignmentId, parentId = parentId, fileRef = fileRef, parentRef = parentRef)
-    generateMetadataPropertiesForFile(fileId, utils)
+    generateMetadataPropertiesForFile(fileId, utils, false)
     utils.addAntivirusMetadata(fileId.toString)
     utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ServerSideChecksum)
     setUpStandardFFIDMatchesForFile(fileId, utils)
   }
 
-  private def generateMetadataPropertiesForFile(fileId: UUID, utils: TestUtils): Unit = {
-    addStaticMetaData(utils, fileId)
-    addClientSideProperties(utils, fileId)
+  private def generateMetadataPropertiesForFile(fileId: UUID, utils: TestUtils, addProperty: Boolean): Unit = {
+    addStaticMetaData(utils, fileId, addProperty)
+    addClientSideProperties(utils, fileId, addProperty)
   }
 
   private def createDirectoryAndMetadata(
@@ -889,14 +889,17 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       parentRef: Option[Reference] = None
   ): UUID = {
     utils.createFile(fileId, consignmentId, NodeType.directoryTypeIdentifier, fileName, parentId = parentId, fileRef = fileRef, parentRef = parentRef)
-    addStaticMetaData(utils, fileId)
+    addStaticMetaData(utils, fileId, false)
     // staticMetadataProperties.foreach(p => utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, p.name, p.value))
     utils.addFileMetadata(UUID.randomUUID.toString, fileId.toString, ClientSideOriginalFilepath, fileName)
     fileId
   }
 
-  private def addStaticMetaData(utils: TestUtils, parentId: UUID): Unit = {
+  private def addStaticMetaData(utils: TestUtils, parentId: UUID, addProperty: Boolean): Unit = {
     staticMetadataProperties.foreach { smp =>
+      if (addProperty) {
+        utils.addFileProperty(smp)
+      }
       utils.addFileMetadata(
         UUID.randomUUID().toString,
         parentId.toString,
@@ -912,8 +915,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     }
   }
 
-  private def addClientSideProperties(utils: TestUtils, parentId: UUID): Unit = {
+  private def addClientSideProperties(utils: TestUtils, parentId: UUID, addProperty: Boolean): Unit = {
     clientSideProperties.foreach { csp =>
+      if (addProperty) {
+        utils.addFileProperty(csp)
+      }
       utils.addFileMetadata(
         UUID.randomUUID().toString,
         parentId.toString,
