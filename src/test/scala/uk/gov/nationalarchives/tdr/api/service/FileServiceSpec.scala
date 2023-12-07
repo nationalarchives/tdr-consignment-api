@@ -33,7 +33,7 @@ import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
-import uk.gov.nationalarchives.tdr.api.utils.TestUtils.staticMetadataProperties
+import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -737,7 +737,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val expectedSize = 56
     metadataRows.size should equal(expectedSize)
     staticMetadataProperties.foreach(prop => {
-      metadataRows.count(r => r.propertyname == prop) should equal(5)
+      metadataRows.count(_.propertyname == prop) should equal(5)
     })
 
     clientSideProperties.foreach(prop => {
@@ -823,7 +823,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val expectedSize = 56
     metadataRows.size should equal(expectedSize)
     staticMetadataProperties.foreach(prop => {
-      metadataRows.count(r => r.propertyname == prop) should equal(5)
+      metadataRows.count(_.propertyname == prop) should equal(5)
     })
 
     clientSideProperties.foreach(prop => {
@@ -908,7 +908,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val expectedSize = 36
     metadataRows.size should equal(expectedSize)
     staticMetadataProperties.foreach(prop => {
-      metadataRows.count(r => r.propertyname == prop) should equal(3)
+      metadataRows.count(_.propertyname == prop) should equal(3)
     })
 
     clientSideProperties.foreach(prop => {
@@ -1342,9 +1342,17 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
   private def mockCustomMetadataValuesResponse(customMetadataMock: CustomMetadataPropertiesRepository): ScalaOngoingStubbing[Future[Seq[FilepropertyvaluesRow]]] = {
     val staticMetadataRows = staticMetadataProperties.map(staticMetadata => {
-      // TODO Check whether should populate this with value or not
-      // FilepropertyvaluesRow(staticMetadata.name, staticMetadata.value, Some(true))
-      FilepropertyvaluesRow(staticMetadata, s"$staticMetadata value", Some(true))
+      FilepropertyvaluesRow(
+        staticMetadata,
+        staticMetadata match {
+          case RightsCopyright  => defaultCopyright
+          case LegalStatus      => defaultLegalStatus
+          case HeldBy           => defaultHeldBy
+          case Language         => defaultLanguage
+          case FoiExemptionCode => defaultFoiExemptionCode
+        },
+        Some(true)
+      )
     })
 
     when(customMetadataMock.getCustomMetadataValuesWithDefault).thenReturn(Future(staticMetadataRows))

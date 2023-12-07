@@ -896,38 +896,38 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   }
 
   private def addStaticMetaData(utils: TestUtils, parentId: UUID, addProperty: Boolean): Unit = {
-    staticMetadataProperties.foreach { smp =>
+    staticMetadataProperties.foreach { staticMetadataProperty =>
       if (addProperty) {
-        utils.addFileProperty(smp)
+        utils.addFileProperty(staticMetadataProperty)
       }
       utils.addFileMetadata(
         UUID.randomUUID().toString,
         parentId.toString,
-        smp,
-        smp match {
-          case RightsCopyright  => "Crown Copyright"
-          case LegalStatus      => "Public Record"
-          case HeldBy           => "TNA"
-          case Language         => "English"
-          case FoiExemptionCode => "open"
+        staticMetadataProperty,
+        staticMetadataProperty match {
+          case RightsCopyright  => defaultCopyright
+          case LegalStatus      => defaultLegalStatus
+          case HeldBy           => defaultHeldBy
+          case Language         => defaultLanguage
+          case FoiExemptionCode => defaultFoiExemptionCode
         }
       )
     }
   }
 
   private def addClientSideProperties(utils: TestUtils, parentId: UUID, addProperty: Boolean): Unit = {
-    clientSideProperties.foreach { csp =>
+    clientSideProperties.foreach { clientSideProperty =>
       if (addProperty) {
-        utils.addFileProperty(csp)
+        utils.addFileProperty(clientSideProperty)
       }
       utils.addFileMetadata(
         UUID.randomUUID().toString,
         parentId.toString,
-        csp,
-        csp match {
+        clientSideProperty,
+        clientSideProperty match {
           case ClientSideFileLastModifiedDate => s"2021-02-08 16:00:00"
           case ClientSideFileSize             => "1"
-          case _                              => s"$csp value"
+          case _                              => s"$clientSideProperty value"
         }
       )
     }

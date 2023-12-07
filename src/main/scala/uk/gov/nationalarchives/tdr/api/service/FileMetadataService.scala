@@ -156,8 +156,6 @@ object FileMetadataService {
   val FoiExemptionCode = "FoiExemptionCode"
   val clientSideProperties: List[String] =
     List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize, Filename, FileType)
-  // Moved to TestUtils as only used in test classes
-  // val serverSideProperties: List[String] = List(FileReference, ParentReference)
 
   def getFileMetadataValues(fileMetadataRow: Seq[FilemetadataRow]): FileMetadataValues = {
     val propertyNameMap: Map[String, String] = fileMetadataRow.groupBy(_.propertyname).transform { (_, value) =>

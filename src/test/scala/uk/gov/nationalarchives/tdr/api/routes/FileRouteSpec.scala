@@ -54,17 +54,15 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     (clientSideProperties ++ serverSideProperties ++ staticMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
-    // staticMetadataProperties.foreach(staticMetadata => utils.createFilePropertyValues(staticMetadata.name, staticMetadata.value, default = true, 1, 1))
-    // Currently hardcoding this to get the tests working (TH - TDR-2207)
     staticMetadataProperties.foreach { smp =>
       utils.createFilePropertyValues(
         smp,
         smp match {
-          case RightsCopyright  => "Crown Copyright"
-          case LegalStatus      => "Public Record"
-          case HeldBy           => "TNA"
-          case Language         => "English"
-          case FoiExemptionCode => "open"
+          case RightsCopyright  => defaultCopyright
+          case LegalStatus      => defaultLegalStatus
+          case HeldBy           => defaultHeldBy
+          case Language         => defaultLanguage
+          case FoiExemptionCode => defaultFoiExemptionCode
         },
         default = true,
         1,
@@ -187,21 +185,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       None
     }
   }
-
-  /* Doesn't appear to be referenced anywhere so could be removed
-    def checkStaticMetadataExists(fileId: UUID, utils: TestUtils): List[Assertion] = {
-      staticMetadataProperties.map(property => {
-        val sql = """SELECT * FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?"""
-        val ps: PreparedStatement = utils.connection.prepareStatement(sql)
-        ps.setObject(1, fileId, Types.OTHER)
-        ps.setString(2, property.name)
-        val result = ps.executeQuery()
-        result.next()
-        result.getString("Value") should equal(property.value)
-      })
-    }
-
-   */
 
   private def createConsignmentStructure(utils: TestUtils, userId: UUID = userId): Unit = {
     val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
