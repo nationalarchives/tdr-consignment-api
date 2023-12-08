@@ -145,10 +145,6 @@ object FileMetadataService {
   val Description = "description"
   val DescriptionAlternate = "DescriptionAlternate"
 
-  /** Default values for these properties stored in FilePropertyValues table. (TDR-2207) Save default values for these properties because TDR currently only supports records which
-    * are Open, in English, etc. Users agree to these conditions at a consignment level, so it's OK to save these as defaults for every file. They need to be saved so they can be
-    * included in the export package. The defaults may be removed in future once we let users upload a wider variety of records.
-    */
   val RightsCopyright = "RightsCopyright"
   val LegalStatus = "LegalStatus"
   val HeldBy = "HeldBy"
@@ -178,8 +174,6 @@ object FileMetadataService {
       propertyNameMap.get(DescriptionClosed).map(_.toBoolean)
     )
   }
-
-  case class StaticMetadata(name: String, value: String)
 
   case class FileMetadataValue(name: String, value: String)
 

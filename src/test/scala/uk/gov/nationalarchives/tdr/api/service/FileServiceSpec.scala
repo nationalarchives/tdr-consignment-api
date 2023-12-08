@@ -736,7 +736,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     })
     val expectedSize = 56
     metadataRows.size should equal(expectedSize)
-    staticMetadataProperties.foreach(prop => {
+    defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(5)
     })
 
@@ -822,7 +822,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     file.get.parentreference should equal(Some("ref2"))
     val expectedSize = 56
     metadataRows.size should equal(expectedSize)
-    staticMetadataProperties.foreach(prop => {
+    defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(5)
     })
 
@@ -907,7 +907,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     })
     val expectedSize = 36
     metadataRows.size should equal(expectedSize)
-    staticMetadataProperties.foreach(prop => {
+    defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(3)
     })
 
@@ -1341,10 +1341,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   }
 
   private def mockCustomMetadataValuesResponse(customMetadataMock: CustomMetadataPropertiesRepository): ScalaOngoingStubbing[Future[Seq[FilepropertyvaluesRow]]] = {
-    val staticMetadataRows = staticMetadataProperties.map(staticMetadata => {
+    val defaultMetadataRows = defaultMetadataProperties.map(defaultMetadata => {
       FilepropertyvaluesRow(
-        staticMetadata,
-        staticMetadata match {
+        defaultMetadata,
+        defaultMetadata match {
           case RightsCopyright  => defaultCopyright
           case LegalStatus      => defaultLegalStatus
           case HeldBy           => defaultHeldBy
@@ -1355,6 +1355,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       )
     })
 
-    when(customMetadataMock.getCustomMetadataValuesWithDefault).thenReturn(Future(staticMetadataRows))
+    when(customMetadataMock.getCustomMetadataValuesWithDefault).thenReturn(Future(defaultMetadataRows))
   }
 }

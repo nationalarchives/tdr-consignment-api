@@ -4,9 +4,7 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{FileReference, FileType, Filename, ParentReference, clientSideProperties}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -51,13 +49,13 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "add files and metadata entries for files and directories" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ staticMetadataProperties).foreach(utils.addFileProperty)
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
-    staticMetadataProperties.foreach { smp =>
+    defaultMetadataProperties.foreach { defaultMetadataProperty =>
       utils.createFilePropertyValues(
-        smp,
-        smp match {
+        defaultMetadataProperty,
+        defaultMetadataProperty match {
           case RightsCopyright  => defaultCopyright
           case LegalStatus      => defaultLegalStatus
           case HeldBy           => defaultHeldBy
@@ -72,8 +70,8 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
-    val expectedCount = ((Filename :: FileType :: FileReference :: ParentReference :: staticMetadataProperties).size * distinctDirectoryCount) +
-      (staticMetadataProperties.size * fileCount) +
+    val expectedCount = ((Filename :: FileType :: FileReference :: ParentReference :: defaultMetadataProperties).size * distinctDirectoryCount) +
+      (defaultMetadataProperties.size * fileCount) +
       (clientSideProperties.size * fileCount) +
       (serverSideProperties.size * fileCount) +
       distinctDirectoryCount
@@ -92,7 +90,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ staticMetadataProperties).foreach(utils.addFileProperty)
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
     val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
