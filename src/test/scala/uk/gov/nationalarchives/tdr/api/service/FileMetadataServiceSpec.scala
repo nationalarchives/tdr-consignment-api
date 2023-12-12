@@ -542,16 +542,11 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FileMetadataService.ClosureType shouldEqual "ClosureType"
     FileMetadataService.Description shouldEqual "description"
     FileMetadataService.DescriptionAlternate shouldEqual "DescriptionAlternate"
-    FileMetadataService.RightsCopyright.name shouldEqual "RightsCopyright"
-    FileMetadataService.RightsCopyright.value shouldEqual "Crown Copyright"
-    FileMetadataService.LegalStatus.name shouldEqual "LegalStatus"
-    FileMetadataService.LegalStatus.value shouldEqual "Public Record"
-    FileMetadataService.HeldBy.name shouldEqual "HeldBy"
-    FileMetadataService.HeldBy.value shouldEqual "TNA"
-    FileMetadataService.Language.name shouldEqual "Language"
-    FileMetadataService.Language.value shouldEqual "English"
-    FileMetadataService.FoiExemptionCode.name shouldEqual "FoiExemptionCode"
-    FileMetadataService.FoiExemptionCode.value shouldEqual "open"
+    FileMetadataService.RightsCopyright shouldEqual "RightsCopyright"
+    FileMetadataService.LegalStatus shouldEqual "LegalStatus"
+    FileMetadataService.HeldBy shouldEqual "HeldBy"
+    FileMetadataService.Language shouldEqual "Language"
+    FileMetadataService.FoiExemptionCode shouldEqual "FoiExemptionCode"
   }
 
   private def generateFileStatusRows(fileIds: Seq[UUID]) = {
