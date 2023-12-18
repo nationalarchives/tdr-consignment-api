@@ -117,6 +117,7 @@ type Consignment {
   includeTopLevelFolder: Boolean
   seriesName: String
   transferringBodyName: String
+  transferringBodyTdrCode: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Long!

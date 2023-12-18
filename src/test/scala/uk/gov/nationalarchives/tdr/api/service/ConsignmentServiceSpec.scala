@@ -32,16 +32,19 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   val fixedTimeSource: Instant = FixedTimeSource.now
   val fixedUuidSource: FixedUUIDSource = new FixedUUIDSource()
-  val bodyId: UUID = UUID.fromString("8eae8ed8-201c-11eb-adc1-0242ac120002")
   val userId: UUID = UUID.fromString("8d415358-f68b-403b-a90a-daab3fd60109")
+  // Transferring Body test values
+  val bodyId: UUID = UUID.fromString("8eae8ed8-201c-11eb-adc1-0242ac120002")
+  val bodyName: String = "Mock department"
+  val bodyCode: String = "Mock-dept-code-123"
+  val bodyDescription: Option[String] = Option("Mock dept description")
+
   val seriesId: UUID = UUID.fromString("b6b19341-8c33-4272-8636-aafa1e3d98de")
   val consignmentId: UUID = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
   val seriesName: String = "Mock series"
   val seriesCode: String = "Mock series"
   val seriesDescription: Option[String] = Option("Series description")
-  val bodyName: String = "Mock department"
-  val bodyCode: String = "Mock department"
-  val bodyDescription: Option[String] = Option("Body description")
+
   // scalastyle:off magic.number
   val consignmentSequence: Long = 400L
   // scalastyle:on magic.number
@@ -57,7 +60,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignmenttype = "standard",
     bodyid = bodyId,
     seriesname = Some(seriesName),
-    transferringbodyname = Some(bodyName)
+    transferringbodyname = Some(bodyName),
+    transferringbodytdrcode = Some(bodyCode)
   )
 
   val consignmentRepoMock: ConsignmentRepository = mock[ConsignmentRepository]
@@ -87,9 +91,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
-    when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
+    when(transferringBodyServiceMock.getBodyByCode(bodyCode)).thenReturn(Future.successful(mockBody))
     when(mockBody.bodyId).thenReturn(bodyId)
-    when(mockToken.transferringBody).thenReturn(Some("body-code"))
+    when(mockToken.transferringBody).thenReturn(Some(bodyCode))
 
     val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
@@ -102,6 +106,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     result.bodyId shouldBe bodyId
     result.seriesName shouldBe Some(seriesName)
     result.transferringBodyName shouldBe Some(bodyName)
+    result.transferringBodyTdrCode shouldBe Some(bodyCode)
   }
 
   "addConsignment" should "create the metadata consignment statuses" in {
@@ -115,9 +120,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(consignmentStatusRepoMock.addConsignmentStatuses(rowCaptor.capture())).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
-    when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
+    when(transferringBodyServiceMock.getBodyByCode(bodyCode)).thenReturn(Future.successful(mockBody))
     when(mockBody.bodyId).thenReturn(bodyId)
-    when(mockToken.transferringBody).thenReturn(Some("body-code"))
+    when(mockToken.transferringBody).thenReturn(Some(bodyCode))
 
     val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
@@ -142,10 +147,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
-    when(transferringBodyServiceMock.getBodyByCode("body-code")).thenReturn(Future.successful(mockBody))
+    when(transferringBodyServiceMock.getBodyByCode(bodyCode)).thenReturn(Future.successful(mockBody))
     when(mockBody.bodyId).thenReturn(bodyId)
     when(mockBody.name).thenReturn(bodyName)
-    when(mockToken.transferringBody).thenReturn(Some("body-code"))
+    when(mockBody.tdrCode).thenReturn(bodyCode)
+    when(mockToken.transferringBody).thenReturn(Some(bodyCode))
     when(mockToken.userId).thenReturn(userId)
     consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
 
@@ -187,7 +193,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       bodyid = bodyId,
       includetoplevelfolder = Some(true),
       seriesname = Some("seriesName"),
-      transferringbodyname = Some("transferringBodyName")
+      transferringbodyname = Some("transferringBodyName"),
+      transferringbodytdrcode = Some("transferringBodyTdrCode")
     )
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
     when(consignmentRepoMock.getConsignment(any[UUID])).thenReturn(mockResponse)
@@ -203,6 +210,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.includeTopLevelFolder should equal(consignmentRow.includetoplevelfolder)
     consignment.seriesName should equal(consignmentRow.seriesname)
     consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
+    consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
   }
 
   "getConsignment" should "return none when consignment id does not exist" in {

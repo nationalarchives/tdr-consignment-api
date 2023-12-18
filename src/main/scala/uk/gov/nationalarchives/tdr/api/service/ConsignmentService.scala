@@ -66,12 +66,12 @@ class ConsignmentService(
     val timestampNow = Timestamp.from(now)
     val consignmentType: String = addConsignmentInput.consignmentType.validateType
 
-    val userBody = token.transferringBody.getOrElse(throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
+    val userBodyCode = token.transferringBody.getOrElse(throw InputDataException(s"No transferring body in user token for user '${token.userId}'"))
     val seriesId = addConsignmentInput.seriesid
 
     for {
       sequence <- consignmentRepository.getNextConsignmentSequence
-      body <- transferringBodyService.getBodyByCode(userBody)
+      body <- transferringBodyService.getBodyByCode(userBodyCode)
       seriesName <- getSeriesName(seriesId)
       consignmentRef = ConsignmentReference.createConsignmentReference(yearNow, sequence)
       consignmentId = uuidSource.uuid
@@ -85,7 +85,8 @@ class ConsignmentService(
         consignmenttype = consignmentType,
         bodyid = body.bodyId,
         seriesname = seriesName,
-        transferringbodyname = Some(body.name)
+        transferringbodyname = Some(body.name),
+        transferringbodytdrcode = Some(body.tdrCode)
       )
       descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
       closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, NotEntered, timestampNow, Option(timestampNow))
@@ -156,7 +157,8 @@ class ConsignmentService(
       row.bodyid,
       row.includetoplevelfolder,
       row.seriesname,
-      row.transferringbodyname
+      row.transferringbodyname,
+      row.transferringbodytdrcode
     )
   }
 
