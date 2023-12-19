@@ -14,14 +14,13 @@ import org.scalatest.prop.Tables.Table
 import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields, SeriesFields}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Completed, DescriptiveMetadata, Failed, NotEntered}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import java.sql.Timestamp
-import java.time.Instant.now
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +32,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val fixedTimeSource: Instant = FixedTimeSource.now
   val fixedUuidSource: FixedUUIDSource = new FixedUUIDSource()
   val userId: UUID = UUID.fromString("8d415358-f68b-403b-a90a-daab3fd60109")
-  // Transferring Body test values
   val bodyId: UUID = UUID.fromString("8eae8ed8-201c-11eb-adc1-0242ac120002")
   val bodyName: String = "Mock department"
   val bodyCode: String = "Mock-dept-code-123"
