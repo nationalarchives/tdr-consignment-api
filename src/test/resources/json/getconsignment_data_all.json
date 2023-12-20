@@ -17,6 +17,7 @@
       "includeTopLevelFolder": true,
       "seriesName": "seriesName",
       "transferringBodyName": "transferringBodyName",
+      "transferringBodyTdrCode": "transferringBodyTdrCode",
       "files": [
         {
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
