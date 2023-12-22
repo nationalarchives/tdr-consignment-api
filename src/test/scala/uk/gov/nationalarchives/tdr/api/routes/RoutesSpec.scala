@@ -1,9 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.{HttpProtocol, HttpResponse, StatusCode, StatusCodes}
-import akka.http.scaladsl.server.AuthorizationFailedRejection
-import akka.http.scaladsl.server.Directives._
-import akka.stream.alpakka.slick.javadsl.SlickSession
+import org.apache.pekko.http.scaladsl.model.{HttpProtocol, HttpResponse, StatusCode, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.AuthorizationFailedRejection
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.stream.connectors.slick.javadsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import nl.altindag.log.LogCaptor
 import org.scalatest.BeforeAndAfterEach

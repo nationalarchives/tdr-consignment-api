@@ -1,9 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.stream.Materializer
-import akka.stream.alpakka.slick.javadsl.SlickSession
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 

@@ -1,19 +1,19 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.StatusCodes.InternalServerError
-import akka.http.scaladsl.model.headers.{Origin, `Strict-Transport-Security`}
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives.{entity, _}
-import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
-import akka.http.scaladsl.server.directives.{Credentials, DebuggingDirectives, LoggingMagnet}
-import akka.http.scaladsl.server.{Directive0, ExceptionHandler, Route, RouteResult}
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.Materializer
-import akka.stream.alpakka.slick.scaladsl.SlickSession
+import org.apache.pekko.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import org.apache.pekko.http.scaladsl.model.StatusCodes.InternalServerError
+import org.apache.pekko.http.scaladsl.model.headers.{Origin, `Strict-Transport-Security`}
+import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Directives.{entity, _}
+import org.apache.pekko.http.scaladsl.server.RouteResult.{Complete, Rejected}
+import org.apache.pekko.http.scaladsl.server.directives.{Credentials, DebuggingDirectives, LoggingMagnet}
+import org.apache.pekko.http.scaladsl.server.{Directive0, ExceptionHandler, Route, RouteResult}
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import com.typesafe.config._
 import com.typesafe.scalalogging.Logger
+import org.apache.pekko.actor.ActorSystem
 import sangria.ast.{Field, OperationDefinition}
 import sangria.parser.QueryParser
 import spray.json.{JsObject, JsString, JsValue}
