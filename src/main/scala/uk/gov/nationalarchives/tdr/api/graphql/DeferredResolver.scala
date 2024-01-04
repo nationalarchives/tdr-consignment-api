@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.graphql
 
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
-//import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileChecks, PaginationInput, TransferringBody}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileChecks, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
