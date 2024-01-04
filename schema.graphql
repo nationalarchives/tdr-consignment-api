@@ -116,6 +116,7 @@ type Consignment {
   consignmentType: String
   includeTopLevelFolder: Boolean
   seriesName: String
+  bodyId: UUID
   transferringBodyName: String
   transferringBodyTdrCode: String
   allChecksSucceeded: Boolean!
@@ -124,7 +125,6 @@ type Consignment {
   fileChecks: FileChecks!
   parentFolder: String
   parentFolderId: UUID
-  transferringBody: TransferringBody
   files(fileFiltersInput: FileFilters): [File!]!
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
@@ -460,11 +460,6 @@ type TransferAgreementPrivateBeta {
   allPublicRecords: Boolean!
   allCrownCopyright: Boolean!
   allEnglish: Boolean
-}
-
-type TransferringBody {
-  name: String!
-  tdrCode: String!
 }
 
 scalar UUID
