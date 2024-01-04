@@ -67,7 +67,7 @@ object ConsignmentFields {
 
   case class FileChecks(antivirusProgress: AntivirusProgress, checksumProgress: ChecksumProgress, ffidProgress: FFIDProgress)
 
-  case class TransferringBody(name: String, tdrCode: String)
+  // case class TransferringBody(name: String, tdrCode: String)
 
   case class StartUploadInput(consignmentId: UUID, parentFolder: String, includeTopLevelFolder: Boolean = false) extends UserOwnsConsignment
 
@@ -87,8 +87,8 @@ object ConsignmentFields {
     deriveObjectType[Unit, ChecksumProgress]()
   implicit val FfidProgressType: ObjectType[Unit, FFIDProgress] =
     deriveObjectType[Unit, FFIDProgress]()
-  implicit val TransferringBodyType: ObjectType[Unit, TransferringBody] =
-    deriveObjectType[Unit, TransferringBody]()
+  // implicit val TransferringBodyType: ObjectType[Unit, TransferringBody] =
+  //  deriveObjectType[Unit, TransferringBody]()
   implicit val FileMetadataValueType: ObjectType[Unit, FileMetadataValue] =
     deriveObjectType[Unit, FileMetadataValue]()
   implicit val FileType: ObjectType[Unit, File] =
@@ -147,6 +147,7 @@ object ConsignmentFields {
       Field("consignmentType", OptionType(StringType), resolve = _.value.consignmentType),
       Field("includeTopLevelFolder", OptionType(BooleanType), resolve = _.value.includeTopLevelFolder),
       Field("seriesName", OptionType(StringType), resolve = _.value.seriesName),
+      Field("bodyId", OptionType(UuidType), resolve = _.value.bodyId),
       Field("transferringBodyName", OptionType(StringType), resolve = _.value.transferringBodyName),
       Field("transferringBodyTdrCode", OptionType(StringType), resolve = _.value.transferringBodyTdrCode),
       Field(
@@ -178,11 +179,6 @@ object ConsignmentFields {
         "parentFolderId",
         OptionType(UuidType),
         resolve = context => DeferParentFolderId(context.value.consignmentid)
-      ),
-      Field(
-        "transferringBody",
-        OptionType(TransferringBodyType),
-        resolve = context => DeferConsignmentBody(context.value.consignmentid)
       ),
       Field(
         "files",
@@ -226,7 +222,7 @@ object ConsignmentFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
-  val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
+  // val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val CurrentPageArg: Argument[Option[Int]] = Argument("currentPage", OptionInputType(IntType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)

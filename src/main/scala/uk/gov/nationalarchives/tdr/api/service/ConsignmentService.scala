@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
-import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow}
+import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -125,10 +125,12 @@ class ConsignmentService(
     } yield result
   }
 
+  /*
   def getTransferringBodyOfConsignment(consignmentId: UUID): Future[Option[TransferringBody]] = {
     val consignment: Future[Seq[BodyRow]] = consignmentRepository.getTransferringBodyOfConsignment(consignmentId)
     consignment.map(rows => rows.headOption.map(transferringBody => TransferringBody(transferringBody.name, transferringBody.tdrcode)))
   }
+   */
 
   def consignmentHasFiles(consignmentId: UUID): Future[Boolean] = {
     consignmentRepository.consignmentHasFiles(consignmentId)

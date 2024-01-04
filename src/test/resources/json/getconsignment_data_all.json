@@ -6,16 +6,13 @@
       "createdDatetime": "2020-01-01T09:00:00Z",
       "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
       "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
-      "transferringBody": {
-        "name": "Default transferring body name",
-        "tdrCode": "default-transferring-body-code"
-      },
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",
       "totalFiles": 3,
       "totalFileSize": 6,
       "includeTopLevelFolder": true,
       "seriesName": "seriesName",
+      "bodyId" : "4da472a5-16b3-4521-a630-5917a0722359",
       "transferringBodyName": "transferringBodyName",
       "transferringBodyTdrCode": "transferringBodyTdrCode",
       "files": [

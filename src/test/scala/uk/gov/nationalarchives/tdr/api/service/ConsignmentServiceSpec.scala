@@ -207,6 +207,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.exportLocation should equal(consignmentRow.exportlocation)
     consignment.includeTopLevelFolder should equal(consignmentRow.includetoplevelfolder)
     consignment.seriesName should equal(consignmentRow.seriesname)
+    consignment.bodyId should equal(consignmentRow.bodyid)
     consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
   }
@@ -345,6 +346,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     result should equal(expectedResult)
   }
 
+  /*
   "getTransferringBodyOfConsignment" should "return the transferring body for a given consignment" in {
     val mockBody = Seq(BodyRow(bodyId, bodyName, bodyDescription, bodyCode))
     when(consignmentRepoMock.getTransferringBodyOfConsignment(consignmentId)).thenReturn(Future.successful(mockBody))
@@ -352,6 +354,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val body: ConsignmentFields.TransferringBody = consignmentService.getTransferringBodyOfConsignment(consignmentId).futureValue.get
     body.name shouldBe mockBody.head.name
   }
+   */
 
   "getConsignments" should "return all the consignments after the cursor to the limit" in {
     val consignmentId2 = UUID.fromString("fa19cd46-216f-497a-8c1d-6caaf3f421bc")
