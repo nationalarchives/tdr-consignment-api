@@ -67,8 +67,6 @@ object ConsignmentFields {
 
   case class FileChecks(antivirusProgress: AntivirusProgress, checksumProgress: ChecksumProgress, ffidProgress: FFIDProgress)
 
-  // case class TransferringBody(name: String, tdrCode: String)
-
   case class StartUploadInput(consignmentId: UUID, parentFolder: String, includeTopLevelFolder: Boolean = false) extends UserOwnsConsignment
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
@@ -87,8 +85,6 @@ object ConsignmentFields {
     deriveObjectType[Unit, ChecksumProgress]()
   implicit val FfidProgressType: ObjectType[Unit, FFIDProgress] =
     deriveObjectType[Unit, FFIDProgress]()
-  // implicit val TransferringBodyType: ObjectType[Unit, TransferringBody] =
-  //  deriveObjectType[Unit, TransferringBody]()
   implicit val FileMetadataValueType: ObjectType[Unit, FileMetadataValue] =
     deriveObjectType[Unit, FileMetadataValue]()
   implicit val FileType: ObjectType[Unit, File] =
@@ -222,7 +218,6 @@ object ConsignmentFields {
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
-  // val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val CurrentPageArg: Argument[Option[Int]] = Argument("currentPage", OptionInputType(IntType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
