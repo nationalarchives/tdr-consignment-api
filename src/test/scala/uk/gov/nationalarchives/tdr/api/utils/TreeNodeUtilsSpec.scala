@@ -18,7 +18,7 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
     val result = TreeNodesUtils(
       new FixedUUIDSource,
       referenceGeneratorServiceMock,
-      ConfigFactory.load().withValue("featureAccessBlock.assignFileReferences", ConfigValueFactory.fromAnyRef("false"))
+      ConfigFactory.load()
     ).generateNodes(Set("/a/path/with/some/nested/folders/file"), fileTypeIdentifier)
     val expectedSize = 7
     result.size should equal(expectedSize)
@@ -65,7 +65,7 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
       TreeNodesUtils(
         new FixedUUIDSource,
         referenceGeneratorServiceMock,
-        ConfigFactory.load().withValue("featureAccessBlock.assignFileReferences", ConfigValueFactory.fromAnyRef("false"))
+        ConfigFactory.load()
       ).generateNodes(Set(fileName), fileTypeIdentifier)
     }
     assert(result.getMessage === "some exception")
