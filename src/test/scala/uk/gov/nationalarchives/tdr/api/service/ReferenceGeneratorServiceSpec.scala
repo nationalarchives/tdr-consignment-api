@@ -16,7 +16,7 @@ class ReferenceGeneratorServiceSpec extends AnyFlatSpec with Matchers {
 
   "getReferences" should "return a list of references" in {
     val sttpBackendStub = SttpBackendStub.synchronous
-      .whenRequestMatches(_.uri.path.startsWith(List("intg", "counter")))
+      .whenRequestMatches(_.uri.path.startsWith(List("test", "counter")))
       .thenRespond("""["REF1","REF2"]""")
     val referenceGeneratorService = new ReferenceGeneratorService(ConfigFactory.load, SimpleHttpClient(sttpBackendStub))
     val getReferences = referenceGeneratorService.getReferences(2)
@@ -26,7 +26,7 @@ class ReferenceGeneratorServiceSpec extends AnyFlatSpec with Matchers {
 
   "getReferences" should "return the correct number of reference if 'referenceLimit' is exceeded in the request" in {
     val sttpBackendStub = SttpBackendStub.synchronous
-      .whenRequestMatches(_.uri.path.startsWith(List("intg", "counter")))
+      .whenRequestMatches(_.uri.path.startsWith(List("test", "counter")))
       .thenRespondCyclic("""["REF1","REF2"]""", """["REF3"]""")
     val referenceGeneratorService = new ReferenceGeneratorService(ConfigFactory.load, SimpleHttpClient(sttpBackendStub))
     val getReferences = referenceGeneratorService.getReferences(3)
