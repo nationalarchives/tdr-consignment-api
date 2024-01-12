@@ -31,13 +31,13 @@ class TreeNodesUtils(uuidSource: UUIDSource, referenceGeneratorService: Referenc
       val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
       innerFunction(pathWithoutInitialSlash, typeIdentifier, Map())
     }.toMap
-      val generatedReferences = referenceGeneratorService.getReferences(generatedNodes.size)
-      generatedReferences
-        .zip(generatedNodes.view)
-        .map { case (reference, (key, treenode)) =>
-          key -> treenode.copy(reference = Some(reference))
-        }
-        .toMap
+    val generatedReferences = referenceGeneratorService.getReferences(generatedNodes.size)
+    generatedReferences
+      .zip(generatedNodes.view)
+      .map { case (reference, (key, treenode)) =>
+        key -> treenode.copy(reference = Some(reference))
+      }
+      .toMap
   }
 }
 
