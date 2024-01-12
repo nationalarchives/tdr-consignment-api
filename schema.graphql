@@ -116,7 +116,6 @@ type Consignment {
   consignmentType: String
   includeTopLevelFolder: Boolean
   seriesName: String
-  bodyId: UUID
   transferringBodyName: String
   transferringBodyTdrCode: String
   allChecksSucceeded: Boolean!

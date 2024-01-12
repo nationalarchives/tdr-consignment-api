@@ -143,7 +143,6 @@ object ConsignmentFields {
       Field("consignmentType", OptionType(StringType), resolve = _.value.consignmentType),
       Field("includeTopLevelFolder", OptionType(BooleanType), resolve = _.value.includeTopLevelFolder),
       Field("seriesName", OptionType(StringType), resolve = _.value.seriesName),
-      Field("bodyId", OptionType(UuidType), resolve = _.value.bodyId),
       Field("transferringBodyName", OptionType(StringType), resolve = _.value.transferringBodyName),
       Field("transferringBodyTdrCode", OptionType(StringType), resolve = _.value.transferringBodyTdrCode),
       Field(

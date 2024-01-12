@@ -207,7 +207,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.exportLocation should equal(consignmentRow.exportlocation)
     consignment.includeTopLevelFolder should equal(consignmentRow.includetoplevelfolder)
     consignment.seriesName should equal(consignmentRow.seriesname)
-    consignment.bodyId should equal(consignmentRow.bodyid)
     consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
   }
