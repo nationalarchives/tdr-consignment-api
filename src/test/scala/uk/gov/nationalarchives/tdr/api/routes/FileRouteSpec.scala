@@ -2,6 +2,9 @@ package uk.gov.nationalarchives.tdr.api.routes
 
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
@@ -93,9 +96,19 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
+    val wiremockServer = new WireMockServer(9006)
+    wiremockServer.start()
+    wiremockServer.stubFor(WireMock.get(WireMock.urlEqualTo("https://dummy-reference-url.com/intg/counter?numberofrefs=2"))
+//      .withQueryParam("numberofrefs", WireMock.equalTo("2"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withHeader("Content-Type", "application/json")
+        .withBody("""["ZD467H","ZD467J"]""")))
+
     val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
     val response = runTestMutationFileMetadata("mutation_alldata_3", validUserToken())
     expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
+    wiremockServer.stop()
   }
 
   "allDescendants" should "return parents and all descendants for the given parent ids" in withContainers { case container: PostgreSQLContainer =>
