@@ -215,7 +215,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     utils.createFile(UUID.fromString(fileFiveId), consignmentId, fileName = "fileFiveName", parentId = Some(UUID.fromString(folderId1)))
   }
 
-  private def getReferencesMockSever(numberOfRefs: Int): WireMockServer = {
+  private def getReferencesMockSever(additionalRefs: Int = 0): WireMockServer = {
     val wiremockServer = new WireMockServer(8080)
     WireMock.configureFor("localhost", 8080)
     wiremockServer.start()
@@ -231,7 +231,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
         )
         .willSetStateTo("fetch references 1")
     )
-    for (current <- 1 to numberOfRefs) {
+    for (current <- 1 to additionalRefs) {
       wiremockServer.stubFor(
         WireMock
           .get(WireMock.urlPathMatching("/test/.*"))
