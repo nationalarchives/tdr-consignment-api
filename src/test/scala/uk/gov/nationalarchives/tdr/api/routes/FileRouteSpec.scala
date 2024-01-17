@@ -70,7 +70,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
         1
       )
     }
-    val referenceMockServer = getReferencesMockSever(4)
+    val referenceMockServer = getReferencesMockServer(4)
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
@@ -98,7 +98,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
-    val referenceMockServer = getReferencesMockSever(4)
+    val referenceMockServer = getReferencesMockServer(4)
 
     val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
     val response = runTestMutationFileMetadata("mutation_alldata_3", validUserToken())
@@ -215,7 +215,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     utils.createFile(UUID.fromString(fileFiveId), consignmentId, fileName = "fileFiveName", parentId = Some(UUID.fromString(folderId1)))
   }
 
-  private def getReferencesMockSever(additionalRefs: Int = 0): WireMockServer = {
+  private def getReferencesMockServer(additionalRefs: Int = 0): WireMockServer = {
     val wiremockServer = new WireMockServer(8080)
     WireMock.configureFor("localhost", 8080)
     wiremockServer.start()
