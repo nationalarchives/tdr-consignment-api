@@ -61,7 +61,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       totalFiles: Option[Int],
       fileChecks: Option[FileChecks],
       parentFolder: Option[String],
-      transferringBody: Option[TransferringBody],
       files: Option[List[File]],
       paginatedFiles: Option[FileConnections],
       consignmentType: Option[String],
