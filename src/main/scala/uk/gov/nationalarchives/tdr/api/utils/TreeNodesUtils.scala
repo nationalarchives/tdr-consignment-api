@@ -12,8 +12,6 @@ import scala.annotation.tailrec
 
 class TreeNodesUtils(uuidSource: UUIDSource, referenceGeneratorService: ReferenceGeneratorService, config: Config) {
 
-  private val referenceGeneratorFeatureBlock: Boolean = config.getBoolean("featureAccessBlock.assignFileReferences")
-
   @tailrec
   private def innerFunction(originalPath: String, typeIdentifier: String, nodes: Map[String, TreeNode]): Map[String, TreeNode] = {
     val jioFile = new JIOFile(originalPath)
@@ -33,17 +31,13 @@ class TreeNodesUtils(uuidSource: UUIDSource, referenceGeneratorService: Referenc
       val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
       innerFunction(pathWithoutInitialSlash, typeIdentifier, Map())
     }.toMap
-    if (referenceGeneratorFeatureBlock) {
-      generatedNodes
-    } else {
-      val generatedReferences = referenceGeneratorService.getReferences(generatedNodes.size)
-      generatedReferences
-        .zip(generatedNodes.view)
-        .map { case (reference, (key, treenode)) =>
-          key -> treenode.copy(reference = Some(reference))
-        }
-        .toMap
-    }
+    val generatedReferences = referenceGeneratorService.getReferences(generatedNodes.size)
+    generatedReferences
+      .zip(generatedNodes.view)
+      .map { case (reference, (key, treenode)) =>
+        key -> treenode.copy(reference = Some(reference))
+      }
+      .toMap
   }
 }
 

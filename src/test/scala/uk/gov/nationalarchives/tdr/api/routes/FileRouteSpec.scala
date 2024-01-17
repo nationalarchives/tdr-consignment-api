@@ -2,14 +2,17 @@ package uk.gov.nationalarchives.tdr.api.routes
 
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedUUIDSource, TestContainerUtils, TestRequest, TestUtils}
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 
 import java.sql.{PreparedStatement, Types}
 import java.util.UUID
@@ -67,6 +70,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
         1
       )
     }
+    val referenceMockServer = getReferencesMockServer(4)
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
@@ -85,6 +89,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
         nameAndPath.isDefined should equal(true)
         nameAndPath.get.fileName should equal(nameAndPath.get.path.split("/").last)
       })
+    referenceMockServer.stop()
   }
 
   "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers { case container: PostgreSQLContainer =>
@@ -93,9 +98,12 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
+    val referenceMockServer = getReferencesMockServer(4)
+
     val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
     val response = runTestMutationFileMetadata("mutation_alldata_3", validUserToken())
     expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
+    referenceMockServer.stop()
   }
 
   "allDescendants" should "return parents and all descendants for the given parent ids" in withContainers { case container: PostgreSQLContainer =>
@@ -205,5 +213,39 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = Some(UUID.fromString(subFolderId)))
     utils.createFile(UUID.fromString(fileFourId), consignmentId, fileName = "fileFourName", parentId = Some(UUID.fromString(folderId1)))
     utils.createFile(UUID.fromString(fileFiveId), consignmentId, fileName = "fileFiveName", parentId = Some(UUID.fromString(folderId1)))
+  }
+
+  private def getReferencesMockServer(additionalRefs: Int = 0): WireMockServer = {
+    val wiremockServer = new WireMockServer(8080)
+    WireMock.configureFor("localhost", 8080)
+    wiremockServer.start()
+    wiremockServer.stubFor(
+      WireMock
+        .get(WireMock.urlPathMatching("/test/.*"))
+        .inScenario("fetch references")
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody("[\"REF1\",\"REF2\"]")
+        )
+        .willSetStateTo("fetch references 1")
+    )
+    for (current <- 1 to additionalRefs) {
+      wiremockServer.stubFor(
+        WireMock
+          .get(WireMock.urlPathMatching("/test/.*"))
+          .inScenario("fetch references")
+          .whenScenarioStateIs(s"fetch references $current")
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withHeader("Content-Type", "application/json")
+              .withBody(s"[\"REF${Math.random()}\",\"REF${Math.random()}\"]")
+          )
+          .willSetStateTo(s"fetch references ${current + 1}")
+      )
+    }
+    wiremockServer
   }
 }

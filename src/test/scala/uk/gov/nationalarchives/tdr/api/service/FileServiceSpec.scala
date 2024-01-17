@@ -690,6 +690,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
     mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
 
     val service = new FileService(
@@ -785,7 +786,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       referenceGeneratorServiceMock,
       FixedTimeSource,
       fixedUuidSource,
-      ConfigFactory.load().withValue("featureAccessBlock.assignFileReferences", ConfigValueFactory.fromAnyRef("false"))
+      ConfigFactory.load()
     )
 
     val expectedStatusInput = AddMultipleFileStatusesInput(
