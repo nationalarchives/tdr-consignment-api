@@ -74,7 +74,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
-    val expectedCount = ((Filename :: FileType :: FileReference :: ParentReference :: defaultMetadataProperties).size * distinctDirectoryCount) +
+    val expectedCount = ((FileUUID :: Filename :: FileType :: FileReference :: ParentReference :: defaultMetadataProperties).size * distinctDirectoryCount) +
       (defaultMetadataProperties.size * fileCount) +
       (clientSideProperties.size * fileCount) +
       (serverSideProperties.size * fileCount) +
@@ -216,8 +216,8 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   }
 
   private def getReferencesMockServer(additionalRefs: Int = 0): WireMockServer = {
-    val wiremockServer = new WireMockServer(8080)
-    WireMock.configureFor("localhost", 8080)
+    val wiremockServer = new WireMockServer(2234)
+    WireMock.configureFor("localhost", 2234)
     wiremockServer.start()
     wiremockServer.stubFor(
       WireMock
