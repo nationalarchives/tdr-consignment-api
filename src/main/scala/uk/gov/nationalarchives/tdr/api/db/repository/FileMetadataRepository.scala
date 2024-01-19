@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.PostgresProfile.api._
+import slick.model.Column
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize}
 
@@ -39,13 +40,18 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(query.result)
   }
 
-  def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None, propertyNames: Option[Set[String]] = None): Future[Seq[FilemetadataRow]] = {
+  def getFileMetadata(
+                       consignmentId: Option[UUID],
+                       selectedFileIds: Option[Set[UUID]] = None,
+                       propertyNames: Option[Set[String]] = None,
+                       searchTerm: Option[String] = None): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
       .join(File)
       .on(_.fileid === _.fileid)
       .filterOpt(consignmentId)(_._2.consignmentid === _)
       .filterOpt(propertyNames)(_._1.propertyname inSetBind _)
       .filterOpt(selectedFileIds)(_._2.fileid inSetBind _)
+      .filterOpt(searchTerm)(_._1.value like _)
       .map(_._1)
     db.run(query.result)
   }

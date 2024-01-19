@@ -78,6 +78,26 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     response.fileid should equal(fileId)
   }
 
+  "getFileMetadata" should "x" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+    val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+    val fileIdTwo = UUID.fromString("664f07a5-ab1d-4d66-abea-d97d81cd7bec")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileIdOne, consignmentId)
+    utils.createFile(fileIdTwo, consignmentId)
+
+    utils.addFileProperty("FilePropertyOne")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "FilePropertyOne", value = "/a/file/path/filename1.docx")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "FilePropertyOne", value = "/a/file/path/filename2.pdf")
+
+    val response = fileMetadataRepository.getFileMetadata(Some(consignmentId), None, Some(Set("FilePropertyOne")), Some("%/file%")).futureValue
+
+    response.size should equal(0)
+  }
+
   "getFileMetadata" should "return the correct metadata for the consignment" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
