@@ -216,8 +216,8 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   }
 
   private def getReferencesMockServer(additionalRefs: Int = 0): WireMockServer = {
-    val wiremockServer = new WireMockServer(2234)
-    WireMock.configureFor("localhost", 2234)
+    val wiremockServer = new WireMockServer(8008)
+    WireMock.configureFor("localhost", 8008)
     wiremockServer.start()
     wiremockServer.stubFor(
       WireMock
