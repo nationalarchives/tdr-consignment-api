@@ -71,8 +71,7 @@ trait GraphQLServerBase {
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
     val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
     val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
-    val validateFileMetadataService =
-      new ValidateFileMetadataService(customMetadataPropertiesService, displayPropertiesService, fileMetadataRepository, fileStatusRepository, config)
+    val validateFileMetadataService = new ValidateFileMetadataService(customMetadataPropertiesService, displayPropertiesService, fileMetadataRepository, fileStatusRepository)
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepository, consignmentStatusService, customMetadataPropertiesService, validateFileMetadataService)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
