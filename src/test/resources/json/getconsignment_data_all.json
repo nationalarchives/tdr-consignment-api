@@ -25,6 +25,10 @@
           "originalFilePath": null,
           "fileMetadata": [
             {
+              "name": "UUID",
+              "value": "42910a85-85c3-40c3-888f-32f697bfadb6"
+            },
+            {
               "name": "SHA256ServerSideChecksum",
               "value": "Result of FileMetadata processing"
             },
