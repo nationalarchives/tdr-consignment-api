@@ -95,7 +95,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
     val response = fileMetadataRepository.getFileMetadata(Some(consignmentId), None, Some(Set("FilePropertyOne")), Some("%/file%")).futureValue
 
-    response.size should equal(0)
+    response.size should equal(2)
   }
 
   "getFileMetadata" should "return the correct metadata for the consignment" in withContainers { case container: PostgreSQLContainer =>
