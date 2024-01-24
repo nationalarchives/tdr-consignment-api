@@ -193,9 +193,14 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
     val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
     val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+    utils.addFileProperty("ClosureType", propertyGroup)
     utils.addFileProperty("newProperty1", propertyGroup)
     utils.addFileProperty("existingPropertyUpdated1", propertyGroup)
     utils.addFileProperty("existingPropertyNotUpdated1", propertyGroup)
+
+    utils.createDisplayProperty("newProperty1", "Active", "true", "boolean")
+    utils.createDisplayProperty("existingPropertyUpdated1", "Active", "true", "boolean")
+    utils.createDisplayProperty("existingPropertyNotUpdated1", "Active", "true", "boolean")
 
     utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
     utils.createFile(fileTwoId, consignmentId)
