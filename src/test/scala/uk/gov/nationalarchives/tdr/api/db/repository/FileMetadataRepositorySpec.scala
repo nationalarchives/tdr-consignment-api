@@ -78,7 +78,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     response.fileid should equal(fileId)
   }
 
-  "getFileMetadata" should "x" in withContainers { case container: PostgreSQLContainer =>
+  "getFileMetadata" should "return correct files based on search term" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
     val fileMetadataRepository = new FileMetadataRepository(db)
