@@ -291,6 +291,21 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
       when(mockFileStatusRepository.deleteFileStatus(any[Set[UUID]], any[Set[String]])).thenReturn(Future.successful(1))
       when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
       when(mockFileMetadataRepository.getFileMetadata(Some(any[UUID]), any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
+
+      val expectedPropertyNames =
+        Seq(
+          "ClosureType",
+          "TitleClosed",
+          "DescriptionClosed",
+          "FoiExemptionCode",
+          "TitleAlternate",
+          "AlternativeDescription",
+          "Language",
+          "description",
+          "ClosurePeriod",
+          "MultiValueWithDependencies"
+        )
+      when(mockDisplayPropertiesService.getActiveDisplayPropertyNames).thenReturn(Future(expectedPropertyNames))
     }
   }
 
