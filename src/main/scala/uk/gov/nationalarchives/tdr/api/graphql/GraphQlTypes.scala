@@ -9,7 +9,6 @@ object GraphQlTypes {
     "Query",
     SeriesFields.queryFields ++
       ConsignmentFields.queryFields ++
-      ClientFileMetadataFields.queryFields ++
       CustomMetadataFields.queryFields ++
       DisplayPropertiesFields.queryFields ++
       FileFields.queryFields
