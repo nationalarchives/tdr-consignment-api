@@ -134,6 +134,7 @@ object FileMetadataService {
   val ClientSideFileSize = "ClientSideFileSize"
   val ClosurePeriod = "ClosurePeriod"
   val ClosureStartDate = "ClosureStartDate"
+  val FileUUID = "UUID"
   val Filename = "Filename"
   val FileType = "FileType"
   val FileReference = "FileReference"
@@ -144,7 +145,6 @@ object FileMetadataService {
   val ClosureType = "ClosureType"
   val Description = "description"
   val DescriptionAlternate = "DescriptionAlternate"
-
   val RightsCopyright = "RightsCopyright"
   val LegalStatus = "LegalStatus"
   val HeldBy = "HeldBy"
