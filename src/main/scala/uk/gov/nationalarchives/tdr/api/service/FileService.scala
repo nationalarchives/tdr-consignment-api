@@ -71,6 +71,7 @@ class FileService(
         )
 
         val commonMetadataRows = List(
+          row(fileId, fileId.toString, FileUUID),
           row(fileId, path, ClientSideOriginalFilepath),
           row(fileId, treeNode.treeNodeType, FileType),
           row(fileId, treeNode.name, Filename),
