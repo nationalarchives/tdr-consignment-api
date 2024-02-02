@@ -48,8 +48,11 @@ If this is not set, you may see errors with the message:
 
 #### Removing tests
 
-If an API test is removed because it is no longer needed, you will need to modify the list of required status checks on Github. These can be found in "Settings > Branches" under the `master` branch. The branch status checks are run when a pull request is raised and while get stuck if it tries to run a check on a test that is no longer present. You can remove the test at this point and the checks will carry on to completion.   
+If an API test is removed because it is no longer needed, you will need to modify the list of required status checks on Github.
 
+These can be found in "Settings > Branches" under the `master` branch.
+
+The branch status checks are run when a pull request is raised and will get stuck if it tries to run a check on a test that is no longer present. You can remove the test at this point and the checks will carry on to completion.   
 
 ### Graphql Schema
 
