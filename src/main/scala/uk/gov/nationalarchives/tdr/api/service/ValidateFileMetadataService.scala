@@ -1,8 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import com.typesafe.config.Config
-import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
@@ -17,11 +15,8 @@ class ValidateFileMetadataService(
     customMetadataService: CustomMetadataPropertiesService,
     displayPropertiesService: DisplayPropertiesService,
     fileMetadataRepository: FileMetadataRepository,
-    fileStatusRepository: FileStatusRepository,
-    config: Config
+    fileStatusRepository: FileStatusRepository
 )(implicit val ec: ExecutionContext) {
-
-  val blockValidationLibrary: Boolean = config.getBoolean("featureAccessBlock.blockValidationLibrary")
 
   def toPropertyNames(fields: Seq[CustomMetadataField]): Set[String] = fields.map(_.name).toSet
 
@@ -38,21 +33,7 @@ class ValidateFileMetadataService(
     })
   }
 
-  def validateAdditionalMetadata(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
-    if (blockValidationLibrary) {
-      for {
-        customMetadataFields <- customMetadataService.getCustomMetadata
-        existingMetadataProperties: Seq[FilemetadataRow] <- fileMetadataRepository.getFileMetadata(None, Some(fileIds), Some(toPropertyNames(customMetadataFields)))
-        rows <- addMetadataFileStatuses(fileIds, propertiesToValidate, customMetadataFields, existingMetadataProperties)
-      } yield {
-        rows
-      }
-    } else {
-      validateAndAddAdditionalMetadataStatuses(fileIds, propertiesToValidate)
-    }
-  }
-
-  private def validateAndAddAdditionalMetadataStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
+  def validateAndAddAdditionalMetadataStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       propertyNames <- displayPropertiesService.getActiveDisplayPropertyNames
       result <- {
@@ -114,86 +95,6 @@ class ValidateFileMetadataService(
       }.toList
     }
   }
-
-  private def addMetadataFileStatuses(
-      fileIds: Set[UUID],
-      propertiesToValidate: Set[String],
-      customMetadataFields: Seq[CustomMetadataField],
-      existingMetadataProperties: Seq[Tables.FilemetadataRow]
-  ): Future[List[Tables.FilestatusRow]] = {
-    val additionalMetadataFieldGroups: Seq[FieldGroup] = toAdditionalMetadataFieldGroups(customMetadataFields)
-    val additionalMetadataPropertyNames: Set[String] = additionalMetadataFieldGroups.flatMap(g => toPropertyNames(g.fields)).toSet
-
-    if (!propertiesToValidate.subsetOf(additionalMetadataPropertyNames)) {
-      Future.successful(List())
-    } else {
-      val additionalMetadataStatuses = {
-
-        additionalMetadataFieldGroups
-          .flatMap(group => {
-            val states = group.fields.flatMap(f => checkPropertyState(fileIds, f, existingMetadataProperties))
-            val filesWithNoAdditionalMetadataStatuses = fileIds
-              .filter(id => !states.map(_.fileId).contains(id))
-              .map(id => {
-                AddFileStatusInput(id, group.groupName, NotEntered)
-              })
-
-            val statuses = states
-              .groupBy(_.fileId)
-              .map(s => {
-                val (fileId, fileStates) = s
-                val status: String = s match {
-                  case _ if fileStates.forall(_.existingValueMatchesDefault == true) => NotEntered
-                  case _ if fileStates.forall(_.missingDependencies == false)        => Completed
-                  case _                                                             => Incomplete
-                }
-                AddFileStatusInput(fileId, group.groupName, status)
-              })
-            statuses ++ filesWithNoAdditionalMetadataStatuses
-          })
-          .toList
-      }
-
-      for {
-        _ <- fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-        rows <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
-      } yield rows.toList
-    }
-  }
-
-  def checkPropertyState(fileIds: Set[UUID], fieldToCheck: CustomMetadataField, existingProperties: Seq[FilemetadataRow]): Seq[FilePropertyState] = {
-    val propertyToCheckName: String = fieldToCheck.name
-    val valueDependenciesGroups: Seq[FieldGroup] = toValueDependenciesGroups(fieldToCheck)
-    val fieldDefaultValue: Option[String] = fieldToCheck.defaultValue
-    val dependencyValues: Seq[String] = valueDependenciesGroups.map(_.groupName)
-
-    fileIds
-      .flatMap(id => {
-        val allExistingFileProperties: Seq[FilemetadataRow] = existingProperties.filter(_.fileid == id)
-        val existingPropertiesToValidate: Seq[FilemetadataRow] = allExistingFileProperties.filter(_.propertyname == propertyToCheckName)
-        val existingPropertiesWithDependencies: Seq[FilemetadataRow] = existingPropertiesToValidate.filter(ep => dependencyValues.contains(ep.value))
-        val expectedDependencies: Seq[CustomMetadataField] =
-          existingPropertiesWithDependencies.flatMap(epd => valueDependenciesGroups.filter(_.groupName == epd.value)).flatMap(_.fields)
-        val actualDependencyProperties = allExistingFileProperties.filter(p => expectedDependencies.map(_.name).contains(p.propertyname))
-
-        if (existingPropertiesToValidate.isEmpty) {
-          None
-        } else {
-          existingPropertiesToValidate.map(existingProperty => {
-            val existingPropertyValue: String = existingProperty.value
-            val missingDependencies: Boolean = actualDependencyProperties.size < expectedDependencies.size
-            val matchesDefault: Boolean = fieldDefaultValue match {
-              case Some(value) => value == existingPropertyValue
-              case _           => false
-            }
-            FilePropertyState(id, propertyToCheckName, missingDependencies, matchesDefault)
-          })
-        }
-      })
-      .toSeq
-  }
-
-  case class FilePropertyState(fileId: UUID, propertyName: String, missingDependencies: Boolean, existingValueMatchesDefault: Boolean)
 
   case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
 }
