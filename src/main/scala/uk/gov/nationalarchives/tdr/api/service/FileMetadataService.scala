@@ -53,7 +53,7 @@ class FileMetadataService(
     for {
       _ <- fileMetadataRepository.deleteFileMetadata(uniqueFileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(uniqueFileIds, distinctMetadataProperties, userId))
-      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, distinctPropertyNames)
+      _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(uniqueFileIds, distinctPropertyNames)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(uniqueFileIds.toSeq, metadataPropertiesAdded.toSeq)
@@ -92,7 +92,7 @@ class FileMetadataService(
       }.toSeq
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, allPropertiesToDelete)
+      _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(fileIds, allPropertiesToDelete)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
