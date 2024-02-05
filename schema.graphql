@@ -88,15 +88,6 @@ type ChecksumProgress {
   filesProcessed: Int!
 }
 
-type ClientFileMetadata {
-  fileId: UUID!
-  originalPath: String
-  checksum: String
-  checksumType: String
-  lastModified: Long!
-  fileSize: Long
-}
-
 input ClientSideMetadataInput {
   originalPath: String!
   checksum: String!
@@ -192,11 +183,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Integer
-  DateTime
-  Text
-  Boolean
   Decimal
+  DateTime
+  Boolean
+  Integer
+  Text
 }
 
 type DeleteFileMetadata {
@@ -427,7 +418,6 @@ type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
   consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
-  getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   displayProperties(consignmentid: UUID!): [DisplayPropertyField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
