@@ -65,7 +65,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.4.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
-  "ch.qos.logback" % "logback-classic" % "1.4.11",
+  "ch.qos.logback" % "logback-classic" % "1.4.14",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "6.0.2",
   "software.amazon.awssdk" % "rds" % "2.21.0",
@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
-  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
+  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
 )
 
 dependencyOverrides ++= Seq(
