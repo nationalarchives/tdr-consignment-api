@@ -61,7 +61,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "core" % "3.9.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.40",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.10",
-  "org.postgresql" % "postgresql" % "42.6.0",
+  "org.postgresql" % "postgresql" % "42.6.1",
   "com.typesafe.slick" %% "slick" % "3.4.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
-  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
+  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
 )
 
 dependencyOverrides ++= Seq(
