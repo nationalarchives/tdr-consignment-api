@@ -1,13 +1,15 @@
 queue_rules:
   - name: default
     conditions:
-      - "check-success=test / test"
+      - "check-success=validate"
+      - "check-success~=test"
       - "check-success=security/snyk (nationalarchives)"
 pull_request_rules:
   - name: automatic merge for Scala Steward
     conditions:
-      - author=scala-steward
-      - "check-success=test / test"
+      - author=tna-digital-archiving-jenkins
+      - "check-success=validate"
+      - "check-success~=test"
       - "check-success=security/snyk (nationalarchives)"
       - or:
           - files=build.sbt
