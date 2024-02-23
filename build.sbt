@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
-  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
+  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
 )
 
 dependencyOverrides ++= Seq(
