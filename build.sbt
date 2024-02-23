@@ -71,7 +71,7 @@ libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "rds" % "2.21.0",
   "software.amazon.awssdk" % "sts" % "2.21.0",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
-  "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.3.0",
+  "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.17" % Test,
   "org.mockito" %% "mockito-scala" % "1.17.27" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.27" % Test,
@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
-  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
+  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
 )
 
 dependencyOverrides ++= Seq(
