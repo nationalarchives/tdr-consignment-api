@@ -10,8 +10,8 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
 import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
-import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.validStatusValues
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Completed, DescriptiveMetadata, Incomplete, NotEntered}
+import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -428,6 +428,24 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "validStatusValues" should "contain the correct values" in {
     val expectedValues = List("Completed", "CompletedWithIssues", "Failed", "InProgress", "Incomplete", "NotEntered")
     validStatusValues.toList.sorted should equal(expectedValues)
+  }
+
+  "validStatusTypes" should "contain the correct values" in {
+    val expectedValues = List(
+      "ClientChecks",
+      "ClosureMetadata",
+      "ConfirmTransfer",
+      "DescriptiveMetadata",
+      "DraftMetadata",
+      "Export",
+      "Series",
+      "ServerAntivirus",
+      "ServerChecksum",
+      "ServerFFID",
+      "TransferAgreement",
+      "Upload"
+    )
+    validStatusTypes.toList.sorted should equal(expectedValues)
   }
 
   private def generateConsignmentStatusRow(
