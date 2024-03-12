@@ -26,6 +26,20 @@ class FileMetadataService(
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 
+  def updateFileMetadata(consignmentId: UUID, input: AddFileMetadataWithFileIdInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
+    val inputValues = input.metadataInputValues
+    val fileIds = inputValues.map(_.fileId)
+    val propertyNames = inputValues.map(_.filePropertyName)
+    val deleteFileMetadataInput = DeleteFileMetadataInput(fileIds, propertyNames, consignmentId)
+
+    for {
+      //Need to delete safely, ie reset to default values. Should probably not validate statuses as will do that when adding the metadata back in?
+      _ <- deleteFileMetadata(deleteFileMetadataInput, userId)
+      result <- addFileMetadata(input, userId)
+      _ <- updateMetadataStatuses(fileIds.toSet, propertyNames.toSet, consignmentId)
+    } yield result
+  }
+
   def addFileMetadata(input: AddFileMetadataWithFileIdInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     val metadataRow = input.metadataInputValues
       .map(addFileMetadataInput => {
@@ -95,6 +109,13 @@ class FileMetadataService(
       _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(fileIds, allPropertiesToDelete)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
+  }
+
+  private def updateMetadataStatuses(uniqueFileIds: Set[UUID], uniquePropertyNames: Set[String], consignmentId: UUID) = {
+    for {
+      updatedFileStatuses <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(uniqueFileIds, uniquePropertyNames)
+      updatedConsignmentStatuses <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
+    } yield (updatedFileStatuses, updatedConsignmentStatuses)
   }
 
   private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
