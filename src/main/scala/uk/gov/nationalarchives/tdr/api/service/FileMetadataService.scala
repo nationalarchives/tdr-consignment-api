@@ -33,7 +33,7 @@ class FileMetadataService(
     val deleteFileMetadataInput = DeleteFileMetadataInput(fileIds, propertyNames, consignmentId)
 
     for {
-      //Need to delete safely, ie reset to default values. Should probably not validate statuses as will do that when adding the metadata back in?
+      // Need to delete safely, ie reset to default values. Should probably not validate statuses as will do that when adding the metadata back in?
       _ <- deleteFileMetadata(deleteFileMetadataInput, userId)
       result <- addFileMetadata(input, userId)
       _ <- updateMetadataStatuses(fileIds.toSet, propertyNames.toSet, consignmentId)
