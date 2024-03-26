@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Input contains directory id or contains non-existing file id or consignment id is incorrect",
+      "locations": [
+        {
+          "column": 33,
+          "line": 1
+        }
+      ]
+    }
+  ]
+}
