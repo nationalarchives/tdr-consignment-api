@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Variable '$addOrUpdateBulkFileMetadataInput' expected value of type 'AddOrUpdateBulkFileMetadataInput!' but got: {\"consignmentId\":\"eb197bfb-43f7-40ca-9104-8f6cbda88506\",\"fileMetadata\":[{\"metadata\":[{\"filePropertyName\":\"newProperty1\",\"value\":\"value1\"},{\"filePropertyName\":\"existingPropertyUpdated1\",\"value\":\"newValue1\"}]}]}. Reason: 'fileMetadata[0].fileId' Expected non-null value, found null. (line 1, column 38):\nmutation addOrUpdateBulkFileMetadata($addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!) {addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput:$addOrUpdateBulkFileMetadataInput) {filePropertyName,fileId,value}}\n                                     ^",
+      "locations": [
+        {
+          "column": 33,
+          "line": 1
+        }
+      ]
+    }
+  ]
+}

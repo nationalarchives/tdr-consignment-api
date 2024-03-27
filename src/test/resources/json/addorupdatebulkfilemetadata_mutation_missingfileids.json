@@ -1,0 +1,22 @@
+{
+  "query": "mutation addOrUpdateBulkFileMetadata($addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!) {addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput:$addOrUpdateBulkFileMetadataInput) {filePropertyName,fileId,value}}",
+  "variables": {
+    "addOrUpdateBulkFileMetadataInput": {
+      "consignmentId": "eb197bfb-43f7-40ca-9104-8f6cbda88506",
+      "fileMetadata": [
+        {
+          "metadata": [
+            {
+              "filePropertyName": "newProperty1",
+              "value": "value1"
+            },
+            {
+              "filePropertyName": "existingPropertyUpdated1",
+              "value": "newValue1"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

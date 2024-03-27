@@ -1,0 +1,26 @@
+{
+  "data": {
+    "addOrUpdateBulkFileMetadata": [
+      {
+        "fileId": "51c55218-1322-4453-9ef8-2300ef1c0fef",
+        "filePropertyName": "newProperty1",
+        "value": "value1"
+      },
+      {
+        "fileId": "51c55218-1322-4453-9ef8-2300ef1c0fef",
+        "filePropertyName": "existingPropertyUpdated1",
+        "value": "newValue1"
+      },
+      {
+        "fileId": "7076f399-b596-4161-a95d-e686c6435710",
+        "filePropertyName": "newProperty1",
+        "value": "value1"
+      },
+      {
+        "fileId": "d2e64eed-faff-45ac-9825-79548f681323",
+        "filePropertyName": "existingPropertyUpdated1",
+        "value": "newValue1"
+      }
+    ]
+  }
+}

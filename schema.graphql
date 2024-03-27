@@ -47,6 +47,21 @@ input AddMultipleFileStatusesInput {
   statuses: [AddFileStatusInput!]!
 }
 
+input AddOrUpdateBulkFileMetadataInput {
+  consignmentId: UUID!
+  fileMetadata: [AddOrUpdateFileMetadata!]!
+}
+
+input AddOrUpdateFileMetadata {
+  fileId: UUID!
+  metadata: [AddOrUpdateMetadata!]!
+}
+
+input AddOrUpdateMetadata {
+  filePropertyName: String!
+  value: String!
+}
+
 input AddTransferAgreementComplianceInput {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
@@ -380,6 +395,7 @@ type Mutation {
   addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
   addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
   updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
+  addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!): [FileMetadataWithFileId!]!
   deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
