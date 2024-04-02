@@ -394,7 +394,7 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
   addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
-  updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
+  updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata! @deprecated(reason: "Use addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!) instead")
   addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!): [FileMetadataWithFileId!]!
   deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!

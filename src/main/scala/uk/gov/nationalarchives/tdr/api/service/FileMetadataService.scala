@@ -38,6 +38,7 @@ class FileMetadataService(
       .recover(err => throw InputDataException(err.getMessage))
   }
 
+  @deprecated("Use addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID) instead")
   def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
     val emptyPropertyValues: Seq[String] = input.metadataProperties.filter(_.value.isEmpty).map(_.filePropertyName)
 
