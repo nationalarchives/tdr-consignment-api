@@ -466,7 +466,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "addOrUpdateBulkFileMetadata" should "add or update all file metadata when consignment belongs to another user but it got the backend check token" in withContainers {
+  "addOrUpdateBulkFileMetadata" should "add or update all file metadata when consignment belongs to another user when called by backend checks client" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
@@ -498,7 +498,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       responseFileMetadataProperties should equal(expectedResponseFileMetadata)
   }
 
-  "addOrUpdateBulkFileMetadata" should "throw a 'not authorised' error if a file id belongs to another user and an input error is also present" in withContainers {
+  "addOrUpdateBulkFileMetadata" should "throw a 'not authorised' exception is thrown when the user doesn't own the file and the backend checks client is not used" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()

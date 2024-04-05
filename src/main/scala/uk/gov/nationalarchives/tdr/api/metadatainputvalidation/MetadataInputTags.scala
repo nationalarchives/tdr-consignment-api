@@ -37,10 +37,10 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
 
     for {
       fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)
-      nonOwnership = fileFields.exists(_.userId != userId)
+      noAccess = fileFields.exists(_.userId != userId) && !draftMetadataValidatorAccess
     } yield {
-      nonOwnership match {
-        case true if !draftMetadataValidatorAccess => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
+      noAccess match {
+        case true => throw AuthorisationException("Access denied to file metadata")
         case _ if inputErrors(fileFields, inputFileIds, inputConsignmentId) =>
           throw InputDataException("Input contains directory id or contains non-existing file id or consignment id is incorrect")
         case _ => continue
