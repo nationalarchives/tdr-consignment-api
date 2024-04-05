@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "User '29f65c4e-0eb8-4719-afdb-ace1bcbae4b6' does not own the files they are trying to access"
+      "message": "Access denied to file metadata"
     }
   ]
 }
