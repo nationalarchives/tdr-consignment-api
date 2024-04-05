@@ -6,6 +6,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrU
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
+import uk.gov.nationalarchives.tdr.api.auth.ValidateBody.exportRole
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileDetails
 
@@ -25,19 +26,21 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
       case deleteInput: DeleteFileMetadataInput               => (deleteInput.fileIds, deleteInput.consignmentId)
       case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId)
     }
-
-    val userId = ctx.ctx.accessToken.userId
+    val token = ctx.ctx.accessToken
+    val userId = token.userId
 
     if (inputFileIds.isEmpty) {
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
+    // TODO: Should use a new client for the draft metadata upload https://national-archives.atlassian.net/browse/TDRD-181
+    val draftMetadataValidatorAccess = token.backendChecksRoles.contains(exportRole)
 
     for {
       fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)
       nonOwnership = fileFields.exists(_.userId != userId)
     } yield {
       nonOwnership match {
-        case true => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
+        case true if !draftMetadataValidatorAccess => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
         case _ if inputErrors(fileFields, inputFileIds, inputConsignmentId) =>
           throw InputDataException("Input contains directory id or contains non-existing file id or consignment id is incorrect")
         case _ => continue
