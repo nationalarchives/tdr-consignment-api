@@ -14,7 +14,7 @@ on:
       to-deploy:
         description: 'Version to deploy'
         required: true
-
+run-name: Deploying API ${{inputs.to-deploy}} to ${{inputs.environment}}
 permissions:
   id-token: write
   contents: write
