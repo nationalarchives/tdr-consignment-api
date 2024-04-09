@@ -70,6 +70,14 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
 
     db.run(query)
   }
+  def deleteFileMetadata(fileId: UUID, propertyNames: Set[String]): Future[Int] = {
+    val query = Filemetadata
+      .filter(_.fileid === fileId)
+      .filter(_.propertyname inSetBind propertyNames)
+      .delete
+
+    db.run(query)
+  }
 
 }
 

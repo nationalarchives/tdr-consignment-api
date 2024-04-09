@@ -21,7 +21,6 @@ object FileMetadataFields {
 
   case class FileMetadata(filePropertyName: String, value: String) extends FileMetadataBase
   case class UpdateFileMetadataInput(filePropertyIsMultiValue: Boolean, filePropertyName: String, value: String) extends FileMetadataBase
-  // Option[String] instead of String in case you want to delete all values of property or in case value does not have properties
 
   case class FileMetadataWithFileId(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
 
@@ -32,6 +31,9 @@ object FileMetadataFields {
   case class AddFileMetadataWithFileIdInputValues(filePropertyName: String, fileId: UUID, value: String) extends FileMetadataBase
 
   case class UpdateBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[UpdateFileMetadataInput])
+  case class AddOrUpdateMetadata(filePropertyName: String, value: String) extends FileMetadataBase
+  case class AddOrUpdateFileMetadata(fileId: UUID, metadata: Seq[AddOrUpdateMetadata])
+  case class AddOrUpdateBulkFileMetadataInput(consignmentId: UUID, fileMetadata: Seq[AddOrUpdateFileMetadata])
 
   case class DeleteFileMetadata(fileIds: Seq[UUID], filePropertyNames: Seq[String])
 
@@ -51,13 +53,19 @@ object FileMetadataFields {
   implicit val DeleteFileMetadataType: ObjectType[Unit, DeleteFileMetadata] = deriveObjectType[Unit, DeleteFileMetadata]()
   val DeleteFileMetadataInputType: InputObjectType[DeleteFileMetadataInput] = deriveInputObjectType[DeleteFileMetadataInput]()
 
+  implicit val InputAddOrUpdateMetadataType: InputObjectType[AddOrUpdateMetadata] = deriveInputObjectType[AddOrUpdateMetadata]()
+  implicit val InputAddOrUpdateFileMetadataType: InputObjectType[AddOrUpdateFileMetadata] = deriveInputObjectType[AddOrUpdateFileMetadata]()
+
   val BulkFileMetadataType: ObjectType[Unit, BulkFileMetadata] = deriveObjectType[Unit, BulkFileMetadata]()
   val UpdateBulkFileMetadataInputType: InputObjectType[UpdateBulkFileMetadataInput] = deriveInputObjectType[UpdateBulkFileMetadataInput]()
+  val AddOrUpdateBulkFileMetadataInputType: InputObjectType[AddOrUpdateBulkFileMetadataInput] = deriveInputObjectType[AddOrUpdateBulkFileMetadataInput]()
 
   implicit val FileMetadataWithFileIdInputValuesArg: Argument[AddFileMetadataWithFileIdInputValues] = Argument("addFileMetadataWithFileIdInput", AddFileMetadataInputValuesType)
   implicit val FileMetadataWithFileIdInputArg: Argument[AddFileMetadataWithFileIdInput] = Argument("addMultipleFileMetadataInput", AddFileMetadataInputType)
   implicit val BulkFileMetadataInputArg: Argument[UpdateBulkFileMetadataInput] =
     Argument("updateBulkFileMetadataInput", UpdateBulkFileMetadataInputType)
+  implicit val AddOrUpdateBulkFileMetadataInputArg: Argument[AddOrUpdateBulkFileMetadataInput] =
+    Argument("addOrUpdateBulkFileMetadataInput", AddOrUpdateBulkFileMetadataInputType)
   implicit val DeleteFileMetadataInputArg: Argument[DeleteFileMetadataInput] = Argument("deleteFileMetadataInput", DeleteFileMetadataInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
@@ -73,7 +81,15 @@ object FileMetadataFields {
       BulkFileMetadataType,
       arguments = BulkFileMetadataInputArg :: Nil,
       resolve = ctx => ctx.ctx.fileMetadataService.updateBulkFileMetadata(ctx.arg(BulkFileMetadataInputArg), ctx.ctx.accessToken.userId),
-      tags = List(ValidateMetadataInput(BulkFileMetadataInputArg))
+      tags = List(ValidateMetadataInput(BulkFileMetadataInputArg)),
+      deprecationReason = Some("Use addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!) instead")
+    ),
+    Field(
+      "addOrUpdateBulkFileMetadata",
+      ListType(FileMetadataWithFileIdType),
+      arguments = AddOrUpdateBulkFileMetadataInputArg :: Nil,
+      resolve = ctx => ctx.ctx.fileMetadataService.addOrUpdateBulkFileMetadata(ctx.arg(AddOrUpdateBulkFileMetadataInputArg), ctx.ctx.accessToken.userId),
+      tags = List(ValidateMetadataInput(AddOrUpdateBulkFileMetadataInputArg))
     ),
     Field(
       "deleteFileMetadata",
