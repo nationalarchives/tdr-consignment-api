@@ -283,6 +283,31 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     response2.length should equal(1)
   }
 
+  "deleteFileMetadata" should "delete metadata rows for the given file id that have the specified property/properties" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.fromString("4c935c42-502c-4b89-abce-2272584655e1")
+    val fileIdOne = UUID.fromString("4d5a5a00-77b4-4a97-aa3f-a75f7b13f284")
+    val filePropertyOne = "FilePropertyOne"
+    val filePropertyTwo = "FilePropertyTwo"
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileIdOne, consignmentId)
+    utils.addFileProperty(filePropertyOne)
+    utils.addFileProperty(filePropertyTwo)
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyOne)
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, filePropertyTwo)
+
+    val deleteResponse = fileMetadataRepository.deleteFileMetadata(fileIdOne, Set(filePropertyOne)).futureValue
+    deleteResponse should equal(1)
+
+    val response = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(Set(fileIdOne)), Some(Set(filePropertyOne))).futureValue
+    response.length should equal(0)
+
+    val response2 = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(Set(fileIdOne)), Some(Set(filePropertyTwo))).futureValue
+    response2.length should equal(1)
+  }
+
   "getSumOfFileSizes" should "return the sum of file sizes" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
