@@ -78,7 +78,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.9.0-M2" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.16.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.199",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.200",
   "io.github.hakky54" % "logcaptor" % "2.9.2" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
