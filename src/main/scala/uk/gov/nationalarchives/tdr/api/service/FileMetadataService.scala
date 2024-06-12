@@ -62,13 +62,20 @@ class FileMetadataService(
 
   def addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     val emptyPropertyValues: Set[String] = input.fileMetadata.flatMap(_.metadata.filter(_.value.isEmpty).map(_.filePropertyName)).toSet
+    // Get rid of empty if statement
+    // Any protectedProperties throw an error
+//    if (emptyPropertyValues.nonEmpty) {
+//      //don't throw exception
+//      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
+//    }
 
-    if (emptyPropertyValues.nonEmpty) {
-      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
-    }
+    // Have logic so that we delete empty values but don't add empty values
 
     for {
+      // Delete can remain the same
+      // Prevent deletion of protected fields. use custommetadata to get the list
       _ <- input.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
+      // Filter out the empty values
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(input.fileMetadata, userId))
       _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(
         fileIds = input.fileMetadata.map(_.fileId).toSet,
@@ -138,7 +145,11 @@ class FileMetadataService(
   }
 
   private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
-    fileMetadata.flatMap(p => p.metadata.map(metadata => AddFileMetadataInput(p.fileId, metadata.value, userId, metadata.filePropertyName))).toList
+    (for {
+      addOrUpdateFileMetadata <- fileMetadata
+      addOrUpdateMetadata <- addOrUpdateFileMetadata.metadata
+      if addOrUpdateMetadata.value.nonEmpty
+    } yield AddFileMetadataInput(addOrUpdateFileMetadata.fileId, addOrUpdateMetadata.value, userId, addOrUpdateMetadata.filePropertyName)).toList
   }
 
   def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =

@@ -248,7 +248,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     addedProperties.subsetOf(expectedUpdatedPropertyNames) should equal(true)
   }
 
-  "addOrUpdateBulkFileMetadata" should "not update properties, and throw an error if input contains an empty property value" in {
+  "addOrUpdateBulkFileMetadata" should "delete properties with empty values but not add empty properties" in {
     val testSetUp = new AddOrUpdateBulkMetadataTestSetUp()
     val customMetadataSetUp = new CustomMetadataTestSetUp()
 
@@ -262,21 +262,34 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.validateFileMetadataServiceMock
     )
 
-    val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
-      AddOrUpdateFileMetadata(fileId, List(AddOrUpdateMetadata("propertyName1", "newValue1"), AddOrUpdateMetadata("propertyName2", ""), AddOrUpdateMetadata("propertyName3", "")))
-    )
+    val addOrUpdateBulkFileMetadata =
+      testSetUp.inputFileIds.map(fileId => AddOrUpdateFileMetadata(fileId, List(AddOrUpdateMetadata("propertyName1", "newValue1"), AddOrUpdateMetadata("propertyName2", ""))))
 
     val input = AddOrUpdateBulkFileMetadataInput(testSetUp.consignmentId, addOrUpdateBulkFileMetadata)
+    val expectedPropertyNames = Set("propertyName1", "propertyName2")
 
-    val thrownException = intercept[Exception] {
-      service.addOrUpdateBulkFileMetadata(input, testSetUp.userId).futureValue
-    }
+    service.addOrUpdateBulkFileMetadata(input, testSetUp.userId).futureValue
+    verify(testSetUp.validateFileMetadataServiceMock, times(1)).validateAndAddAdditionalMetadataStatuses(testSetUp.inputFileIds.toSet, expectedPropertyNames)
+    verify(testSetUp.metadataRepositoryMock, times(3)).deleteFileMetadata(any[UUID], any[Set[String]])
 
-    verify(testSetUp.metadataRepositoryMock, times(0)).deleteFileMetadata(any[UUID], any[Set[String]])
-    verify(testSetUp.metadataRepositoryMock, times(0)).addFileMetadata(any[Seq[AddFileMetadataInput]])
-    verify(testSetUp.validateFileMetadataServiceMock, times(0)).validateAndAddAdditionalMetadataStatuses(any[Set[UUID]], any[Set[String]])
+    val deleteFileMetadataIdsArg: UUID = testSetUp.deleteFileMetadataIdsArgCaptor.getValue
+    val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
+    val addFileMetadataArgument: Seq[AddFileMetadataInput] = testSetUp.addFileMetadataCaptor.getValue
 
-    thrownException.getMessage should include("Cannot update properties with empty value: propertyName2, propertyName3")
+    val expectedUpdatedPropertyNames: Set[String] = Set("propertyName1", "propertyName2")
+
+    deleteFileMetadataPropertiesArg.size should equal(2)
+    deleteFileMetadataPropertiesArg should equal(expectedUpdatedPropertyNames)
+
+    addFileMetadataArgument.size should equal(3)
+    val addedFileIds = addFileMetadataArgument.map(_.fileId).toSet
+    addedFileIds should equal(testSetUp.inputFileIds.toSet)
+
+    val addedPropertyValues = addFileMetadataArgument.map(_.value).toSet
+    addedPropertyValues.size should equal(1)
+
+    val addedProperties = addFileMetadataArgument.map(_.filePropertyName).toSet
+    addedProperties.size should equal(1)
   }
 
   "addOrUpdateBulkFileMetadata" should "create the metadata consignment statuses" in {
