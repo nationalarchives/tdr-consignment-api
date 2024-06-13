@@ -1,3 +1,0 @@
-{
-  "query": "query { getClientFileMetadata(fileId: \"2e821753-6e0c-494d-9032-b8169e7f25cb\") {fileId,originalPath,checksum,checksumType,lastModified,fileSize}}"
-}

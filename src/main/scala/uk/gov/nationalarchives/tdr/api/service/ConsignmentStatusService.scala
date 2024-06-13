@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import cats.implicits._
-import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -115,7 +115,8 @@ class ConsignmentStatusService(
 }
 
 object ConsignmentStatusService {
-  val validConsignmentTypes: List[String] = List("Series", "TransferAgreement", "Upload", "ClientChecks", "ClosureMetadata", "DescriptiveMetadata", "ConfirmTransfer", "Export")
+  val validConsignmentTypes: List[String] =
+    List("Series", "TransferAgreement", "Upload", "ClientChecks", "DraftMetadata", "ClosureMetadata", "DescriptiveMetadata", "ConfirmTransfer", "Export")
   val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set("ServerFFID", "ServerChecksum", "ServerAntivirus")
   val validStatusValues: Set[String] = Set("InProgress", "Completed", "CompletedWithIssues", "Failed", "NotEntered", "Incomplete")
 }

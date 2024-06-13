@@ -38,6 +38,7 @@ class FileMetadataService(
       .recover(err => throw InputDataException(err.getMessage))
   }
 
+  @deprecated("Use addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID) instead")
   def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
     val emptyPropertyValues: Seq[String] = input.metadataProperties.filter(_.value.isEmpty).map(_.filePropertyName)
 
@@ -53,10 +54,29 @@ class FileMetadataService(
     for {
       _ <- fileMetadataRepository.deleteFileMetadata(uniqueFileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(uniqueFileIds, distinctMetadataProperties, userId))
-      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, distinctPropertyNames)
+      _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(uniqueFileIds, distinctPropertyNames)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
     } yield BulkFileMetadata(uniqueFileIds.toSeq, metadataPropertiesAdded.toSeq)
+  }
+
+  def addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
+    val emptyPropertyValues: Set[String] = input.fileMetadata.flatMap(_.metadata.filter(_.value.isEmpty).map(_.filePropertyName)).toSet
+
+    if (emptyPropertyValues.nonEmpty) {
+      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
+    }
+
+    for {
+      _ <- input.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
+      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(input.fileMetadata, userId))
+      _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(
+        fileIds = input.fileMetadata.map(_.fileId).toSet,
+        propertiesToValidate = input.fileMetadata.head.metadata.map(_.filePropertyName).toSet
+      )
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(input.consignmentId, List(DescriptiveMetadata, ClosureMetadata))
+      metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
+    } yield metadataPropertiesAdded
   }
 
   def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
@@ -92,7 +112,7 @@ class FileMetadataService(
       }.toSeq
       _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
       _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, allPropertiesToDelete)
+      _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(fileIds, allPropertiesToDelete)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
     } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
@@ -117,6 +137,10 @@ class FileMetadataService(
       .toList
   }
 
+  private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
+    fileMetadata.flatMap(p => p.metadata.map(metadata => AddFileMetadataInput(p.fileId, metadata.value, userId, metadata.filePropertyName))).toList
+  }
+
   def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
     fileMetadataRepository.getFileMetadata(consignmentId, selectedFileIds).map { rows =>
       rows.groupBy(_.fileid).map { case (fileId, fileMetadata) =>
@@ -134,6 +158,7 @@ object FileMetadataService {
   val ClientSideFileSize = "ClientSideFileSize"
   val ClosurePeriod = "ClosurePeriod"
   val ClosureStartDate = "ClosureStartDate"
+  val FileUUID = "UUID"
   val Filename = "Filename"
   val FileType = "FileType"
   val FileReference = "FileReference"
@@ -144,7 +169,6 @@ object FileMetadataService {
   val ClosureType = "ClosureType"
   val Description = "description"
   val DescriptionAlternate = "DescriptionAlternate"
-
   val RightsCopyright = "RightsCopyright"
   val LegalStatus = "LegalStatus"
   val HeldBy = "HeldBy"

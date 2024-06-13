@@ -580,7 +580,7 @@ object TestUtils {
   case class Locations(column: Int, line: Int)
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
-  val serverSideProperties: List[String] = List(FileReference, ParentReference)
+  val serverSideProperties: List[String] = List(FileUUID, FileReference, ParentReference)
   val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
   val defaultCopyright: String = "Crown Copyright"
   val defaultLegalStatus: String = "Public Record"
