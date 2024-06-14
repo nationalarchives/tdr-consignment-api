@@ -63,10 +63,10 @@ class FileMetadataService(
   def addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     for {
       customMetadata <- customMetadataService.getCustomMetadata
-      filterProtectedMetadata = customMetadata.filter(_.propertyProtected).map(_.name)
+      protectedMetadata = customMetadata.filter(_.propertyProtected).map(_.name)
       _ = input.fileMetadata.map { addOrUpdateFileMetadata =>
         addOrUpdateFileMetadata.metadata.map { metadata =>
-          if (filterProtectedMetadata.contains(metadata.filePropertyName)) {
+          if (protectedMetadata.contains(metadata.filePropertyName)) {
             throw InputDataException(s"Protected metadata property found: ${metadata.filePropertyName}")
           }
         }
