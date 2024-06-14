@@ -317,11 +317,56 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
   private def mockCustomMetadataFields(): Seq[CustomMetadataField] = {
     val closurePeriodField: CustomMetadataField =
-      CustomMetadataField("ClosurePeriod", Some("Closure Period"), None, Defined, Some("MandatoryClosure"), Text, true, false, None, List(), 2147483647, false, None, propertyProtected = false)
+      CustomMetadataField(
+        "ClosurePeriod",
+        Some("Closure Period"),
+        None,
+        Defined,
+        Some("MandatoryClosure"),
+        Text,
+        true,
+        false,
+        None,
+        List(),
+        2147483647,
+        false,
+        None,
+        propertyProtected = false
+      )
     val descriptionField: CustomMetadataField =
-      CustomMetadataField("description", Some("description"), None, Defined, Some("OptionalMetadata"), Text, true, false, None, List(), 2147483647, false, None, propertyProtected = false)
+      CustomMetadataField(
+        "description",
+        Some("description"),
+        None,
+        Defined,
+        Some("OptionalMetadata"),
+        Text,
+        true,
+        false,
+        None,
+        List(),
+        2147483647,
+        false,
+        None,
+        propertyProtected = false
+      )
     val languageField =
-      CustomMetadataField("Language", Some("Language"), None, Defined, Some("OptionalMetadata"), Text, true, true, Some("English"), List(), 2147483647, false, None, propertyProtected = false)
+      CustomMetadataField(
+        "Language",
+        Some("Language"),
+        None,
+        Defined,
+        Some("OptionalMetadata"),
+        Text,
+        true,
+        true,
+        Some("English"),
+        List(),
+        2147483647,
+        false,
+        None,
+        propertyProtected = false
+      )
     val alternativeDescriptionField: CustomMetadataField =
       CustomMetadataField(
         "AlternativeDescription",
@@ -340,7 +385,22 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         propertyProtected = false
       )
     val alternativeTitleField: CustomMetadataField =
-      CustomMetadataField("TitleAlternate", Some("Alternative Title"), None, Defined, Some("OptionalClosure"), Text, true, false, None, List(), 2147483647, false, None, propertyProtected = false)
+      CustomMetadataField(
+        "TitleAlternate",
+        Some("Alternative Title"),
+        None,
+        Defined,
+        Some("OptionalClosure"),
+        Text,
+        true,
+        false,
+        None,
+        List(),
+        2147483647,
+        false,
+        None,
+        propertyProtected = false
+      )
     val foiExemptionCodeField =
       CustomMetadataField(
         "FoiExemptionCode",

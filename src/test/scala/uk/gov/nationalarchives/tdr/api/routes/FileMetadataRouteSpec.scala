@@ -18,7 +18,6 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, T
 import java.sql.{PreparedStatement, ResultSet, Types}
 import java.util.UUID
 
-//scalastyle:off method.length
 class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRequest with TableDrivenPropertyChecks {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
@@ -188,21 +187,20 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       }
   }
 
-  "addOrUpdateBulkFileMetadata" should "return an error if trying to add metadata that is protected" in withContainers {
-    case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+  "addOrUpdateBulkFileMetadata" should "return an error if trying to add metadata that is protected" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
 
-      val fileId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-      utils.addFileProperty("newProperty1", propertyGroup = SystemProperty)
-      utils.createFile(fileId, consignmentId)
+    val fileId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+    utils.addFileProperty("newProperty1", propertyGroup = SystemProperty)
+    utils.createFile(fileId, consignmentId)
 
-      val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
-        expectedAddOrUpdateBulkFileMetadataMutationResponse("data_protected")
-      val response: GraphqlAddOrUpdateBulkFileMetadataMutationData =
-        runAddOrUpdateBulkFileMetadataTestMutation("mutation_protected", validUserToken())
+    val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+      expectedAddOrUpdateBulkFileMetadataMutationResponse("data_protected")
+    val response: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+      runAddOrUpdateBulkFileMetadataTestMutation("mutation_protected", validUserToken())
 
-      response.errors.head.message should equal(expectedResponse.errors.head.message)
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
   }
 
   "addOrUpdateBulkFileMetadata" should "set the expected consignment and file statuses for all input file ids" in withContainers { case container: PostgreSQLContainer =>
@@ -603,7 +601,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
     utils.addFileProperty("ClosureType", propertyGroup = propertyGroup)
     utils.addFileProperty("newProperty1", propertyGroup = propertyGroup)
-    utils.addFileProperty("existingPropertyUpdated1", propertyGroup= propertyGroup)
+    utils.addFileProperty("existingPropertyUpdated1", propertyGroup = propertyGroup)
     utils.addFileProperty("existingPropertyNotUpdated1", propertyGroup = propertyGroup)
 
     utils.createDisplayProperty("newProperty1", "Active", "true", "boolean")
