@@ -109,6 +109,7 @@ input ClientSideMetadataInput {
   lastModified: Long!
   fileSize: Long!
   matchId: Long!
+  clientSideUuid: UUID
 }
 
 type Consignment {
@@ -198,11 +199,11 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  DateTime
-  Boolean
   Integer
   Text
+  DateTime
+  Boolean
+  Decimal
 }
 
 type DeleteFileMetadata {

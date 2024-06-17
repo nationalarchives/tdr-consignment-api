@@ -47,9 +47,10 @@ class FileService(
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
-    val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
-    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
-    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
+    val fileNodeInput = addFileAndMetadataInput.metadataInput.map(i => TreeNodeInput(i.originalPath, i.clientSideUuid)).toSet
+    val emptyDirNodeInput = addFileAndMetadataInput.emptyDirectories.toSet.map(i => TreeNodeInput(i, None))
+    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(fileNodeInput, fileTypeIdentifier)
+    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(emptyDirNodeInput, directoryTypeIdentifier)
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
