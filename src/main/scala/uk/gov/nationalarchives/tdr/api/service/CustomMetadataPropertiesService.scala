@@ -4,7 +4,7 @@ import uk.gov.nationalarchives.Tables.{FilepropertyRow, Filepropertydependencies
 import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
-import uk.gov.nationalarchives.tdr.api.service.CustomMetadataPropertiesService.{MandatoryMetadata, SystemProperty}
+import uk.gov.nationalarchives.tdr.api.service.CustomMetadataPropertiesService.{MandatoryMetadata, SystemProperty, protectedPropertyGroups}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -90,7 +90,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
       fp.uiordinal.getOrElse(Int.MaxValue),
       fp.allowexport,
       fp.exportordinal.map(_.toInt),
-      Set(MandatoryMetadata, SystemProperty).contains(fp.propertygroup.get)
+      protectedPropertyGroups.contains(fp.propertygroup.get)
     )
   }
 
@@ -107,4 +107,5 @@ object CustomMetadataPropertiesService {
   val SystemProperty = "System"
   val MandatoryMetadata = "MandatoryMetadata"
   val OptionalMetadata = "OptionalMetadata"
+  val protectedPropertyGroups: Set[String] = Set(MandatoryMetadata, SystemProperty)
 }
