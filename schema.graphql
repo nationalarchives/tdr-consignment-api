@@ -189,6 +189,7 @@ type CustomMetadataField {
   uiOrdinal: Int!
   allowExport: Boolean!
   exportOrdinal: Int
+  propertyProtected: Boolean!
 }
 
 type CustomMetadataValues {

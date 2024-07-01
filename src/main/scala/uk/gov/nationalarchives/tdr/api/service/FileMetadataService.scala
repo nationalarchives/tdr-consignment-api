@@ -61,13 +61,16 @@ class FileMetadataService(
   }
 
   def addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
-    val emptyPropertyValues: Set[String] = input.fileMetadata.flatMap(_.metadata.filter(_.value.isEmpty).map(_.filePropertyName)).toSet
-
-    if (emptyPropertyValues.nonEmpty) {
-      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
-    }
-
     for {
+      customMetadata <- customMetadataService.getCustomMetadata
+      protectedMetadata = customMetadata.filter(_.propertyProtected).map(_.name)
+      _ = input.fileMetadata.map { addOrUpdateFileMetadata =>
+        addOrUpdateFileMetadata.metadata.map { metadata =>
+          if (protectedMetadata.contains(metadata.filePropertyName)) {
+            throw InputDataException(s"Protected metadata property found: ${metadata.filePropertyName}")
+          }
+        }
+      }
       _ <- input.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(input.fileMetadata, userId))
       _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(
@@ -138,7 +141,11 @@ class FileMetadataService(
   }
 
   private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
-    fileMetadata.flatMap(p => p.metadata.map(metadata => AddFileMetadataInput(p.fileId, metadata.value, userId, metadata.filePropertyName))).toList
+    (for {
+      addOrUpdateFileMetadata <- fileMetadata
+      addOrUpdateMetadata <- addOrUpdateFileMetadata.metadata
+      if addOrUpdateMetadata.value.nonEmpty
+    } yield AddFileMetadataInput(addOrUpdateFileMetadata.fileId, addOrUpdateMetadata.value, userId, addOrUpdateMetadata.filePropertyName)).toList
   }
 
   def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =

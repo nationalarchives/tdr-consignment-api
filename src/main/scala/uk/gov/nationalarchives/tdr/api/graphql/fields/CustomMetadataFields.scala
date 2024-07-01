@@ -32,7 +32,8 @@ object CustomMetadataFields extends DataTypeFields {
       values: List[CustomMetadataValues],
       uiOrdinal: Int,
       allowExport: Boolean = false,
-      exportOrdinal: Option[Int] = None
+      exportOrdinal: Option[Int] = None,
+      propertyProtected: Boolean
   )
 
   implicit val PropertyTypeType: EnumType[PropertyType] = deriveEnumType[PropertyType]()
