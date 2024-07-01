@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.service.CustomMetadataPropertiesService.OptionalMetadata
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -52,7 +53,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "add files and metadata entries for files and directories" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_, propertyGroup = OptionalMetadata))
     utils.createConsignment(consignmentId, userId)
 
     defaultMetadataProperties.foreach { defaultMetadataProperty =>
@@ -95,7 +96,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_, propertyGroup = OptionalMetadata))
     utils.createConsignment(consignmentId, userId)
 
     val referenceMockServer = getReferencesMockServer(4)

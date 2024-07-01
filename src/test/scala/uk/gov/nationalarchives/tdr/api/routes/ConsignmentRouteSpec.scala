@@ -209,7 +209,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val identificationBasisMatch = "TEST DATA identification"
     val puidMatch = "TEST DATA puid"
 
-    List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitleClosed, DescriptionClosed, ClosureStartDate).foreach(utils.addFileProperty)
+    List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitleClosed, DescriptionClosed, ClosureStartDate).foreach(utils.addFileProperty(_))
 
     utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID, fileRef = Some("REF1"))
     utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID, fileRef = Some("REF2"))
@@ -365,8 +365,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
     utils.createConsignment(consignmentId, userId)
     utils.addFileProperty(SHA256ServerSideChecksum)
-    defaultMetadataProperties.foreach(utils.addFileProperty)
-    clientSideProperties.foreach(utils.addFileProperty)
+    defaultMetadataProperties.foreach(utils.addFileProperty(_))
+    clientSideProperties.foreach(utils.addFileProperty(_))
     val topDirectory = UUID.fromString("ce0a51a5-a224-474f-b3a4-df75effd5b34")
     val subDirectory = UUID.fromString("2753ceca-4df3-436b-8891-78ad38e2e8c5")
     val fileId = UUID.fromString("6420152a-aaf2-4401-a309-f67ae35f5702")
@@ -519,8 +519,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val consignmentId = UUID.fromString("e72d94d5-ae79-4a05-bee9-86d9dea2bcc9")
     utils.createConsignment(consignmentId, userId)
     utils.addFileProperty(SHA256ServerSideChecksum)
-    defaultMetadataProperties.foreach(utils.addFileProperty)
-    clientSideProperties.foreach(utils.addFileProperty)
+    defaultMetadataProperties.foreach(utils.addFileProperty(_))
+    clientSideProperties.foreach(utils.addFileProperty(_))
     utils.addFileProperty(OriginalFilepath)
     val originalFilePath = "/an/original/file/path"
     val topDirectory = UUID.fromString("ce0a51a5-a224-474f-b3a4-df75effd5b34")

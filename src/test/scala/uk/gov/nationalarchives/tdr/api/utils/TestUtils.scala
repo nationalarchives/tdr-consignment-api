@@ -420,27 +420,14 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     })
   }
 
-  def addFileProperty(name: String, propertyGroup: String): Unit = {
+  def addFileProperty(name: String, propertyType: String = "System", propertyGroup: String = "System"): Unit = {
     val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype", "PropertyGroup") VALUES (?, ?, ?, ?)"""
-    val defaultPropertyType = "System"
     val defaultDataType = "text"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
-    ps.setString(2, defaultPropertyType)
+    ps.setString(2, propertyType)
     ps.setString(3, defaultDataType)
     ps.setString(4, propertyGroup)
-    ps.executeUpdate()
-  }
-
-  def addFileProperty(name: String): Unit = {
-    val defaultPropertyType = "System"
-    val defaultDataType = "text"
-    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype") VALUES (?, ?, ?)"""
-    val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setString(1, name)
-    ps.setString(2, defaultPropertyType)
-    ps.setString(3, defaultDataType)
-
     ps.executeUpdate()
   }
 

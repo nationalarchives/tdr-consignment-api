@@ -1,0 +1,14 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Protected metadata property found: newProperty1",
+      "path": [
+        "addOrUpdateBulkFileMetadata"
+      ],
+      "extensions": {
+        "code": "INVALID_INPUT_DATA"
+      }
+    }
+  ]
+}
