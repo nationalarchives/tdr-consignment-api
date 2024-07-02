@@ -435,6 +435,7 @@ type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
   consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
+  getConsignmentsForReview: [Consignment!]!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   displayProperties(consignmentid: UUID!): [DisplayPropertyField!]!
   allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
