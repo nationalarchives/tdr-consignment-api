@@ -438,6 +438,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       "DescriptiveMetadata",
       "DraftMetadata",
       "Export",
+      "MetadataReview",
       "Series",
       "ServerAntivirus",
       "ServerChecksum",
