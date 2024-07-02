@@ -116,7 +116,18 @@ class ConsignmentStatusService(
 
 object ConsignmentStatusService {
   private val validConsignmentTypes: List[String] =
-    List("Series", "TransferAgreement", "Upload", "ClientChecks", "DraftMetadata", "ClosureMetadata", "DescriptiveMetadata", "ConfirmTransfer", "Export", "MetadataReview")
+    List(
+      "Series",
+      "TransferAgreement",
+      "Upload",
+      "ClientChecks",
+      "DraftMetadata",
+      "ClosureMetadata",
+      "DescriptiveMetadata",
+      "ConfirmTransfer",
+      "Export",
+      "MetadataReview"
+    )
   val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set("ServerFFID", "ServerChecksum", "ServerAntivirus")
   val validStatusValues: Set[String] = Set("InProgress", "Completed", "CompletedWithIssues", "Failed", "NotEntered", "Incomplete")
 }
