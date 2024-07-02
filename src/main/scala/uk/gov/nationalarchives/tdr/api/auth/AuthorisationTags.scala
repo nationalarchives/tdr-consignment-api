@@ -211,3 +211,15 @@ object ValidateHasConsignmentsAccess extends SyncAuthorisationTag {
     }
   }
 }
+
+object ValidateIsTnaUser extends SyncAuthorisationTag {
+  override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+    val token = ctx.ctx.accessToken
+    if (token.isTNAUser) {
+      continue
+    } else {
+      val tokenUserId = token.userId
+      throw AuthorisationException(s"User $tokenUserId does not have permission to review consignments")
+    }
+  }
+}

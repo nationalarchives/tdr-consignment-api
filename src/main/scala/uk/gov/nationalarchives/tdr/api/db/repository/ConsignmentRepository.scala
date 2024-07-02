@@ -59,6 +59,16 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
+  def getConsignmentsForReview: Future[Seq[ConsignmentRow]] = {
+    val query = Consignment
+      .join(Consignmentstatus)
+      .on(_.consignmentid === _.consignmentid)
+      .filter(_._2.statustype === "DTAReview")
+      .filter(_._2.value === "InProgress")
+      .map(_._1)
+    db.run(query.result)
+  }
+
   def getConsignments(limit: Int, after: Option[String], currentPage: Option[Int] = None, consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
     val offset = currentPage.map(_ * limit).getOrElse(0)
     val query = Consignment

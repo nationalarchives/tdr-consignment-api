@@ -271,6 +271,13 @@ object ConsignmentFields {
           })
       },
       tags = List(ValidateHasConsignmentsAccess)
+    ),
+    Field(
+      "getConsignmentsForReview",
+      ListType(ConsignmentType),
+      arguments = Nil,
+      resolve = ctx => ctx.ctx.consignmentService.getConsignmentsForReview,
+      tags = List(ValidateIsTnaUser)
     )
   )
 
