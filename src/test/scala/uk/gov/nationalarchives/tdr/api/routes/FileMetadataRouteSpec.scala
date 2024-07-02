@@ -8,7 +8,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.service.CustomMetadataPropertiesService.{OptionalMetadata, SystemProperty}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -161,8 +160,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
       val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
-      utils.addFileProperty("newProperty1", propertyGroup = OptionalMetadata)
-      utils.addFileProperty("existingPropertyUpdated1", propertyGroup = OptionalMetadata)
+      utils.addFileProperty("newProperty1", propertyType = "Supplied")
+      utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied")
 
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
@@ -192,7 +191,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
 
     val fileId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    utils.addFileProperty("newProperty1", propertyGroup = SystemProperty)
+    utils.addFileProperty("newProperty1")
     utils.createFile(fileId, consignmentId)
 
     val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
@@ -212,9 +211,9 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
     val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
     val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
-    utils.addFileProperty("ClosureType", propertyGroup = propertyGroup)
-    utils.addFileProperty("newProperty1", propertyGroup = propertyGroup)
-    utils.addFileProperty("existingPropertyUpdated1", propertyGroup = propertyGroup)
+    utils.addFileProperty("ClosureType", propertyType = "Supplied", propertyGroup = propertyGroup)
+    utils.addFileProperty("newProperty1", propertyType = "Supplied", propertyGroup = propertyGroup)
+    utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied", propertyGroup = propertyGroup)
 
     utils.createDisplayProperty("newProperty1", "Active", "true", "boolean")
     utils.createDisplayProperty("existingPropertyUpdated1", "Active", "true", "boolean")
@@ -245,14 +244,14 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
       val fileThreeId = UUID.randomUUID()
 
-      utils.createFileProperty("TestProperty1", "", "Defined", "text", false, false, mandatoryClosure, "")
-      utils.createFileProperty("TestProperty2", "", "Defined", "text", false, false, mandatoryClosure, "")
-      utils.createFilePropertyValues("TestProperty1", "value1", false, 1, 2)
+      utils.createFileProperty("TestProperty1", "", "Defined", "text", editable = true, multivalue = false, mandatoryClosure, "")
+      utils.createFileProperty("TestProperty2", "", "Defined", "text", editable = true, multivalue = false, mandatoryClosure, "")
+      utils.createFilePropertyValues("TestProperty1", "value1", default = false, 1, 2)
       utils.createFilePropertyDependencies(1, "TestProperty2", "")
 
-      utils.createFileProperty("TestProperty3", "", "Defined", "text", false, false, optionalMetadata, "")
-      utils.createFileProperty("TestProperty4", "", "Defined", "text", false, false, optionalMetadata, "")
-      utils.createFilePropertyValues("TestProperty3", "value2", false, 3, 4)
+      utils.createFileProperty("TestProperty3", "", "Defined", "text", editable = true, multivalue = false, optionalMetadata, "")
+      utils.createFileProperty("TestProperty4", "", "Defined", "text", editable = true, multivalue = false, optionalMetadata, "")
+      utils.createFilePropertyValues("TestProperty3", "value2", default = false, 3, 4)
       utils.createFilePropertyDependencies(3, "TestProperty4", "")
 
       utils.createFile(fileOneId, consignmentId)
@@ -279,8 +278,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
       val fileFourId = UUID.randomUUID()
 
-      utils.addFileProperty("newProperty1", propertyGroup = closurePropertyGroup)
-      utils.addFileProperty("existingPropertyUpdated1", propertyGroup = descriptivePropertyGroup)
+      utils.addFileProperty("newProperty1", propertyType = "Supplied", propertyGroup = closurePropertyGroup)
+      utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied", propertyGroup = descriptivePropertyGroup)
 
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
@@ -308,8 +307,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
       val fileFourId = UUID.randomUUID()
 
-      utils.addFileProperty("newProperty1", propertyGroup = closurePropertyGroup)
-      utils.addFileProperty("existingPropertyUpdated1", propertyGroup = descriptivePropertyGroup)
+      utils.addFileProperty("newProperty1", propertyType = "Supplied", propertyGroup = closurePropertyGroup)
+      utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied", propertyGroup = descriptivePropertyGroup)
 
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)
@@ -491,8 +490,8 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
       val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
       val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
-      utils.addFileProperty("newProperty1", propertyGroup = OptionalMetadata)
-      utils.addFileProperty("existingPropertyUpdated1", propertyGroup = OptionalMetadata)
+      utils.addFileProperty("newProperty1", propertyType = "Supplied")
+      utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied")
 
       utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
       utils.createFile(fileTwoId, consignmentId)

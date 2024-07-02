@@ -330,8 +330,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
     val descriptionField: CustomMetadataField =
       CustomMetadataField(
@@ -347,8 +346,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
     val languageField =
       CustomMetadataField(
@@ -364,8 +362,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
     val alternativeDescriptionField: CustomMetadataField =
       CustomMetadataField(
@@ -381,8 +378,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
     val alternativeTitleField: CustomMetadataField =
       CustomMetadataField(
@@ -398,8 +394,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
     val foiExemptionCodeField =
       CustomMetadataField(
@@ -415,8 +410,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     val descriptionClosedTrueValues: CustomMetadataValues = CustomMetadataValues(List(alternativeDescriptionField), "true", 2147483647)
@@ -435,8 +429,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(descriptionClosedTrueValues, descriptionClosedFalseValues),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     val titleClosedTrueValue: CustomMetadataValues = CustomMetadataValues(List(alternativeTitleField), "true", 2147483647)
@@ -455,8 +448,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(titleClosedTrueValue, titleClosedFalseValue),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     val closureTypeClosedValues: CustomMetadataValues =
@@ -476,8 +468,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(closureTypeClosedValues, closureTypeOpenValues),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     val multiValueDependency40Value: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField), "40", 2147483647)
@@ -496,8 +487,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         List(multiValueDependency30Value, multiValueDependency40Value),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     Seq(

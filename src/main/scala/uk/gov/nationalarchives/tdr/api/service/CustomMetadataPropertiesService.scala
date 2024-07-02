@@ -4,7 +4,6 @@ import uk.gov.nationalarchives.Tables.{FilepropertyRow, Filepropertydependencies
 import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
-import uk.gov.nationalarchives.tdr.api.service.CustomMetadataPropertiesService.{MandatoryMetadata, SystemProperty, protectedPropertyGroups}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -89,8 +88,7 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
       metadataValues.toList,
       fp.uiordinal.getOrElse(Int.MaxValue),
       fp.allowexport,
-      fp.exportordinal.map(_.toInt),
-      protectedPropertyGroups.contains(fp.propertygroup.get)
+      fp.exportordinal.map(_.toInt)
     )
   }
 
@@ -100,12 +98,4 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
     case Some("Supplied") => Supplied
     case _                => throw new Exception(s"Invalid property type $propertyType")
   }
-}
-
-object CustomMetadataPropertiesService {
-
-  val SystemProperty = "System"
-  val MandatoryMetadata = "MandatoryMetadata"
-  val OptionalMetadata = "OptionalMetadata"
-  val protectedPropertyGroups: Set[String] = Set(MandatoryMetadata, SystemProperty)
 }

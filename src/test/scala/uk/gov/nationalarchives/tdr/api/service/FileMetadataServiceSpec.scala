@@ -12,7 +12,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Bool
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
-import uk.gov.nationalarchives.tdr.api.service.CustomMetadataPropertiesService.SystemProperty
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -862,8 +861,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val closurePeriodField: CustomMetadataField =
@@ -880,8 +878,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val closureStartDateField: CustomMetadataField =
@@ -898,8 +895,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val descriptionField: CustomMetadataField =
@@ -916,8 +912,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val titleClosedField: CustomMetadataField =
@@ -934,8 +929,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val topLevelDependencyField: CustomMetadataField =
@@ -952,8 +946,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val sHA256ServerSideChecksumField: CustomMetadataField =
@@ -962,7 +955,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         Some(Description),
         None,
         System,
-        Some(SystemProperty),
+        Some("System"),
         Text,
         false,
         false,
@@ -970,8 +963,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = true
+        None
       )
 
     private val closureTypeClosedValues: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField, closureStartDateField, titleClosedField), "Closed", 2147483647)
@@ -991,8 +983,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(closureTypeClosedValues, closureTypeOpenValues),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val descriptionClosedTrueValues: CustomMetadataValues = CustomMetadataValues(List(alternativeDescriptionField), "true", 2147483647)
@@ -1011,8 +1002,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(descriptionClosedTrueValues),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val foiExemptionCodeField =
@@ -1029,8 +1019,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         List(),
         2147483647,
         false,
-        None,
-        propertyProtected = false
+        None
       )
 
     private val mockFields = Future(
