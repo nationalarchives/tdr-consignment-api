@@ -9,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput}
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
@@ -296,6 +297,23 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     response should have size 2
     consignmentReferences should equal(List("TDR-2021-B", "TDR-2021-A"))
+  }
+
+  "getConsignmentsForMetadataReview" should "return the consignments with `MetadataReview` status set to `InProgress`" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
+    val consignmentId2 = UUID.fromString("dc6ca08d-6dd6-4906-8f07-97f4f6492dfc")
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignment(consignmentId2, userId)
+    utils.createConsignmentStatus(consignmentId, MetadataReviewType.id, InProgressValue.value)
+    utils.createConsignmentStatus(consignmentId2, MetadataReviewType.id, CompletedValue.value)
+
+    val response = consignmentRepository.getConsignmentsForMetadataReview.futureValue
+
+    response should have size 1
+    response.headOption.get.consignmentid should equal(consignmentId)
   }
 
   "updateSeriesOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>
