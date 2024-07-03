@@ -1,15 +1,15 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import java.sql.Timestamp
-import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.InProgress
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
+import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentRepository(db: Database, timeSource: TimeSource) {
@@ -60,12 +60,12 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignmentsForReview: Future[Seq[ConsignmentRow]] = {
+  def getConsignmentsForMetadataReview: Future[Seq[ConsignmentRow]] = {
     val query = Consignment
       .join(Consignmentstatus)
       .on(_.consignmentid === _.consignmentid)
-      .filter(_._2.statustype === "MetadataReview")
-      .filter(_._2.value === InProgress)
+      .filter(_._2.statustype === MetadataReviewType.id)
+      .filter(_._2.value === InProgressValue.value)
       .map(_._1)
     db.run(query.result)
   }

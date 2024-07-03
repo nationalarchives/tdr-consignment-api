@@ -116,8 +116,8 @@ class ConsignmentService(
     } yield PaginatedConsignments(lastCursor, paginatedConsignments)
   }
 
-  def getConsignmentsForReview: Future[Seq[Consignment]] = {
-    val consignments = consignmentRepository.getConsignmentsForReview
+  def getConsignmentsForMetadataReview: Future[Seq[Consignment]] = {
+    val consignments = consignmentRepository.getConsignmentsForMetadataReview
     consignments.map(rows => rows.map(row => convertRowToConsignment(row)))
   }
 

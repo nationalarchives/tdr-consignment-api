@@ -566,6 +566,37 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     }
   }
 
+  "getConsignmentsForMetadataReview" should "return a list of consignments" in {
+    val consignmentRow: ConsignmentRow = ConsignmentRow(
+      consignmentId,
+      Some(seriesId),
+      userId,
+      Timestamp.from(FixedTimeSource.now),
+      exportlocation = Some("Location"),
+      consignmentsequence = consignmentSequence,
+      consignmentreference = consignmentReference,
+      consignmenttype = "standard",
+      bodyid = bodyId,
+      includetoplevelfolder = Some(true),
+      seriesname = Some("seriesName"),
+      transferringbodyname = Some("transferringBodyName"),
+      transferringbodytdrcode = Some("transferringBodyTdrCode")
+    )
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
+    when(consignmentRepoMock.getConsignmentsForMetadataReview).thenReturn(mockResponse)
+
+    val response: Seq[Consignment] = consignmentService.getConsignmentsForMetadataReview.futureValue
+
+    verify(consignmentRepoMock, times(1)).getConsignmentsForMetadataReview
+    val consignment: Consignment = response.head
+    consignment.consignmentid should equal(consignmentId)
+    consignment.seriesid should equal(Some(seriesId))
+    consignment.userid should equal(userId)
+    consignment.seriesName should equal(consignmentRow.seriesname)
+    consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
+    consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
+  }
+
   "startUpload" should "create an upload in progress status, add the parent folder and 'IncludeTopLevelFolder'" in {
     val startUploadInputCaptor: ArgumentCaptor[StartUploadInput] = ArgumentCaptor.forClass(classOf[StartUploadInput])
     val consignmentStatusCaptor: ArgumentCaptor[List[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[List[ConsignmentstatusRow]])
