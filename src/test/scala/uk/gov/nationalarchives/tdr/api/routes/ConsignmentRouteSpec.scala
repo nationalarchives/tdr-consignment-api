@@ -28,7 +28,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val consignmentsJsonFilePrefix: String = "json/consignments_"
   private val startUploadJsonFilePrefix: String = "json/startupload_"
   private val updateConsignmentSeriesIdJsonFilePrefix: String = "json/updateconsignmentseriesid_"
-
   private val getConsignmentForMetadataReviewJsonFilePrefix: String = "json/getconsignmentsformetadatareview_"
 
   val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
@@ -169,14 +168,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
   val runUpdateConsignmentSeriesIdMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateSeriesIdOfConsignment =
     runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
+  val runGetConsignmentsForMetadataReview: (String, OAuth2BearerToken) => ConsignmentsForMetadataReviewData =
+    runTestRequest[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String => GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
   val expectedUpdateConsignmentSeriesIdMutationResponse: String => GraphqlMutationUpdateSeriesIdOfConsignment =
     getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
-
-  val runGetConsignmentsForMetadataReview: (String, OAuth2BearerToken) => ConsignmentsForMetadataReviewData =
-    runTestRequest[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
   val expectedGetConsignmentForMetadataResponse: String => ConsignmentsForMetadataReviewData =
     getDataFromFile[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
 
