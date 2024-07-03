@@ -116,6 +116,11 @@ class ConsignmentService(
     } yield PaginatedConsignments(lastCursor, paginatedConsignments)
   }
 
+  def getConsignmentsForMetadataReview: Future[Seq[Consignment]] = {
+    val consignments = consignmentRepository.getConsignmentsForMetadataReview
+    consignments.map(rows => rows.map(row => convertRowToConsignment(row)))
+  }
+
   def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
     for {
       seriesName <- getSeriesName(Some(updateConsignmentSeriesIdInput.seriesId))
