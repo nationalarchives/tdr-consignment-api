@@ -88,7 +88,7 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends 
     ctx.ctx.consignmentService
       .getConsignment(consignmentId)
       .map(consignment => {
-        if (consignment.isDefined && (consignment.get.userid == userId || exportAccess)) {
+        if (consignment.isDefined && (consignment.get.userid == userId || exportAccess || token.isTNAUser)) {
           continue
         } else {
           throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")

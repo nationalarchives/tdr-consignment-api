@@ -352,6 +352,17 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.data should equal(expectedResponse.data)
   }
 
+  "getConsignment" should "allow a user of type TNAUser access to return data" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val tnaUserId = UUID.fromString("c59cd886-6b12-4288-bf64-80c59f6a566a")
+    utils.createConsignment(consignmentId, userId)
+
+    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
+    val response: GraphqlQueryData = runTestQuery("query_somedata", validTNAUserToken(userId = tnaUserId))
+    response.data should equal(expectedResponse.data)
+  }
+
   "getConsignment" should "not allow a user to get a consignment that they did not create" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("f1dbc692-e56c-4d76-be94-d8d3d79bd38a")
