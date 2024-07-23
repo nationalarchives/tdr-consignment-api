@@ -10,6 +10,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256S
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -27,6 +28,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val consignmentsJsonFilePrefix: String = "json/consignments_"
   private val startUploadJsonFilePrefix: String = "json/startupload_"
   private val updateConsignmentSeriesIdJsonFilePrefix: String = "json/updateconsignmentseriesid_"
+  private val getConsignmentForMetadataReviewJsonFilePrefix: String = "json/getconsignmentsformetadatareview_"
 
   val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
   val parentUUID: Option[UUID] = UUID.fromString("7b19b272-d4d1-4d77-bf25-511dc6489d12").some
@@ -38,6 +40,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
+
+  case class ConsignmentsForMetadataReview(getConsignmentsForMetadataReview: List[GetConsignment])
+
+  case class ConsignmentsForMetadataReviewData(data: Option[ConsignmentsForMetadataReview], errors: List[GraphqlError] = Nil)
 
   case class GraphqlConsignmentsQueryData(data: Option[ConsignmentConnections], errors: List[GraphqlError] = Nil)
 
@@ -162,11 +168,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
   val runUpdateConsignmentSeriesIdMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateSeriesIdOfConsignment =
     runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
+  val runGetConsignmentsForMetadataReview: (String, OAuth2BearerToken) => ConsignmentsForMetadataReviewData =
+    runTestRequest[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String => GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
   val expectedUpdateConsignmentSeriesIdMutationResponse: String => GraphqlMutationUpdateSeriesIdOfConsignment =
     getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
+  val expectedGetConsignmentForMetadataResponse: String => ConsignmentsForMetadataReviewData =
+    getDataFromFile[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
 
   "addConsignment" should "create a consignment of type 'standard' when standard consignment type provided" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
@@ -339,6 +349,17 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
     val response: GraphqlQueryData = runTestQuery("query_somedata", exportAccessToken)
+    response.data should equal(expectedResponse.data)
+  }
+
+  "getConsignment" should "allow a user of type TNAUser access to return data" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val tnaUserId = UUID.fromString("c59cd886-6b12-4288-bf64-80c59f6a566a")
+    utils.createConsignment(consignmentId, userId)
+
+    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
+    val response: GraphqlQueryData = runTestQuery("query_somedata", validTNAUserToken(userId = tnaUserId))
     response.data should equal(expectedResponse.data)
   }
 
@@ -753,6 +774,28 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   "consignments" should "throw an error if user does not have reporting access" in withContainers { case _: PostgreSQLContainer =>
     val exportAccessToken = invalidReportingToken()
     val response: GraphqlConsignmentsQueryData = runConsignmentsTestQuery("query_somedata", exportAccessToken)
+
+    response.errors should have size 1
+    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+  }
+
+  "getConsignmentsForMetadataReview" should "return all consignments with `MetadataReview` status `inProgress`" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2024-AFK")
+    val consignmentId2 = UUID.fromString("e169c625-ba5f-4d7c-bbdf-af71ff4cc179")
+    utils.createConsignment(consignmentId2, userId, fixedSeriesId, "TEST-TDR-2024-BRB")
+
+    utils.createConsignmentStatus(defaultConsignmentId, MetadataReviewType.id, InProgressValue.value, statusId = UUID.fromString("21f3a11d-05f4-4565-b668-8586644fd441"))
+    utils.createConsignmentStatus(consignmentId2, MetadataReviewType.id, InProgressValue.value, statusId = UUID.fromString("f19b1fe5-5763-4f59-896a-6f16f55a4063"))
+
+    val expectedResponse: ConsignmentsForMetadataReviewData = expectedGetConsignmentForMetadataResponse("data_all")
+    val response: ConsignmentsForMetadataReviewData = runGetConsignmentsForMetadataReview("query_alldata", validTNAUserToken(body = defaultBodyCode))
+
+    response should equal(expectedResponse)
+  }
+
+  "getConsignmentsForMetadataReview" should "throw an error if user is not a TNAUser" in withContainers { case _: PostgreSQLContainer =>
+    val response: ConsignmentsForMetadataReviewData = runGetConsignmentsForMetadataReview("query_alldata", validUserToken(body = defaultBodyCode))
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")

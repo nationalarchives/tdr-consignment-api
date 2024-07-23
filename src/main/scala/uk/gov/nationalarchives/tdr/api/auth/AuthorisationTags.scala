@@ -88,7 +88,7 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends 
     ctx.ctx.consignmentService
       .getConsignment(consignmentId)
       .map(consignment => {
-        if (consignment.isDefined && (consignment.get.userid == userId || exportAccess)) {
+        if (consignment.isDefined && (consignment.get.userid == userId || exportAccess || token.isTNAUser)) {
           continue
         } else {
           throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
@@ -208,6 +208,18 @@ object ValidateHasConsignmentsAccess extends SyncAuthorisationTag {
     } else {
       val tokenUserId = token.userId
       throw AuthorisationException(s"User $tokenUserId does not have permission to access the consignments")
+    }
+  }
+}
+
+object ValidateIsTnaUser extends SyncAuthorisationTag {
+  override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+    val token = ctx.ctx.accessToken
+    if (token.isTNAUser) {
+      continue
+    } else {
+      val tokenUserId = token.userId
+      throw AuthorisationException(s"User $tokenUserId does not have permission to review consignments")
     }
   }
 }
