@@ -43,7 +43,7 @@ lazy val circeVersion = "0.14.9"
 lazy val testContainersVersion = "0.41.4"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.1.0",
+  "org.sangria-graphql" %% "sangria" % "4.1.1",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.3",
   "com.softwaremill.sttp.client3" %% "core" % "3.9.7",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.40",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.33",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.39",
   "org.postgresql" % "postgresql" % "42.7.3",
   "com.typesafe.slick" %% "slick" % "3.4.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
@@ -68,8 +68,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.6",
   "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "6.0.2",
-  "software.amazon.awssdk" % "rds" % "2.26.16",
-  "software.amazon.awssdk" % "sts" % "2.26.16",
+  "software.amazon.awssdk" % "rds" % "2.26.21",
+  "software.amazon.awssdk" % "sts" % "2.26.21",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
@@ -78,7 +78,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.9.0-M2" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.16.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.205",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.207",
   "io.github.hakky54" % "logcaptor" % "2.9.3" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
