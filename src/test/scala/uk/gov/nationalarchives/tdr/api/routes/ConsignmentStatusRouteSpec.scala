@@ -162,6 +162,42 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
   }
 
+  "updateConsignmentStatus" should "allow a transfer adviser user to update the consignment status" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val statusType = "Series"
+    val statusValue = "InProgress"
+    val tnaUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
+    val token = validTNAUserToken(userId = tnaUserId, tnaUserType = "transfer_adviser")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_all")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_data_all", token)
+
+    response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
+  }
+
+  "updateConsignmentStatus" should "not allow a metadata viewer user to update the consignment status" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val statusType = "MetadataReview"
+    val statusValue = "InProgress"
+    val tnaUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
+    val token = validTNAUserToken(tnaUserId)
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_not_owner")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_not_owner", token)
+
+    response.errors.head.message should equal(expectedResponse.errors.head.message)
+  }
+
   "updateConsignmentStatus" should "not allow a user to update the consignment status of a consignment that they did not create" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)

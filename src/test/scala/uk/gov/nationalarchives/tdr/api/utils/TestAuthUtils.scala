@@ -41,14 +41,14 @@ object TestAuthUtils {
       )
     )
 
-  def validTNAUserToken(userId: UUID = userId, body: String = "Code", tnaUser: String = "true"): OAuth2BearerToken =
+  def validTNAUserToken(userId: UUID = userId, body: String = "Code", tnaUserType: String = "tna_user", tnaUser: String = "true"): OAuth2BearerToken =
     OAuth2BearerToken(
       tdrMock.getAccessToken(
         aTokenConfig()
           .withResourceRole("tdr", "tdr_user")
           .withClaim("body", body)
           .withClaim("user_id", userId)
-          .withClaim("tna_user", tnaUser)
+          .withClaim(tnaUserType, tnaUser)
           .build
       )
     )
