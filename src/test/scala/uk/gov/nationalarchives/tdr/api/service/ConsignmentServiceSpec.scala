@@ -11,12 +11,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
-import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow, SeriesRow}
+import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.{ConsignmentFields}
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, Completed, DescriptiveMetadata, Failed, NotEntered}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -595,6 +594,44 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.seriesName should equal(consignmentRow.seriesname)
     consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
+  }
+
+  "getConsignmentForMetadataReview" should "return a given consignment" in {
+    val consignmentRow: ConsignmentRow = ConsignmentRow(
+      consignmentId,
+      Some(seriesId),
+      userId,
+      Timestamp.from(FixedTimeSource.now),
+      exportlocation = Some("Location"),
+      consignmentsequence = consignmentSequence,
+      consignmentreference = consignmentReference,
+      consignmenttype = "standard",
+      bodyid = bodyId,
+      includetoplevelfolder = Some(true),
+      seriesname = Some("seriesName"),
+      transferringbodyname = Some("transferringBodyName"),
+      transferringbodytdrcode = Some("transferringBodyTdrCode")
+    )
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
+    when(consignmentRepoMock.getConsignmentForMetadataReview(consignmentId)).thenReturn(mockResponse)
+
+    val response: Option[Consignment] = consignmentService.getConsignmentForMetadataReview(consignmentId).futureValue
+
+    val consignment: Consignment = response.get
+    consignment.consignmentid should equal(consignmentId)
+    consignment.seriesid should equal(Some(seriesId))
+    consignment.userid should equal(userId)
+    consignment.seriesName should equal(consignmentRow.seriesname)
+    consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
+    consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
+  }
+
+  "getConsignmentForMetadataReview" should "not return any consignment if the consignment doesn't exist" in {
+    val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
+    when(consignmentRepoMock.getConsignmentForMetadataReview(consignmentId)).thenReturn(mockResponse)
+
+    val response: Option[Consignment] = consignmentService.getConsignmentForMetadataReview(consignmentId).futureValue
+    response should equal(None)
   }
 
   "startUpload" should "create an upload in progress status, add the parent folder and 'IncludeTopLevelFolder'" in {
