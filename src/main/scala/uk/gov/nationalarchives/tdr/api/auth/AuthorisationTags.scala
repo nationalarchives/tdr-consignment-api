@@ -89,15 +89,16 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateCo
     } else {
       token.isTNAUser
     }
-    ctx.ctx.consignmentService
-      .getConsignment(consignmentId)
-      .map(consignment => {
-        if (consignment.isDefined && (consignment.get.userid == userId || exportAccess || tnaUserAccess)) {
-          continue
-        } else {
-          throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
-        }
-      })
+    for {
+      consignment <- ctx.ctx.consignmentService.getConsignment(consignmentId)
+      canReviewConsignment <- if (tnaUserAccess) ctx.ctx.consignmentService.getConsignmentForMetadataReview(consignmentId) else Future(None)
+    } yield {
+      if (consignment.isDefined && (consignment.get.userid == userId || exportAccess || canReviewConsignment.isDefined)) {
+        continue
+      } else {
+        throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
+      }
+    }
   }
 }
 
