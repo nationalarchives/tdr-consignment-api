@@ -73,7 +73,7 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
   }
 }
 
-case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends AuthorisationTag {
+case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateConsignment: Boolean = false) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
@@ -84,16 +84,21 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends 
       case uoc: UserOwnsConsignment => uoc.consignmentId
       case id: UUID                 => id
     }
-
-    ctx.ctx.consignmentService
-      .getConsignment(consignmentId)
-      .map(consignment => {
-        if (consignment.isDefined && (consignment.get.userid == userId || exportAccess || token.isTNAUser)) {
-          continue
-        } else {
-          throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
-        }
-      })
+    lazy val tnaUserAccess = if (updateConsignment) {
+      token.isTransferAdviser
+    } else {
+      token.isTNAUser
+    }
+    for {
+      consignment <- ctx.ctx.consignmentService.getConsignment(consignmentId)
+      canReviewConsignment <- if (tnaUserAccess) ctx.ctx.consignmentService.getConsignmentForMetadataReview(consignmentId) else Future(None)
+    } yield {
+      if (consignment.isDefined && (consignment.get.userid == userId || exportAccess || canReviewConsignment.isDefined)) {
+        continue
+      } else {
+        throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
+      }
+    }
   }
 }
 

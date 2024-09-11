@@ -70,6 +70,17 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
+  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
+    val query = Consignment
+      .join(Consignmentstatus)
+      .on(_.consignmentid === _.consignmentid)
+      .filter(_._1.consignmentid === consignmentId)
+      .filter(_._2.statustype === MetadataReviewType.id)
+      .filter(_._2.value === InProgressValue.value)
+      .map(_._1)
+    db.run(query.result)
+  }
+
   def getConsignments(limit: Int, after: Option[String], currentPage: Option[Int] = None, consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
     val offset = currentPage.map(_ * limit).getOrElse(0)
     val query = Consignment
