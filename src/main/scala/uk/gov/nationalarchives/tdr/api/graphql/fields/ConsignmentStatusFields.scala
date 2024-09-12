@@ -51,7 +51,7 @@ object ConsignmentStatusFields {
         ctx.ctx.consignmentStatusService.updateConsignmentStatus(
           ctx.arg(UpdateConsignmentStatusArg)
         ),
-      tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentStatusArg))
+      tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentStatusArg, updateConsignment = true))
     )
   )
 }

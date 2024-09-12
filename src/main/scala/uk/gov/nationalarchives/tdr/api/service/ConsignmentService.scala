@@ -121,6 +121,11 @@ class ConsignmentService(
     consignments.map(rows => rows.map(row => convertRowToConsignment(row)))
   }
 
+  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Option[Consignment]] = {
+    val consignment = consignmentRepository.getConsignmentForMetadataReview(consignmentId)
+    consignment.map(rows => rows.map(row => convertRowToConsignment(row)).headOption)
+  }
+
   def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
     for {
       seriesName <- getSeriesName(Some(updateConsignmentSeriesIdInput.seriesId))
