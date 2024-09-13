@@ -43,7 +43,7 @@ lazy val circeVersion = "0.14.10"
 lazy val testContainersVersion = "0.41.4"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.1.1",
+  "org.sangria-graphql" %% "sangria" % "4.2.0",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -60,12 +60,12 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.9.7",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.40",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.52",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.55",
   "org.postgresql" % "postgresql" % "42.7.4",
   "com.typesafe.slick" %% "slick" % "3.4.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
-  "ch.qos.logback" % "logback-classic" % "1.5.6",
+  "ch.qos.logback" % "logback-classic" % "1.5.8",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.0",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "6.0.2",
   "software.amazon.awssdk" % "rds" % "2.26.27",
@@ -78,7 +78,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.9.0-M2" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.16.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.210",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.213",
   "io.github.hakky54" % "logcaptor" % "2.9.3" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,

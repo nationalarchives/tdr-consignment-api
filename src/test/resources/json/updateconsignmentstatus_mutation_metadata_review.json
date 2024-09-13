@@ -1,0 +1,10 @@
+{
+  "query": "mutation updateConsignmentStatus($updateConsignmentStatusInput: ConsignmentStatusInput!){updateConsignmentStatus(updateConsignmentStatusInput: $updateConsignmentStatusInput)}",
+  "variables": {
+    "updateConsignmentStatusInput": {
+      "consignmentId": "a8dc972d-58f9-4733-8bb2-4254b89a35f2",
+      "statusType": "MetadataReview",
+      "statusValue": "Completed"
+    }
+  }
+}

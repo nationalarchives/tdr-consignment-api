@@ -356,7 +356,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val tnaUserId = UUID.fromString("c59cd886-6b12-4288-bf64-80c59f6a566a")
+    val statusType = "MetadataReview"
+    val statusValue = "InProgress"
+
     utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
     val response: GraphqlQueryData = runTestQuery("query_somedata", validTNAUserToken(userId = tnaUserId))
