@@ -62,8 +62,8 @@ libraryDependencies ++= Seq(
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.40",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.60",
   "org.postgresql" % "postgresql" % "42.7.4",
-  "com.typesafe.slick" %% "slick" % "3.4.1",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
+  "com.typesafe.slick" %% "slick" % "3.5.2",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
   "ch.qos.logback" % "logback-classic" % "1.5.8",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.0",
@@ -86,8 +86,8 @@ libraryDependencies ++= Seq(
 )
 
 dependencyOverrides ++= Seq(
-  "com.typesafe.slick" %% "slick" % "3.4.1",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
+  "com.typesafe.slick" %% "slick" % "3.5.2",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2",
   "org.sangria-graphql" %% "sangria" % "3.5.3"
 )
 
