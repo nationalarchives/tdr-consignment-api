@@ -9,6 +9,8 @@ description := "The consignment API for TDR"
 scalaVersion := "2.13.15"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
+resolvers += "Akka library repository".at("https://repo.akka.io/maven")
+
 (Compile / run / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
 
 graphqlSchemas += GraphQLSchema(
@@ -38,7 +40,8 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val akkaHttpVersion = "10.6.0-M1"
+lazy val akkaVersion = "2.9.3"
+lazy val akkaHttpVersion = "10.6.3"
 lazy val circeVersion = "0.14.10"
 lazy val testContainersVersion = "0.41.4"
 
@@ -52,7 +55,7 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-stream" % "2.9.0-M2",
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.15.0",
@@ -76,7 +79,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "1.17.37" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "1.17.37" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.9.0-M2" % Test,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.16.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.216",
   "io.github.hakky54" % "logcaptor" % "2.9.3" % Test,
