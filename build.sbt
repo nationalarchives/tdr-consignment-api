@@ -46,7 +46,7 @@ lazy val circeVersion = "0.14.10"
 lazy val testContainersVersion = "0.41.4"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.2.1",
+  "org.sangria-graphql" %% "sangria" % "4.2.3",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.9.7",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.40",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.79",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.82",
   "org.postgresql" % "postgresql" % "42.7.4",
   "com.typesafe.slick" %% "slick" % "3.4.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
