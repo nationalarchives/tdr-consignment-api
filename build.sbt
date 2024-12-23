@@ -46,7 +46,7 @@ lazy val circeVersion = "0.14.10"
 lazy val testContainersVersion = "0.41.5"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.2.3",
+  "org.sangria-graphql" %% "sangria" % "4.2.4",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -63,12 +63,12 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.9.7",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.40",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.89",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.90",
   "org.postgresql" % "postgresql" % "42.7.4",
   "com.typesafe.slick" %% "slick" % "3.4.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
-  "ch.qos.logback" % "logback-classic" % "1.5.12",
+  "ch.qos.logback" % "logback-classic" % "1.5.15",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.0",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "6.0.2",
   "software.amazon.awssdk" % "rds" % "2.26.27",
