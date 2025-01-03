@@ -43,7 +43,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 lazy val akkaVersion = "2.9.3"
 lazy val akkaHttpVersion = "10.6.3"
 lazy val circeVersion = "0.14.10"
-lazy val testContainersVersion = "0.41.4"
+lazy val testContainersVersion = "0.41.5"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.4",
@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.9.7",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.40",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.90",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.91",
   "org.postgresql" % "postgresql" % "42.7.4",
   "com.typesafe.slick" %% "slick" % "3.4.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.17.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.223",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.224",
   "io.github.hakky54" % "logcaptor" % "2.10.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
