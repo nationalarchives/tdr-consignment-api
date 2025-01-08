@@ -5,6 +5,7 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType.directoryTypeIdentifi
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 import uk.gov.nationalarchives.tdr.api.service.{ReferenceGeneratorService, UUIDSource}
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils.TreeNode
+import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import java.io.{File => JIOFile}
 import java.util.UUID
@@ -26,12 +27,12 @@ class TreeNodesUtils(uuidSource: UUIDSource, referenceGeneratorService: Referenc
     }
   }
 
-  def generateNodes(filePaths: Set[String], typeIdentifier: String): Map[String, TreeNode] = {
+  def generateNodes(filePaths: Set[String], typeIdentifier: String, consignmentId: UUID, token: Token): Map[String, TreeNode] = {
     val generatedNodes = filePaths.flatMap { path =>
       val pathWithoutInitialSlash: String = if (path.startsWith("/")) path.tail else path
       innerFunction(pathWithoutInitialSlash, typeIdentifier, Map())
     }.toMap
-    val generatedReferences = referenceGeneratorService.getReferences(generatedNodes.size)
+    val generatedReferences = referenceGeneratorService.getReferences(generatedNodes.size, consignmentId, token)
     generatedReferences
       .zip(generatedNodes.view)
       .map { case (reference, (key, treenode)) =>

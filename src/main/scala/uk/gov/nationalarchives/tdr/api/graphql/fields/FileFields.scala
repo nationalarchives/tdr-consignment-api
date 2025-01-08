@@ -9,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.UuidType
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.FileType
+import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 
 import java.util.UUID
 
@@ -33,7 +34,7 @@ object FileFields {
       "addFilesAndMetadata",
       ListType(FileSequenceType),
       arguments = List(FileAndMetadataInputArg),
-      resolve = ctx => ctx.ctx.fileService.addFile(ctx.arg(FileAndMetadataInputArg), ctx.ctx.accessToken.userId),
+      resolve = ctx => ctx.ctx.fileService.addFile(ctx.arg(FileAndMetadataInputArg), ctx.ctx.accessToken),
       tags = List(ValidateUserHasAccessToConsignment(FileAndMetadataInputArg))
     )
   )
