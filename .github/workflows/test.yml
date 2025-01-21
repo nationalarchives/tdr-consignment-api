@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: sbt/setup-sbt@v1
       - run: sbt scalafmtCheckAll 'graphqlValidateSchema "build" "consignmentApi"'
         env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
@@ -22,6 +23,7 @@ jobs:
       files: ${{ steps.generate-files.outputs.files }}
     steps:
       - uses: actions/checkout@v3
+      - uses: sbt/setup-sbt@v1
       - id: generate-files
         run: |
           FILES=$(find src/test/* -name "*Spec.scala" -type f -printf "%f\n" | sed 's/\.[^.]*$//' | jq -R -s -c 'split("\n")[:-1]')
@@ -34,6 +36,7 @@ jobs:
         file: ${{ fromJSON(needs.setup-tests.outputs.files) }}
     steps:
       - uses: actions/checkout@v3
+      - uses: sbt/setup-sbt@v1
       - run: |
           docker build -f Dockerfile-tests -t tests .
           sbt 'testOnly *${{ matrix.file }}*'

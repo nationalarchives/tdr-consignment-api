@@ -265,7 +265,11 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
       AddOrUpdateFileMetadata(
         fileId,
-        List(AddOrUpdateMetadata("propertyName1", "newValue1"), AddOrUpdateMetadata("SHA256ServerSideChecksum", "newValue2"), AddOrUpdateMetadata("propertyName3", ""))
+        List(
+          AddOrUpdateMetadata("propertyName1", "newValue1"),
+          AddOrUpdateMetadata("SHA256ServerSideChecksum", "newValue2"),
+          AddOrUpdateMetadata("propertyName3", "")
+        )
       )
     )
 
