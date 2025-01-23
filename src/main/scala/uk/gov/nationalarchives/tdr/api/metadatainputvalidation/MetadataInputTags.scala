@@ -21,10 +21,10 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
 
-    val (inputFileIds: Seq[UUID], inputConsignmentId: UUID) = arg match {
-      case updateInput: UpdateBulkFileMetadataInput           => (updateInput.fileIds, updateInput.consignmentId)
-      case deleteInput: DeleteFileMetadataInput               => (deleteInput.fileIds, deleteInput.consignmentId)
-      case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId)
+    val (inputFileIds: Seq[UUID], inputConsignmentId: UUID, skipValidation: Boolean) = arg match {
+      case updateInput: UpdateBulkFileMetadataInput           => (updateInput.fileIds, updateInput.consignmentId, false)
+      case deleteInput: DeleteFileMetadataInput               => (deleteInput.fileIds, deleteInput.consignmentId, false)
+      case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId, addOrUpdateInput.skipValidation)
     }
     val token = ctx.ctx.accessToken
     val userId = token.userId
@@ -32,8 +32,13 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
     if (inputFileIds.isEmpty) {
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
-    // TODO: Should use a new client for the draft metadata upload https://national-archives.atlassian.net/browse/TDRD-181
-    val draftMetadataValidatorAccess = token.backendChecksRoles.contains(exportRole)
+
+    val draftMetadataValidatorAccess = if (skipValidation) {
+      // TODO: Should use a new client for the draft metadata validator https://national-archives.atlassian.net/browse/TDRD-181
+      token.backendChecksRoles.contains(exportRole)
+    } else {
+      token.backendChecksRoles.contains(exportRole)
+    }
 
     for {
       fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)

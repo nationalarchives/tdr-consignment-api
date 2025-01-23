@@ -186,6 +186,41 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       }
   }
 
+  "addOrUpdateBulkFileMetadata" should "add or update all file metadata without validation and update the statuses when skipValidation is true" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      utils.addFileProperty("newProperty1", propertyType = "Supplied")
+      utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied")
+
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "existingPropertyUpdated1", "existingValue1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId.toString, "existingPropertyUpdated1", "newValue1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "newProperty1", "value1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "existingPropertyUpdated1", "existingValue1")
+
+      val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+        expectedAddOrUpdateBulkFileMetadataMutationResponse("data_all")
+      val expectedResponseFileMetadata = expectedResponse.data.get
+      val response: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+        runAddOrUpdateBulkFileMetadataTestMutation("mutation_skip_validation", validUserToken())
+      val responseFileMetadataProperties = response.data.get
+
+      responseFileMetadataProperties should equal(expectedResponseFileMetadata)
+
+      List(fileOneId, fileTwoId, fileThreeId).foreach { id =>
+        checkFileMetadataValue(id, utils, "newProperty1", "value1")
+        checkFileMetadataValue(id, utils, "existingPropertyUpdated1", "newValue1")
+      }
+  }
+
   "addOrUpdateBulkFileMetadata" should "return an error if trying to add metadata that is protected" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()

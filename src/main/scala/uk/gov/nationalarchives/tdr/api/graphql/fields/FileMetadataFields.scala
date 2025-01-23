@@ -33,7 +33,7 @@ object FileMetadataFields {
   case class UpdateBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[UpdateFileMetadataInput])
   case class AddOrUpdateMetadata(filePropertyName: String, value: String) extends FileMetadataBase
   case class AddOrUpdateFileMetadata(fileId: UUID, metadata: Seq[AddOrUpdateMetadata])
-  case class AddOrUpdateBulkFileMetadataInput(consignmentId: UUID, fileMetadata: Seq[AddOrUpdateFileMetadata])
+  case class AddOrUpdateBulkFileMetadataInput(consignmentId: UUID, fileMetadata: Seq[AddOrUpdateFileMetadata], skipValidation: Boolean = false)
 
   case class DeleteFileMetadata(fileIds: Seq[UUID], filePropertyNames: Seq[String])
 

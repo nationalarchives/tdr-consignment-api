@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import sangria.macros.derive.GraphQLDeprecated
-import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -60,24 +60,21 @@ class FileMetadataService(
     } yield BulkFileMetadata(uniqueFileIds.toSeq, metadataPropertiesAdded.toSeq)
   }
 
-  def addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
+  def addOrUpdateBulkFileMetadata(metadataInput: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     for {
       customMetadata <- customMetadataService.getCustomMetadata
       protectedMetadata = customMetadata.filter(!_.editable).map(_.name)
-      _ = input.fileMetadata.map { addOrUpdateFileMetadata =>
+      _ = metadataInput.fileMetadata.map { addOrUpdateFileMetadata =>
         addOrUpdateFileMetadata.metadata.map { metadata =>
           if (protectedMetadata.contains(metadata.filePropertyName)) {
             throw InputDataException(s"Protected metadata property found: ${metadata.filePropertyName}")
           }
         }
       }
-      _ <- input.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(input.fileMetadata, userId))
-      _ <- validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(
-        fileIds = input.fileMetadata.map(_.fileId).toSet,
-        propertiesToValidate = input.fileMetadata.head.metadata.map(_.filePropertyName).toSet
-      )
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(input.consignmentId, List(DescriptiveMetadata, ClosureMetadata))
+      _ <- metadataInput.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
+      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(metadataInput.fileMetadata, userId))
+      _ <- addFileMetadataStatuses(metadataInput)
+      _ <- consignmentStatusService.updateMetadataConsignmentStatus(metadataInput.consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
     } yield metadataPropertiesAdded
   }
@@ -154,6 +151,17 @@ class FileMetadataService(
         fileId -> getFileMetadataValues(fileMetadata)
       }
     }
+
+  private def addFileMetadataStatuses(metadataInput: AddOrUpdateBulkFileMetadataInput): Future[Seq[FilestatusRow]] = {
+    if (metadataInput.skipValidation) {
+      validateFileMetadataService.addAdditionalMetadataStatuses(metadataInput.fileMetadata)
+    } else {
+      validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(
+        fileIds = metadataInput.fileMetadata.map(_.fileId).toSet,
+        propertiesToValidate = metadataInput.fileMetadata.head.metadata.map(_.filePropertyName).toSet
+      )
+    }
+  }
 }
 
 object FileMetadataService {

@@ -357,6 +357,35 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     testSetUp.statusTypeCaptor.getValue.sorted should equal(List(ClosureMetadata, DescriptiveMetadata))
   }
 
+  "addOrUpdateBulkFileMetadata" should "add or updated metadata and metadata statuses without validating the data when skipValidation is 'true'" in {
+    val testSetUp = new AddOrUpdateBulkMetadataTestSetUp()
+    val customMetadataSetUp = new CustomMetadataTestSetUp()
+
+    testSetUp.stubRepoResponses()
+    customMetadataSetUp.stubResponse()
+
+    val service = new FileMetadataService(
+      testSetUp.metadataRepositoryMock,
+      testSetUp.consignmentStatusServiceMock,
+      customMetadataSetUp.customMetadataServiceMock,
+      testSetUp.validateFileMetadataServiceMock
+    )
+
+    val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
+      AddOrUpdateFileMetadata(fileId, List(AddOrUpdateMetadata("propertyName1", "newValue1"), AddOrUpdateMetadata("propertyName2", "newValue2")))
+    )
+
+    val input = AddOrUpdateBulkFileMetadataInput(testSetUp.consignmentId, addOrUpdateBulkFileMetadata, skipValidation = true)
+    service.addOrUpdateBulkFileMetadata(input, testSetUp.userId).futureValue
+
+    verify(testSetUp.validateFileMetadataServiceMock, times(0)).validateAndAddAdditionalMetadataStatuses(any[Set[UUID]], any[Set[String]])
+    verify(testSetUp.validateFileMetadataServiceMock, times(1)).addAdditionalMetadataStatuses(any[List[AddOrUpdateFileMetadata]])
+    verify(testSetUp.consignmentStatusServiceMock, times(1)).updateMetadataConsignmentStatus(any[UUID], any[List[String]])
+
+    testSetUp.consignmentIdCaptor.getValue should equal(testSetUp.consignmentId)
+    testSetUp.statusTypeCaptor.getValue.sorted should equal(List(ClosureMetadata, DescriptiveMetadata))
+  }
+
   "getFileMetadata" should "call the repository with the correct arguments" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
@@ -841,6 +870,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
         .thenReturn(Future(addFileMetadataResponse))
       when(validateFileMetadataServiceMock.validateAndAddAdditionalMetadataStatuses(any[Set[UUID]], any[Set[String]])).thenReturn(Future(List()))
+      when(validateFileMetadataServiceMock.addAdditionalMetadataStatuses(any[List[AddOrUpdateFileMetadata]])).thenReturn(Future(List()))
       when(consignmentStatusServiceMock.updateMetadataConsignmentStatus(consignmentIdCaptor.capture(), statusTypeCaptor.capture()))
         .thenReturn(Future.successful(1 :: Nil))
     }
