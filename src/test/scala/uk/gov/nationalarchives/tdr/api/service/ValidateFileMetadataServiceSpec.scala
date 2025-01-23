@@ -251,7 +251,6 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file2DescriptiveStatus.value should equal("NotEntered")
   }
 
-
   "addAdditionalMetadataStatuses" should "update 'additional metadata' statuses to 'NotEntered' or 'Completed' for multiple files" in {
     val testSetUp = new ValidatePropertiesSetUp()
     val userId = testSetUp.userId
@@ -268,26 +267,34 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
     testSetUp.stubMockResponses(existingMetadataRows)
     val fileMetadataList: Seq[AddOrUpdateFileMetadata] = List(
-      AddOrUpdateFileMetadata(testSetUp.fileId1, Seq(
-        AddOrUpdateMetadata("ClosurePeriod", "40"),
-        AddOrUpdateMetadata("ClosureType", "Closed"),
-        AddOrUpdateMetadata("Language", "English"),
-        AddOrUpdateMetadata("AlternativeDescription", ""),
-        AddOrUpdateMetadata("TitleAlternate", ""),
-        AddOrUpdateMetadata("FoiExemptionCode", "40"),
-        AddOrUpdateMetadata("TitleClosed", "false"),
-        AddOrUpdateMetadata("DescriptionClosed", "false"),
-        AddOrUpdateMetadata("description", "eeeee"))),
-      AddOrUpdateFileMetadata(testSetUp.fileId2, Seq(
-        AddOrUpdateMetadata("ClosurePeriod", ""),
-        AddOrUpdateMetadata("ClosureType", "Open"),
-        AddOrUpdateMetadata("Language", "English"),
-        AddOrUpdateMetadata("AlternativeDescription", ""),
-        AddOrUpdateMetadata("TitleAlternate", ""),
-        AddOrUpdateMetadata("FoiExemptionCode", ""),
-        AddOrUpdateMetadata("TitleClosed", "false"),
-        AddOrUpdateMetadata("DescriptionClosed", "false"),
-        AddOrUpdateMetadata("description", "")))
+      AddOrUpdateFileMetadata(
+        testSetUp.fileId1,
+        Seq(
+          AddOrUpdateMetadata("ClosurePeriod", "40"),
+          AddOrUpdateMetadata("ClosureType", "Closed"),
+          AddOrUpdateMetadata("Language", "English"),
+          AddOrUpdateMetadata("AlternativeDescription", ""),
+          AddOrUpdateMetadata("TitleAlternate", ""),
+          AddOrUpdateMetadata("FoiExemptionCode", "40"),
+          AddOrUpdateMetadata("TitleClosed", "false"),
+          AddOrUpdateMetadata("DescriptionClosed", "false"),
+          AddOrUpdateMetadata("description", "eeeee")
+        )
+      ),
+      AddOrUpdateFileMetadata(
+        testSetUp.fileId2,
+        Seq(
+          AddOrUpdateMetadata("ClosurePeriod", ""),
+          AddOrUpdateMetadata("ClosureType", "Open"),
+          AddOrUpdateMetadata("Language", "English"),
+          AddOrUpdateMetadata("AlternativeDescription", ""),
+          AddOrUpdateMetadata("TitleAlternate", ""),
+          AddOrUpdateMetadata("FoiExemptionCode", ""),
+          AddOrUpdateMetadata("TitleClosed", "false"),
+          AddOrUpdateMetadata("DescriptionClosed", "false"),
+          AddOrUpdateMetadata("description", "")
+        )
+      )
     )
 
     val service = testSetUp.service

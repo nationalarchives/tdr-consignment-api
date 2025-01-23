@@ -44,15 +44,14 @@ class ValidateFileMetadataService(
           additionalMetadataGroups.map(p => p.groupName -> p.fields.map(field => field.name -> field.defaultValue.getOrElse("")).toMap).toMap
 
         fileMetadataList.flatMap(fileMetadata => {
-          metadataGroupsWithDefaultValues.map {
-            case (groupName, fields) =>
-              val hasDefaultValues = fields.forall(p => fileMetadata.metadata.find(_.filePropertyName == p._1).exists(_.value == p._2))
-              val status = if (hasDefaultValues) {
-                NotEntered
-              } else {
-                Completed
-              }
-              AddFileStatusInput(fileMetadata.fileId, groupName, status)
+          metadataGroupsWithDefaultValues.map { case (groupName, fields) =>
+            val hasDefaultValues = fields.forall(p => fileMetadata.metadata.find(_.filePropertyName == p._1).exists(_.value == p._2))
+            val status = if (hasDefaultValues) {
+              NotEntered
+            } else {
+              Completed
+            }
+            AddFileStatusInput(fileMetadata.fileId, groupName, status)
           }
         })
       }
