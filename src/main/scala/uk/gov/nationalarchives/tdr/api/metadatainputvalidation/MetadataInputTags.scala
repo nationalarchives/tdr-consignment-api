@@ -2,19 +2,20 @@ package uk.gov.nationalarchives.tdr.api.metadatainputvalidation
 
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
+import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrUpdateBulkFileMetadataInput, DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
-import uk.gov.nationalarchives.tdr.api.auth.ValidateBody.exportRole
-import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileDetails
 
 import java.util.UUID
 import scala.concurrent._
 import scala.language.postfixOps
 
-trait MetadataInputTag extends ValidationTag
+trait MetadataInputTag extends ValidationTag {
+  val updateMetadataRole = "update_metadata"
+}
 
 case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInputTag {
 
@@ -32,8 +33,8 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
     if (inputFileIds.isEmpty) {
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
-    // TODO: Should use a new client for the draft metadata upload https://national-archives.atlassian.net/browse/TDRD-181
-    val draftMetadataValidatorAccess = token.backendChecksRoles.contains(exportRole)
+
+    val draftMetadataValidatorAccess = token.draftMetadataRoles.contains(updateMetadataRole)
 
     for {
       fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)
