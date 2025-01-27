@@ -516,7 +516,7 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "addOrUpdateBulkFileMetadata" should "add or update all file metadata when consignment belongs to another user when called by backend checks client" in withContainers {
+  "addOrUpdateBulkFileMetadata" should "add or update all file metadata when consignment belongs to another user when called by draft metadata client" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
@@ -536,19 +536,19 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "newProperty1", "value1")
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "existingPropertyUpdated1", "existingValue1")
 
-      val exportAccessToken = validBackendChecksToken("export")
+      val updateMetadataAccessToken = validDraftMetadataToken("update_metadata")
 
       val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
         expectedAddOrUpdateBulkFileMetadataMutationResponse("data_all")
       val expectedResponseFileMetadata = expectedResponse.data.get
       val response: GraphqlAddOrUpdateBulkFileMetadataMutationData =
-        runAddOrUpdateBulkFileMetadataTestMutation("mutation_alldata", exportAccessToken)
+        runAddOrUpdateBulkFileMetadataTestMutation("mutation_alldata", updateMetadataAccessToken)
       val responseFileMetadataProperties = response.data.get
 
       responseFileMetadataProperties should equal(expectedResponseFileMetadata)
   }
 
-  "addOrUpdateBulkFileMetadata" should "throw a 'not authorised' exception is thrown when the user doesn't own the file and the backend checks client is not used" in withContainers {
+  "addOrUpdateBulkFileMetadata" should "throw a 'not authorised' exception is thrown when the user doesn't own the file and the draft metadata client is not used" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
