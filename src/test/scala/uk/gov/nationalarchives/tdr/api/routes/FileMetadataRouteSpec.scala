@@ -501,13 +501,13 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "newProperty1", "value1")
       utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "existingPropertyUpdated1", "existingValue1")
 
-      val exportAccessToken = validDraftMetadataToken("update_metadata")
+      val updateMetadataAccessToken = validDraftMetadataToken("update_metadata")
 
       val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
         expectedAddOrUpdateBulkFileMetadataMutationResponse("data_all")
       val expectedResponseFileMetadata = expectedResponse.data.get
       val response: GraphqlAddOrUpdateBulkFileMetadataMutationData =
-        runAddOrUpdateBulkFileMetadataTestMutation("mutation_alldata", exportAccessToken)
+        runAddOrUpdateBulkFileMetadataTestMutation("mutation_alldata", updateMetadataAccessToken)
       val responseFileMetadataProperties = response.data.get
 
       responseFileMetadataProperties should equal(expectedResponseFileMetadata)
