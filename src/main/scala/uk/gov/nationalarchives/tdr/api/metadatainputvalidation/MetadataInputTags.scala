@@ -22,10 +22,10 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
 
-    val (inputFileIds: Seq[UUID], inputConsignmentId: UUID, skipValidation: Boolean) = arg match {
-      case updateInput: UpdateBulkFileMetadataInput           => (updateInput.fileIds, updateInput.consignmentId, false)
-      case deleteInput: DeleteFileMetadataInput               => (deleteInput.fileIds, deleteInput.consignmentId, false)
-      case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId, addOrUpdateInput.skipValidation)
+    val (inputFileIds: Seq[UUID], inputConsignmentId: UUID) = arg match {
+      case updateInput: UpdateBulkFileMetadataInput           => (updateInput.fileIds, updateInput.consignmentId)
+      case deleteInput: DeleteFileMetadataInput               => (deleteInput.fileIds, deleteInput.consignmentId)
+      case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId)
     }
     val token = ctx.ctx.accessToken
     val userId = token.userId
