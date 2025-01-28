@@ -60,6 +60,11 @@ class ConsignmentService(
     consignmentRepository.updateExportData(exportDataInput)
   }
 
+  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String) = {
+    consignmentRepository.updateSchemaLibraryVersion(consignmentId, schemaLibraryVersion)
+  }
+
+
   def addConsignment(addConsignmentInput: AddConsignmentInput, token: Token): Future[Consignment] = {
     val now = timeSource.now
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
@@ -163,6 +168,7 @@ class ConsignmentService(
       row.includetoplevelfolder,
       row.seriesname,
       row.transferringbodyname,
+      row.transferringbodytdrcode,
       row.transferringbodytdrcode
     )
   }

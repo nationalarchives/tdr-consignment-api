@@ -134,6 +134,7 @@ type Consignment {
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
   consignmentStatuses: [ConsignmentStatus!]!
+  schemaLibraryVersion: String
 }
 
 "A connection to a list of items."
@@ -173,6 +174,11 @@ input ConsignmentStatusInput {
   consignmentId: UUID!
   statusType: String!
   statusValue: String
+}
+
+input UpdateSchemaLibraryVersionInput {
+  consignmentId: UUID!
+  schemaLibraryVersion: String!
 }
 
 type CustomMetadataField {
@@ -400,6 +406,7 @@ type Mutation {
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
+  updateSchemaLibraryVersion(updateSchemaLibraryVersionInput: UpdateSchemaLibraryVersionInput!): String!
 }
 
 "Information about pagination in a connection."

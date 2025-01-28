@@ -35,6 +35,14 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(update)
   }
 
+  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String): Future[Int] = {
+    val update = Consignment
+      .filter(_.consignmentid === consignmentId)
+      .map(_.transferringbodytdrcode)
+      .update(Some(schemaLibraryVersion))
+    db.run(update)
+  }
+
   def updateTransferInitiated(consignmentId: UUID, userId: UUID, timestamp: Timestamp): Future[Int] = {
     val update = Consignment
       .filter(_.consignmentid === consignmentId)

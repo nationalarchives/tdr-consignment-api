@@ -50,7 +50,8 @@ object ConsignmentFields {
       includeTopLevelFolder: Option[Boolean],
       seriesName: Option[String],
       transferringBodyName: Option[String],
-      transferringBodyTdrCode: Option[String]
+      transferringBodyTdrCode: Option[String],
+      schemaLibraryVersion: Option[String]
   )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
