@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.metadatainputvalidation
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
+import uk.gov.nationalarchives.tdr.api.auth.ValidateBody.updateMetadataRole
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrUpdateBulkFileMetadataInput, DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
@@ -13,9 +14,7 @@ import java.util.UUID
 import scala.concurrent._
 import scala.language.postfixOps
 
-trait MetadataInputTag extends ValidationTag {
-  val updateMetadataRole = "update_metadata"
-}
+trait MetadataInputTag extends ValidationTag
 
 case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInputTag {
 
