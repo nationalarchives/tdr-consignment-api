@@ -21,6 +21,7 @@ trait AuthorisationTag extends ValidationTag {
   val fileFormatRole = "file_format"
   val exportRole = "export"
   val reportingRole = "reporting"
+  val updateMetadataRole = "update_metadata"
 }
 
 trait SyncAuthorisationTag extends AuthorisationTag {
@@ -77,7 +78,7 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateCo
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
-    val exportAccess = token.backendChecksRoles.contains(exportRole)
+    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole)
 
     val arg: T = ctx.arg[T](argument.name)
     val consignmentId: UUID = arg match {
@@ -93,7 +94,7 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateCo
       consignment <- ctx.ctx.consignmentService.getConsignment(consignmentId)
       canReviewConsignment <- if (tnaUserAccess) ctx.ctx.consignmentService.getConsignmentForMetadataReview(consignmentId) else Future(None)
     } yield {
-      if (consignment.isDefined && (consignment.get.userid == userId || exportAccess || canReviewConsignment.isDefined)) {
+      if (consignment.isDefined && (consignment.get.userid == userId || hasAccess || canReviewConsignment.isDefined)) {
         continue
       } else {
         throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
