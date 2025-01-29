@@ -43,7 +43,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 lazy val akkaVersion = "2.9.3"
 lazy val akkaHttpVersion = "10.6.3"
 lazy val circeVersion = "0.14.10"
-lazy val testContainersVersion = "0.41.5"
+lazy val testContainersVersion = "0.41.8"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.5",
