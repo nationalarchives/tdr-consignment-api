@@ -85,7 +85,7 @@ class Routes(val config: Config, slickSession: SlickSession) extends Cors {
         complete(StatusCodes.OK)
       } ~ (get & path("healthcheck-full")) {
         val fullHealthCheck = new FullHealthCheckService()
-        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(DbConnection(slickSession).db)) {
+        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(DbConnection(slickSession).db.asInstanceOf[slick.jdbc.PostgresProfile.api.Database])) {
           complete(StatusCodes.OK)
         }
       }

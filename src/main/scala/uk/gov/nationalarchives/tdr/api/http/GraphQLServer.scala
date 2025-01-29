@@ -47,7 +47,7 @@ class GraphQLServer(slickSession: SlickSession) extends GraphQLServerBase {
   private def executeGraphQLQuery(query: Document, operation: Option[String], vars: JsObject, accessToken: Token)(implicit
       ec: ExecutionContext
   ): Future[(StatusCode with Serializable, JsValue)] = {
-    val context = generateConsignmentApiContext(accessToken: Token, DbConnection(slickSession).db)
+    val context = generateConsignmentApiContext(accessToken: Token, DbConnection(slickSession).db.asInstanceOf[slick.jdbc.PostgresProfile.api.Database])
 
     Executor
       .execute(
