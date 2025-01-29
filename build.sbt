@@ -62,7 +62,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.9.7",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.46-SNAPSHOT",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.45",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.94",
   "org.postgresql" % "postgresql" % "42.7.5",
   "com.typesafe.slick" %% "slick" % "3.5.2",
@@ -87,12 +87,6 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
-)
-
-dependencyOverrides ++= Seq(
-  "com.typesafe.slick" %% "slick" % "3.5.2",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2",
-  "org.sangria-graphql" %% "sangria" % "4.2.5"
 )
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
