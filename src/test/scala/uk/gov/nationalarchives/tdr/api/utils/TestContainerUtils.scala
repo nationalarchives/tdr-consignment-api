@@ -29,11 +29,11 @@ trait TestContainerUtils extends AnyFlatSpec with TestContainerForEach with Befo
     super.afterContainersStart(containers)
   }
 
-  def seedDatabase(db: JdbcBackend#DatabaseDef): Unit = {
+  def seedDatabase(db: JdbcBackend#Database): Unit = {
     setupBodyAndSeries(db)
   }
 
-  def setupBodyAndSeries(db: JdbcBackend#DatabaseDef): Unit = {
+  def setupBodyAndSeries(db: JdbcBackend#Database): Unit = {
     val utils = TestUtils(db)
     utils.addTransferringBody(
       fixedBodyId,
@@ -56,8 +56,8 @@ object TestContainerUtils {
       SlickSession.forConfig("consignmentapi")
     }
 
-    def database: JdbcBackend#DatabaseDef = {
-      session.db
+    def database = {
+      session.db.asInstanceOf[slick.jdbc.PostgresProfile.api.Database]
     }
   }
 }
