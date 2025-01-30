@@ -19,49 +19,6 @@ class ValidateFileMetadataService(
     fileStatusRepository: FileStatusRepository
 )(implicit val ec: ExecutionContext) {
 
-  def toPropertyNames(fields: Seq[CustomMetadataField]): Set[String] = fields.map(_.name).toSet
-
-  def toAdditionalMetadataFieldGroups(fields: Seq[CustomMetadataField]): Seq[FieldGroup] = {
-    val closureFields = fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
-    val descriptiveFields = fields.filter(f => f.propertyGroup.contains("OptionalMetadata"))
-    Seq(FieldGroup(ClosureMetadata, closureFields), FieldGroup(DescriptiveMetadata, descriptiveFields))
-  }
-
-  def toValueDependenciesGroups(field: CustomMetadataField): Seq[FieldGroup] = {
-    val values: List[CustomMetadataValues] = field.values
-    values.map(v => {
-      FieldGroup(v.value, v.dependencies)
-    })
-  }
-
-  def addAdditionalMetadataStatuses(fileMetadataList: Seq[AddOrUpdateFileMetadata]): Future[Seq[FilestatusRow]] = {
-    for {
-      customMetadataFields <- customMetadataService.getCustomMetadata
-      propertyNames <- displayPropertiesService.getActiveDisplayPropertyNames
-      additionalMetadataStatuses = {
-        val additionalMetadataGroups = toAdditionalMetadataFieldGroups(customMetadataFields.filter(p => propertyNames.contains(p.name)))
-        val metadataGroupsWithDefaultValues =
-          additionalMetadataGroups.map(p => p.groupName -> p.fields.map(field => field.name -> field.defaultValue.getOrElse("")).toMap).toMap
-
-        fileMetadataList.flatMap(fileMetadata => {
-          metadataGroupsWithDefaultValues.map { case (groupName, fields) =>
-            val hasDefaultValues = fields.forall(p => fileMetadata.metadata.find(_.filePropertyName == p._1).exists(_.value == p._2))
-            val status = if (hasDefaultValues) {
-              NotEntered
-            } else {
-              Completed
-            }
-            AddFileStatusInput(fileMetadata.fileId, groupName, status)
-          }
-        })
-      }
-      _ <- fileStatusRepository.deleteFileStatus(additionalMetadataStatuses.map(_.fileId).toSet, Set(ClosureMetadata, DescriptiveMetadata))
-      rows <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses.toList)
-    } yield {
-      rows
-    }
-  }
-
   def validateAndAddAdditionalMetadataStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       propertyNames <- displayPropertiesService.getActiveDisplayPropertyNames
@@ -86,7 +43,7 @@ class ValidateFileMetadataService(
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties <- fileMetadataRepository.getFileMetadata(None, Some(fileIds), Some(propertyNames.toSet))
     } yield {
-      val additionalMetadataGroups = toAdditionalMetadataFieldGroups(customMetadataFields.filter(p => propertyNames.contains(p.name)))
+      val additionalMetadataGroups = customMetadataService.toAdditionalMetadataFieldGroups(customMetadataFields.filter(p => propertyNames.contains(p.name)))
 
       val existingFileProperties =
         fileIds.map(fileId => fileId -> existingMetadataProperties.filter(_.fileid == fileId).groupBy(_.propertyname).map(p => p._1 -> p._2.map(_.value).mkString(","))).toMap
@@ -124,6 +81,4 @@ class ValidateFileMetadataService(
       }.toList
     }
   }
-
-  case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
 }

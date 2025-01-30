@@ -21,7 +21,8 @@ class FileMetadataService(
     fileMetadataRepository: FileMetadataRepository,
     consignmentStatusService: ConsignmentStatusService,
     customMetadataService: CustomMetadataPropertiesService,
-    validateFileMetadataService: ValidateFileMetadataService
+    validateFileMetadataService: ValidateFileMetadataService,
+    fileStatusService: FileStatusService
 )(implicit val ec: ExecutionContext) {
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
@@ -73,7 +74,7 @@ class FileMetadataService(
       }
       _ <- metadataInput.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(metadataInput.fileMetadata, userId))
-      _ <- addFileMetadataStatuses(metadataInput)
+      _ <- processFileMetadata(metadataInput)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(metadataInput.consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
     } yield metadataPropertiesAdded
@@ -152,9 +153,9 @@ class FileMetadataService(
       }
     }
 
-  private def addFileMetadataStatuses(metadataInput: AddOrUpdateBulkFileMetadataInput): Future[Seq[FilestatusRow]] = {
+  private def processFileMetadata(metadataInput: AddOrUpdateBulkFileMetadataInput): Future[Seq[FilestatusRow]] = {
     if (metadataInput.skipValidation) {
-      validateFileMetadataService.addAdditionalMetadataStatuses(metadataInput.fileMetadata)
+      fileStatusService.addAdditionalMetadataStatuses(metadataInput.fileMetadata)
     } else {
       validateFileMetadataService.validateAndAddAdditionalMetadataStatuses(
         fileIds = metadataInput.fileMetadata.map(_.fileId).toSet,

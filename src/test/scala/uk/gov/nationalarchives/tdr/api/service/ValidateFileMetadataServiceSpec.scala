@@ -7,12 +7,12 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
+import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrUpdateFileMetadata, AddOrUpdateMetadata}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
-import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDataHelper}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -21,55 +21,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
   val fixedTimeSource: FixedTimeSource.type = FixedTimeSource
-
-  "toPropertyNames" should "return all the names of the 'custom metadata fields'" in {
-    val testSetUp = new ValidatePropertiesSetUp()
-    val expectedPropertyNames =
-      Set(
-        "ClosureType",
-        "TitleClosed",
-        "DescriptionClosed",
-        "FoiExemptionCode",
-        "TitleAlternate",
-        "AlternativeDescription",
-        "Language",
-        "description",
-        "ClosurePeriod",
-        "MultiValueWithDependencies"
-      )
-
-    val service = testSetUp.service
-    val propertyNames = service.toPropertyNames(mockCustomMetadataFields())
-    propertyNames.size should equal(expectedPropertyNames.size)
-    propertyNames.subsetOf(expectedPropertyNames) shouldBe true
-  }
-
-  "toAdditionalMetadataFieldGroups" should "group 'custom metadata fields' by 'closure' and 'descriptive'" in {
-    val testSetUp = new ValidatePropertiesSetUp()
-
-    val service = testSetUp.service
-    val fieldGroups = service.toAdditionalMetadataFieldGroups(mockCustomMetadataFields())
-
-    fieldGroups.size shouldBe 2
-    val closureGroups = fieldGroups.find(_.groupName == ClosureMetadata).get
-    closureGroups.fields.size shouldBe 7
-    val descriptiveGroups = fieldGroups.find(_.groupName == DescriptiveMetadata).get
-    descriptiveGroups.fields.size shouldBe 2
-  }
-
-  "toValueDependenciesGroups" should "group 'custom metadata fields' by field value to dependencies" in {
-    val testSetUp = new ValidatePropertiesSetUp()
-    val service = testSetUp.service
-    val valueDependenciesGroup = service.toValueDependenciesGroups(mockCustomMetadataFields().find(_.name == "ClosureType").get)
-
-    valueDependenciesGroup.size shouldBe 2
-    val group1 = valueDependenciesGroup.head
-    group1.groupName should equal("Closed")
-    group1.fields.size shouldBe 4
-    val group2 = valueDependenciesGroup.last
-    group2.groupName should equal("Open")
-    group2.fields.size shouldBe 0
-  }
 
   "validateAndAddAdditionalMetadataStatuses" should "not update 'additional metadata' statuses if properties to validate are not 'additional metadata' properties" in {
     val testSetUp = new ValidatePropertiesSetUp()
@@ -251,77 +202,6 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     file2DescriptiveStatus.value should equal("NotEntered")
   }
 
-  "addAdditionalMetadataStatuses" should "update 'additional metadata' statuses to 'NotEntered' or 'Completed' for multiple files" in {
-    val testSetUp = new ValidatePropertiesSetUp()
-    val userId = testSetUp.userId
-    val fileId1 = testSetUp.fileId1
-    val fileId2 = testSetUp.fileId2
-    val fileIds = Set(fileId1, fileId2)
-
-    val existingMetadataRows: List[FilemetadataRow] = List(
-      FilemetadataRow(UUID.randomUUID(), fileId1, "Open", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
-      FilemetadataRow(UUID.randomUUID(), fileId2, "Open", Timestamp.from(FixedTimeSource.now), userId, "ClosureType"),
-      FilemetadataRow(UUID.randomUUID(), fileId1, "English", Timestamp.from(FixedTimeSource.now), userId, "Language"),
-      FilemetadataRow(UUID.randomUUID(), fileId2, "English", Timestamp.from(FixedTimeSource.now), userId, "Language")
-    )
-
-    testSetUp.stubMockResponses(existingMetadataRows)
-    val fileMetadataList: Seq[AddOrUpdateFileMetadata] = List(
-      AddOrUpdateFileMetadata(
-        testSetUp.fileId1,
-        Seq(
-          AddOrUpdateMetadata("ClosurePeriod", "40"),
-          AddOrUpdateMetadata("ClosureType", "Closed"),
-          AddOrUpdateMetadata("Language", "English"),
-          AddOrUpdateMetadata("AlternativeDescription", ""),
-          AddOrUpdateMetadata("TitleAlternate", ""),
-          AddOrUpdateMetadata("FoiExemptionCode", "40"),
-          AddOrUpdateMetadata("TitleClosed", "false"),
-          AddOrUpdateMetadata("DescriptionClosed", "false"),
-          AddOrUpdateMetadata("description", "eeeee")
-        )
-      ),
-      AddOrUpdateFileMetadata(
-        testSetUp.fileId2,
-        Seq(
-          AddOrUpdateMetadata("ClosurePeriod", ""),
-          AddOrUpdateMetadata("ClosureType", "Open"),
-          AddOrUpdateMetadata("Language", "English"),
-          AddOrUpdateMetadata("AlternativeDescription", ""),
-          AddOrUpdateMetadata("TitleAlternate", ""),
-          AddOrUpdateMetadata("FoiExemptionCode", ""),
-          AddOrUpdateMetadata("TitleClosed", "false"),
-          AddOrUpdateMetadata("DescriptionClosed", "false"),
-          AddOrUpdateMetadata("description", "")
-        )
-      )
-    )
-
-    val service = testSetUp.service
-    val response = service.addAdditionalMetadataStatuses(fileMetadataList).futureValue
-
-    response.size shouldBe 4
-
-    val expectedAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response.toList)
-
-    verify(testSetUp.mockFileStatusRepository, times(1)).deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
-    verify(testSetUp.mockFileStatusRepository, times(1)).addFileStatuses(expectedAddFileStatusInput)
-
-    val file1Statuses = response.filter(_.fileid == fileId1)
-    file1Statuses.size shouldBe 2
-    val file1ClosureStatus = file1Statuses.find(_.statustype == ClosureMetadata).get
-    file1ClosureStatus.value should equal("Completed")
-    val file1DescriptiveStatus = file1Statuses.find(_.statustype == DescriptiveMetadata).get
-    file1DescriptiveStatus.value should equal("Completed")
-
-    val file2Statuses = response.filter(_.fileid == fileId2)
-    file2Statuses.size shouldBe 2
-    val file2ClosureStatus = file2Statuses.find(_.statustype == ClosureMetadata).get
-    file2ClosureStatus.value should equal("NotEntered")
-    val file2DescriptiveStatus = file2Statuses.find(_.statustype == DescriptiveMetadata).get
-    file2DescriptiveStatus.value should equal("NotEntered")
-  }
-
   private class ValidatePropertiesSetUp {
     val userId: UUID = UUID.randomUUID()
     val fileId1: UUID = UUID.randomUUID()
@@ -335,7 +215,6 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     val fixedUUIDSource = new FixedUUIDSource()
     fixedUUIDSource.reset
     val service = new ValidateFileMetadataService(mockCustomMetadataService, mockDisplayPropertiesService, mockFileMetadataRepository, mockFileStatusRepository)
-    val mockFields = mockCustomMetadataFields()
 
     private def createExpectedFileStatusRow(fileId: UUID, statusType: String, statusValue: String): Seq[FilestatusRow] = {
       val mappedMetadataTypeValue = (statusValue, statusType) match {
@@ -361,7 +240,11 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
         generateExpectedRows(input)
       }
       when(mockFileStatusRepository.deleteFileStatus(any[Set[UUID]], any[Set[String]])).thenReturn(Future.successful(1))
-      when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(mockFields))
+      when(mockCustomMetadataService.getCustomMetadata).thenReturn(Future(TestDataHelper.mockCustomMetadataFields()))
+      when(mockCustomMetadataService.toAdditionalMetadataFieldGroups(any[Seq[CustomMetadataField]])).thenAnswer { invocation: InvocationOnMock =>
+        val input: Seq[CustomMetadataField] = invocation.getArgument(0)
+        new CustomMetadataPropertiesService(mock[CustomMetadataPropertiesRepository]).toAdditionalMetadataFieldGroups(input)
+      }
       when(mockFileMetadataRepository.getFileMetadata(Some(any[UUID]), any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(Future(metadataRows))
 
       val expectedPropertyNames =
@@ -385,194 +268,5 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     filestatusRows.map { filestatusRow =>
       AddFileStatusInput(filestatusRow.fileid, filestatusRow.statustype, filestatusRow.value)
     }
-  }
-
-  private def mockCustomMetadataFields(): Seq[CustomMetadataField] = {
-    val closurePeriodField: CustomMetadataField =
-      CustomMetadataField(
-        "ClosurePeriod",
-        Some("Closure Period"),
-        None,
-        Defined,
-        Some("MandatoryClosure"),
-        Text,
-        true,
-        false,
-        None,
-        List(),
-        2147483647,
-        false,
-        None
-      )
-    val descriptionField: CustomMetadataField =
-      CustomMetadataField(
-        "description",
-        Some("description"),
-        None,
-        Defined,
-        Some("OptionalMetadata"),
-        Text,
-        true,
-        false,
-        None,
-        List(),
-        2147483647,
-        false,
-        None
-      )
-    val languageField =
-      CustomMetadataField(
-        "Language",
-        Some("Language"),
-        None,
-        Defined,
-        Some("OptionalMetadata"),
-        Text,
-        true,
-        true,
-        Some("English"),
-        List(),
-        2147483647,
-        false,
-        None
-      )
-    val alternativeDescriptionField: CustomMetadataField =
-      CustomMetadataField(
-        "AlternativeDescription",
-        Some("Alternative Description"),
-        None,
-        Defined,
-        Some("OptionalClosure"),
-        Text,
-        true,
-        false,
-        None,
-        List(),
-        2147483647,
-        false,
-        None
-      )
-    val alternativeTitleField: CustomMetadataField =
-      CustomMetadataField(
-        "TitleAlternate",
-        Some("Alternative Title"),
-        None,
-        Defined,
-        Some("OptionalClosure"),
-        Text,
-        true,
-        false,
-        None,
-        List(),
-        2147483647,
-        false,
-        None
-      )
-    val foiExemptionCodeField =
-      CustomMetadataField(
-        "FoiExemptionCode",
-        Some("FOI Exemption Code"),
-        None,
-        Defined,
-        Some("MandatoryClosure"),
-        Text,
-        true,
-        true,
-        None,
-        List(),
-        2147483647,
-        false,
-        None
-      )
-
-    val descriptionClosedTrueValues: CustomMetadataValues = CustomMetadataValues(List(alternativeDescriptionField), "true", 2147483647)
-    val descriptionClosedFalseValues: CustomMetadataValues = CustomMetadataValues(List(), "false", 2147483647)
-    val descriptionClosedField: CustomMetadataField =
-      CustomMetadataField(
-        "DescriptionClosed",
-        Some("DescriptionClosed"),
-        None,
-        Supplied,
-        Some("MandatoryClosure"),
-        Text,
-        true,
-        true,
-        Some("false"),
-        List(descriptionClosedTrueValues, descriptionClosedFalseValues),
-        2147483647,
-        false,
-        None
-      )
-
-    val titleClosedTrueValue: CustomMetadataValues = CustomMetadataValues(List(alternativeTitleField), "true", 2147483647)
-    val titleClosedFalseValue: CustomMetadataValues = CustomMetadataValues(List(), "false", 2147483647)
-    val titleClosedField: CustomMetadataField =
-      CustomMetadataField(
-        "TitleClosed",
-        Some("TitleClosed"),
-        None,
-        Supplied,
-        Some("MandatoryClosure"),
-        Text,
-        true,
-        true,
-        Some("false"),
-        List(titleClosedTrueValue, titleClosedFalseValue),
-        2147483647,
-        false,
-        None
-      )
-
-    val closureTypeClosedValues: CustomMetadataValues =
-      CustomMetadataValues(List(closurePeriodField, foiExemptionCodeField, descriptionClosedField, titleClosedField), "Closed", 2147483647)
-    val closureTypeOpenValues: CustomMetadataValues = CustomMetadataValues(List(), "Open", 2147483647)
-    val closureTypeField: CustomMetadataField =
-      CustomMetadataField(
-        "ClosureType",
-        Some("Closure Type"),
-        None,
-        Defined,
-        Some("MandatoryClosure"),
-        Text,
-        true,
-        false,
-        Some("Open"),
-        List(closureTypeClosedValues, closureTypeOpenValues),
-        2147483647,
-        false,
-        None
-      )
-
-    val multiValueDependency40Value: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField), "40", 2147483647)
-    val multiValueDependency30Value: CustomMetadataValues = CustomMetadataValues(List(closurePeriodField), "30", 2147483647)
-    val multiValueWithDependenciesField =
-      CustomMetadataField(
-        "MultiValueWithDependencies",
-        Some("FOI Exemption Code"),
-        None,
-        Defined,
-        Some("Group"),
-        Text,
-        true,
-        true,
-        None,
-        List(multiValueDependency30Value, multiValueDependency40Value),
-        2147483647,
-        false,
-        None
-      )
-
-    Seq(
-      closurePeriodField,
-      closureTypeField,
-      descriptionField,
-      alternativeDescriptionField,
-      foiExemptionCodeField,
-      languageField,
-      titleClosedField,
-      descriptionClosedField,
-      alternativeTitleField,
-      multiValueWithDependenciesField
-    )
   }
 }

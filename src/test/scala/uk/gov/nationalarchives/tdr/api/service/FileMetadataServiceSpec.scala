@@ -31,6 +31,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val mockMetadataResponse = Future.successful(
       FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
@@ -49,7 +50,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       .thenReturn(Future(mockFileMetadataResponse))
     when(validateFileMetadataServiceMock.validateAndAddAdditionalMetadataStatuses(any[Set[UUID]], any[Set[String]])).thenReturn(Future(List()))
 
-    val service = new FileMetadataService(metadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock)
+    val service = new FileMetadataService(metadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock, fileStatusServiceMock)
     service.addFileMetadata(createInput(SHA256ServerSideChecksum, fixedFileUuid, "value"), fixedUserId).futureValue
 
     verify(validateFileMetadataServiceMock, times(0)).validateAndAddAdditionalMetadataStatuses(any[Set[UUID]], any[Set[String]])
@@ -72,11 +73,11 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val mockMetadataResponse = Future.successful(
       FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "value", Timestamp.from(FixedTimeSource.now), fixedUserId, SHA256ServerSideChecksum) :: Nil
     )
     val propertyName = SHA256ServerSideChecksum
-    val fixedUUIDSource = new FixedUUIDSource()
     val timestamp = Timestamp.from(FixedTimeSource.now)
     val mockClientChecksumRow = FilemetadataRow(UUID.randomUUID(), fixedFileUuid, "ChecksumMatch", timestamp, fixedUserId, SHA256ClientSideChecksum)
     val mockClientChecksumResponse = Future(Seq(mockClientChecksumRow))
@@ -84,7 +85,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(metadataRepositoryMock.addFileMetadata(any[List[AddFileMetadataInput]])).thenReturn(mockMetadataResponse)
     when(metadataRepositoryMock.getFileMetadataByProperty(fixedFileUuid :: Nil, SHA256ClientSideChecksum)).thenReturn(mockClientChecksumResponse)
 
-    val service = new FileMetadataService(metadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock)
+    val service = new FileMetadataService(metadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock, fileStatusServiceMock)
     val result: FileMetadataWithFileId =
       service.addFileMetadata(createInput(propertyName, fixedFileUuid, "value"), fixedUserId).futureValue.head
 
@@ -106,7 +107,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       testSetUp.consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
 
     val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, fileIds, testSetUp.newMetadataProperties)
@@ -152,7 +154,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       testSetUp.consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
 
     val emptyMetadataProperties: Seq[UpdateFileMetadataInput] = Seq(
@@ -191,7 +194,13 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val input = UpdateBulkFileMetadataInput(testSetUp.consignmentId, testSetUp.inputFileIds, testSetUp.newMetadataProperties)
 
     val service =
-      new FileMetadataService(testSetUp.metadataRepositoryMock, consignmentStatusServiceMock, testSetUp.customMetadataServiceMock, testSetUp.validateFileMetadataServiceMock)
+      new FileMetadataService(
+        testSetUp.metadataRepositoryMock,
+        consignmentStatusServiceMock,
+        testSetUp.customMetadataServiceMock,
+        testSetUp.validateFileMetadataServiceMock,
+        testSetUp.fileStatusServiceMock
+      )
     service.updateBulkFileMetadata(input, testSetUp.userId).futureValue
 
     verify(consignmentStatusServiceMock, times(1))
@@ -211,7 +220,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       testSetUp.consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
 
     val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
@@ -259,7 +269,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       testSetUp.consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
 
     val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
@@ -297,7 +308,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       testSetUp.consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
 
     val addOrUpdateBulkFileMetadata =
@@ -310,7 +322,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     verify(testSetUp.validateFileMetadataServiceMock, times(1)).validateAndAddAdditionalMetadataStatuses(testSetUp.inputFileIds.toSet, expectedPropertyNames)
     verify(testSetUp.metadataRepositoryMock, times(3)).deleteFileMetadata(any[UUID], any[Set[String]])
 
-    val deleteFileMetadataIdsArg: UUID = testSetUp.deleteFileMetadataIdsArgCaptor.getValue
     val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
     val addFileMetadataArgument: Seq[AddFileMetadataInput] = testSetUp.addFileMetadataCaptor.getValue
 
@@ -341,7 +352,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       testSetUp.consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
 
     val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
@@ -368,7 +380,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       testSetUp.consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
 
     val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
@@ -379,7 +392,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     service.addOrUpdateBulkFileMetadata(input, testSetUp.userId).futureValue
 
     verify(testSetUp.validateFileMetadataServiceMock, times(0)).validateAndAddAdditionalMetadataStatuses(any[Set[UUID]], any[Set[String]])
-    verify(testSetUp.validateFileMetadataServiceMock, times(1)).addAdditionalMetadataStatuses(any[List[AddOrUpdateFileMetadata]])
+    verify(testSetUp.fileStatusServiceMock, times(1)).addAdditionalMetadataStatuses(any[List[AddOrUpdateFileMetadata]])
     verify(testSetUp.consignmentStatusServiceMock, times(1)).updateMetadataConsignmentStatus(any[UUID], any[List[String]])
 
     testSetUp.consignmentIdCaptor.getValue should equal(testSetUp.consignmentId)
@@ -391,6 +404,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
     val selectedFileIdsCaptor: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val consignmentId = UUID.randomUUID()
@@ -405,7 +419,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     ).thenReturn(mockResponse)
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock)
+      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock, fileStatusServiceMock)
 
     service.getFileMetadata(Some(consignmentId)).futureValue
     consignmentIdCaptor.getValue should equal(Some(consignmentId))
@@ -417,6 +431,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val consignmentId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
     val fileIdTwo = UUID.randomUUID()
@@ -437,7 +452,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(fileMetadataRepositoryMock.getFileMetadata(Some(any[UUID]), any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(mockResponse)
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock)
+      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock, fileStatusServiceMock)
     val response = service.getFileMetadata(Some(consignmentId)).futureValue
 
     response.size should equal(2)
@@ -454,10 +469,17 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
   "getSumOfFileSizes" should "return the sum of the file sizes" in {
     val fileMetadataRepository = mock[FileMetadataRepository]
+    val fileStatusServiceMock = mock[FileStatusService]
     val consignmentId = UUID.randomUUID()
     when(fileMetadataRepository.getSumOfFileSizes(any[UUID])).thenReturn(Future(1L))
 
-    val service = new FileMetadataService(fileMetadataRepository, mock[ConsignmentStatusService], mock[CustomMetadataPropertiesService], mock[ValidateFileMetadataService])
+    val service = new FileMetadataService(
+      fileMetadataRepository,
+      mock[ConsignmentStatusService],
+      mock[CustomMetadataPropertiesService],
+      mock[ValidateFileMetadataService],
+      fileStatusServiceMock
+    )
     val result = service.getSumOfFileSizes(consignmentId).futureValue
 
     result should equal(1)
@@ -466,9 +488,9 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
   "deleteFileMetadata" should "throw an exception if property name does not exist" in {
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
-    val fileRepositoryMock = mock[FileRepository]
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val fileOneId = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
     val fileTwoId = UUID.fromString("81643ecc-e618-43bb-829e-f7266565d0b5")
 
@@ -476,7 +498,13 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     customMetadataSetUp.stubResponse()
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataSetUp.customMetadataServiceMock, validateFileMetadataServiceMock)
+      new FileMetadataService(
+        fileMetadataRepositoryMock,
+        consignmentStatusServiceMock,
+        customMetadataSetUp.customMetadataServiceMock,
+        validateFileMetadataServiceMock,
+        fileStatusServiceMock
+      )
 
     val thrownException = intercept[Exception] {
       service.deleteFileMetadata(DeleteFileMetadataInput(Seq(fileOneId, fileTwoId), Seq("Non-ExistentProperty"), UUID.randomUUID()), UUID.randomUUID()).futureValue
@@ -495,6 +523,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
@@ -514,7 +543,13 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(consignmentStatusServiceMock.updateMetadataConsignmentStatus(any[UUID], any[List[String]])).thenReturn(Future.successful(1 :: Nil))
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataTestSetUp.customMetadataServiceMock, validateFileMetadataServiceMock)
+      new FileMetadataService(
+        fileMetadataRepositoryMock,
+        consignmentStatusServiceMock,
+        customMetadataTestSetUp.customMetadataServiceMock,
+        validateFileMetadataServiceMock,
+        fileStatusServiceMock
+      )
     val response = service
       .deleteFileMetadata(
         DeleteFileMetadataInput(
@@ -547,6 +582,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
@@ -565,7 +601,13 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(consignmentStatusServiceMock.updateMetadataConsignmentStatus(any[UUID], any[List[String]])).thenReturn(Future.successful(1 :: Nil))
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataTestSetUp.customMetadataServiceMock, validateFileMetadataServiceMock)
+      new FileMetadataService(
+        fileMetadataRepositoryMock,
+        consignmentStatusServiceMock,
+        customMetadataTestSetUp.customMetadataServiceMock,
+        validateFileMetadataServiceMock,
+        fileStatusServiceMock
+      )
 
     val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(fileInFolderId1, fileInFolderId2), Seq(ClosureType), consignmentId), userId).futureValue
     verify(validateFileMetadataServiceMock, times(1)).validateAndAddAdditionalMetadataStatuses(fileIds.toSet, expectedPropertyNamesToDelete)
@@ -589,6 +631,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
@@ -608,7 +651,13 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(consignmentStatusServiceMock.updateMetadataConsignmentStatus(any[UUID], any[List[String]])).thenReturn(Future.successful(1 :: Nil))
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataTestSetUp.customMetadataServiceMock, validateFileMetadataServiceMock)
+      new FileMetadataService(
+        fileMetadataRepositoryMock,
+        consignmentStatusServiceMock,
+        customMetadataTestSetUp.customMetadataServiceMock,
+        validateFileMetadataServiceMock,
+        fileStatusServiceMock
+      )
 
     val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(fileInFolderId1, fileInFolderId2), Seq("description"), consignmentId), userId).futureValue
     verify(validateFileMetadataServiceMock, times(1)).validateAndAddAdditionalMetadataStatuses(fileIds.toSet, expectedPropertyNamesToDelete)
@@ -632,6 +681,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val fileMetadataRepositoryMock = mock[FileMetadataRepository]
     val consignmentStatusServiceMock = mock[ConsignmentStatusService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
+    val fileStatusServiceMock = mock[FileStatusService]
     val userId = UUID.randomUUID()
     val consignmentId = UUID.randomUUID()
     val fileInFolderId1 = UUID.fromString("104dde28-21cc-43f6-aa47-d17f120497f5")
@@ -651,7 +701,13 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     when(consignmentStatusServiceMock.updateMetadataConsignmentStatus(any[UUID], any[List[String]])).thenReturn(Future.successful(1 :: Nil))
 
     val service =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataTestSetUp.customMetadataServiceMock, validateFileMetadataServiceMock)
+      new FileMetadataService(
+        fileMetadataRepositoryMock,
+        consignmentStatusServiceMock,
+        customMetadataTestSetUp.customMetadataServiceMock,
+        validateFileMetadataServiceMock,
+        fileStatusServiceMock
+      )
     val response = service.deleteFileMetadata(DeleteFileMetadataInput(Seq(fileInFolderId1, fileInFolderId2), Seq(ClosureType), consignmentId), userId).futureValue
     verify(validateFileMetadataServiceMock, times(1)).validateAndAddAdditionalMetadataStatuses(fileIds.toSet, expectedPropertyNamesToDelete.toSet)
     verify(consignmentStatusServiceMock, times(1)).updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
@@ -696,7 +752,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       testSetUp.metadataRepositoryMock,
       consignmentStatusServiceMock,
       customMetadataSetUp.customMetadataServiceMock,
-      testSetUp.validateFileMetadataServiceMock
+      testSetUp.validateFileMetadataServiceMock,
+      testSetUp.fileStatusServiceMock
     )
     service.deleteFileMetadata(input, testSetUp.userId).futureValue
 
@@ -815,6 +872,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock: ValidateFileMetadataService = mock[ValidateFileMetadataService]
     val consignmentStatusServiceMock: ConsignmentStatusService = mock[ConsignmentStatusService]
+    val fileStatusServiceMock: FileStatusService = mock[FileStatusService]
 
     val getAllDescendentIdsCaptor: ArgumentCaptor[Seq[UUID]] = ArgumentCaptor.forClass(classOf[Seq[UUID]])
     val deletePropertyNamesCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
@@ -853,6 +911,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val metadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
     val validateFileMetadataServiceMock: ValidateFileMetadataService = mock[ValidateFileMetadataService]
     val consignmentStatusServiceMock: ConsignmentStatusService = mock[ConsignmentStatusService]
+    val fileStatusServiceMock: FileStatusService = mock[FileStatusService]
 
     val deletePropertyNamesCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
     val addFileMetadataCaptor: ArgumentCaptor[Seq[AddFileMetadataInput]] = ArgumentCaptor.forClass(classOf[Seq[AddFileMetadataInput]])
@@ -870,7 +929,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
         .thenReturn(Future(addFileMetadataResponse))
       when(validateFileMetadataServiceMock.validateAndAddAdditionalMetadataStatuses(any[Set[UUID]], any[Set[String]])).thenReturn(Future(List()))
-      when(validateFileMetadataServiceMock.addAdditionalMetadataStatuses(any[List[AddOrUpdateFileMetadata]])).thenReturn(Future(List()))
+      when(fileStatusServiceMock.addAdditionalMetadataStatuses(any[List[AddOrUpdateFileMetadata]])).thenReturn(Future(List()))
       when(consignmentStatusServiceMock.updateMetadataConsignmentStatus(consignmentIdCaptor.capture(), statusTypeCaptor.capture()))
         .thenReturn(Future.successful(1 :: Nil))
     }
