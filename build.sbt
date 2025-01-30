@@ -43,7 +43,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 lazy val akkaVersion = "2.9.3"
 lazy val akkaHttpVersion = "10.6.3"
 lazy val circeVersion = "0.14.10"
-lazy val testContainersVersion = "0.41.5"
+lazy val testContainersVersion = "0.41.8"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.5",
@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.17.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.227",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.228",
   "io.github.hakky54" % "logcaptor" % "2.10.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
