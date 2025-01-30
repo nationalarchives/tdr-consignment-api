@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import slick.jdbc.{GetResult, JdbcBackend}
 import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.{GetResult, JdbcBackend}
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
@@ -96,8 +96,8 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
 
   def getAllDescendants(fileIds: Seq[UUID]): Future[Seq[FileRow]] = {
 
-    val sql =
-      sql"""WITH RECURSIVE children AS (
+    val sqlString =
+      s"""WITH RECURSIVE children AS (
            SELECT
             "FileId"::text,
             "ConsignmentId"::text,
@@ -119,7 +119,8 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
              f."FileName",
              f."ParentId"::text
             FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
-        ) SELECT * FROM children;""".as[FileRow]
+        ) SELECT * FROM children;""".stripMargin
+    val sql = sql"""$sqlString""".as[FileRow]
     db.run(sql)
   }
 
