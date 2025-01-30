@@ -57,7 +57,7 @@ object TestContainerUtils {
     }
 
     def database = {
-      session.db.asInstanceOf[slick.jdbc.PostgresProfile.api.Database]
+      session.db
     }
   }
 }
