@@ -37,7 +37,7 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
 
     for {
       fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)
-      noAccess = !(draftMetadataValidatorAccess || (fileFields.exists(_.userId == userId) && !skipValidation))
+      noAccess = (fileFields.exists(_.userId != userId) || skipValidation) && !draftMetadataValidatorAccess
     } yield {
       noAccess match {
         case true => throw AuthorisationException("Access denied to file metadata")
