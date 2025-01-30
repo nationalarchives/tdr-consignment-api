@@ -119,7 +119,8 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
              f."FileName",
              f."ParentId"::text
             FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
-        ) SELECT * FROM children;""".as[FileRow]
+        ) SELECT * FROM children;""".stripMargin
+    val sql = sql"""$sqlString""".as[FileRow]
     db.run(sql)
   }
 
