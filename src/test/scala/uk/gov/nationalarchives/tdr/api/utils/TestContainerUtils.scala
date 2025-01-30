@@ -56,7 +56,7 @@ object TestContainerUtils {
       SlickSession.forConfig("consignmentapi")
     }
 
-    def database = {
+    def database: JdbcBackend#Database = {
       session.db
     }
   }
