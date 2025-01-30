@@ -56,8 +56,8 @@ object TestContainerUtils {
       SlickSession.forConfig("consignmentapi")
     }
 
-    def database = {
-      session.db.asInstanceOf[slick.jdbc.PostgresProfile.api.Database]
+    def database: JdbcBackend#Database = {
+      session.db
     }
   }
 }

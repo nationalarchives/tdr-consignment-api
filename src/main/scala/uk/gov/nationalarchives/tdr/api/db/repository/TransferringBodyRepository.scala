@@ -1,12 +1,14 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import slick.jdbc.JdbcBackend
+
 import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Series}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TransferringBodyRepository(db: Database)(implicit executionContext: ExecutionContext) {
+class TransferringBodyRepository(db: JdbcBackend#Database)(implicit executionContext: ExecutionContext) {
 
   def getTransferringBody(seriesId: UUID): Future[BodyRow] = {
     val query = for {

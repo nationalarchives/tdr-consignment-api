@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
@@ -12,7 +13,7 @@ import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConsignmentRepository(db: Database, timeSource: TimeSource) {
+class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
 
   private val insertQuery = Consignment returning Consignment.map(_.consignmentid) into
     ((consignment, consignmentid) => consignment.copy(consignmentid = consignmentid))
@@ -32,14 +33,6 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
       .filter(_.consignmentid === exportDataInput.consignmentId)
       .map(c => (c.exportlocation, c.exportdatetime, c.exportversion))
       .update((Option(exportDataInput.exportLocation), Some(exportDatetime), Option(exportDataInput.exportVersion)))
-    db.run(update)
-  }
-
-  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String): Future[Int] = {
-    val update = Consignment
-      .filter(_.consignmentid === consignmentId)
-      .map(_.transferringbodytdrcode)
-      .update(Some(schemaLibraryVersion))
     db.run(update)
   }
 
@@ -164,4 +157,11 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result).map(_.headOption.flatten)
   }
 
+  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String): Future[Int] = {
+    val update = Consignment
+      .filter(_.consignmentid === consignmentId)
+      .map(_.schemalibraryversion)
+      .update(Some(schemaLibraryVersion))
+    db.run(update)
+  }
 }

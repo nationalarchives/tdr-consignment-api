@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{File, Filestatus, FilestatusRow}
@@ -8,7 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileSt
 import java.util.UUID
 import scala.concurrent.Future
 
-class FileStatusRepository(db: Database) {
+class FileStatusRepository(db: JdbcBackend#Database) {
   private val insertQuery =
     Filestatus.map(t => (t.fileid, t.statustype, t.value)) returning Filestatus.map(r => (r.filestatusid, r.createddatetime)) into ((fileStatus, dbGeneratedValues) =>
       FilestatusRow(dbGeneratedValues._1, fileStatus._1, fileStatus._2, fileStatus._3, dbGeneratedValues._2)

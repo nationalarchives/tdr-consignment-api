@@ -60,11 +60,6 @@ class ConsignmentService(
     consignmentRepository.updateExportData(exportDataInput)
   }
 
-  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String) = {
-    consignmentRepository.updateSchemaLibraryVersion(consignmentId, schemaLibraryVersion)
-  }
-
-
   def addConsignment(addConsignmentInput: AddConsignmentInput, token: Token): Future[Consignment] = {
     val now = timeSource.now
     val yearNow = LocalDate.from(now.atOffset(ZoneOffset.UTC)).getYear
@@ -151,6 +146,10 @@ class ConsignmentService(
   def getTotalPages(limit: Int, consignmentFilters: Option[ConsignmentFilters]): Future[Int] = {
     val maxConsignmentsLimit: Int = min(limit, maxLimit)
     consignmentRepository.getTotalConsignments(consignmentFilters).map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
+  }
+
+  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String): Unit = {
+    consignmentRepository.updateSchemaLibraryVersion(consignmentId, schemaLibraryVersion)
   }
 
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {

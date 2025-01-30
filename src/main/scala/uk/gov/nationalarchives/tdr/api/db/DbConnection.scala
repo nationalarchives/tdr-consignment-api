@@ -7,8 +7,8 @@ import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 import scala.util.{Failure, Success}
 
 class DbConnection(slickSession: SlickSession) extends DbConnectionBase {
-  override def db = {
-    val db = slickSession.db.asInstanceOf[slick.jdbc.PostgresProfile.api.Database]
+  override def db: JdbcBackend#Database = {
+    val db = slickSession.db
     db.source match {
       case hikariDataSource: HikariCPJdbcDataSource =>
         val configBean = hikariDataSource.ds.getHikariConfigMXBean
