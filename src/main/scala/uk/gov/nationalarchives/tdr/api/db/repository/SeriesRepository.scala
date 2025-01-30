@@ -2,11 +2,12 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables._
+import slick.jdbc.JdbcBackend
 
 import java.util.UUID
 import scala.concurrent.Future
 
-class SeriesRepository(db: Database) {
+class SeriesRepository(db: JdbcBackend#Database) {
 
   def getSeries(tdrBodyCode: String): Future[Seq[SeriesRow]] = {
     val query = for {

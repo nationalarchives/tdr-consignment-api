@@ -7,7 +7,7 @@ import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 import scala.util.{Failure, Success}
 
 class DbConnection(slickSession: SlickSession) extends DbConnectionBase {
-  override def db: JdbcBackend#DatabaseDef = {
+  override def db: JdbcBackend#Database = {
     val db = slickSession.db
     db.source match {
       case hikariDataSource: HikariCPJdbcDataSource =>

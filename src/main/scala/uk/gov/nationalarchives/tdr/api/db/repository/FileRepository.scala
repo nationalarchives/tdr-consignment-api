@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.{GetResult, JdbcBackend}
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
@@ -10,7 +10,7 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
+class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
   implicit val getFileResult: GetResult[FileRow] = GetResult(r =>
     FileRow(
       UUID.fromString(r.nextString()),
@@ -119,7 +119,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
              f."FileName",
              f."ParentId"::text
             FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
-        ) SELECT * FROM children;""".stripMargin.as[FileRow]
+        ) SELECT * FROM children;""".as[FileRow]
     db.run(sql)
   }
 
