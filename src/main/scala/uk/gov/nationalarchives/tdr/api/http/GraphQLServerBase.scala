@@ -39,7 +39,7 @@ trait GraphQLServerBase {
     case (_, ex: Throwable) => throw ex
   }
 
-  protected def generateConsignmentApiContext(accessToken: Token, db: JdbcBackend#DatabaseDef)(implicit ec: ExecutionContext): ConsignmentApiContext = {
+  protected def generateConsignmentApiContext(accessToken: Token, db: JdbcBackend#Database)(implicit ec: ExecutionContext): ConsignmentApiContext = {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
     val timeSource = new CurrentTimeSource
