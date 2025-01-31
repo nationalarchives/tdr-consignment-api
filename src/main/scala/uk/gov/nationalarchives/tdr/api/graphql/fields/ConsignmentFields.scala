@@ -74,6 +74,8 @@ object ConsignmentFields {
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
+  case class UpdateSchemaLibraryVersionInput(consignmentId:UUID, schemaLibraryVersion:String) extends UserOwnsConsignment
+
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
   case class ConsignmentFilters(userId: Option[UUID], consignmentType: Option[String])
@@ -213,6 +215,7 @@ object ConsignmentFields {
   implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
+  implicit val UpdateSchemaLibraryVersionInputType: InputObjectType[UpdateSchemaLibraryVersionInput] = deriveInputObjectType[UpdateSchemaLibraryVersionInput]()
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)

@@ -6,7 +6,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput, UpdateSchemaLibraryVersionInput, UpdateSchemaLibraryVersionInputType}
+import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
 import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, InProgressValue, MetadataReviewType}
@@ -375,7 +376,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     utils.createConsignment(consignmentId, userId)
     val version = "3.4.5"
 
-    val response = consignmentRepository.updateSchemaLibraryVersion(consignmentId, version).futureValue
+    val response = consignmentRepository.updateSchemaLibraryVersion(UpdateSchemaLibraryVersionInput(consignmentId, version)).futureValue
 
     response should be(1)
     val consignment = consignmentRepository.getConsignment(consignmentId).futureValue.head

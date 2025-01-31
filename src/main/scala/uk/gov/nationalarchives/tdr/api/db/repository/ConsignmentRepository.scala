@@ -4,7 +4,7 @@ import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateSchemaLibraryVersionInput}
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
 import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
@@ -157,11 +157,11 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
     db.run(query.result).map(_.headOption.flatten)
   }
 
-  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String): Future[Int] = {
+  def updateSchemaLibraryVersion(updateSchemaLibraryVersionInput: UpdateSchemaLibraryVersionInput): Future[Int] = {
     val update = Consignment
-      .filter(_.consignmentid === consignmentId)
+      .filter(_.consignmentid === updateSchemaLibraryVersionInput.consignmentId)
       .map(_.schemalibraryversion)
-      .update(Some(schemaLibraryVersion))
+      .update(Some(updateSchemaLibraryVersionInput.schemaLibraryVersion))
     db.run(update)
   }
 }

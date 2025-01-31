@@ -148,8 +148,8 @@ class ConsignmentService(
     consignmentRepository.getTotalConsignments(consignmentFilters).map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
   }
 
-  def updateSchemaLibraryVersion(consignmentId: UUID, schemaLibraryVersion: String): Future[Int] = {
-    consignmentRepository.updateSchemaLibraryVersion(consignmentId, schemaLibraryVersion)
+  def updateSchemaLibraryVersion(updateSchemaLibraryVersionInput: UpdateSchemaLibraryVersionInput): Future[Int] = {
+    consignmentRepository.updateSchemaLibraryVersion(updateSchemaLibraryVersionInput)
   }
 
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
