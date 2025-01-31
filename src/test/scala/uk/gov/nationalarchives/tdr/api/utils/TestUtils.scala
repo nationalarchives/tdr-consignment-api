@@ -214,13 +214,14 @@ class TestUtils(db: JdbcBackend#Database) {
       includeStatusRows: Boolean = true,
       seriesName: Option[String] = Some("seriesName"),
       transferringBodyName: Option[String] = Some("transferringBodyName"),
-      transferringBodyTdrCode: Option[String] = Some("transferringBodyTdrCode")
+      transferringBodyTdrCode: Option[String] = Some("transferringBodyTdrCode"),
+      schemaLibraryVersion: Option[String] = Some("1.0.0")
   ): UUID = {
     val sql =
       """INSERT INTO "Consignment" """ +
         """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
-          |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence", "SeriesName", "TransferringBodyName", "TransferringBodyTdrCode")""".stripMargin +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+          |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence", "SeriesName", "TransferringBodyName", "TransferringBodyTdrCode","SchemaLibraryVersion")""".stripMargin +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     val nextValStatement = connection.prepareStatement("select nextval('consignment_sequence_id') as Seq")
     val nextResults: ResultSet = nextValStatement.executeQuery()
     nextResults.next()
@@ -241,6 +242,7 @@ class TestUtils(db: JdbcBackend#Database) {
     ps.setString(11, seriesName.orNull)
     ps.setString(12, transferringBodyName.orNull)
     ps.setString(13, transferringBodyTdrCode.orNull)
+    ps.setString(14, schemaLibraryVersion.orNull)
     ps.executeUpdate()
     if (includeStatusRows) {
       createConsignmentStatus(consignmentId, DescriptiveMetadata, NotEntered)
