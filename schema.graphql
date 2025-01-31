@@ -50,6 +50,7 @@ input AddMultipleFileStatusesInput {
 input AddOrUpdateBulkFileMetadataInput {
   consignmentId: UUID!
   fileMetadata: [AddOrUpdateFileMetadata!]!
+  skipValidation: Boolean = false
 }
 
 input AddOrUpdateFileMetadata {
