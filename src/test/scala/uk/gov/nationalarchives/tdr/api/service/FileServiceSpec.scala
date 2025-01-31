@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import cats.implicits.catsSyntaxOptionId
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
@@ -20,8 +20,8 @@ import uk.gov.nationalarchives.Tables.{
   FilepropertyvaluesRow,
   FilestatusRow
 }
-import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileFields
+import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput

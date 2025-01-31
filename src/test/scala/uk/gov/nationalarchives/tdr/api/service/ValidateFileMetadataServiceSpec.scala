@@ -9,7 +9,6 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrUpdateFileMetadata, AddOrUpdateMetadata}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDataHelper}
@@ -31,7 +30,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses()
 
     val service = testSetUp.service
-    val response = service.validateAndAddAdditionalMetadataStatuses(fileIds, Set("nonAdditionalMetadataProperty")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("nonAdditionalMetadataProperty")).futureValue
 
     response.size shouldBe 0
 
@@ -67,7 +66,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
 
     val service = testSetUp.service
 
-    val response = service.validateAndAddAdditionalMetadataStatuses(fileIds, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
 
@@ -108,7 +107,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
-    val response = service.validateAndAddAdditionalMetadataStatuses(fileIds, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     val expectedAddFileStatusInput = convertFileStatusRowToAddFileStatusInput(response)
 
@@ -149,7 +148,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses(existingMetadataRows)
 
     val service = testSetUp.service
-    val response = service.validateAndAddAdditionalMetadataStatuses(fileIds, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
 
@@ -179,7 +178,7 @@ class ValidateFileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with
     testSetUp.stubMockResponses()
 
     val service = testSetUp.service
-    val response = service.validateAndAddAdditionalMetadataStatuses(fileIds, Set("ClosureType", "description")).futureValue
+    val response = service.validateAdditionalMetadata(fileIds, Set("ClosureType", "description")).futureValue
 
     response.size shouldBe 4
 

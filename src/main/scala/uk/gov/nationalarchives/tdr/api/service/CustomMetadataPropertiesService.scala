@@ -106,4 +106,5 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
     case _                => throw new Exception(s"Invalid property type $propertyType")
   }
 }
+
 case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])

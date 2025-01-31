@@ -10,8 +10,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileMetadataRepository, FileRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues, Defined, Supplied, Text}
+import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileRepository, FileStatusRepository}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.CustomMetadataField
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrUpdateFileMetadata, AddOrUpdateMetadata}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._

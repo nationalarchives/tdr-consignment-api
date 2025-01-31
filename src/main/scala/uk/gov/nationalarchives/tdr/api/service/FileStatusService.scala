@@ -3,7 +3,6 @@ package uk.gov.nationalarchives.tdr.api.service
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.CustomMetadataField
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddOrUpdateFileMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._

@@ -2,8 +2,6 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddOrUpdateFileMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.MetadataValidationUtils
@@ -19,13 +17,13 @@ class ValidateFileMetadataService(
     fileStatusRepository: FileStatusRepository
 )(implicit val ec: ExecutionContext) {
 
-  def validateAndAddAdditionalMetadataStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
+  def validateAdditionalMetadata(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       propertyNames <- displayPropertiesService.getActiveDisplayPropertyNames
       result <- {
         if (propertiesToValidate.exists(propertyNames.contains)) {
           for {
-            additionalMetadataStatuses <- validateAdditionalMetadata(fileIds, propertyNames)
+            additionalMetadataStatuses <- validate(fileIds, propertyNames)
             _ <- fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
             rows <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
           } yield rows.toList
@@ -38,7 +36,7 @@ class ValidateFileMetadataService(
     }
   }
 
-  private def validateAdditionalMetadata(fileIds: Set[UUID], propertyNames: Seq[String]): Future[List[AddFileStatusInput]] = {
+  private def validate(fileIds: Set[UUID], propertyNames: Seq[String]): Future[List[AddFileStatusInput]] = {
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties <- fileMetadataRepository.getFileMetadata(None, Some(fileIds), Some(propertyNames.toSet))
