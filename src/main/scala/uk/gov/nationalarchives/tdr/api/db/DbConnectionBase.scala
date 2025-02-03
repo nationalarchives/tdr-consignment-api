@@ -17,7 +17,7 @@ import scala.util.Try
 trait DbConnectionBase {
   implicit val passwordCache: CaffeineCache[String] = CaffeineCache[String](CacheConfig())
 
-  def db: JdbcBackend#Database
+  def db: JdbcBackend#DatabaseDef
 
   def getPassword: Try[String] = memoize[Try, String](Some(5.minutes)) {
     val configFactory = ConfigFactory.load

@@ -1,14 +1,13 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Ffidmetadata, FfidmetadataRow, Ffidmetadatamatches, FfidmetadatamatchesRow, File}
 import uk.gov.nationalarchives.tdr.api.db.repository.FFIDMetadataRepository.FFIDRepositoryMetadata
-
 import java.util.UUID
+
 import scala.concurrent.{ExecutionContext, Future}
 
-class FFIDMetadataRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
+class FFIDMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
 
   private val insertFFIDMetadataQuery = Ffidmetadata returning Ffidmetadata.map(_.fileid) into
     ((ffidMetadata, fileid) => ffidMetadata.copy(fileid = fileid))
