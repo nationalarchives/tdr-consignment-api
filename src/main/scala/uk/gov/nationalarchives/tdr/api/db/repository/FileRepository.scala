@@ -96,6 +96,7 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
 
   def getAllDescendants(fileIds: Seq[UUID]): Future[Seq[FileRow]] = {
 
+    val valueIdsString = fileIds.mkString("('", "','", "')")
     val plainSql =
       sql"""WITH RECURSIVE children AS (
            SELECT
@@ -108,7 +109,7 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
             "FileName",
             "ParentId"::text
            FROM "File"
-            WHERE "FileId"::text IN #${fileIds.mkString("('", "','", "')")}
+            WHERE "FileId"::text IN #$valueIdsString
             UNION SELECT
              f."FileId"::text,
              f."ConsignmentId"::text,
