@@ -74,7 +74,7 @@ object ConsignmentFields {
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
-  case class UpdateSchemaLibraryVersionInput(consignmentId:UUID, schemaLibraryVersion:String) extends UserOwnsConsignment
+  case class UpdateSchemaLibraryVersionInput(consignmentId: UUID, schemaLibraryVersion: String) extends UserOwnsConsignment
 
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
