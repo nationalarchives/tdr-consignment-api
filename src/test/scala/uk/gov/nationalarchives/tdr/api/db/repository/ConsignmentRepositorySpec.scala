@@ -6,7 +6,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput, UpdateSchemaLibraryVersionInput, UpdateSchemaLibraryVersionInputType}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput, UpdateSchemaLibraryVersionInput}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
@@ -368,7 +368,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignment.seriesname should be(seriesName.some)
   }
 
-  "updateSchemaLibraryVersionOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>
+  "updateSchemaLibraryVersionOfConsignment" should "update the validation schema library version of the consignment" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)

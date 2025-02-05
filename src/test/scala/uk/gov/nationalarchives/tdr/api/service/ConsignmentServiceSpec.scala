@@ -691,32 +691,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     result should equal(expectedResult)
   }
 
-//  "updateSchemaLibraryVersionOfConsignment" should "return an error if consignment ID is invalid" in {
-//    val invalidConsignmentId = UUID.randomUUID()
-//    val schemaVersion = "12344"
-//
-//    when(consignmentRepoMock.updateSchemaLibraryVersion(invalidConsignmentId, schemaVersion)).thenReturn(Future.failed(new Exception("Invalid consignment ID")))
-//
-//    val exception = intercept[Exception] {
-//      consignmentService.updateSchemaLibraryVersion(invalidConsignmentId, schemaVersion).futureValue
-//    }
-//
-//    exception.getMessage should equal("The future returned an exception of type: java.lang.Exception, with message: Invalid consignment ID[.]")
-//  }
-//
-//  "updateSchemaLibraryVersionOfConsignment" should "return an error if schema version is empty" in {
-//    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-//    val emptySchemaVersion = ""
-//
-//    when(consignmentRepoMock.updateSchemaLibraryVersion(consignmentId, emptySchemaVersion)).thenReturn(Future.failed(new Exception("Schema version cannot be empty")))
-//
-//    val exception = intercept[Exception] {
-//      consignmentService.updateSchemaLibraryVersion(consignmentId, emptySchemaVersion).futureValue
-//    }
-//
-//    exception.getMessage should equal("Schema version cannot be empty")
-//  }
-
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {
     ConsignmentRow(
       consignmentId,

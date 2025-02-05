@@ -148,6 +148,7 @@ object ConsignmentFields {
       Field("seriesName", OptionType(StringType), resolve = _.value.seriesName),
       Field("transferringBodyName", OptionType(StringType), resolve = _.value.transferringBodyName),
       Field("transferringBodyTdrCode", OptionType(StringType), resolve = _.value.transferringBodyTdrCode),
+      Field("schemaLibraryVersion", OptionType(StringType), resolve = _.value.schemaLibraryVersion),
       Field(
         "allChecksSucceeded",
         BooleanType,
@@ -226,6 +227,8 @@ object ConsignmentFields {
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
     Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
+  val UpdateSchemaLibraryVersionArg: Argument[UpdateSchemaLibraryVersionInput] =
+    Argument("updateSchemaLibraryVersion", UpdateSchemaLibraryVersionInputType)
 
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[ConsignmentApiContext, Connection, Consignment](
@@ -324,6 +327,13 @@ object ConsignmentFields {
       arguments = UpdateConsignmentSeriesIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateSeriesOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)
+    ),
+    Field(
+      "updateConsignmentSchemaLibraryVersion",
+      OptionType(IntType),
+      arguments = UpdateSchemaLibraryVersionArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateSchemaLibraryVersion(ctx.arg(UpdateSchemaLibraryVersionArg)),
+      tags = List(ValidateUserHasAccessToConsignment(UpdateSchemaLibraryVersionArg))
     )
   )
 }

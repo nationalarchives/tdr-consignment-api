@@ -124,6 +124,7 @@ type Consignment {
   seriesName: String
   transferringBodyName: String
   transferringBodyTdrCode: String
+  schemaLibraryVersion: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Long!
@@ -134,7 +135,6 @@ type Consignment {
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
   consignmentStatuses: [ConsignmentStatus!]!
-  schemaLibraryVersion: String
 }
 
 "A connection to a list of items."
@@ -176,11 +176,6 @@ input ConsignmentStatusInput {
   statusValue: String
 }
 
-input UpdateSchemaLibraryVersionInput {
-  consignmentId: UUID!
-  schemaLibraryVersion: String!
-}
-
 type CustomMetadataField {
   name: String!
   fullName: String
@@ -204,9 +199,9 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  DateTime
   Boolean
+  DateTime
+  Decimal
   Integer
   Text
 }
@@ -393,6 +388,7 @@ type Mutation {
   updateExportData(exportData: UpdateExportDataInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
+  updateConsignmentSchemaLibraryVersion(updateSchemaLibraryVersion: UpdateSchemaLibraryVersionInput!): Int
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -406,7 +402,6 @@ type Mutation {
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
-  updateSchemaLibraryVersion(updateSchemaLibraryVersionInput: UpdateSchemaLibraryVersionInput!): String!
 }
 
 "Information about pagination in a connection."
@@ -432,9 +427,9 @@ input PaginationInput {
 }
 
 enum PropertyType {
-  System
   Defined
   Supplied
+  System
 }
 
 type Query {
@@ -499,6 +494,11 @@ input UpdateFileMetadataInput {
   filePropertyIsMultiValue: Boolean!
   filePropertyName: String!
   value: String!
+}
+
+input UpdateSchemaLibraryVersionInput {
+  consignmentId: UUID!
+  schemaLibraryVersion: String!
 }
 
 scalar ZonedDateTime

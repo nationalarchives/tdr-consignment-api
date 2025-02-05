@@ -25,7 +25,7 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
 
   "addConsignmentMetadata" should "add consignment metadata with the correct values" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
-    val utils = TestUtils(db.asInstanceOf[slick.jdbc.PostgresProfile.api.Database])
+    val utils = TestUtils(db)
     utils.addConsignmentProperty(consignmentMetadataProperty)
     val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
     val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
