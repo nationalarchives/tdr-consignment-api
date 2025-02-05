@@ -186,6 +186,71 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       }
   }
 
+  "addOrUpdateBulkFileMetadata" should "add or update all file metadata without validation and update the statuses when skipValidation is false" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      utils.addFileProperty("newProperty1", propertyType = "Supplied")
+      utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied")
+
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "existingPropertyUpdated1", "existingValue1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId.toString, "existingPropertyUpdated1", "newValue1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "newProperty1", "value1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "existingPropertyUpdated1", "existingValue1")
+
+      val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+        expectedAddOrUpdateBulkFileMetadataMutationResponse("data_all")
+      val expectedResponseFileMetadata = expectedResponse.data.get
+      val response: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+        runAddOrUpdateBulkFileMetadataTestMutation("mutation_with_validation", validUserToken())
+      val responseFileMetadataProperties = response.data.get
+
+      responseFileMetadataProperties should equal(expectedResponseFileMetadata)
+
+      List(fileOneId, fileTwoId, fileThreeId).foreach { id =>
+        checkFileMetadataValue(id, utils, "newProperty1", "value1")
+        checkFileMetadataValue(id, utils, "existingPropertyUpdated1", "newValue1")
+      }
+  }
+
+  "addOrUpdateBulkFileMetadata" should "throw an error when the user tries to add or update all file metadata when skipValidation is true" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      utils.addFileProperty("newProperty1", propertyType = "Supplied")
+      utils.addFileProperty("existingPropertyUpdated1", propertyType = "Supplied")
+
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      utils.addFileMetadata(UUID.randomUUID().toString, fileOneId.toString, "existingPropertyUpdated1", "existingValue1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId.toString, "existingPropertyUpdated1", "newValue1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "newProperty1", "value1")
+      utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId.toString, "existingPropertyUpdated1", "existingValue1")
+
+      val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+        expectedAddOrUpdateBulkFileMetadataMutationResponse("data_error_not_file_owner")
+      val response: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+        runAddOrUpdateBulkFileMetadataTestMutation("mutation_skip_validation", validUserToken())
+
+      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      checkNoFileMetadataAdded(utils, "property1")
+  }
+
   "addOrUpdateBulkFileMetadata" should "return an error if trying to add metadata that is protected" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
@@ -479,6 +544,40 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     response.errors.head.message should equal(expectedResponse.errors.head.message)
     checkNoFileMetadataAdded(utils, "property1")
     checkNoFileMetadataAdded(utils, "property2")
+  }
+
+  "addOrUpdateBulkFileMetadata" should "throw a 'not authorised' error if a file id exists but belongs to another user and skipValidation is true" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries() // this method adds a default file
+
+      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
+      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
+      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
+      val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
+      val fileFourId = UUID.fromString("373ce1c5-6e06-423d-8b86-ca5eaebef457")
+      val fileFiveId = UUID.fromString("5302acac-1396-44fe-9094-dc262414a03a")
+
+      utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
+      utils.createFile(fileTwoId, consignmentId)
+      utils.createFile(fileThreeId, consignmentId)
+      val consignmentId2 = UUID.fromString("3a4d1650-dc96-4b0d-a2e7-3551a682b46f")
+      val consignmentId3 = UUID.fromString("75ec3c85-ba66-4145-842f-0aa91b1a9972")
+      val userId2 = UUID.fromString("a2c292e8-e764-4dd5-99eb-23084c226013")
+      val userId3 = UUID.fromString("c83b64c8-b7f5-47e2-94a4-4b91bf76faea")
+      utils.createConsignment(consignmentId2, userId = userId2)
+      utils.createFile(fileFourId, consignmentId2, userId = userId2)
+      utils.createConsignment(consignmentId3, userId = userId3)
+      utils.createFile(fileFiveId, consignmentId3, userId = userId3)
+
+      val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =
+        expectedAddOrUpdateBulkFileMetadataMutationResponse("data_error_not_file_owner")
+      val response: GraphqlAddOrUpdateBulkFileMetadataMutationData = runAddOrUpdateBulkFileMetadataTestMutation("mutation_notfileowner_skip_validation", validUserToken())
+
+      response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+      response.errors.head.message should equal(expectedResponse.errors.head.message)
+      checkNoFileMetadataAdded(utils, "property1")
+      checkNoFileMetadataAdded(utils, "property2")
   }
 
   "addOrUpdateBulkFileMetadata" should "add or update all file metadata when consignment belongs to another user when called by draft metadata client" in withContainers {
