@@ -7,6 +7,8 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{FilepropertyRow, FilepropertydependenciesRow, FilepropertyvaluesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.CustomMetadataField
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
+import uk.gov.nationalarchives.tdr.api.utils.TestDataHelper.mockCustomMetadataFields
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -14,6 +16,20 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CustomMetadataPropertiesServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+
+  "toAdditionalMetadataFieldGroups" should "group 'custom metadata fields' by 'closure' and 'descriptive'" in {
+
+    val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]
+    val service = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
+
+    val fieldGroups = service.toAdditionalMetadataFieldGroups(mockCustomMetadataFields())
+
+    fieldGroups.size shouldBe 2
+    val closureGroups = fieldGroups.find(_.groupName == ClosureMetadata).get
+    closureGroups.fields.size shouldBe 7
+    val descriptiveGroups = fieldGroups.find(_.groupName == DescriptiveMetadata).get
+    descriptiveGroups.fields.size shouldBe 2
+  }
 
   "getCustomMetadata" should "correctly return sequence of CustomMetadataField without dependencies" in {
     val customMetadataPropertiesRepository = mock[CustomMetadataPropertiesRepository]

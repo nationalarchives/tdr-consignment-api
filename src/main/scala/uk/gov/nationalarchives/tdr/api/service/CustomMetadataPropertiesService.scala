@@ -4,6 +4,7 @@ import uk.gov.nationalarchives.Tables.{FilepropertyRow, Filepropertydependencies
 import uk.gov.nationalarchives.tdr.api.db.repository.CustomMetadataPropertiesRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,6 +48,12 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
           )
       }
     }
+
+  def toAdditionalMetadataFieldGroups(fields: Seq[CustomMetadataField]): Seq[FieldGroup] = {
+    val closureFields = fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
+    val descriptiveFields = fields.filter(f => f.propertyGroup.contains("OptionalMetadata"))
+    Seq(FieldGroup(ClosureMetadata, closureFields), FieldGroup(DescriptiveMetadata, descriptiveFields))
+  }
 
   private def rowsToMetadata(
       fp: FilepropertyRow,
@@ -99,3 +106,5 @@ class CustomMetadataPropertiesService(customMetadataPropertiesRepository: Custom
     case _                => throw new Exception(s"Invalid property type $propertyType")
   }
 }
+
+case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
