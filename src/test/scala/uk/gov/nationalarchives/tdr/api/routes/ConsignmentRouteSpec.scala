@@ -28,6 +28,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val consignmentsJsonFilePrefix: String = "json/consignments_"
   private val startUploadJsonFilePrefix: String = "json/startupload_"
   private val updateConsignmentSeriesIdJsonFilePrefix: String = "json/updateconsignmentseriesid_"
+  private val updateConsignmentSchemaLibraryVersionPrefix: String = "json/updateconsignmentschemalibraryversion_"
   private val getConsignmentForMetadataReviewJsonFilePrefix: String = "json/getconsignmentsformetadatareview_"
 
   val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
@@ -57,6 +58,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlMutationUpdateSeriesIdOfConsignment(data: Option[UpdateSeriesIdOfConsignment], errors: List[GraphqlError] = Nil)
 
+  case class GraphqlMutationUpdateSchemaLibraryVersion(data: Option[UpdateSchemaLibraryVersion], errors: List[GraphqlError] = Nil)
+
   case class Consignment(
       consignmentid: Option[UUID] = None,
       userid: Option[UUID] = None,
@@ -75,7 +78,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       includeTopLevelFolder: Option[Boolean] = None,
       seriesName: Option[String],
       transferringBodyName: Option[String],
-      transferringBodyTdrCode: Option[String]
+      transferringBodyTdrCode: Option[String],
+      schemaLibraryVersion: Option[String] = None
   )
 
   case class ConsignmentStatus(
@@ -118,6 +122,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class UpdateTransferInitiated(updateTransferInitiated: Int)
 
   case class UpdateSeriesIdOfConsignment(updateConsignmentSeriesId: Option[Int])
+
+  case class UpdateSchemaLibraryVersion(updateConsignmentSchemaLibraryVersion: Int)
 
   case class FileStatus(fileId: UUID, statusType: String, statusValue: String)
 
@@ -170,11 +176,15 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
   val runGetConsignmentsForMetadataReview: (String, OAuth2BearerToken) => ConsignmentsForMetadataReviewData =
     runTestRequest[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
+  val runUpdateConsignmentSchemaLibraryVersionMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateSchemaLibraryVersion =
+    runTestRequest[GraphqlMutationUpdateSchemaLibraryVersion](updateConsignmentSchemaLibraryVersionPrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String => GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
   val expectedUpdateConsignmentSeriesIdMutationResponse: String => GraphqlMutationUpdateSeriesIdOfConsignment =
     getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
+  val expectedUpdateConsignmentSchemaLibraryVersionResponse: String => GraphqlMutationUpdateSchemaLibraryVersion =
+    getDataFromFile[GraphqlMutationUpdateSchemaLibraryVersion](updateConsignmentSchemaLibraryVersionPrefix)
   val expectedGetConsignmentForMetadataResponse: String => ConsignmentsForMetadataReviewData =
     getDataFromFile[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
 
@@ -869,6 +879,17 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       runUpdateConsignmentSeriesIdMutation("mutation_incorrect_body", validUserToken(body = "incorrect"))
 
     response.errors.head.message should equal(expectedResponse.errors.head.message)
+  }
+
+  "updateConsignmentSchemaLibraryVersion" should "update the consignment schema library version with version" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.createConsignment(new FixedUUIDSource().uuid, userId)
+
+    val expectedResponse: GraphqlMutationUpdateSchemaLibraryVersion = expectedUpdateConsignmentSchemaLibraryVersionResponse("data_all")
+    val response: GraphqlMutationUpdateSchemaLibraryVersion =
+      runUpdateConsignmentSchemaLibraryVersionMutation("mutation_all", validUserToken(body = defaultBodyCode))
+
+    response.data.get.updateConsignmentSchemaLibraryVersion should equal(expectedResponse.data.get.updateConsignmentSchemaLibraryVersion)
   }
 
   private def checkConsignmentExists(consignmentId: UUID, utils: TestUtils): Unit = {

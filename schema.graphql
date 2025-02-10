@@ -125,7 +125,7 @@ type Consignment {
   seriesName: String
   transferringBodyName: String
   transferringBodyTdrCode: String
-  schemaLibraryVersion: String
+  consignmentStatusInputLibraryVersion: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Long!
@@ -200,9 +200,9 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Boolean
-  DateTime
   Decimal
+  DateTime
+  Boolean
   Integer
   Text
 }
@@ -389,7 +389,7 @@ type Mutation {
   updateExportData(exportData: UpdateExportDataInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
-  updateConsignmentSchemaLibraryVersion(updateSchemaLibraryVersion: UpdateSchemaLibraryVersionInput!): Int
+  updateConsignmentSchemaLibraryVersion(updateConsignmentSchemaLibraryVersion: UpdateSchemaLibraryVersionInput!): Int
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -428,9 +428,9 @@ input PaginationInput {
 }
 
 enum PropertyType {
+  System
   Defined
   Supplied
-  System
 }
 
 type Query {
