@@ -192,7 +192,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       seriesname = Some("seriesName"),
       transferringbodyname = Some("transferringBodyName"),
       transferringbodytdrcode = Some("transferringBodyTdrCode"),
-      schemalibraryversion = Some("0.0.Version")
+      metadataschemalibraryversion = Some("0.0.Version")
     )
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
     when(consignmentRepoMock.getConsignment(any[UUID])).thenReturn(mockResponse)
@@ -209,7 +209,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.seriesName should equal(consignmentRow.seriesname)
     consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
-    consignment.schemaLibraryVersion should equal(consignmentRow.schemalibraryversion)
+    consignment.metadataSchemaLibraryVersion should equal(consignmentRow.metadataschemalibraryversion)
   }
 
   "getConsignment" should "return none when consignment id does not exist" in {
@@ -681,14 +681,14 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
   }
 
-  "updateSchemaLibraryVersionOfConsignment" should "update the schema library version for consignment" in {
+  "updateMetadataSchemaLibraryVersionOfConsignment" should "update the schema library version for consignment" in {
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val schemaVersion = "12344"
     val expectedResult = 1
 
-    when(consignmentRepoMock.updateSchemaLibraryVersion(UpdateSchemaLibraryVersionInput(consignmentId, schemaVersion))).thenReturn(Future.successful(expectedResult))
+    when(consignmentRepoMock.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion))).thenReturn(Future.successful(expectedResult))
 
-    val result = consignmentService.updateSchemaLibraryVersion(UpdateSchemaLibraryVersionInput(consignmentId, schemaVersion)).futureValue
+    val result = consignmentService.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion)).futureValue
 
     result should equal(expectedResult)
   }

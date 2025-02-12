@@ -125,7 +125,7 @@ type Consignment {
   seriesName: String
   transferringBodyName: String
   transferringBodyTdrCode: String
-  schemaLibraryVersion: String
+  metadataSchemaLibraryVersion: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Long!
@@ -389,7 +389,7 @@ type Mutation {
   updateExportData(exportData: UpdateExportDataInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
-  updateConsignmentSchemaLibraryVersion(updateSchemaLibraryVersion: UpdateSchemaLibraryVersionInput!): Int
+  updateConsignmentMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersion: UpdateMetadataSchemaLibraryVersionInput!): Int
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -497,9 +497,9 @@ input UpdateFileMetadataInput {
   value: String!
 }
 
-input UpdateSchemaLibraryVersionInput {
+input UpdateMetadataSchemaLibraryVersionInput {
   consignmentId: UUID!
-  schemaLibraryVersion: String!
+  metadataSchemaLibraryVersion: String!
 }
 
 scalar ZonedDateTime
