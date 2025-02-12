@@ -368,19 +368,20 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignment.seriesname should be(seriesName.some)
   }
 
-  "updateMetadataSchemaLibraryVersionOfConsignment" should "update the validation schema library version of the consignment" in withContainers { case container: PostgreSQLContainer =>
-    val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
-    val db = container.database
-    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
-    val utils = TestUtils(db)
-    utils.createConsignment(consignmentId, userId)
-    val version = "3.4.5"
+  "updateMetadataSchemaLibraryVersionOfConsignment" should "update the validation schema library version of the consignment" in withContainers {
+    case container: PostgreSQLContainer =>
+      val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
+      val db = container.database
+      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+      val utils = TestUtils(db)
+      utils.createConsignment(consignmentId, userId)
+      val version = "3.4.5"
 
-    val response = consignmentRepository.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, version)).futureValue
+      val response = consignmentRepository.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, version)).futureValue
 
-    response should be(1)
-    val consignment = consignmentRepository.getConsignment(consignmentId).futureValue.head
-    consignment.metadataschemalibraryversion should be(version.some)
+      response should be(1)
+      val consignment = consignmentRepository.getConsignment(consignmentId).futureValue.head
+      consignment.metadataschemalibraryversion should be(version.some)
 
   }
 

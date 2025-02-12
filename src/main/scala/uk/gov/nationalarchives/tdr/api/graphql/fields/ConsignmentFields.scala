@@ -216,7 +216,8 @@ object ConsignmentFields {
   implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
-  implicit val UpdateMetadataSchemaLibraryVersionInputType: InputObjectType[UpdateMetadataSchemaLibraryVersionInput] = deriveInputObjectType[UpdateMetadataSchemaLibraryVersionInput]()
+  implicit val UpdateMetadataSchemaLibraryVersionInputType: InputObjectType[UpdateMetadataSchemaLibraryVersionInput] =
+    deriveInputObjectType[UpdateMetadataSchemaLibraryVersionInput]()
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
