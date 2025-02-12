@@ -684,14 +684,14 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "updateMetadataSchemaLibraryVersionOfConsignment" should "update the schema library version for consignment" in {
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val schemaVersion = "12344"
-    val expectedResult = 1
+    val expectedNumbersOfRowsUpdatedResult = 1
 
     when(consignmentRepoMock.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion)))
-      .thenReturn(Future.successful(expectedResult))
+      .thenReturn(Future.successful(expectedNumbersOfRowsUpdatedResult))
 
     val result = consignmentService.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion)).futureValue
 
-    result should equal(expectedResult)
+    result should equal(expectedNumbersOfRowsUpdatedResult)
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {

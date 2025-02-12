@@ -382,7 +382,6 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       response should be(1)
       val consignment = consignmentRepository.getConsignment(consignmentId).futureValue.head
       consignment.metadataschemalibraryversion should be(version.some)
-
   }
 
   "totalConsignments" should "return total number of consignments" in withContainers { case container: PostgreSQLContainer =>
