@@ -199,9 +199,9 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  DateTime
   Boolean
+  DateTime
+  Decimal
   Integer
   Text
 }
@@ -426,9 +426,9 @@ input PaginationInput {
 }
 
 enum PropertyType {
-  System
   Defined
   Supplied
+  System
 }
 
 type Query {
