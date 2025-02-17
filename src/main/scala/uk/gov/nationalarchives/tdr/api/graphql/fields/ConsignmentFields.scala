@@ -50,7 +50,8 @@ object ConsignmentFields {
       includeTopLevelFolder: Option[Boolean],
       seriesName: Option[String],
       transferringBodyName: Option[String],
-      transferringBodyTdrCode: Option[String]
+      transferringBodyTdrCode: Option[String],
+      metadataSchemaLibraryVersion: Option[String]
   )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
@@ -72,6 +73,8 @@ object ConsignmentFields {
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
+
+  case class UpdateMetadataSchemaLibraryVersionInput(consignmentId: UUID, metadataSchemaLibraryVersion: String) extends UserOwnsConsignment
 
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
@@ -145,6 +148,7 @@ object ConsignmentFields {
       Field("seriesName", OptionType(StringType), resolve = _.value.seriesName),
       Field("transferringBodyName", OptionType(StringType), resolve = _.value.transferringBodyName),
       Field("transferringBodyTdrCode", OptionType(StringType), resolve = _.value.transferringBodyTdrCode),
+      Field("metadataSchemaLibraryVersion", OptionType(StringType), resolve = _.value.metadataSchemaLibraryVersion),
       Field(
         "allChecksSucceeded",
         BooleanType,
@@ -212,6 +216,8 @@ object ConsignmentFields {
   implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
+  implicit val UpdateMetadataSchemaLibraryVersionInputType: InputObjectType[UpdateMetadataSchemaLibraryVersionInput] =
+    deriveInputObjectType[UpdateMetadataSchemaLibraryVersionInput]()
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
@@ -222,6 +228,8 @@ object ConsignmentFields {
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
     Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
+  val UpdateMetadataSchemaLibraryVersionArg: Argument[UpdateMetadataSchemaLibraryVersionInput] =
+    Argument("updateMetadataSchemaLibraryVersion", UpdateMetadataSchemaLibraryVersionInputType)
 
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[ConsignmentApiContext, Connection, Consignment](
@@ -320,6 +328,13 @@ object ConsignmentFields {
       arguments = UpdateConsignmentSeriesIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateSeriesOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)
+    ),
+    Field(
+      "updateConsignmentMetadataSchemaLibraryVersion",
+      OptionType(IntType),
+      arguments = UpdateMetadataSchemaLibraryVersionArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateMetadataSchemaLibraryVersion(ctx.arg(UpdateMetadataSchemaLibraryVersionArg)),
+      tags = List(ValidateUserHasAccessToConsignment(UpdateMetadataSchemaLibraryVersionArg))
     )
   )
 }
