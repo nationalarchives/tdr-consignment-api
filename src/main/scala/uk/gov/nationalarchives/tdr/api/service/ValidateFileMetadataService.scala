@@ -2,7 +2,6 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{CustomMetadataField, CustomMetadataValues}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.MetadataValidationUtils
@@ -18,28 +17,13 @@ class ValidateFileMetadataService(
     fileStatusRepository: FileStatusRepository
 )(implicit val ec: ExecutionContext) {
 
-  def toPropertyNames(fields: Seq[CustomMetadataField]): Set[String] = fields.map(_.name).toSet
-
-  def toAdditionalMetadataFieldGroups(fields: Seq[CustomMetadataField]): Seq[FieldGroup] = {
-    val closureFields = fields.filter(f => f.propertyGroup.contains("MandatoryClosure") || f.propertyGroup.contains("OptionalClosure"))
-    val descriptiveFields = fields.filter(f => f.propertyGroup.contains("OptionalMetadata"))
-    Seq(FieldGroup(ClosureMetadata, closureFields), FieldGroup(DescriptiveMetadata, descriptiveFields))
-  }
-
-  def toValueDependenciesGroups(field: CustomMetadataField): Seq[FieldGroup] = {
-    val values: List[CustomMetadataValues] = field.values
-    values.map(v => {
-      FieldGroup(v.value, v.dependencies)
-    })
-  }
-
-  def validateAndAddAdditionalMetadataStatuses(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
+  def validateAdditionalMetadata(fileIds: Set[UUID], propertiesToValidate: Set[String]): Future[List[FilestatusRow]] = {
     for {
       propertyNames <- displayPropertiesService.getActiveDisplayPropertyNames
       result <- {
         if (propertiesToValidate.exists(propertyNames.contains)) {
           for {
-            additionalMetadataStatuses <- validateAdditionalMetadata(fileIds, propertyNames)
+            additionalMetadataStatuses <- validate(fileIds, propertyNames)
             _ <- fileStatusRepository.deleteFileStatus(fileIds, Set(ClosureMetadata, DescriptiveMetadata))
             rows <- fileStatusRepository.addFileStatuses(additionalMetadataStatuses)
           } yield rows.toList
@@ -52,12 +36,12 @@ class ValidateFileMetadataService(
     }
   }
 
-  private def validateAdditionalMetadata(fileIds: Set[UUID], propertyNames: Seq[String]): Future[List[AddFileStatusInput]] = {
+  private def validate(fileIds: Set[UUID], propertyNames: Seq[String]): Future[List[AddFileStatusInput]] = {
     for {
       customMetadataFields <- customMetadataService.getCustomMetadata
       existingMetadataProperties <- fileMetadataRepository.getFileMetadata(None, Some(fileIds), Some(propertyNames.toSet))
     } yield {
-      val additionalMetadataGroups = toAdditionalMetadataFieldGroups(customMetadataFields.filter(p => propertyNames.contains(p.name)))
+      val additionalMetadataGroups = customMetadataService.toAdditionalMetadataFieldGroups(customMetadataFields.filter(p => propertyNames.contains(p.name)))
 
       val existingFileProperties =
         fileIds.map(fileId => fileId -> existingMetadataProperties.filter(_.fileid == fileId).groupBy(_.propertyname).map(p => p._1 -> p._2.map(_.value).mkString(","))).toMap
@@ -95,6 +79,4 @@ class ValidateFileMetadataService(
       }.toList
     }
   }
-
-  case class FieldGroup(groupName: String, fields: Seq[CustomMetadataField])
 }
