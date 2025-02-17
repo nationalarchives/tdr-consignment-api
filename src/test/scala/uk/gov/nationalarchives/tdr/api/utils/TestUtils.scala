@@ -19,7 +19,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.io.Source.fromResource
 
-class TestUtils(db: JdbcBackend#DatabaseDef) {
+class TestUtils(db: JdbcBackend#Database) {
   val connection: Connection = db.source.createConnection()
 
   def deleteTables(): Boolean = {
@@ -542,7 +542,7 @@ object TestUtils {
   val fixedSeriesId: UUID = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
   val fixedBodyId: UUID = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")
 
-  def apply(db: JdbcBackend#DatabaseDef): TestUtils = new TestUtils(db)
+  def apply(db: JdbcBackend#Database): TestUtils = new TestUtils(db)
 
   def getDataFromFile[A](prefix: String)(fileName: String)(implicit decoder: Decoder[A]): A = {
     getDataFromString(fromResource(s"$prefix$fileName.json").mkString)

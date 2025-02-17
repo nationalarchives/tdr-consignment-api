@@ -5,11 +5,10 @@ import io.circe.generic.auto._
 import sangria.macros.derive.{deriveInputObjectType, deriveObjectType}
 import sangria.marshalling.circe._
 import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, fields}
-import uk.gov.nationalarchives.tdr.api.auth.{ValidateHasChecksumMetadataAccess, ValidateUserOwnsFiles}
+import uk.gov.nationalarchives.tdr.api.auth.ValidateHasChecksumMetadataAccess
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.metadatainputvalidation.ValidateMetadataInput
 import FieldTypes._
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.ClosureType
 
 object FileMetadataFields {
   trait FileMetadataBase {
@@ -33,7 +32,7 @@ object FileMetadataFields {
   case class UpdateBulkFileMetadataInput(consignmentId: UUID, fileIds: Seq[UUID], metadataProperties: Seq[UpdateFileMetadataInput])
   case class AddOrUpdateMetadata(filePropertyName: String, value: String) extends FileMetadataBase
   case class AddOrUpdateFileMetadata(fileId: UUID, metadata: Seq[AddOrUpdateMetadata])
-  case class AddOrUpdateBulkFileMetadataInput(consignmentId: UUID, fileMetadata: Seq[AddOrUpdateFileMetadata])
+  case class AddOrUpdateBulkFileMetadataInput(consignmentId: UUID, fileMetadata: Seq[AddOrUpdateFileMetadata], skipValidation: Boolean = false)
 
   case class DeleteFileMetadata(fileIds: Seq[UUID], filePropertyNames: Seq[String])
 
