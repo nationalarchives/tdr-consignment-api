@@ -62,7 +62,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.10.3",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.45",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.48",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.101",
   "org.postgresql" % "postgresql" % "42.7.5",
   "com.typesafe.slick" %% "slick" % "3.5.2",

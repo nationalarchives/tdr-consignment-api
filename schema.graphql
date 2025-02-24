@@ -125,6 +125,7 @@ type Consignment {
   seriesName: String
   transferringBodyName: String
   transferringBodyTdrCode: String
+  metadataSchemaLibraryVersion: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Long!
@@ -199,9 +200,9 @@ type CustomMetadataValues {
 }
 
 enum DataType {
-  Decimal
-  DateTime
   Boolean
+  DateTime
+  Decimal
   Integer
   Text
 }
@@ -388,6 +389,7 @@ type Mutation {
   updateExportData(exportData: UpdateExportDataInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
+  updateConsignmentMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersion: UpdateMetadataSchemaLibraryVersionInput!): Int
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -426,9 +428,9 @@ input PaginationInput {
 }
 
 enum PropertyType {
-  System
   Defined
   Supplied
+  System
 }
 
 type Query {
@@ -493,6 +495,11 @@ input UpdateFileMetadataInput {
   filePropertyIsMultiValue: Boolean!
   filePropertyName: String!
   value: String!
+}
+
+input UpdateMetadataSchemaLibraryVersionInput {
+  consignmentId: UUID!
+  metadataSchemaLibraryVersion: String!
 }
 
 scalar ZonedDateTime
