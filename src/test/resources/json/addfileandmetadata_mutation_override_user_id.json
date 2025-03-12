@@ -7,37 +7,37 @@
         {
           "originalPath": "topDirectory/originalPath",
           "checksum": "checksum",
-          "lastModified": 1,
+          "lastModified": "1",
           "fileSize": 123,
-          "matchId": 1
+          "matchId": "1"
         },
         {
           "originalPath": "otherTopDirectory/originalDirectory/originalPath2",
           "checksum": "checksum2",
           "lastModified": 112,
           "fileSize": 1233,
-          "matchId": 2
+          "matchId": "2"
         },
         {
           "originalPath": "otherTopDirectory/originalDirectory/originalPath3",
           "checksum": "checksum2",
           "lastModified": 112,
           "fileSize": 1233,
-          "matchId": 3
+          "matchId": "3"
         },
         {
           "originalPath": "otherTopDirectory/originalDirectory/originalPath4",
           "checksum": "checksum2",
           "lastModified": 112,
           "fileSize": 1233,
-          "matchId": 4
+          "matchId": "4"
         },
         {
           "originalPath": "otherTopDirectory/originalDirectory/originalPath5",
           "checksum": "checksum2",
           "lastModified": 112,
           "fileSize": 1233,
-          "matchId": 5
+          "matchId": "5"
         }
       ],
       "userIdOverride": "4ab14990-ed63-4615-8336-56fbb9960300"

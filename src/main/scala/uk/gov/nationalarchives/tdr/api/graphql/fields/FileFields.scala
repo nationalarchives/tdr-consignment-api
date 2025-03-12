@@ -14,9 +14,9 @@ import java.util.UUID
 
 object FileFields {
 
-  case class FileMatches(fileId: UUID, matchId: Long)
+  case class FileMatches(fileId: UUID, matchId: String)
 
-  case class ClientSideMetadataInput(originalPath: String, checksum: String, lastModified: Long, fileSize: Long, matchId: Long)
+  case class ClientSideMetadataInput(originalPath: String, checksum: String, lastModified: Long, fileSize: Long, matchId: String)
   case class AddFileAndMetadataInput(
                                       consignmentId: UUID,
                                       metadataInput: List[ClientSideMetadataInput],
