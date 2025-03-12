@@ -88,11 +88,48 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
         val nameAndPath = getFileNameAndOriginalPathMatch(fileId, utils)
         nameAndPath.isDefined should equal(true)
         nameAndPath.get.fileName should equal(nameAndPath.get.path.split("/").last)
+        val actualUserId = getUserIdForFile(fileId, utils).get
+        actualUserId should equal(userId)
       })
     referenceMockServer.stop()
   }
 
-  "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers { case container: PostgreSQLContainer =>
+  "'addFilesAndMetadata' mutation" should "override user id where present in input for files" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
+    val tokenUserId = UUID.randomUUID()
+    val overrideUserId = userId
+    val utils = TestUtils(container.database)
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
+    utils.createConsignment(consignmentId, overrideUserId)
+
+    val referenceMockServer = getReferencesMockServer(4)
+    val res = runTestMutationFileMetadata("mutation_override_user_id", validUserToken(userId = tokenUserId))
+    res.data.get.addFilesAndMetadata
+      .map(_.fileId)
+      .foreach(fileId => {
+        val userId = getUserIdForFile(fileId, utils).get
+        userId should equal(overrideUserId)
+      })
+    referenceMockServer.stop()
+  }
+
+  "'addFilesAndMetadata' mutation" should "throw an error when the override user id does not match the consignment user id" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
+    val tokenUserId = UUID.randomUUID()
+    val overrideUserId = userId
+    val utils = TestUtils(container.database)
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
+    utils.createConsignment(consignmentId, overrideUserId)
+
+    val referenceMockServer = getReferencesMockServer(4)
+    val res = runTestMutationFileMetadata("mutation_incorrect_override_user_id", validUserToken(userId = tokenUserId))
+    res.errors.head.message should equal(
+      "User '9d7fbffc-4012-40a8-89bf-314eabab78a8' does not have access to consignment 'c44f1b9b-1275-4bc3-831c-808c50a0222d'")
+    res.data.isDefined shouldBe false
+    referenceMockServer.stop()
+  }
+
+  "'addFilesAndMetadata' mutation" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
     val utils = TestUtils(container.database)
     (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
@@ -187,6 +224,20 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       val fileName = rs.getString("FileName")
       val value = rs.getString("Value")
       Option(FileNameAndPath(fileName, value))
+    } else {
+      None
+    }
+  }
+
+  def getUserIdForFile(fileId: UUID, utils: TestUtils): Option[UUID] = {
+    val sql =
+      """SELECT "UserId" FROM "File" where "FileId" = ?""".stripMargin
+    val ps: PreparedStatement = utils.connection.prepareStatement(sql)
+    ps.setObject(1, fileId, Types.OTHER)
+    val rs = ps.executeQuery()
+    if (rs.next()) {
+      val userId = rs.getString("UserId")
+      Option(UUID.fromString(userId))
     } else {
       None
     }

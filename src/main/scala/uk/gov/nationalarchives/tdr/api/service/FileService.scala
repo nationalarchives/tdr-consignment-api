@@ -44,7 +44,11 @@ class FileService(
   private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
   private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
 
-  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
+  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, tokenUserId: UUID): Future[List[FileMatches]] = {
+    val userId = addFileAndMetadataInput.userIdOverride match {
+      case Some(id) => id
+      case _ => tokenUserId
+    }
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
     val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
