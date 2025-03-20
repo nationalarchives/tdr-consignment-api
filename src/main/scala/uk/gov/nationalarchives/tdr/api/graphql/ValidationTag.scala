@@ -17,7 +17,7 @@ trait ValidationTag extends FieldTag {
     //
     // We are only using Await because Sangria middleware does not support Futures like the main resolvers do. We should
     // remove it when we find a way to do authorisation in a completely async way in Sangria.
-    Await.result(validationResult, 240 seconds)
+    Await.result(validationResult, 180 seconds)
   }
 
   def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]]
