@@ -42,8 +42,8 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 
 lazy val akkaVersion = "2.10.0"
 lazy val akkaHttpVersion = "10.7.0"
-lazy val circeVersion = "0.14.10"
-lazy val testContainersVersion = "0.41.8"
+lazy val circeVersion = "0.14.12"
+lazy val testContainersVersion = "0.43.0"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.5",
@@ -63,16 +63,16 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.10.3",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.48",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.108",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.117",
   "org.postgresql" % "postgresql" % "42.7.5",
   "com.typesafe.slick" %% "slick" % "3.5.2",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
-  "ch.qos.logback" % "logback-classic" % "1.5.17",
+  "ch.qos.logback" % "logback-classic" % "1.5.18",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.0",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.1",
-  "software.amazon.awssdk" % "rds" % "2.30.36",
-  "software.amazon.awssdk" % "sts" % "2.30.36",
+  "software.amazon.awssdk" % "rds" % "2.31.11",
+  "software.amazon.awssdk" % "sts" % "2.31.11",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-pki" % akkaVersion,
   "com.tngtech.keycloakmock" % "mock" % "0.17.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.234",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.236",
   "io.github.hakky54" % "logcaptor" % "2.10.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
