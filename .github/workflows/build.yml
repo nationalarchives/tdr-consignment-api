@@ -18,6 +18,7 @@ jobs:
       AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
       WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
       WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+      WIZ_PROJECT_ID: ${{ secrets.WIZ_PROJECT_TDR }}
   deploy:
     needs: pre-deploy
     runs-on: ubuntu-latest
