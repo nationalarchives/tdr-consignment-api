@@ -83,7 +83,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-pki" % akkaVersion,
   "com.tngtech.keycloakmock" % "mock" % "0.18.0" % Test,
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.236",
-  "io.github.hakky54" % "logcaptor" % "2.10.1" % Test,
+  "io.github.hakky54" % "logcaptor" % "2.10.2" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
