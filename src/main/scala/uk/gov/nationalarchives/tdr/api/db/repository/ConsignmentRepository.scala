@@ -171,6 +171,7 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
   }
 
   def updateClientSideDraftMetadataFileName(input: UpdateClientSideDraftMetadataFileNameInput): Future[Int] = {
+    println("HERE")
     val update = Consignment
       .filter(_.consignmentid === input.consignmentId)
       .map(_.clientsidedraftmetadatafilename)
