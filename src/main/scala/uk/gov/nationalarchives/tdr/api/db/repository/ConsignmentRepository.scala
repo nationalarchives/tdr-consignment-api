@@ -173,7 +173,7 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
   def updateClientSideDraftMetadataFileName(input: UpdateClientSideDraftMetadataFileNameInput): Future[Int] = {
     val update = Consignment
       .filter(_.consignmentid === input.consignmentId)
-      .map(_.metadataschemalibraryversion)
+      .map(_.clientsidedraftmetadatafilename)
       .update(Some(input.clientSideDraftMetadataFileName))
     db.run(update)
   }
