@@ -1,0 +1,9 @@
+{
+  "query": "mutation updateClientSideDraftMetadataFileName($updateClientSideDraftMetadataFileNameInput: UpdateClientSideDraftMetadataFileName!){updateClientSideDraftMetadataFileName(updateClientSideDraftMetadataFileName: $updateClientSideDraftMetadataFileNameInput)}",
+  "variables": {
+    "updateClientSideDraftMetadataFileName": {
+      "consignmentId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+      "clientSideDraftMetadataFileName":"some file name.csv"
+    }
+  }
+}
