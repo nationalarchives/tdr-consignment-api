@@ -910,7 +910,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val response: GraphqlMutationUpdateDraftMetadataFileName =
       runUpdateClientSideDraftMetadataFileNameMutation("mutation_all", validUserToken(body = defaultBodyCode))
 
-    response.data.get.updateClientSideDraftMetadataFileName // should equal(expectedResponse.data.get.updateClientSideDraftMetadataFileName)
+    response.data.get.updateClientSideDraftMetadataFileName should equal(expectedResponse.data.get.updateClientSideDraftMetadataFileName)
   }
 
   private def checkConsignmentExists(consignmentId: UUID, utils: TestUtils): Unit = {
