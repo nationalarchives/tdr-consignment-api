@@ -4,7 +4,12 @@ import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateMetadataSchemaLibraryVersionInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
+  ConsignmentFilters,
+  StartUploadInput,
+  UpdateClientSideDraftMetadataFileNameInput,
+  UpdateMetadataSchemaLibraryVersionInput
+}
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
 import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
@@ -162,6 +167,14 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
       .filter(_.consignmentid === updateMetadataSchemaLibraryVersionInput.consignmentId)
       .map(_.metadataschemalibraryversion)
       .update(Some(updateMetadataSchemaLibraryVersionInput.metadataSchemaLibraryVersion))
+    db.run(update)
+  }
+
+  def updateClientSideDraftMetadataFileName(input: UpdateClientSideDraftMetadataFileNameInput): Future[Int] = {
+    val update = Consignment
+      .filter(_.consignmentid === input.consignmentId)
+      .map(_.clientsidedraftmetadatafilename)
+      .update(Some(input.clientSideDraftMetadataFileName))
     db.run(update)
   }
 }

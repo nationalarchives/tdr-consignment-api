@@ -6,7 +6,13 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput, UpdateExportDataInput, UpdateMetadataSchemaLibraryVersionInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
+  ConsignmentFilters,
+  StartUploadInput,
+  UpdateClientSideDraftMetadataFileNameInput,
+  UpdateExportDataInput,
+  UpdateMetadataSchemaLibraryVersionInput
+}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
@@ -382,6 +388,21 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       response should be(1)
       val consignment = consignmentRepository.getConsignment(consignmentId).futureValue.head
       consignment.metadataschemalibraryversion should be(version.some)
+  }
+
+  "updateClientSideDraftMetadataFileName" should "update the draft metadata file name for the consignment" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
+    val fileName = "a-filename.csv"
+
+    val response = consignmentRepository.updateClientSideDraftMetadataFileName(UpdateClientSideDraftMetadataFileNameInput(consignmentId, fileName)).futureValue
+
+    response should be(1)
+    val consignment = consignmentRepository.getConsignment(consignmentId).futureValue.head
+    consignment.clientsidedraftmetadatafilename should be(fileName.some)
   }
 
   "totalConsignments" should "return total number of consignments" in withContainers { case container: PostgreSQLContainer =>

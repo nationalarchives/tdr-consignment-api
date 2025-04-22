@@ -126,6 +126,7 @@ type Consignment {
   transferringBodyName: String
   transferringBodyTdrCode: String
   metadataSchemaLibraryVersion: String
+  clientSideDraftMetadataFileName: String
   allChecksSucceeded: Boolean!
   totalFiles: Int!
   totalFileSize: Long!
@@ -390,6 +391,7 @@ type Mutation {
   startUpload(startUploadInput: StartUploadInput!): String!
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
   updateConsignmentMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersion: UpdateMetadataSchemaLibraryVersionInput!): Int
+  updateClientSideDraftMetadataFileName(updateClientSideDraftMetadataFileName: UpdateClientSideDraftMetadataFileNameInput!): Int
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -477,6 +479,11 @@ input UpdateBulkFileMetadataInput {
   consignmentId: UUID!
   fileIds: [UUID!]!
   metadataProperties: [UpdateFileMetadataInput!]!
+}
+
+input UpdateClientSideDraftMetadataFileNameInput {
+  consignmentId: UUID!
+  clientSideDraftMetadataFileName: String!
 }
 
 input UpdateConsignmentSeriesIdInput {

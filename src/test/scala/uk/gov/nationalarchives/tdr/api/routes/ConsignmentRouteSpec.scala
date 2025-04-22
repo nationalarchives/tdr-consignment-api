@@ -29,6 +29,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val startUploadJsonFilePrefix: String = "json/startupload_"
   private val updateConsignmentSeriesIdJsonFilePrefix: String = "json/updateconsignmentseriesid_"
   private val updateConsignmentMetadataSchemaLibraryVersionPrefix: String = "json/updateconsignmentmetadataschemalibraryversion_"
+  private val updateClientSideDraftMetadataFileNamePrefix: String = "json/updateconsignment_draft_metadata_filename_"
   private val getConsignmentForMetadataReviewJsonFilePrefix: String = "json/getconsignmentsformetadatareview_"
 
   val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
@@ -60,6 +61,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlMutationUpdateMetadataSchemaLibraryVersion(data: Option[UpdateMetadataSchemaLibraryVersion], errors: List[GraphqlError] = Nil)
 
+  case class GraphqlMutationUpdateDraftMetadataFileName(data: Option[UpdateDraftMetadataFileName], errors: List[GraphqlError] = Nil)
+
   case class Consignment(
       consignmentid: Option[UUID] = None,
       userid: Option[UUID] = None,
@@ -79,7 +82,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       seriesName: Option[String],
       transferringBodyName: Option[String],
       transferringBodyTdrCode: Option[String],
-      metadataSchemaLibraryVersion: Option[String] = None
+      metadataSchemaLibraryVersion: Option[String] = None,
+      clientSideDraftMetadataFileName: Option[String] = None
   )
 
   case class ConsignmentStatus(
@@ -124,6 +128,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class UpdateSeriesIdOfConsignment(updateConsignmentSeriesId: Option[Int])
 
   case class UpdateMetadataSchemaLibraryVersion(updateConsignmentMetadataSchemaLibraryVersion: Int)
+
+  case class UpdateDraftMetadataFileName(updateClientSideDraftMetadataFileName: Int)
 
   case class FileStatus(fileId: UUID, statusType: String, statusValue: String)
 
@@ -178,6 +184,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     runTestRequest[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
   val runUpdateConsignmentMetadataSchemaLibraryVersionMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateMetadataSchemaLibraryVersion =
     runTestRequest[GraphqlMutationUpdateMetadataSchemaLibraryVersion](updateConsignmentMetadataSchemaLibraryVersionPrefix)
+  val runUpdateClientSideDraftMetadataFileNameMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateDraftMetadataFileName =
+    runTestRequest[GraphqlMutationUpdateDraftMetadataFileName](updateClientSideDraftMetadataFileNamePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String => GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
@@ -185,6 +193,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     getDataFromFile[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
   val expectedUpdateConsignmentMetadataSchemaLibraryVersionResponse: String => GraphqlMutationUpdateMetadataSchemaLibraryVersion =
     getDataFromFile[GraphqlMutationUpdateMetadataSchemaLibraryVersion](updateConsignmentMetadataSchemaLibraryVersionPrefix)
+  val expectedUpdateClientSideDraftMetadataFileNameResponse: String => GraphqlMutationUpdateDraftMetadataFileName =
+    getDataFromFile[GraphqlMutationUpdateDraftMetadataFileName](updateClientSideDraftMetadataFileNamePrefix)
   val expectedGetConsignmentForMetadataResponse: String => ConsignmentsForMetadataReviewData =
     getDataFromFile[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
 
@@ -890,6 +900,17 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       runUpdateConsignmentMetadataSchemaLibraryVersionMutation("mutation_all", validUserToken(body = defaultBodyCode))
 
     response.data.get.updateConsignmentMetadataSchemaLibraryVersion should equal(expectedResponse.data.get.updateConsignmentMetadataSchemaLibraryVersion)
+  }
+
+  "updateClientSideDraftMetadataFileName" should "update the consignment client side draft metadata file name" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.createConsignment(new FixedUUIDSource().uuid, userId)
+
+    val expectedResponse: GraphqlMutationUpdateDraftMetadataFileName = expectedUpdateClientSideDraftMetadataFileNameResponse("data_all")
+    val response: GraphqlMutationUpdateDraftMetadataFileName =
+      runUpdateClientSideDraftMetadataFileNameMutation("mutation_all", validUserToken(body = defaultBodyCode))
+
+    response.data.get.updateClientSideDraftMetadataFileName should equal(expectedResponse.data.get.updateClientSideDraftMetadataFileName)
   }
 
   private def checkConsignmentExists(consignmentId: UUID, utils: TestUtils): Unit = {

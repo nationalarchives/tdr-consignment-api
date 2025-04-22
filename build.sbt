@@ -62,11 +62,11 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.48",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.50",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.126",
   "org.postgresql" % "postgresql" % "42.7.5",
-  "com.typesafe.slick" %% "slick" % "3.5.2",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2",
+  "com.typesafe.slick" %% "slick" % "3.6.0",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.6.0",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
   "ch.qos.logback" % "logback-classic" % "1.5.18",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.1",
@@ -88,6 +88,10 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
 )
+
+//Akka Alpakka requires slick v3.5.2
+dependencyOverrides += "com.typesafe.slick" %% "slick" % "3.5.2"
+dependencyOverrides += "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2"
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
 (Test / fork) := true
