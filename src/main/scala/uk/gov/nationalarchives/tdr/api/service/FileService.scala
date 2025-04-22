@@ -335,7 +335,7 @@ object FileService {
     val metadataRows: List[FilemetadataRow]
   }
 
-  case class MatchedFileRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], matchId: Long) extends Rows
+  case class MatchedFileRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], matchId: String) extends Rows
 
   case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow]) extends Rows
 
