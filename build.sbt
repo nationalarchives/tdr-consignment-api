@@ -42,7 +42,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 
 lazy val akkaVersion = "2.10.0"
 lazy val akkaHttpVersion = "10.7.0"
-lazy val circeVersion = "0.14.12"
+lazy val circeVersion = "0.14.13"
 lazy val testContainersVersion = "0.43.0"
 
 libraryDependencies ++= Seq(
@@ -61,18 +61,18 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-optics" % "0.15.0",
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.4",
-  "com.softwaremill.sttp.client3" %% "core" % "3.10.3",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.48",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.116",
+  "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.50",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.126",
   "org.postgresql" % "postgresql" % "42.7.5",
-  "com.typesafe.slick" %% "slick" % "3.5.2",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2",
+  "com.typesafe.slick" %% "slick" % "3.6.0",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.6.0",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
   "ch.qos.logback" % "logback-classic" % "1.5.18",
-  "net.logstash.logback" % "logstash-logback-encoder" % "8.0",
+  "net.logstash.logback" % "logstash-logback-encoder" % "8.1",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.1",
-  "software.amazon.awssdk" % "rds" % "2.31.10",
-  "software.amazon.awssdk" % "sts" % "2.31.10",
+  "software.amazon.awssdk" % "rds" % "2.31.26",
+  "software.amazon.awssdk" % "sts" % "2.31.26",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
@@ -81,13 +81,17 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-pki" % akkaVersion,
-  "com.tngtech.keycloakmock" % "mock" % "0.17.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.236",
-  "io.github.hakky54" % "logcaptor" % "2.10.1" % Test,
+  "com.tngtech.keycloakmock" % "mock" % "0.18.0" % Test,
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.238",
+  "io.github.hakky54" % "logcaptor" % "2.11.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
 )
+
+//Akka Alpakka requires slick v3.5.2
+dependencyOverrides += "com.typesafe.slick" %% "slick" % "3.5.2"
+dependencyOverrides += "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2"
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
 (Test / fork) := true
