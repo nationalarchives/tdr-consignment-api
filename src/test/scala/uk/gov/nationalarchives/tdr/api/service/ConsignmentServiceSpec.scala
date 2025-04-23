@@ -681,17 +681,29 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
   }
 
-  "updateMetadataSchemaLibraryVersionOfConsignment" should "update the schema library version for consignment" in {
+  "updateMetadataSchemaLibraryVersionOfConsignment" should "pass correct input values to repository" in {
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val schemaVersion = "12344"
-    val expectedNumbersOfRowsUpdatedResult = 1
+    val inputCaptor: ArgumentCaptor[UpdateMetadataSchemaLibraryVersionInput] = ArgumentCaptor.forClass(classOf[UpdateMetadataSchemaLibraryVersionInput])
 
-    when(consignmentRepoMock.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion)))
-      .thenReturn(Future.successful(expectedNumbersOfRowsUpdatedResult))
+    when(consignmentRepoMock.updateMetadataSchemaLibraryVersion(inputCaptor.capture()))
+      .thenReturn(Future.successful(1))
+    consignmentService.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion))
+    inputCaptor.getValue.consignmentId should equal(consignmentId)
+    inputCaptor.getValue.metadataSchemaLibraryVersion should equal(schemaVersion)
+  }
 
-    val result = consignmentService.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion)).futureValue
+  "updateClientSideDraftMetadataFileName" should "pass correct input values to repository" in {
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val clientSideDraftMetadataFileName = "some file name.csv"
+    val inputCaptor: ArgumentCaptor[UpdateClientSideDraftMetadataFileNameInput] = ArgumentCaptor.forClass(classOf[UpdateClientSideDraftMetadataFileNameInput])
 
-    result should equal(expectedNumbersOfRowsUpdatedResult)
+    when(consignmentRepoMock.updateClientSideDraftMetadataFileName(inputCaptor.capture()))
+      .thenReturn(Future.successful(1))
+
+    consignmentService.updateClientSideDraftMetadataFileName(UpdateClientSideDraftMetadataFileNameInput(consignmentId, clientSideDraftMetadataFileName)).futureValue
+    inputCaptor.getValue.consignmentId should equal(consignmentId)
+    inputCaptor.getValue.clientSideDraftMetadataFileName should equal(clientSideDraftMetadataFileName)
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {

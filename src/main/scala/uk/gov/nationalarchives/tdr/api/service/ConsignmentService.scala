@@ -152,6 +152,10 @@ class ConsignmentService(
     consignmentRepository.updateMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersionInput)
   }
 
+  def updateClientSideDraftMetadataFileName(input: UpdateClientSideDraftMetadataFileNameInput): Future[Int] = {
+    consignmentRepository.updateClientSideDraftMetadataFileName(input)
+  }
+
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
     Consignment(
       row.consignmentid,
@@ -168,7 +172,8 @@ class ConsignmentService(
       row.seriesname,
       row.transferringbodyname,
       row.transferringbodytdrcode,
-      row.metadataschemalibraryversion
+      row.metadataschemalibraryversion,
+      row.clientsidedraftmetadatafilename
     )
   }
 
