@@ -6,7 +6,7 @@ import sangria.marshalling.circe._
 import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, fields}
 import uk.gov.nationalarchives.tdr.api.auth.ValidateUserHasAccessToConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
-import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
+import uk.gov.nationalarchives.tdr.api.graphql.validation.{ServiceTransfer, UserOwnsConsignment}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.UuidType
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.FileType
 
@@ -17,7 +17,9 @@ object FileFields {
   case class FileMatches(fileId: UUID, matchId: Long)
 
   case class ClientSideMetadataInput(originalPath: String, checksum: String, lastModified: Long, fileSize: Long, matchId: Long)
-  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[ClientSideMetadataInput], emptyDirectories: List[String] = Nil) extends UserOwnsConsignment
+  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[ClientSideMetadataInput], emptyDirectories: List[String] = Nil, userIdOverride: Option[UUID] = None)
+      extends UserOwnsConsignment
+      with ServiceTransfer
 
   case class AllDescendantsInput(consignmentId: UUID, parentIds: List[UUID]) extends UserOwnsConsignment
 
