@@ -19,7 +19,7 @@ import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileS
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
-import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
+import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils.{TreeNodeInput, _}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -47,9 +47,10 @@ class FileService(
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
-    val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
-    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
-    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
+    val filePathInputs = addFileAndMetadataInput.metadataInput.map(i => TreeNodeInput(i.originalPath, Some(i.matchId.toString))).toSet
+    val emptyDirectoriesInputs = addFileAndMetadataInput.emptyDirectories.map(i => TreeNodeInput(i)).toSet
+    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePathInputs, fileTypeIdentifier)
+    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(emptyDirectoriesInputs, directoryTypeIdentifier)
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
     val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
@@ -67,7 +68,8 @@ class FileService(
           filename = Some(treeNode.name),
           parentid = parentId,
           filereference = treeNode.reference,
-          parentreference = parentFileReference
+          parentreference = parentFileReference,
+          sourcematchid = treeNode.matchId
         )
 
         val commonMetadataRows = List(
