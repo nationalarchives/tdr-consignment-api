@@ -70,7 +70,7 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
     treeNode.get.treeNodeType should be(NodeType.fileTypeIdentifier)
     treeNode.get.parentPath.isEmpty should be(true)
     treeNode.get.name should be(fileName)
-    treeNode.get.reference should be (Some("ref1"))
+    treeNode.get.reference should be(Some("ref1"))
     treeNode.get.matchId.get should be(matchId)
   }
 
