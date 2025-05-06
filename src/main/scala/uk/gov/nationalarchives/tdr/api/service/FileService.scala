@@ -47,7 +47,7 @@ class FileService(
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
-    val filePathInputs = addFileAndMetadataInput.metadataInput.map(i => TreeNodeInput(i.originalPath, Some(i.matchId.toString))).toSet
+    val filePathInputs = addFileAndMetadataInput.metadataInput.map(i => TreeNodeInput(i.originalPath, Some(i.matchId))).toSet
     val emptyDirectoriesInputs = addFileAndMetadataInput.emptyDirectories.map(i => TreeNodeInput(i)).toSet
     val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePathInputs, fileTypeIdentifier)
     val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(emptyDirectoriesInputs, directoryTypeIdentifier)
@@ -69,7 +69,7 @@ class FileService(
           parentid = parentId,
           filereference = treeNode.reference,
           parentreference = parentFileReference,
-          sourcematchid = treeNode.matchId
+          uploadmatchid = treeNode.matchId
         )
 
         val commonMetadataRows = List(
