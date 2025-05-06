@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
