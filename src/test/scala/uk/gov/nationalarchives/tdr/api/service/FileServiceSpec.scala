@@ -938,10 +938,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
 
     response.head.fileId should equal(file1Id)
-    response.head.matchId should equal(2)
+    response.head.matchId should equal("2")
 
     response.last.fileId should equal(file2Id)
-    response.last.matchId should equal(1)
+    response.last.matchId should equal("1")
 
     val expectedFileRows = 5
     fileRows.size should equal(expectedFileRows)
@@ -1372,8 +1372,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   }
 
   private def setupMetadataInput(consignmentId: UUID, userId: Option[UUID] = None): AddFileAndMetadataInput = {
-    val metadataInputOne = ClientSideMetadataInput("/a/nested/path/OriginalPath1", "Checksum1", 1L, 1L, 1)
-    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, 2)
+    val metadataInputOne = ClientSideMetadataInput("/a/nested/path/OriginalPath1", "Checksum1", 1L, 1L, "1")
+    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, "2")
     AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo), userIdOverride = userId)
   }
 

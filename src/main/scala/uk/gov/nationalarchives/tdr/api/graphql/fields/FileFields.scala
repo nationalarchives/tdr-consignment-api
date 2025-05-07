@@ -17,9 +17,9 @@ object FileFields {
   case class FileMatches(fileId: UUID, matchId: String)
 
   case class ClientSideMetadataInput(originalPath: String, checksum: String, lastModified: Long, fileSize: Long, matchId: String)
-  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[ClientSideMetadataInput], emptyDirectories: List[String] = Nil)
-    extends UserOwnsConsignment
-    with ServiceTransfer
+  case class AddFileAndMetadataInput(consignmentId: UUID, metadataInput: List[ClientSideMetadataInput], emptyDirectories: List[String] = Nil, userIdOverride: Option[UUID] = None)
+      extends UserOwnsConsignment
+      with ServiceTransfer
 
   case class AllDescendantsInput(consignmentId: UUID, parentIds: List[UUID]) extends UserOwnsConsignment
 
