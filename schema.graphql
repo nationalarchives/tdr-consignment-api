@@ -110,7 +110,7 @@ input ClientSideMetadataInput {
   checksum: String!
   lastModified: Long!
   fileSize: Long!
-  matchId: Long!
+  matchId: String!
 }
 
 type Consignment {
@@ -327,7 +327,7 @@ input FileFilters {
 
 type FileMatches {
   fileId: UUID!
-  matchId: Long!
+  matchId: String!
 }
 
 type FileMetadata {
