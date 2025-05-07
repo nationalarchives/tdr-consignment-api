@@ -58,6 +58,52 @@ class TreeNodeUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers with
     fileTreeNode.get.reference should be(Some("ref2"))
   }
 
+  "generateNodes" should "generate the correct nodes for multiple paths" in {
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4"))
+    val filePath1 = "/aFolder/file1"
+    val filePath2 = "/bFolder/file2"
+    val matchId1 = "1"
+    val matchId2 = "2"
+    val inputs = Set(
+      TreeNodeInput(filePath1, Some(matchId1)),
+      TreeNodeInput(filePath2, Some(matchId2))
+    )
+    val result = TreeNodesUtils(
+      new FixedUUIDSource,
+      referenceGeneratorServiceMock,
+      ConfigFactory.load()
+    ).generateNodes(inputs, fileTypeIdentifier)
+
+    result.size should equal(4)
+    val aFolderNone = result("aFolder")
+    aFolderNone.treeNodeType should be(NodeType.directoryTypeIdentifier)
+    aFolderNone.name should be("aFolder")
+    aFolderNone.reference.get should be("ref2")
+    aFolderNone.parentPath should be(None)
+    aFolderNone.matchId should be(None)
+
+    val file1Node = result("aFolder/file1")
+    file1Node.treeNodeType should be(NodeType.fileTypeIdentifier)
+    file1Node.name should be("file1")
+    file1Node.reference.get should be("ref1")
+    file1Node.parentPath.get should be("aFolder")
+    file1Node.matchId.get should be("1")
+
+    val bFolderNode = result("bFolder")
+    bFolderNode.treeNodeType should be(NodeType.directoryTypeIdentifier)
+    bFolderNode.name should be("bFolder")
+    bFolderNode.reference.get should be("ref4")
+    bFolderNode.parentPath should be(None)
+    bFolderNode.matchId should be(None)
+
+    val file2Node = result("bFolder/file2")
+    file2Node.treeNodeType should be(NodeType.fileTypeIdentifier)
+    file2Node.name should be("file2")
+    file2Node.reference.get should be("ref3")
+    file2Node.parentPath.get should be("bFolder")
+    file2Node.matchId.get should be("2")
+  }
+
   "generateNodes" should "generate the correct nodes for a single file" in {
     when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1"))
     val fileName = "file"

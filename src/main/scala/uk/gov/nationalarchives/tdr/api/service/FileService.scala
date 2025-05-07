@@ -135,13 +135,13 @@ class FileService(
   }
 
   def getFileDetails(ids: Seq[UUID]): Future[Seq[FileDetails]] = {
-    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3, f._4)))
+    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3, f._4, f._5)))
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
     fileRepository
       .getFileFields(fileIds.toSet)
-      .map(_.map { case (fileId, _, userId, _) => FileOwnership(fileId, userId) })
+      .map(_.map { case (fileId, _, userId, _, _) => FileOwnership(fileId, userId) })
   }
 
   def fileCount(consignmentId: UUID): Future[Int] = {
@@ -264,6 +264,7 @@ object FileService {
           val statuses = fileStatuses.filter(_.fileId == fileId)
           File(
             fileId,
+            fr.uploadmatchid,
             fr.filetype,
             fr.filename,
             fr.filereference,
@@ -302,6 +303,7 @@ object FileService {
         val statuses = fileStatuses.filter(_.fileId == id)
         File(
           id,
+          fr.uploadmatchid,
           fr.filetype,
           fr.filename,
           fr.filereference,
@@ -345,5 +347,5 @@ object FileService {
 
   case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
 
-  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID, consignmentId: UUID)
+  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID, consignmentId: UUID, uploadMatchId: Option[String])
 }
