@@ -102,7 +102,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
     val expectedResponse = expectedFilesAndMetadataMutationResponse("data_all")
     val response = runTestMutationFileMetadata("mutation_alldata_3", validUserToken())
-    expectedResponse.data.get.addFilesAndMetadata should equal(response.data.get.addFilesAndMetadata)
+    response.data.get.addFilesAndMetadata should equal(expectedResponse.data.get.addFilesAndMetadata)
     referenceMockServer.stop()
   }
 

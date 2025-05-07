@@ -277,6 +277,7 @@ type FFIDProgress {
 
 type File {
   fileId: UUID!
+  uploadMatchId: String
   fileType: String
   fileName: String
   fileReference: String

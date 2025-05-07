@@ -298,10 +298,11 @@ class TestUtils(db: JdbcBackend#Database) {
       parentId: Option[UUID] = None,
       userId: UUID = userId,
       fileRef: Option[String] = None,
-      parentRef: Option[String] = None
+      parentRef: Option[String] = None,
+      uploadMatchId: Option[String] = None
   ): Unit = {
     val sql =
-      s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId", "FileReference", "ParentReference") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+      s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId", "FileReference", "ParentReference", "UploadMatchId") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
@@ -312,6 +313,7 @@ class TestUtils(db: JdbcBackend#Database) {
     ps.setObject(7, parentId.map(_.toString).orNull, Types.OTHER)
     ps.setString(8, fileRef.orNull)
     ps.setString(9, parentRef.orNull)
+    ps.setString(10, uploadMatchId.orNull)
     ps.executeUpdate()
   }
 
