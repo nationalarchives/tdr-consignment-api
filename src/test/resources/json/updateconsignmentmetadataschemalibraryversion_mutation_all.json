@@ -1,0 +1,9 @@
+{
+  "query": "mutation updateConsignmentMetadataSchemaLibraryVersion($updateConsignmentMetadataSchemaLibraryVersionInput: UpdateMetadataSchemaLibraryVersionInput!){updateConsignmentMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersion: $updateConsignmentMetadataSchemaLibraryVersionInput)}",
+  "variables": {
+    "updateConsignmentMetadataSchemaLibraryVersionInput": {
+      "consignmentId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+      "metadataSchemaLibraryVersion":"v1.0"
+    }
+  }
+}

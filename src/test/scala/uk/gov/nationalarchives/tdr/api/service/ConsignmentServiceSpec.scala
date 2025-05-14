@@ -191,7 +191,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       includetoplevelfolder = Some(true),
       seriesname = Some("seriesName"),
       transferringbodyname = Some("transferringBodyName"),
-      transferringbodytdrcode = Some("transferringBodyTdrCode")
+      transferringbodytdrcode = Some("transferringBodyTdrCode"),
+      metadataschemalibraryversion = Some("0.0.Version")
     )
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
     when(consignmentRepoMock.getConsignment(any[UUID])).thenReturn(mockResponse)
@@ -208,6 +209,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.seriesName should equal(consignmentRow.seriesname)
     consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
+    consignment.metadataSchemaLibraryVersion should equal(consignmentRow.metadataschemalibraryversion)
   }
 
   "getConsignment" should "return none when consignment id does not exist" in {
@@ -677,6 +679,31 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(statusRows))
     val exception = consignmentService.startUpload(StartUploadInput(consignmentId, "parentFolder", false)).failed.futureValue
     exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")
+  }
+
+  "updateMetadataSchemaLibraryVersionOfConsignment" should "pass correct input values to repository" in {
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val schemaVersion = "12344"
+    val inputCaptor: ArgumentCaptor[UpdateMetadataSchemaLibraryVersionInput] = ArgumentCaptor.forClass(classOf[UpdateMetadataSchemaLibraryVersionInput])
+
+    when(consignmentRepoMock.updateMetadataSchemaLibraryVersion(inputCaptor.capture()))
+      .thenReturn(Future.successful(1))
+    consignmentService.updateMetadataSchemaLibraryVersion(UpdateMetadataSchemaLibraryVersionInput(consignmentId, schemaVersion))
+    inputCaptor.getValue.consignmentId should equal(consignmentId)
+    inputCaptor.getValue.metadataSchemaLibraryVersion should equal(schemaVersion)
+  }
+
+  "updateClientSideDraftMetadataFileName" should "pass correct input values to repository" in {
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val clientSideDraftMetadataFileName = "some file name.csv"
+    val inputCaptor: ArgumentCaptor[UpdateClientSideDraftMetadataFileNameInput] = ArgumentCaptor.forClass(classOf[UpdateClientSideDraftMetadataFileNameInput])
+
+    when(consignmentRepoMock.updateClientSideDraftMetadataFileName(inputCaptor.capture()))
+      .thenReturn(Future.successful(1))
+
+    consignmentService.updateClientSideDraftMetadataFileName(UpdateClientSideDraftMetadataFileNameInput(consignmentId, clientSideDraftMetadataFileName)).futureValue
+    inputCaptor.getValue.consignmentId should equal(consignmentId)
+    inputCaptor.getValue.clientSideDraftMetadataFileName should equal(clientSideDraftMetadataFileName)
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {

@@ -148,6 +148,14 @@ class ConsignmentService(
     consignmentRepository.getTotalConsignments(consignmentFilters).map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
   }
 
+  def updateMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersionInput: UpdateMetadataSchemaLibraryVersionInput): Future[Int] = {
+    consignmentRepository.updateMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersionInput)
+  }
+
+  def updateClientSideDraftMetadataFileName(input: UpdateClientSideDraftMetadataFileNameInput): Future[Int] = {
+    consignmentRepository.updateClientSideDraftMetadataFileName(input)
+  }
+
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
     Consignment(
       row.consignmentid,
@@ -163,7 +171,9 @@ class ConsignmentService(
       row.includetoplevelfolder,
       row.seriesname,
       row.transferringbodyname,
-      row.transferringbodytdrcode
+      row.transferringbodytdrcode,
+      row.metadataschemalibraryversion,
+      row.clientsidedraftmetadatafilename
     )
   }
 

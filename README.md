@@ -28,7 +28,7 @@ Run the api:
 
 1. The repository and route tests use a docker container for the database. To run the tests locally, you will need to build this database.
 ```shell
-docker build -f Dockerfile-tests -t tests .
+docker build --no-cache -f Dockerfile-tests -t tests .
 ```
 
 2. In order to run the tests run the command `sbt test`

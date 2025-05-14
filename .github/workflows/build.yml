@@ -16,11 +16,14 @@ jobs:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
       AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
+      WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+      WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+      WIZ_PROJECT_ID: ${{ secrets.WIZ_PROJECT_TDR }}
   deploy:
     needs: pre-deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.next-version }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
