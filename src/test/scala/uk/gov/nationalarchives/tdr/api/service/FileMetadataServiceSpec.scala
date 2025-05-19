@@ -461,7 +461,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     response(fileIdOne).clientSideFileSize.get should equal(1)
     response(fileIdTwo).foiExemptionCode.get should equal("valueTwo")
     response(fileIdTwo).closureStartDate.get should equal(closureStartDate.toLocalDateTime)
-    response(fileIdTwo).closurePeriod.get should equal(1)
+    response(fileIdTwo).closurePeriod.get should equal("1")
     response(fileIdTwo).titleClosed.get should equal(true)
     response(fileIdTwo).descriptionClosed.get should equal(true)
     response(fileIdTwo).foiExemptionAsserted.get should equal(foiExemptionAsserted.toLocalDateTime)
