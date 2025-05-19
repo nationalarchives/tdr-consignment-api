@@ -355,7 +355,7 @@ type FileMetadataValues {
   heldBy: String
   language: String
   foiExemptionCode: String
-  closurePeriod: Int
+  closurePeriod: String
   closureStartDate: LocalDateTime
   foiExemptionAsserted: LocalDateTime
   titleClosed: Boolean
