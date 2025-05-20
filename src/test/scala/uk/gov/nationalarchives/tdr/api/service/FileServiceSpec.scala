@@ -538,7 +538,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         Some("heldBy"),
         Some("language"),
         Some("foiExemption"),
-        Some(0),
+        Some("0"),
         Some(closureStartDate.toLocalDateTime),
         Some(foiExemptionAsserted.toLocalDateTime),
         Some(true),
