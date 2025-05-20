@@ -221,6 +221,7 @@ object FileMetadataService {
 
   case class File(
       fileId: UUID,
+      uploadMatchId: Option[String] = None,
       fileType: Option[String] = None,
       fileName: Option[String] = None,
       fileReference: Option[Reference],

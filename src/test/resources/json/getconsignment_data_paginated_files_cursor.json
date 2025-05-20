@@ -17,7 +17,8 @@
               "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
               "fileName": "fileOneName",
               "fileType": "File",
-              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+              "uploadMatchId": "1"
             },
             "cursor": "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
           },
@@ -26,7 +27,8 @@
               "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
               "fileName": "fileThreeName",
               "fileType": "File",
-              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12"
+              "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+              "uploadMatchId": "3"
             },
             "cursor": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
           }
