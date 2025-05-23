@@ -17,7 +17,7 @@ import scala.language.postfixOps
 trait AuthorisationTag extends ValidationTag {
   val antiVirusRole = "antivirus"
   val checksumRole = "checksum"
-  val clientFileMetadataRole = "client_file_metadata"
+  val dataLoadRole = "data-load"
   val fileFormatRole = "file_format"
   val exportRole = "export"
   val reportingRole = "reporting"
@@ -77,14 +77,13 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateConsignment: Boolean = false) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
-
-    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole)
-
     val arg: T = ctx.arg[T](argument.name)
+    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole)
+    lazy val hasUserIdOverrideAccess: Boolean = token.transferServiceRoles.contains(dataLoadRole)
 
     val userId: UUID = arg match {
-      case st: ServiceTransfer if st.userIdOverride.isDefined => st.userIdOverride.get
-      case _                                                  => token.userId
+      case st: ServiceTransfer if st.userIdOverride.isDefined && hasUserIdOverrideAccess => st.userIdOverride.get
+      case _                                                                             => token.userId
     }
 
     val consignmentId: UUID = arg match {
@@ -133,21 +132,6 @@ object ValidateHasChecksumMetadataAccess extends SyncAuthorisationTag {
     } else {
       val tokenUserId = token.userId
       throw AuthorisationException(s"User '$tokenUserId' does not have permission to update checksum metadata")
-    }
-  }
-}
-
-object ValidateHasClientFileMetadataAccess extends SyncAuthorisationTag {
-  override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
-    val token = ctx.ctx.accessToken
-    val clientFileMetadataAccess = token.backendChecksRoles.contains(clientFileMetadataRole)
-    val fileId = ctx.arg[UUID]("fileId")
-
-    if (clientFileMetadataAccess) {
-      continue
-    } else {
-      val tokenUserId = token.userId
-      throw AuthorisationException(s"User '$tokenUserId' does not have permission to access the client file metadata for file $fileId")
     }
   }
 }
