@@ -135,6 +135,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class File(
       fileId: UUID,
+      uploadMatchId: Option[String],
       fileType: Option[String],
       fileName: Option[String],
       fileReference: Option[Reference],
@@ -241,9 +242,17 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitleClosed, DescriptionClosed, ClosureStartDate).foreach(utils.addFileProperty(_))
 
-    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID, fileRef = Some("REF1"))
-    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID, fileRef = Some("REF2"))
-    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID, fileRef = Some("REF3"), parentRef = Some("REF1"))
+    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID, fileRef = Some("REF1"), uploadMatchId = Some("1"))
+    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID, fileRef = Some("REF2"), uploadMatchId = Some("2"))
+    utils.createFile(
+      UUID.fromString(fileThreeId),
+      defaultConsignmentId,
+      fileName = "fileThreeName",
+      parentId = parentUUID,
+      fileRef = Some("REF3"),
+      parentRef = Some("REF1"),
+      uploadMatchId = Some("3")
+    )
 
     utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileOneId), "FFID", "Success")
     utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "FFID", "Success")
@@ -1031,9 +1040,9 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private def setUpStandardConsignmentAndFiles(utils: TestUtils): Unit = {
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
     utils.createFile(parentUUID.get, defaultConsignmentId, NodeType.directoryTypeIdentifier, "parentFolderName")
-    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID)
-    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID)
-    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID)
+    utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID, uploadMatchId = Some("1"))
+    utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID, uploadMatchId = Some("2"))
+    utils.createFile(UUID.fromString(fileThreeId), defaultConsignmentId, fileName = "fileThreeName", parentId = parentUUID, uploadMatchId = Some("3"))
     utils.addParentFolderName(defaultConsignmentId, "ALL CONSIGNMENT DATA PARENT FOLDER")
     utils.createConsignmentStatus(defaultConsignmentId, "Upload", "Completed")
   }

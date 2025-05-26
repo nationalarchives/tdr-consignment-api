@@ -207,7 +207,7 @@ object FileMetadataService {
       propertyNameMap.get(HeldBy),
       propertyNameMap.get(Language),
       propertyNameMap.get(FoiExemptionCode),
-      propertyNameMap.get(ClosurePeriod).map(_.toInt),
+      propertyNameMap.get(ClosurePeriod),
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(TitleClosed).map(_.toBoolean),
@@ -221,6 +221,7 @@ object FileMetadataService {
 
   case class File(
       fileId: UUID,
+      uploadMatchId: Option[String] = None,
       fileType: Option[String] = None,
       fileName: Option[String] = None,
       fileReference: Option[Reference],
@@ -246,7 +247,7 @@ object FileMetadataService {
       heldBy: Option[String],
       language: Option[String],
       foiExemptionCode: Option[String],
-      closurePeriod: Option[Int],
+      closurePeriod: Option[String],
       closureStartDate: Option[LocalDateTime],
       foiExemptionAsserted: Option[LocalDateTime],
       titleClosed: Option[Boolean],
