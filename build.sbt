@@ -46,7 +46,7 @@ lazy val circeVersion = "0.14.13"
 lazy val testContainersVersion = "0.43.0"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.2.6",
+  "org.sangria-graphql" %% "sangria" % "4.2.7",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -71,8 +71,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.18",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.1",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.1",
-  "software.amazon.awssdk" % "rds" % "2.31.50",
-  "software.amazon.awssdk" % "sts" % "2.31.50",
+  "software.amazon.awssdk" % "rds" % "2.31.51",
+  "software.amazon.awssdk" % "sts" % "2.31.51",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
