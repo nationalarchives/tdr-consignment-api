@@ -20,6 +20,7 @@ input AddFileAndMetadataInput {
   consignmentId: UUID!
   metadataInput: [ClientSideMetadataInput!]!
   emptyDirectories: [String!] = []
+  userIdOverride: UUID
 }
 
 input AddFileMetadataWithFileIdInput {
