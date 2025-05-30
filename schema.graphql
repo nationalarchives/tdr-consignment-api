@@ -277,6 +277,7 @@ type FFIDProgress {
 
 type File {
   fileId: UUID!
+  uploadMatchId: String
   fileType: String
   fileName: String
   fileReference: String
@@ -355,7 +356,7 @@ type FileMetadataValues {
   heldBy: String
   language: String
   foiExemptionCode: String
-  closurePeriod: Int
+  closurePeriod: String
   closureStartDate: LocalDateTime
   foiExemptionAsserted: LocalDateTime
   titleClosed: Boolean
