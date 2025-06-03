@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
+import java.util.UUID
 import io.circe.generic.auto._
 import sangria.macros.derive.{deriveInputObjectType, deriveObjectType}
 import sangria.marshalling.circe._
@@ -7,8 +8,7 @@ import sangria.schema.{Argument, Field, InputObjectType, ListType, ObjectType, f
 import uk.gov.nationalarchives.tdr.api.auth.ValidateHasChecksumMetadataAccess
 import uk.gov.nationalarchives.tdr.api.graphql.ConsignmentApiContext
 import uk.gov.nationalarchives.tdr.api.metadatainputvalidation.ValidateMetadataInput
-
-import java.util.UUID
+import FieldTypes._
 
 object FileMetadataFields {
   trait FileMetadataBase {
