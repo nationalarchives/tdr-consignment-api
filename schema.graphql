@@ -77,11 +77,6 @@ input AddTransferAgreementPrivateBetaInput {
   allEnglish: Boolean
 }
 
-input AllDescendantsInput {
-  consignmentId: UUID!
-  parentIds: [UUID!]!
-}
-
 type AntivirusMetadata {
   fileId: UUID!
   software: String!
@@ -420,7 +415,6 @@ type Query {
   getConsignmentsForMetadataReview: [Consignment!]!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
   displayProperties(consignmentid: UUID!): [DisplayPropertyField!]!
-  allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
 }
 
 type Series {

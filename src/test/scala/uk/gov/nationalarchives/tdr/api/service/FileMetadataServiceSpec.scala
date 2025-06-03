@@ -6,12 +6,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
+import uk.gov.nationalarchives.Tables.FilemetadataRow
+import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, Defined, Supplied, System, Text}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
-import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -399,100 +398,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FileMetadataService.Language shouldEqual "Language"
     FileMetadataService.FoiExemptionCode shouldEqual "FoiExemptionCode"
     FileMetadataService.FileUUID shouldEqual "UUID"
-  }
-
-  private def generateFileStatusRows(fileIds: Seq[UUID]) = {
-    fileIds.map(id => FilestatusRow(UUID.randomUUID(), id, "statusType", "value", Timestamp.from(FixedTimeSource.now)))
-  }
-
-  private def generateFileRows(fileUuids: Seq[UUID], filesInFolderFixedFileUuids: Seq[UUID], fixedUserId: UUID, consignmentId: UUID = UUID.randomUUID()): Seq[FileRow] = {
-    val timestamp: Timestamp = Timestamp.from(FixedTimeSource.now)
-
-    val folderFileRow = Seq(
-      FileRow(
-        fileUuids.head,
-        consignmentId,
-        fixedUserId,
-        timestamp,
-        Some(true),
-        Some(directoryTypeIdentifier),
-        Some("folderName")
-      )
-    )
-
-    val fileRowsForFilesInFolder: Seq[FileRow] = filesInFolderFixedFileUuids
-      .drop(1)
-      .map(fileUuid =>
-        FileRow(
-          fileUuid,
-          consignmentId,
-          fixedUserId,
-          timestamp,
-          Some(true),
-          Some(fileTypeIdentifier),
-          Some("fileName"),
-          Some(fileUuids.head)
-        )
-      )
-
-    val folderAndFileRows = folderFileRow ++ fileRowsForFilesInFolder
-
-    val fileRowsExceptFirst: Seq[FileRow] = fileUuids
-      .drop(1)
-      .map(fileUuid =>
-        FileRow(
-          fileUuid,
-          consignmentId,
-          fixedUserId,
-          timestamp,
-          Some(true),
-          Some(fileTypeIdentifier),
-          Some("fileName")
-        )
-      )
-
-    folderAndFileRows ++ fileRowsExceptFirst
-  }
-
-  private class UpdateBulkMetadataTestSetUp() {
-    val userId: UUID = UUID.randomUUID()
-    val consignmentId: UUID = UUID.randomUUID()
-    val folderId: UUID = UUID.fromString("f89da9b9-4c3b-4a17-a903-61c36b822c17")
-    val fileId1: UUID = UUID.randomUUID()
-    val childFileId1: UUID = UUID.randomUUID()
-    val childFileId2: UUID = UUID.randomUUID()
-
-    val folderAndChildrenIds: Seq[UUID] = Seq(folderId, childFileId1, childFileId2)
-    val inputFileIds: Seq[UUID] = Seq(folderId, fileId1)
-
-    val fixedUUIDSource = new FixedUUIDSource()
-    fixedUUIDSource.reset
-
-    val metadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
-    val fileRepositoryMock: FileRepository = mock[FileRepository]
-    val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
-    val validateFileMetadataServiceMock: ValidateFileMetadataService = mock[ValidateFileMetadataService]
-    val consignmentStatusServiceMock: ConsignmentStatusService = mock[ConsignmentStatusService]
-    val fileStatusServiceMock: FileStatusService = mock[FileStatusService]
-
-    val getAllDescendentIdsCaptor: ArgumentCaptor[Seq[UUID]] = ArgumentCaptor.forClass(classOf[Seq[UUID]])
-    val deletePropertyNamesCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
-    val addFileMetadataCaptor: ArgumentCaptor[Seq[AddFileMetadataInput]] = ArgumentCaptor.forClass(classOf[Seq[AddFileMetadataInput]])
-    val deleteFileMetadataIdsArgCaptor: ArgumentCaptor[Set[UUID]] = ArgumentCaptor.forClass(classOf[Set[UUID]])
-
-    def stubRepoResponses(
-        getAllDescendantsResponse: Seq[FileRow] = Seq(),
-        deleteFileMetadataResponse: Int = 0,
-        addFileMetadataResponse: Seq[FilemetadataRow] = Seq()
-    ): Unit = {
-
-      when(fileRepositoryMock.getAllDescendants(getAllDescendentIdsCaptor.capture())).thenReturn(Future(getAllDescendantsResponse))
-      when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
-        .thenReturn(Future(addFileMetadataResponse))
-      when(validateFileMetadataServiceMock.validateAdditionalMetadata(any[Set[UUID]], any[Set[String]])).thenReturn(Future(List()))
-      when(consignmentStatusServiceMock.updateMetadataConsignmentStatus(any[UUID], any[List[String]]))
-        .thenReturn(Future.successful(1 :: Nil))
-    }
   }
 
   private class AddOrUpdateBulkMetadataTestSetUp() {

@@ -23,7 +23,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   case class FileNameAndPath(fileName: String, path: String)
 
   private val addFilesAndMetadataJsonFilePrefix: String = "json/addfileandmetadata_"
-  private val allDescendantsJsonFilePrefix: String = "json/alldescendants_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -41,11 +40,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     runTestRequest[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
   val expectedFilesAndMetadataMutationResponse: String => GraphqlMutationDataFilesMetadata =
     getDataFromFile[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
-
-  val runTestQueryAllDescendants: (String, OAuth2BearerToken) => GraphqlQueryDataAllDescendants =
-    runTestRequest[GraphqlQueryDataAllDescendants](allDescendantsJsonFilePrefix)
-  val expectedAllDescendantsQueryResponse: String => GraphqlQueryDataAllDescendants =
-    getDataFromFile[GraphqlQueryDataAllDescendants](allDescendantsJsonFilePrefix)
 
   val fixedUuidSource = new FixedUUIDSource()
 
@@ -106,76 +100,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     referenceMockServer.stop()
   }
 
-  "allDescendants" should "return parents and all descendants for the given parent ids" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_multiple_parentids")
-    val response = runTestQueryAllDescendants("query_multiple_parentids", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "return parent and all descendants of the given single parent id" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_single_parentid")
-    val response = runTestQueryAllDescendants("query_single_parentid", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "only return parent where no descendants" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_descendants")
-    val response = runTestQueryAllDescendants("query_no_descendants", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "return an empty response if no parent ids passed" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_parentids")
-    val response = runTestQueryAllDescendants("query_no_parentids", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "not allow a user to get descendants for a consignment that they did not create" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val otherUserId = "73abd1dc-294d-4068-b60d-c1cd4782d08d"
-    createConsignmentStructure(utils, UUID.fromString(otherUserId))
-    val consignmentId = UUID.fromString("f1dbc692-e56c-4d76-be94-d8d3d79bd38a")
-
-    utils.createConsignment(consignmentId, UUID.fromString(otherUserId))
-
-    val response = runTestQueryAllDescendants("query_no_descendants", validUserToken())
-
-    response.errors should have size 1
-    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
-  }
-
-  "allDescendants" should "return an error where no consignment id input argument provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_consignmentid")
-    val response = runTestQueryAllDescendants("query_no_consignmentid", validUserToken())
-
-    response should equal(expectedResponse)
-  }
-
-  "allDescendants" should "return an error where no parent id input argument provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_parentids_input")
-    val response = runTestQueryAllDescendants("query_no_parentids_input", validUserToken())
-
-    response should equal(expectedResponse)
-  }
-
   def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): Option[FileNameAndPath] = {
     val sql =
       """SELECT "FileName", "Value" FROM "FileMetadata" fm
@@ -190,29 +114,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     } else {
       None
     }
-  }
-
-  private def createConsignmentStructure(utils: TestUtils, userId: UUID = userId): Unit = {
-    val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
-    val rootFolderId = "90f56dfc-c6a2-4b59-add7-18e256ae864a"
-    val folderId: String = "7b19b272-d4d1-4d77-bf25-511dc6489d12"
-    val folderId1: String = "d94b80ea-54c0-4357-9ff3-e097efcebb9b"
-    val subFolderId: String = "42910a85-85c3-40c3-888f-32f697bfadb6"
-    val fileOneId = "e7ba59c9-5b8b-4029-9f27-2d03957463ad"
-    val fileTwoId = "8d9e6de0-e92f-4fef-b8e9-201322937c9b"
-    val fileThreeId = "9757f402-ee1a-43a2-ae2a-81a9ea9729b9"
-    val fileFourId = "a5dc822f-8d6a-4ef6-9f7a-5077fa9b318c"
-    val fileFiveId = "9cda9ee6-00f1-4c50-a708-1eac0d48623e"
-
-    utils.createConsignment(consignmentId, userId, fixedSeriesId, "TEST-TDR-2021-MTB")
-    utils.createFile(UUID.fromString(folderId), consignmentId, "Folder", "folderName", Some(UUID.fromString(rootFolderId)))
-    utils.createFile(UUID.fromString(folderId1), consignmentId, "Folder", "folderOneName", Some(UUID.fromString(rootFolderId)))
-    utils.createFile(UUID.fromString(subFolderId), consignmentId, "Folder", "subFolderName", Some(UUID.fromString(folderId)))
-    utils.createFile(UUID.fromString(fileOneId), consignmentId, fileName = "fileOneName", parentId = Some(UUID.fromString(folderId)))
-    utils.createFile(UUID.fromString(fileTwoId), consignmentId, fileName = "fileTwoName", parentId = Some(UUID.fromString(folderId)))
-    utils.createFile(UUID.fromString(fileThreeId), consignmentId, fileName = "fileThreeName", parentId = Some(UUID.fromString(subFolderId)))
-    utils.createFile(UUID.fromString(fileFourId), consignmentId, fileName = "fileFourName", parentId = Some(UUID.fromString(folderId1)))
-    utils.createFile(UUID.fromString(fileFiveId), consignmentId, fileName = "fileFiveName", parentId = Some(UUID.fromString(folderId1)))
   }
 
   private def getReferencesMockServer(additionalRefs: Int = 0): WireMockServer = {
