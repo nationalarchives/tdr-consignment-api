@@ -1,3 +1,0 @@
-{
-  "query": "{allDescendants(allDescendantsInput: {parentIds: [\"e7ba59c9-5b8b-4029-9f27-2d03957463ad\"]}){fileId fileType fileName parentId}}"
-}
