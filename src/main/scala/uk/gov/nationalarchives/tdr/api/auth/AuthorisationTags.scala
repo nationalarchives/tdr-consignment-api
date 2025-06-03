@@ -4,9 +4,8 @@ import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.UpdateBulkFileMetadataInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
-import uk.gov.nationalarchives.tdr.api.graphql.validation.{ServiceTransfer, UserOwnsConsignment}
+import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
@@ -17,7 +16,7 @@ import scala.language.postfixOps
 trait AuthorisationTag extends ValidationTag {
   val antiVirusRole = "antivirus"
   val checksumRole = "checksum"
-  val dataLoadRole = "data-load"
+  val clientFileMetadataRole = "client_file_metadata"
   val fileFormatRole = "file_format"
   val exportRole = "export"
   val reportingRole = "reporting"
@@ -77,15 +76,10 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateConsignment: Boolean = false) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
-    val arg: T = ctx.arg[T](argument.name)
+    val userId = token.userId
     val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole)
-    lazy val hasUserIdOverrideAccess: Boolean = token.transferServiceRoles.contains(dataLoadRole)
 
-    val userId: UUID = arg match {
-      case st: ServiceTransfer if st.userIdOverride.isDefined && hasUserIdOverrideAccess => st.userIdOverride.get
-      case _                                                                             => token.userId
-    }
-
+    val arg: T = ctx.arg[T](argument.name)
     val consignmentId: UUID = arg match {
       case uoc: UserOwnsConsignment => uoc.consignmentId
       case id: UUID                 => id
@@ -166,7 +160,6 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
     val fileIds: Seq[UUID] = arg match {
-      case input: UpdateBulkFileMetadataInput  => input.fileIds
       case input: AddFileStatusInput           => Seq(input.fileId)
       case input: AddMultipleFileStatusesInput => input.statuses.map(_.fileId)
     }

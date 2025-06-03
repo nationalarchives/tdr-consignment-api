@@ -39,27 +39,6 @@ class FileMetadataService(
       .recover(err => throw InputDataException(err.getMessage))
   }
 
-  @deprecated("Use addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID) instead")
-  def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val emptyPropertyValues: Seq[String] = input.metadataProperties.filter(_.value.isEmpty).map(_.filePropertyName)
-
-    if (emptyPropertyValues.nonEmpty) {
-      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
-    }
-
-    val consignmentId = input.consignmentId
-    val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
-    val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
-    val uniqueFileIds: Set[UUID] = input.fileIds.toSet
-
-    for {
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(uniqueFileIds, distinctMetadataProperties, userId))
-      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, distinctPropertyNames)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
-      metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
-    } yield BulkFileMetadata(uniqueFileIds.toSeq, metadataPropertiesAdded.toSeq)
-  }
-
   def addOrUpdateBulkFileMetadata(metadataInput: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     for {
       customMetadata <- customMetadataService.getCustomMetadata
@@ -87,16 +66,6 @@ class FileMetadataService(
     if (originalPropertyNames.contains(Description)) {
       originalPropertyNames ++ Set(DescriptionClosed)
     } else originalPropertyNames
-  }
-
-  private def generateFileMetadataInput(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[AddFileMetadataInput] = {
-    fileIds
-      .flatMap(fileId =>
-        {
-          inputs.map(i => AddFileMetadataInput(fileId, i.value, userId, i.filePropertyName))
-        }.toList
-      )
-      .toList
   }
 
   private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
