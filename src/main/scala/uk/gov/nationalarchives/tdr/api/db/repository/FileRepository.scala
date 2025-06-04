@@ -20,7 +20,8 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       r.nextBooleanOption(),
       r.nextStringOption(),
       r.nextStringOption(),
-      r.nextStringOption().map(UUID.fromString)
+      r.nextStringOption().map(UUID.fromString),
+      uploadmatchid = r.nextStringOption()
     )
   )
 
@@ -66,7 +67,7 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
   def getFileFields(ids: Set[UUID]): Future[Seq[FileFields]] = {
     val query = File
       .filter(_.fileid inSet ids)
-      .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid))
+      .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid, res.uploadmatchid))
 
     db.run(query.result)
   }
@@ -107,7 +108,8 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
             "ChecksumMatches",
             "FileType",
             "FileName",
-            "ParentId"::text
+            "ParentId"::text,
+            "UploadMatchId"::text
            FROM "File"
             WHERE "FileId"::text IN #$valueIdsString
             UNION SELECT
@@ -118,7 +120,8 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
              f."ChecksumMatches",
              f."FileType",
              f."FileName",
-             f."ParentId"::text
+             f."ParentId"::text,
+             f."UploadMatchId"::text
             FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
         ) SELECT * FROM children;"""
 
@@ -145,5 +148,5 @@ case class FileFilters(
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
-  type FileFields = (UUID, Option[String], UUID, UUID)
+  type FileFields = (UUID, Option[String], UUID, UUID, Option[String])
 }
