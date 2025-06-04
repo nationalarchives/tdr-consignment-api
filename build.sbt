@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.51",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.145",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.147",
   "org.postgresql" % "postgresql" % "42.7.6",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
@@ -71,18 +71,18 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.18",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.1",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.1",
-  "software.amazon.awssdk" % "rds" % "2.31.51",
-  "software.amazon.awssdk" % "sts" % "2.31.51",
+  "software.amazon.awssdk" % "rds" % "2.31.56",
+  "software.amazon.awssdk" % "sts" % "2.31.56",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
-  "org.mockito" %% "mockito-scala" % "1.17.45" % Test,
-  "org.mockito" %% "mockito-scala-scalatest" % "1.17.45" % Test,
+  "org.mockito" %% "mockito-scala" % "2.0.0" % Test,
+  "org.mockito" %% "mockito-scala-scalatest" % "2.0.0" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-pki" % akkaVersion,
   "com.tngtech.keycloakmock" % "mock" % "0.18.2" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.244",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.245",
   "io.github.hakky54" % "logcaptor" % "2.11.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
@@ -90,8 +90,8 @@ libraryDependencies ++= Seq(
 )
 
 //Akka Alpakka requires slick v3.5.2
-dependencyOverrides += "com.typesafe.slick" %% "slick" % "3.5.2"
-dependencyOverrides += "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2"
+dependencyOverrides += "com.typesafe.slick" %% "slick" % "3.6.1"
+dependencyOverrides += "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1"
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
 (Test / fork) := true
