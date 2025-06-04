@@ -90,9 +90,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     testSetUp.stubRepoResponses()
     customMetadataSetUp.stubResponse()
 
-    val service = new FileMetadataService(
-      testSetUp.metadataRepositoryMock,
-      customMetadataSetUp.customMetadataServiceMock)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, customMetadataSetUp.customMetadataServiceMock)
 
     val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
       AddOrUpdateFileMetadata(fileId, List(AddOrUpdateMetadata("propertyName1", "newValue1"), AddOrUpdateMetadata("propertyName2", "newValue2")))
@@ -133,9 +131,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     testSetUp.stubRepoResponses()
     customMetadataSetUp.stubResponse()
 
-    val service = new FileMetadataService(
-      testSetUp.metadataRepositoryMock,
-      customMetadataSetUp.customMetadataServiceMock)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, customMetadataSetUp.customMetadataServiceMock)
 
     val addOrUpdateBulkFileMetadata = testSetUp.inputFileIds.map(fileId =>
       AddOrUpdateFileMetadata(
@@ -167,9 +163,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     testSetUp.stubRepoResponses()
     customMetadataSetUp.stubResponse()
 
-    val service = new FileMetadataService(
-      testSetUp.metadataRepositoryMock,
-      customMetadataSetUp.customMetadataServiceMock)
+    val service = new FileMetadataService(testSetUp.metadataRepositoryMock, customMetadataSetUp.customMetadataServiceMock)
 
     val addOrUpdateBulkFileMetadata =
       testSetUp.inputFileIds.map(fileId => AddOrUpdateFileMetadata(fileId, List(AddOrUpdateMetadata("propertyName1", "newValue1"), AddOrUpdateMetadata("propertyName2", ""))))
@@ -265,9 +259,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentId = UUID.randomUUID()
     when(fileMetadataRepository.getSumOfFileSizes(any[UUID])).thenReturn(Future(1L))
 
-    val service = new FileMetadataService(
-      fileMetadataRepository,
-      mock[CustomMetadataPropertiesService])
+    val service = new FileMetadataService(fileMetadataRepository, mock[CustomMetadataPropertiesService])
     val result = service.getSumOfFileSizes(consignmentId).futureValue
 
     result should equal(1)
