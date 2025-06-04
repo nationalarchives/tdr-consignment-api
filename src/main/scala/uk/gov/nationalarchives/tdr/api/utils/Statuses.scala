@@ -54,16 +54,6 @@ object Statuses {
     val nonJudgmentStatus: Boolean = false
   }
 
-  case object DescriptiveMetadataType extends StatusType {
-    val id: String = "DescriptiveMetadata"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object ClosureMetadataType extends StatusType {
-    val id: String = "ClosureMetadata"
-    val nonJudgmentStatus: Boolean = true
-  }
-
   case object DraftMetadataType extends StatusType {
     val id: String = "DraftMetadata"
     val nonJudgmentStatus: Boolean = true
