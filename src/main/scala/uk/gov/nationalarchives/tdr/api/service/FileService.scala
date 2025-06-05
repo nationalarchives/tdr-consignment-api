@@ -103,8 +103,6 @@ class FileService(
 
     for {
       matchedFiles <- generateMatchedRows(rows) // 'rows' is Future[List[Rows]]; 'matchedFiles' will be List[FileMatches]
-      // addDefaultMetadataStatuses takes Future[List[FileMatches]] and returns Future[List[FileStatus]]
-      // We pass Future.successful(matchedFiles) to ensure the already resolved List[FileMatches] is used.
       _ <- addDefaultMetadataStatuses(Future.successful(matchedFiles))
     } yield matchedFiles
   }
