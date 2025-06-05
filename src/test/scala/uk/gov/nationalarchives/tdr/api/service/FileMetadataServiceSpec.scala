@@ -405,7 +405,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
     val fileStatusServiceMock = mock[FileStatusService]
-    val consignmentIdCaptor: ArgumentCaptor[Option[UUID]] = ArgumentCaptor.forClass(classOf[Option[UUID]]) // Corrected type for the captor
+    val consignmentIdCaptor: ArgumentCaptor[Option[UUID]] = ArgumentCaptor.forClass(classOf[Option[UUID]])
     val selectedFileIdsCaptor: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val consignmentId = UUID.randomUUID()
     val mockResponse = Future(Seq())
