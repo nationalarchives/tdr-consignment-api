@@ -13,10 +13,6 @@ class ConsignmentStatusRepository(db: JdbcBackend#Database) {
   private val insertQuery = Consignmentstatus returning Consignmentstatus.map(_.consignmentstatusid) into
     ((consignmentStatus, consignmentstatusid) => consignmentStatus.copy(consignmentstatusid = consignmentstatusid))
 
-  def addConsignmentStatuses(consignmentStatusRows: Seq[ConsignmentstatusRow]): Future[Seq[ConsignmentstatusRow]] = {
-    db.run(insertQuery ++= consignmentStatusRows)
-  }
-
   def addConsignmentStatus(consignmentStatusRow: ConsignmentstatusRow): Future[Tables.ConsignmentstatusRow] = {
     db.run(insertQuery += consignmentStatusRow)
   }

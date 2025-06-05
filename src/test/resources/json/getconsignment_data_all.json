@@ -231,18 +231,6 @@
       },
       "consignmentStatuses": [
         {
-          "createdDatetime": "2020-01-01T09:00:00Z",
-          "statusType": "DescriptiveMetadata",
-          "value": "NotEntered",
-          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
-        },
-        {
-          "createdDatetime": "2020-01-01T09:00:00Z",
-          "statusType": "ClosureMetadata",
-          "value": "NotEntered",
-          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
-        },
-        {
           "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
           "statusType": "Upload",
           "value": "Completed",

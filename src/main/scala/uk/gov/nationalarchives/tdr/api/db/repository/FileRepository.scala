@@ -95,40 +95,6 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
     db.run(query.result)
   }
 
-  def getAllDescendants(fileIds: Seq[UUID]): Future[Seq[FileRow]] = {
-
-    val valueIdsString = fileIds.mkString("('", "','", "')")
-    val plainSql =
-      sql"""WITH RECURSIVE children AS (
-           SELECT
-            "FileId"::text,
-            "ConsignmentId"::text,
-            "UserId"::text,
-            "Datetime",
-            "ChecksumMatches",
-            "FileType",
-            "FileName",
-            "ParentId"::text,
-            "UploadMatchId"::text
-           FROM "File"
-            WHERE "FileId"::text IN #$valueIdsString
-            UNION SELECT
-             f."FileId"::text,
-             f."ConsignmentId"::text,
-             f."UserId"::text,
-             f."Datetime",
-             f."ChecksumMatches",
-             f."FileType",
-             f."FileName",
-             f."ParentId"::text,
-             f."UploadMatchId"::text
-            FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
-        ) SELECT * FROM children;"""
-
-    val sql = plainSql.as[FileRow]
-    db.run(sql)
-  }
-
   def getConsignmentParentFolder(consignmentId: UUID): Future[Seq[Tables.FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)

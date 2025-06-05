@@ -63,14 +63,6 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     db.run(DBIO.sequence(dbUpdate).transactionally)
   }
 
-  def deleteFileMetadata(selectedFileIds: Set[UUID], propertyNames: Set[String]): Future[Int] = {
-    val query = Filemetadata
-      .filter(_.fileid inSetBind selectedFileIds)
-      .filter(_.propertyname inSetBind propertyNames)
-      .delete
-
-    db.run(query)
-  }
   def deleteFileMetadata(fileId: UUID, propertyNames: Set[String]): Future[Int] = {
     val query = Filemetadata
       .filter(_.fileid === fileId)

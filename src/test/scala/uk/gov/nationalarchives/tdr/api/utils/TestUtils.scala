@@ -7,7 +7,7 @@ import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered, PasswordProtected, Zip}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{PasswordProtected, Zip}
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
@@ -211,7 +211,6 @@ class TestUtils(db: JdbcBackend#Database) {
       consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
       consignmentType: String = "standard",
       bodyId: UUID = fixedBodyId,
-      includeStatusRows: Boolean = true,
       seriesName: Option[String] = Some("seriesName"),
       transferringBodyName: Option[String] = Some("transferringBodyName"),
       transferringBodyTdrCode: Option[String] = Some("transferringBodyTdrCode"),
@@ -246,10 +245,6 @@ class TestUtils(db: JdbcBackend#Database) {
     ps.setString(14, metadataSchemaLibraryVersion.orNull)
     ps.setString(15, clientSideDraftMetadataFileName.orNull)
     ps.executeUpdate()
-    if (includeStatusRows) {
-      createConsignmentStatus(consignmentId, DescriptiveMetadata, NotEntered)
-      createConsignmentStatus(consignmentId, ClosureMetadata, NotEntered)
-    }
     consignmentId
   }
 
