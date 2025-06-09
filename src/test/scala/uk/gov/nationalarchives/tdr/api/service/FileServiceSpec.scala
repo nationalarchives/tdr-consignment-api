@@ -5,8 +5,7 @@ import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.events.Event
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
