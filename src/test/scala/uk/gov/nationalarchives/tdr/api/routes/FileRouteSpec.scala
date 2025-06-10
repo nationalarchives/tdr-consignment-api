@@ -27,14 +27,12 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   case class GraphqlMutationDataFilesMetadata(data: Option[AddFilesAndMetadata], errors: List[GraphqlError] = Nil)
-  case class GraphqlQueryDataAllDescendants(data: Option[AllDescendants], errors: List[GraphqlError] = Nil)
 
   case class FileMatches(fileId: UUID, matchId: Long)
 
   case class File(fileId: UUID, fileType: Option[String], fileName: Option[String], parentId: Option[UUID])
 
   case class AddFilesAndMetadata(addFilesAndMetadata: List[FileMatches])
-  case class AllDescendants(allDescendants: List[File])
 
   val runTestMutationFileMetadata: (String, OAuth2BearerToken) => GraphqlMutationDataFilesMetadata =
     runTestRequest[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
