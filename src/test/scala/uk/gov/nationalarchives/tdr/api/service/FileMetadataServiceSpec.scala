@@ -581,17 +581,14 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     fixedUUIDSource.reset
 
     val metadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
-    val fileRepositoryMock: FileRepository = mock[FileRepository]
     val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock: ValidateFileMetadataService = mock[ValidateFileMetadataService]
     val consignmentStatusServiceMock: ConsignmentStatusService = mock[ConsignmentStatusService]
     val fileStatusServiceMock: FileStatusService = mock[FileStatusService]
 
-    val deletePropertyNamesCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
     val addFileMetadataCaptor: ArgumentCaptor[Seq[AddFileMetadataInput]] = ArgumentCaptor.forClass(classOf[Seq[AddFileMetadataInput]])
 
     def stubRepoResponses(
-        deleteFileMetadataResponse: Int = 0,
         addFileMetadataResponse: Seq[FilemetadataRow] = Seq()
     ): Unit = {
       when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
