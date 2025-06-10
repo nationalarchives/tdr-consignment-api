@@ -204,17 +204,6 @@ enum DataType {
   Text
 }
 
-type DeleteFileMetadata {
-  fileIds: [UUID!]!
-  filePropertyNames: [String!]!
-}
-
-input DeleteFileMetadataInput {
-  fileIds: [UUID!]!
-  propertyNames: [String!]!
-  consignmentId: UUID!
-}
-
 type DisplayAttribute {
   attribute: String!
   value: String
@@ -398,7 +387,6 @@ type Mutation {
   addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
   updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata! @deprecated(reason: "Use addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!) instead")
   addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!): [FileMetadataWithFileId!]!
-  deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
