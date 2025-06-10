@@ -6,11 +6,12 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import uk.gov.nationalarchives.Tables.FilemetadataRow
-import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, System, Defined, Supplied, Text}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
+import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -169,7 +170,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       service.updateBulkFileMetadata(input, testSetUp.userId).futureValue
     }
 
-    verify(testSetUp.fileRepositoryMock, times(0)).getAllDescendants(any[Seq[UUID]])
     verify(testSetUp.metadataRepositoryMock, times(0)).deleteFileMetadata(any[Set[UUID]], any[Set[String]])
     verify(testSetUp.metadataRepositoryMock, times(0)).addFileMetadata(any[Seq[AddFileMetadataInput]])
     verify(testSetUp.validateFileMetadataServiceMock, times(0)).validateAdditionalMetadata(any[Set[UUID]], any[Set[String]])
@@ -873,7 +873,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentStatusServiceMock: ConsignmentStatusService = mock[ConsignmentStatusService]
     val fileStatusServiceMock: FileStatusService = mock[FileStatusService]
 
-    val getAllDescendentIdsCaptor: ArgumentCaptor[Seq[UUID]] = ArgumentCaptor.forClass(classOf[Seq[UUID]])
     val deletePropertyNamesCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
     val addFileMetadataCaptor: ArgumentCaptor[Seq[AddFileMetadataInput]] = ArgumentCaptor.forClass(classOf[Seq[AddFileMetadataInput]])
     val deleteFileMetadataIdsArgCaptor: ArgumentCaptor[Set[UUID]] = ArgumentCaptor.forClass(classOf[Set[UUID]])
@@ -883,8 +882,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         deleteFileMetadataResponse: Int = 0,
         addFileMetadataResponse: Seq[FilemetadataRow] = Seq()
     ): Unit = {
-
-      when(fileRepositoryMock.getAllDescendants(getAllDescendentIdsCaptor.capture())).thenReturn(Future(getAllDescendantsResponse))
       when(metadataRepositoryMock.deleteFileMetadata(deleteFileMetadataIdsArgCaptor.capture(), deletePropertyNamesCaptor.capture()))
         .thenReturn(Future(deleteFileMetadataResponse))
       when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
