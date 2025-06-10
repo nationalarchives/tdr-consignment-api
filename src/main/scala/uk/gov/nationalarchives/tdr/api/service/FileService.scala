@@ -44,7 +44,11 @@ class FileService(
   private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
   private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
 
-  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
+  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, tokenUserId: UUID): Future[List[FileMatches]] = {
+    val userId = addFileAndMetadataInput.userIdOverride match {
+      case Some(id) => id
+      case _        => tokenUserId
+    }
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
     val filePathInputs = addFileAndMetadataInput.metadataInput.map(i => TreeNodeInput(i.originalPath, Some(i.matchId))).toSet
@@ -101,9 +105,11 @@ class FileService(
       }).toList
     })
 
-    val matchedFileRows = generateMatchedRows(rows)
-    addDefaultMetadataStatuses(matchedFileRows)
-    matchedFileRows
+    val matchedFileRows: Future[List[FileMatches]] = generateMatchedRows(rows)
+    for {
+      matches <- matchedFileRows
+      _ <- addDefaultMetadataStatuses(Future.successful(matches))
+    } yield matches
   }
 
   private def addDefaultMetadataStatuses(fileMatches: Future[List[FileMatches]]): Future[List[FileStatus]] = {

@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileMetadataRepository, FileRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, System, Defined, Supplied, Text}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.{Boolean, CustomMetadataField, CustomMetadataValues, Defined, Supplied, System, Text}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{SHA256ServerSideChecksum, _}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{directoryTypeIdentifier, fileTypeIdentifier}
@@ -405,23 +405,24 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val customMetadataServiceMock = mock[CustomMetadataPropertiesService]
     val validateFileMetadataServiceMock = mock[ValidateFileMetadataService]
     val fileStatusServiceMock = mock[FileStatusService]
-    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+    val consignmentIdCaptor: ArgumentCaptor[Option[UUID]] = ArgumentCaptor.forClass(classOf[Option[UUID]])
     val selectedFileIdsCaptor: ArgumentCaptor[Option[Set[UUID]]] = ArgumentCaptor.forClass(classOf[Option[Set[UUID]]])
     val consignmentId = UUID.randomUUID()
     val mockResponse = Future(Seq())
-
-    when(
-      fileMetadataRepositoryMock.getFileMetadata(
-        Some(consignmentIdCaptor.capture()),
-        selectedFileIdsCaptor.capture(),
-        any[Option[Set[String]]]
-      )
-    ).thenReturn(mockResponse)
+    when(fileMetadataRepositoryMock.getFileMetadata(any[Option[UUID]], any[Option[Set[UUID]]], any[Option[Set[String]]])).thenReturn(mockResponse)
 
     val service =
       new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusServiceMock, customMetadataServiceMock, validateFileMetadataServiceMock, fileStatusServiceMock)
 
     service.getFileMetadata(Some(consignmentId)).futureValue
+
+    // Verify mock interaction and capture arguments before asserting them
+    verify(fileMetadataRepositoryMock).getFileMetadata(
+      consignmentIdCaptor.capture(),
+      selectedFileIdsCaptor.capture(),
+      any[Option[Set[String]]]
+    )
+
     consignmentIdCaptor.getValue should equal(Some(consignmentId))
     selectedFileIdsCaptor.getValue should equal(None)
   }
