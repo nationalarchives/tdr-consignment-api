@@ -986,7 +986,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val response = service.addFile(input, tokenUserId).futureValue
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
-    verify(fileStatusServiceMock, times(1)).addFileStatuses(expectedStatusInput)
+    verify(fileStatusServiceMock, after(1000).times(1)).addFileStatuses(expectedStatusInput)
 
     val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
