@@ -105,9 +105,11 @@ class FileService(
       }).toList
     })
 
-    val matchedFileRows = generateMatchedRows(rows)
-    addDefaultMetadataStatuses(matchedFileRows)
-    matchedFileRows
+    val matchedFileRows: Future[List[FileMatches]] = generateMatchedRows(rows)
+    for {
+      matches <- matchedFileRows
+      _ <- addDefaultMetadataStatuses(Future.successful(matches))
+    } yield matches
   }
 
   private def addDefaultMetadataStatuses(fileMatches: Future[List[FileMatches]]): Future[List[FileStatus]] = {
