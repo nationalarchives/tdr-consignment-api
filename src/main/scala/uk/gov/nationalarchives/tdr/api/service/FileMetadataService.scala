@@ -53,7 +53,6 @@ class FileMetadataService(
     val uniqueFileIds: Set[UUID] = input.fileIds.toSet
 
     for {
-      _ <- fileMetadataRepository.deleteFileMetadata(uniqueFileIds, distinctPropertyNames)
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(uniqueFileIds, distinctMetadataProperties, userId))
       _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, distinctPropertyNames)
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
@@ -78,44 +77,6 @@ class FileMetadataService(
       _ <- consignmentStatusService.updateMetadataConsignmentStatus(metadataInput.consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
     } yield metadataPropertiesAdded
-  }
-
-  def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
-    val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
-    val consignmentId: UUID = input.consignmentId
-    val fileIds: Set[UUID] = input.fileIds.toSet
-    for {
-      customMetadataProperties <- customMetadataService.getCustomMetadata
-      allPropertiesToDelete: Set[String] = customMetadataProperties
-        .collect {
-          case customMetadataProperty if propertiesToDelete.contains(customMetadataProperty.name) =>
-            val namesOfDependenciesToDelete: List[String] = customMetadataProperty.values.flatMap(_.dependencies.map(_.name))
-            namesOfDependenciesToDelete :+ customMetadataProperty.name
-        }
-        .flatten
-        .toSet
-
-      _ = if (allPropertiesToDelete.isEmpty) {
-        throw new IllegalStateException(
-          s"Can't find metadata property '${input.propertyNames.mkString(" or ")}' in the db"
-        )
-      }
-
-      propertyDefaults: Seq[(String, String)] = customMetadataProperties.collect {
-        case customMetadataProperty if allPropertiesToDelete.contains(customMetadataProperty.name) && customMetadataProperty.defaultValue.nonEmpty =>
-          (customMetadataProperty.name, customMetadataProperty.defaultValue.get)
-      }
-
-      metadataToReset: Seq[AddFileMetadataInput] = fileIds.flatMap { fileId =>
-        propertyDefaults.map { case (propertyName, defaultValue) =>
-          AddFileMetadataInput(fileId, defaultValue, userId, propertyName)
-        }
-      }.toSeq
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
-      _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, allPropertiesToDelete)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
-    } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
   }
 
   private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {

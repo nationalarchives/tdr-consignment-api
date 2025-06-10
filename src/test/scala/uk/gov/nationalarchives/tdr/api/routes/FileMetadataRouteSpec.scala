@@ -6,7 +6,7 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, DeleteFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{BulkFileMetadata, FileMetadataWithFileId, SHA256ServerSideChecksum}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
@@ -23,7 +23,6 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
   private val addFileMetadataJsonFilePrefix: String = "json/addfilemetadata_"
   private val updateBulkFileMetadataJsonFilePrefix: String = "json/updatebulkfilemetadata_"
   private val addOrUpdateBulkFileMetadataJsonFilePrefix: String = "json/addorupdatebulkfilemetadata_"
-  private val deleteFileMetadataJsonFilePrefix: String = "json/deletefilemetadata_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
@@ -35,15 +34,11 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   case class GraphqlAddOrUpdateBulkFileMetadataMutationData(data: Option[AddOrUpdateBulkFileMetadata], errors: List[GraphqlError] = Nil)
 
-  case class GraphqlDeleteFileMetadataMutationData(data: Option[DeletedFileMetadata], errors: List[GraphqlError] = Nil)
-
   case class AddFileMetadata(addMultipleFileMetadata: List[FileMetadataWithFileId])
 
   case class AddOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadata: List[FileMetadataWithFileId])
 
   case class UpdateBulkFileMetadata(updateBulkFileMetadata: BulkFileMetadata)
-
-  case class DeletedFileMetadata(deleteFileMetadata: DeleteFileMetadata)
 
   val runAddFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlAddFileMetadataMutationData =
     runTestRequest[GraphqlAddFileMetadataMutationData](addFileMetadataJsonFilePrefix)
@@ -62,12 +57,6 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
 
   val expectedAddOrUpdateBulkFileMetadataMutationResponse: String => GraphqlAddOrUpdateBulkFileMetadataMutationData =
     getDataFromFile[GraphqlAddOrUpdateBulkFileMetadataMutationData](addOrUpdateBulkFileMetadataJsonFilePrefix)
-
-  val runDeleteFileMetadataTestMutation: (String, OAuth2BearerToken) => GraphqlDeleteFileMetadataMutationData =
-    runTestRequest[GraphqlDeleteFileMetadataMutationData](deleteFileMetadataJsonFilePrefix)
-
-  val expectedDeleteFileMetadataMutationResponse: String => GraphqlDeleteFileMetadataMutationData =
-    getDataFromFile[GraphqlDeleteFileMetadataMutationData](deleteFileMetadataJsonFilePrefix)
 
   "addFileMetadata" should "return all requested fields from inserted checksum file metadata object" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
@@ -1005,176 +994,12 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
       checkNoFileMetadataAdded(utils, "property2")
   }
 
-  "deleteFileMetadata" should "delete file metadata or set the relevant default values for the given fileIds" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
-    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    addDummyFileProperties(utils, consignmentId, userId)
-    createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
-
-    val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_all")
-    val expectedResponseFileIds = expectedResponse.data.get.deleteFileMetadata.fileIds
-    val expectedResponseFileMetadata = expectedResponse.data.get.deleteFileMetadata.filePropertyNames
-    val response = runDeleteFileMetadataTestMutation("mutation_alldata", validUserToken())
-    val responseFileIds: Seq[UUID] = response.data.get.deleteFileMetadata.fileIds
-    val responseFileMetadataProperties = response.data.get.deleteFileMetadata.filePropertyNames
-
-    responseFileMetadataProperties.size should equal(expectedResponseFileMetadata.size)
-    responseFileMetadataProperties should equal(expectedResponseFileMetadata)
-
-    responseFileIds.sorted should equal(expectedResponseFileIds.sorted)
-
-    responseFileIds.foreach { id =>
-      checkFileMetadataDoesNotExist(id, utils, "TestDependency2")
-      checkFileMetadataDoesNotExist(id, utils, "TestDependency4")
-      checkFileMetadataValue(id, utils, "TestDependency1", "test")
-      checkFileMetadataValue(id, utils, "ClosureType", "Open")
-    }
-  }
-
   val statusValues: TableFor1[String] = Table(
     "statusValues",
     Incomplete,
     Completed,
     NotEntered
   )
-
-  forAll(statusValues)(statusValue => {
-    "deleteFileMetadata" should s"set the consignment status to $statusValue if an existing file is $statusValue" in withContainers { case container: PostgreSQLContainer =>
-      val utils = TestUtils(container.database)
-      val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
-      val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-      val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-      val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-      val fileThreeId = UUID.randomUUID()
-      addDummyFileProperties(utils, consignmentId, userId)
-      createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
-      utils.createFile(fileThreeId, consignmentId)
-      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, DescriptiveMetadata, statusValue)
-      utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, ClosureMetadata, statusValue)
-
-      runDeleteFileMetadataTestMutation("mutation_alldata", validUserToken())
-
-      utils.getConsignmentStatus(consignmentId, DescriptiveMetadata).getString("Value") should equal(statusValue)
-      utils.getConsignmentStatus(consignmentId, ClosureMetadata).getString("Value") should equal(statusValue)
-    }
-
-  })
-
-  "deleteFileMetadata" should "throw an error if the field fileIds is not provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val consignmentId = UUID.randomUUID()
-    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    addDummyFileProperties(utils, consignmentId, userId)
-    createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
-
-    val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_missing_fileids")
-    val response = runDeleteFileMetadataTestMutation("mutation_missing_fileids", validUserToken(userId))
-
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-
-    List(fileOneId, fileTwoId).foreach(id => {
-      checkFileMetadataExists(id, utils, "TestDependency2")
-      checkFileMetadataValue(id, utils, "TestDependency1", "newValue")
-      checkFileMetadataValue(id, utils, "ClosureType", "Closed")
-    })
-  }
-
-  "deleteFileMetadata" should "throw an error if the field fileIds is empty" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
-    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    addDummyFileProperties(utils, consignmentId, userId)
-    createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
-
-    val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_empty_fileids")
-    val response = runDeleteFileMetadataTestMutation("mutation_empty_fileids", validUserToken(userId))
-
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-    response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
-
-    List(fileOneId, fileTwoId).foreach(id => {
-      checkFileMetadataExists(id, utils, "TestDependency2")
-      checkFileMetadataValue(id, utils, "TestDependency1", "newValue")
-      checkFileMetadataValue(id, utils, "ClosureType", "Closed")
-    })
-  }
-
-  "deleteFileMetadata" should "throw an error if a file id exists but belongs to another user" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val consignmentId = UUID.randomUUID()
-    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    val wrongUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
-    addDummyFileProperties(utils, consignmentId, userId)
-    createFileAndFileMetadata(utils, consignmentId, folderOneId, fileOneId, fileTwoId)
-
-    val expectedResponse: GraphqlDeleteFileMetadataMutationData = expectedDeleteFileMetadataMutationResponse("data_error_not_file_owner")
-    val response = runDeleteFileMetadataTestMutation("mutation_alldata", validUserToken(wrongUserId))
-
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
-
-    List(fileOneId, fileTwoId).foreach(id => {
-      checkFileMetadataExists(id, utils, "TestDependency2")
-      checkFileMetadataValue(id, utils, "TestDependency1", "newValue")
-      checkFileMetadataValue(id, utils, "ClosureType", "Closed")
-    })
-  }
-
-  "deleteFileMetadata" should "throw an 'invalid input data' error if input file ids belong to different consignments" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val consignmentId = UUID.fromString("57a0b4cd-4dc1-4be4-a8c1-2d93fce54413")
-
-    val differentConsignmentId = UUID.fromString("7ece007d-6f47-4be2-895f-511a607e4074")
-    utils.createConsignment(differentConsignmentId)
-
-    val folderOneId = UUID.fromString("d74650ff-21b1-402d-8c59-b114698a8341")
-    val fileOneId = UUID.fromString("51c55218-1322-4453-9ef8-2300ef1c0fef")
-    val fileTwoId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    val fileThreeId = UUID.fromString("d2e64eed-faff-45ac-9825-79548f681323")
-
-    addDummyFileProperties(utils, consignmentId, userId)
-
-    utils.createFile(fileOneId, consignmentId, NodeType.fileTypeIdentifier, "fileName", Some(folderOneId))
-    utils.createFile(fileTwoId, differentConsignmentId)
-    utils.createFile(fileThreeId, consignmentId)
-
-    List(fileOneId, fileTwoId).foreach(id => {
-      utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "ClosureType", "Closed")
-      utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "TestDependency1", "newValue")
-      utils.addFileMetadata(UUID.randomUUID().toString, id.toString, "TestDependency2", "someValue")
-    })
-
-    val expectedResponse: GraphqlUpdateBulkFileMetadataMutationData =
-      expectedUpdateBulkFileMetadataMutationResponse("data_fileid_not_exists")
-    val response: GraphqlUpdateBulkFileMetadataMutationData =
-      runUpdateBulkFileMetadataTestMutation("mutation_alldata", validUserToken())
-
-    response.errors.head.extensions.get.code should equal("INVALID_INPUT_DATA")
-    response.errors.head.message should equal(expectedResponse.errors.head.message)
-    List(fileOneId, fileTwoId).foreach(id => {
-      checkFileMetadataExists(id, utils, "TestDependency2")
-      checkFileMetadataValue(id, utils, "TestDependency1", "newValue")
-      checkFileMetadataValue(id, utils, "ClosureType", "Closed")
-    })
-  }
-
-  private def getParentId(fileId: UUID, utils: TestUtils): String = {
-    val sql = """SELECT * FROM "File" WHERE "FileId" = ?;"""
-    val ps: PreparedStatement = utils.connection.prepareStatement(sql)
-    ps.setObject(1, fileId, Types.OTHER)
-    val rs: ResultSet = ps.executeQuery()
-    rs.next()
-    rs.getString("ParentId")
-  }
 
   private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, propertyName: String = SHA256ServerSideChecksum): Unit = {
     val sql = """SELECT * FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
