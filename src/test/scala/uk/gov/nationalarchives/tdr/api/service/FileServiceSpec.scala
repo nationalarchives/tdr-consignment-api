@@ -866,21 +866,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
-  def checkFileStatusRows(rows: List[FilestatusRow], response: List[FileMatches], statusType: String, firstStatus: String, secondStatus: String): Unit = {
-
-    rows.head.filestatusid != null shouldBe true
-    rows.head.fileid should equal(response.head.fileId)
-    rows.head.statustype should equal(statusType)
-    rows.head.value should equal(firstStatus)
-    rows.head.createddatetime != null shouldBe true
-
-    rows.last.filestatusid != null shouldBe true
-    rows.last.fileid should equal(response.last.fileId)
-    rows.last.statustype should equal(statusType)
-    rows.last.value should equal(secondStatus)
-    rows.last.createddatetime != null shouldBe true
-  }
-
   "addFile" should "add all files, directories, client and static metadata when total number of files and folders are less than batch size" in {
     val consignmentId = UUID.randomUUID()
     val ffidMetadataService = mock[FFIDMetadataService]
@@ -890,7 +875,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusService, customMetadataServiceMock, validateFileMetadataServiceMock, fileStatusServiceMock)
     val fixedUuidSource = new FixedUUIDSource()
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock, customMetadataServiceMock, displayPropertiesServiceMock)
 
     val userId = UUID.randomUUID()
 
@@ -901,6 +885,13 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val metadataInputTwo = ClientSideMetadataInput("", "", 1L, 1L, "2")
 
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
+
+    when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenAnswer { invocation: org.mockito.invocation.InvocationOnMock =>
+      val input = invocation.getArgument[AddMultipleFileStatusesInput](0)
+      val fileStatuses = input.statuses.map(statusInput => FileStatus(statusInput.fileId, statusInput.statusType, statusInput.statusValue))
+      Future.successful(fileStatuses)
+    }
+
     when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3"))
     mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
 
@@ -909,7 +900,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       customMetadataPropertiesRepositoryMock,
       ffidMetadataService,
       antivirusMetadataService,
-      fileStatusService,
+      fileStatusServiceMock,
       fileMetadataService,
       referenceGeneratorServiceMock,
       FixedTimeSource,
