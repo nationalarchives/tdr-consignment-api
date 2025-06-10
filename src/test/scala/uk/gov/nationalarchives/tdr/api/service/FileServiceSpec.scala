@@ -732,9 +732,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRowCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
     val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
 
-    val metadataInputOne = ClientSideMetadataInput("/a/nested/path/OriginalPath1", "Checksum1", 1L, 1L, "1")
-    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, "2")
-
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
     when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
@@ -753,16 +750,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       ConfigFactory.load()
     )
 
-    val expectedStatusInput = AddMultipleFileStatusesInput(
-      List(
-        AddFileStatusInput(file1Id, "ClosureMetadata", "NotEntered"),
-        AddFileStatusInput(file1Id, "DescriptiveMetadata", "NotEntered"),
-        AddFileStatusInput(file2Id, "ClosureMetadata", "NotEntered"),
-        AddFileStatusInput(file2Id, "DescriptiveMetadata", "NotEntered")
-      )
-    )
-
-    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
+    val expectedStatusInput = setupExpectedStatusInput(Set(file1Id, file2Id))
+    val input = setupMetadataInput(consignmentId)
+    val response = service.addFile(input, userId).futureValue
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
     verify(fileStatusServiceMock, times(1)).addFileStatuses(expectedStatusInput)
@@ -816,9 +806,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileRowCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
     val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
 
-    val metadataInputOne = ClientSideMetadataInput("/a/nested/path/OriginalPath1", "Checksum1", 1L, 1L, "1")
-    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, "2")
-
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
     when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
@@ -837,16 +824,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       ConfigFactory.load()
     )
 
-    val expectedStatusInput = AddMultipleFileStatusesInput(
-      List(
-        AddFileStatusInput(file1Id, "ClosureMetadata", "NotEntered"),
-        AddFileStatusInput(file1Id, "DescriptiveMetadata", "NotEntered"),
-        AddFileStatusInput(file2Id, "ClosureMetadata", "NotEntered"),
-        AddFileStatusInput(file2Id, "DescriptiveMetadata", "NotEntered")
-      )
-    )
+    val expectedStatusInput = setupExpectedStatusInput(Set(file1Id, file2Id))
+    val input = setupMetadataInput(consignmentId)
 
-    val response = service.addFile(AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo)), userId).futureValue
+    val response = service.addFile(input, userId).futureValue
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
     verify(fileStatusServiceMock, times(1)).addFileStatuses(expectedStatusInput)
@@ -956,6 +937,82 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       val count = metadataRows.count(r => r.propertyname == prop)
       prop match {
         case ClientSideOriginalFilepath | Filename | FileType | FileReference | ParentReference => count should equal(3) // Directories have this set
+        case _                                                                                  => count should equal(2)
+      }
+    })
+    verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
+  }
+
+  "addFile" should "set user id to override id where present on input for metadata entries" in {
+    val ffidMetadataService = mock[FFIDMetadataService]
+    val antivirusMetadataService = mock[AntivirusMetadataService]
+    val fileRepositoryMock = mock[FileRepository]
+    val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
+    val fileStatusServiceMock = mock[FileStatusService]
+    val fileMetadataService =
+      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusService, customMetadataServiceMock, validateFileMetadataServiceMock, fileStatusServiceMock)
+    val fixedUuidSource = new FixedUUIDSource()
+
+    val consignmentId = UUID.randomUUID()
+    val tokenUserId = UUID.randomUUID()
+    val overrideUserId = UUID.randomUUID()
+    val file1Id = UUID.fromString("47e365a4-fc1e-4375-b2f6-dccb6d361f5f")
+    val file2Id = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+
+    val fileRowCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
+    val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
+
+    when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
+    when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
+    mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
+
+    val service = new FileService(
+      fileRepositoryMock,
+      customMetadataPropertiesRepositoryMock,
+      ffidMetadataService,
+      antivirusMetadataService,
+      fileStatusServiceMock,
+      fileMetadataService,
+      referenceGeneratorServiceMock,
+      FixedTimeSource,
+      fixedUuidSource,
+      ConfigFactory.load()
+    )
+
+    val expectedStatusInput = setupExpectedStatusInput(Set(file1Id, file2Id))
+
+    val input = setupMetadataInput(consignmentId, Some(overrideUserId))
+    val response = service.addFile(input, tokenUserId).futureValue
+
+    verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    verify(fileStatusServiceMock, times(1)).addFileStatuses(expectedStatusInput)
+
+    val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
+    val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
+
+    response.head.fileId should equal(file1Id)
+    response.head.matchId should equal("2")
+
+    response.last.fileId should equal(file2Id)
+    response.last.matchId should equal("1")
+
+    val expectedFileRows = 5
+    fileRows.size should equal(expectedFileRows)
+    fileRows.foreach(row => {
+      row.consignmentid should equal(consignmentId)
+      row.userid should equal(overrideUserId)
+    })
+    val expectedSize = 61
+    metadataRows.size should equal(expectedSize)
+    defaultMetadataProperties.foreach(prop => {
+      metadataRows.count(_.propertyname == prop) should equal(5)
+    })
+
+    clientSideProperties.foreach(prop => {
+      val count = metadataRows.count(r => r.propertyname == prop)
+      prop match {
+        case ClientSideOriginalFilepath | Filename | FileType | FileReference | ParentReference => count should equal(5) // Directories have this set
         case _                                                                                  => count should equal(2)
       }
     })
@@ -1370,6 +1427,25 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       fixedUuidSource,
       ConfigFactory.load()
     )
+  }
+
+  private def setupMetadataInput(consignmentId: UUID, userId: Option[UUID] = None): AddFileAndMetadataInput = {
+    val metadataInputOne = ClientSideMetadataInput("/a/nested/path/OriginalPath1", "Checksum1", 1L, 1L, "1")
+    val metadataInputTwo = ClientSideMetadataInput("OriginalPath2", "Checksum2", 1L, 1L, "2")
+    AddFileAndMetadataInput(consignmentId, List(metadataInputOne, metadataInputTwo), userIdOverride = userId)
+  }
+
+  private def setupExpectedStatusInput(fileIds: Set[UUID]): AddMultipleFileStatusesInput = {
+    val inputs: List[AddFileStatusInput] = fileIds
+      .flatMap(id => {
+        List(
+          AddFileStatusInput(id, "ClosureMetadata", "NotEntered"),
+          AddFileStatusInput(id, "DescriptiveMetadata", "NotEntered")
+        )
+      })
+      .toList
+
+    AddMultipleFileStatusesInput(inputs)
   }
 
   private def ffidMetadataRow(ffidMetadataid: UUID, fileId: UUID, datetime: Timestamp): FfidmetadataRow =
