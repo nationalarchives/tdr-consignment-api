@@ -91,11 +91,6 @@ type AntivirusProgress {
   filesProcessed: Int!
 }
 
-type BulkFileMetadata {
-  fileIds: [UUID!]!
-  metadataProperties: [FileMetadata!]!
-}
-
 type ChecksumProgress {
   filesProcessed: Int!
 }
@@ -315,11 +310,6 @@ type FileMatches {
   matchId: String!
 }
 
-type FileMetadata {
-  filePropertyName: String!
-  value: String!
-}
-
 input FileMetadataFilters {
   closureMetadata: Boolean = false
   descriptiveMetadata: Boolean = false
@@ -385,7 +375,6 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
   addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
-  updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata! @deprecated(reason: "Use addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!) instead")
   addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!): [FileMetadataWithFileId!]!
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
@@ -459,12 +448,6 @@ type TransferAgreementPrivateBeta {
 
 scalar UUID
 
-input UpdateBulkFileMetadataInput {
-  consignmentId: UUID!
-  fileIds: [UUID!]!
-  metadataProperties: [UpdateFileMetadataInput!]!
-}
-
 input UpdateClientSideDraftMetadataFileNameInput {
   consignmentId: UUID!
   clientSideDraftMetadataFileName: String!
@@ -480,12 +463,6 @@ input UpdateExportDataInput {
   exportLocation: String!
   exportDatetime: ZonedDateTime
   exportVersion: String!
-}
-
-input UpdateFileMetadataInput {
-  filePropertyIsMultiValue: Boolean!
-  filePropertyName: String!
-  value: String!
 }
 
 input UpdateMetadataSchemaLibraryVersionInput {
