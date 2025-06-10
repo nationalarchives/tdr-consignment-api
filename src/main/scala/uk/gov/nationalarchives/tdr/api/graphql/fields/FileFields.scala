@@ -21,14 +21,10 @@ object FileFields {
       extends UserOwnsConsignment
       with ServiceTransfer
 
-  case class AllDescendantsInput(consignmentId: UUID, parentIds: List[UUID]) extends UserOwnsConsignment
-
   implicit val MetadataInputType: InputObjectType[ClientSideMetadataInput] = deriveInputObjectType[ClientSideMetadataInput]()
   implicit val AddFileAndMetadataInputType: InputObjectType[AddFileAndMetadataInput] = deriveInputObjectType[AddFileAndMetadataInput]()
-  implicit val AllDescendantsInputType: InputObjectType[AllDescendantsInput] = deriveInputObjectType[AllDescendantsInput]()
   implicit val FileSequenceType: ObjectType[Unit, FileMatches] = deriveObjectType[Unit, FileMatches]()
   private val FileAndMetadataInputArg = Argument("addFilesAndMetadataInput", AddFileAndMetadataInputType)
-  private val AllDescendantsInputArg = Argument("allDescendantsInput", AllDescendantsInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
     Field(
@@ -41,12 +37,5 @@ object FileFields {
   )
 
   val queryFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
-    Field(
-      "allDescendants",
-      ListType(FileType),
-      arguments = AllDescendantsInputArg :: Nil,
-      resolve = ctx => ctx.ctx.fileService.getAllDescendants(ctx.arg(AllDescendantsInputArg)),
-      tags = List(ValidateUserHasAccessToConsignment(AllDescendantsInputArg))
-    )
   )
 }

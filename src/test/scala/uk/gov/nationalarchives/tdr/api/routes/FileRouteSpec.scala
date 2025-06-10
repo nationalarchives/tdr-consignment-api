@@ -23,29 +23,21 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   case class FileNameAndPath(fileName: String, path: String)
 
   private val addFilesAndMetadataJsonFilePrefix: String = "json/addfileandmetadata_"
-  private val allDescendantsJsonFilePrefix: String = "json/alldescendants_"
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   case class GraphqlMutationDataFilesMetadata(data: Option[AddFilesAndMetadata], errors: List[GraphqlError] = Nil)
-  case class GraphqlQueryDataAllDescendants(data: Option[AllDescendants], errors: List[GraphqlError] = Nil)
 
   case class FileMatches(fileId: UUID, matchId: Long)
 
   case class File(fileId: UUID, fileType: Option[String], fileName: Option[String], parentId: Option[UUID])
 
   case class AddFilesAndMetadata(addFilesAndMetadata: List[FileMatches])
-  case class AllDescendants(allDescendants: List[File])
 
   val runTestMutationFileMetadata: (String, OAuth2BearerToken) => GraphqlMutationDataFilesMetadata =
     runTestRequest[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
   val expectedFilesAndMetadataMutationResponse: String => GraphqlMutationDataFilesMetadata =
     getDataFromFile[GraphqlMutationDataFilesMetadata](addFilesAndMetadataJsonFilePrefix)
-
-  val runTestQueryAllDescendants: (String, OAuth2BearerToken) => GraphqlQueryDataAllDescendants =
-    runTestRequest[GraphqlQueryDataAllDescendants](allDescendantsJsonFilePrefix)
-  val expectedAllDescendantsQueryResponse: String => GraphqlQueryDataAllDescendants =
-    getDataFromFile[GraphqlQueryDataAllDescendants](allDescendantsJsonFilePrefix)
 
   val fixedUuidSource = new FixedUUIDSource()
 
@@ -154,76 +146,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     val response = runTestMutationFileMetadata("mutation_alldata_3", validUserToken())
     response.data.get.addFilesAndMetadata should equal(expectedResponse.data.get.addFilesAndMetadata)
     referenceMockServer.stop()
-  }
-
-  "allDescendants" should "return parents and all descendants for the given parent ids" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_multiple_parentids")
-    val response = runTestQueryAllDescendants("query_multiple_parentids", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "return parent and all descendants of the given single parent id" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_single_parentid")
-    val response = runTestQueryAllDescendants("query_single_parentid", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "only return parent where no descendants" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_descendants")
-    val response = runTestQueryAllDescendants("query_no_descendants", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "return an empty response if no parent ids passed" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_parentids")
-    val response = runTestQueryAllDescendants("query_no_parentids", validUserToken())
-    response.data.get.allDescendants should equal(expectedResponse.data.get.allDescendants)
-  }
-
-  "allDescendants" should "not allow a user to get descendants for a consignment that they did not create" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    val otherUserId = "73abd1dc-294d-4068-b60d-c1cd4782d08d"
-    createConsignmentStructure(utils, UUID.fromString(otherUserId))
-    val consignmentId = UUID.fromString("f1dbc692-e56c-4d76-be94-d8d3d79bd38a")
-
-    utils.createConsignment(consignmentId, UUID.fromString(otherUserId))
-
-    val response = runTestQueryAllDescendants("query_no_descendants", validUserToken())
-
-    response.errors should have size 1
-    response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
-  }
-
-  "allDescendants" should "return an error where no consignment id input argument provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_consignmentid")
-    val response = runTestQueryAllDescendants("query_no_consignmentid", validUserToken())
-
-    response should equal(expectedResponse)
-  }
-
-  "allDescendants" should "return an error where no parent id input argument provided" in withContainers { case container: PostgreSQLContainer =>
-    val utils = TestUtils(container.database)
-    createConsignmentStructure(utils)
-
-    val expectedResponse = expectedAllDescendantsQueryResponse("data_no_parentids_input")
-    val response = runTestQueryAllDescendants("query_no_parentids_input", validUserToken())
-
-    response should equal(expectedResponse)
   }
 
   def getFileNameAndOriginalPathMatch(fileId: UUID, utils: TestUtils): Option[FileNameAndPath] = {
