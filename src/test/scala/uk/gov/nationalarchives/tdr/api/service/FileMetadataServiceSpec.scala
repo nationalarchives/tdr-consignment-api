@@ -401,7 +401,6 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FileMetadataService.FileUUID shouldEqual "UUID"
   }
 
-
   private class AddOrUpdateBulkMetadataTestSetUp() {
     val userId: UUID = UUID.randomUUID()
     val consignmentId: UUID = UUID.randomUUID()
