@@ -5,7 +5,7 @@ import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
-import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
+import uk.gov.nationalarchives.tdr.api.graphql.validation.{ServiceTransfer, UserOwnsConsignment}
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
@@ -16,7 +16,7 @@ import scala.language.postfixOps
 trait AuthorisationTag extends ValidationTag {
   val antiVirusRole = "antivirus"
   val checksumRole = "checksum"
-  val clientFileMetadataRole = "client_file_metadata"
+  val dataLoadRole = "data-load"
   val fileFormatRole = "file_format"
   val exportRole = "export"
   val reportingRole = "reporting"
@@ -76,10 +76,15 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
 case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateConsignment: Boolean = false) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
-    val userId = token.userId
-    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole)
-
     val arg: T = ctx.arg[T](argument.name)
+    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole)
+    lazy val hasUserIdOverrideAccess: Boolean = token.transferServiceRoles.contains(dataLoadRole)
+
+    val userId: UUID = arg match {
+      case st: ServiceTransfer if st.userIdOverride.isDefined && hasUserIdOverrideAccess => st.userIdOverride.get
+      case _                                                                             => token.userId
+    }
+
     val consignmentId: UUID = arg match {
       case uoc: UserOwnsConsignment => uoc.consignmentId
       case id: UUID                 => id
