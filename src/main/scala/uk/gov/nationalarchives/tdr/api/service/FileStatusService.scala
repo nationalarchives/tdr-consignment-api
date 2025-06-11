@@ -9,8 +9,8 @@ import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileStatusService(fileStatusRepository: FileStatusRepository)(
-    implicit val executionContext: ExecutionContext
+class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
+    val executionContext: ExecutionContext
 ) {
 
   private def toFileStatuses(rows: Seq[FilestatusRow]): Seq[FileStatus] = {

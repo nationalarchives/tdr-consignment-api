@@ -17,9 +17,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileMetadataService(
-    fileMetadataRepository: FileMetadataRepository,
-    customMetadataService: CustomMetadataPropertiesService)(implicit val ec: ExecutionContext) {
+class FileMetadataService(fileMetadataRepository: FileMetadataRepository, customMetadataService: CustomMetadataPropertiesService)(implicit val ec: ExecutionContext) {
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 

@@ -41,7 +41,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   def fileStatusRow(statusType: String, value: String): FilestatusRow =
     FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), statusType, value, Timestamp.from(Instant.now))
 
-  "addFileStatus" should "add a file status row in the db" in {
+  "addFileStatuses" should "add a file status row in the db" in {
 
     val fileStatusCaptor: ArgumentCaptor[List[AddFileStatusInput]] = ArgumentCaptor.forClass(classOf[List[AddFileStatusInput]])
 
@@ -266,7 +266,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
       FileStatusService.Redaction,
       FileStatusService.Upload,
       FileStatusService.ServerChecksum,
-      FileStatusService.ClientChecks,
+      FileStatusService.ClientChecks
     )
 
     FileStatusService.allFileStatusTypes should equal(expectedTypes)

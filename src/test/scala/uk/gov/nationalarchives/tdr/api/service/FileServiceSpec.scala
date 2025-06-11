@@ -867,7 +867,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileMetadataService =
       new FileMetadataService(fileMetadataRepositoryMock, customMetadataServiceMock)
     val fixedUuidSource = new FixedUUIDSource()
-    val fileStatusService = new FileStatusService(fileStatusRepositoryMock)
 
     val userId = UUID.randomUUID()
 
@@ -943,7 +942,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val customMetadataPropertiesRepositoryMock = mock[CustomMetadataPropertiesRepository]
     val fileStatusServiceMock = mock[FileStatusService]
     val fileMetadataService =
-      new FileMetadataService(fileMetadataRepositoryMock, consignmentStatusService)
+      new FileMetadataService(fileMetadataRepositoryMock, customMetadataServiceMock)
     val fixedUuidSource = new FixedUUIDSource()
 
     val consignmentId = UUID.randomUUID()
@@ -956,7 +955,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val metadataRowCaptor: ArgumentCaptor[List[FilemetadataRow]] = ArgumentCaptor.forClass(classOf[List[FilemetadataRow]])
 
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
-    when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
     when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
     mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
 
@@ -973,13 +971,10 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       ConfigFactory.load()
     )
 
-    val expectedStatusInput = setupExpectedStatusInput(Set(file1Id, file2Id))
-
     val input = setupMetadataInput(consignmentId, Some(overrideUserId))
     val response = service.addFile(input, tokenUserId).futureValue
 
     verify(fileRepositoryMock, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
-    verify(fileStatusServiceMock, times(1)).addFileStatuses(expectedStatusInput)
 
     val fileRows: List[FileRow] = fileRowCaptor.getAllValues.asScala.flatten.toList
     val metadataRows: List[FilemetadataRow] = metadataRowCaptor.getAllValues.asScala.flatten.toList
