@@ -79,6 +79,36 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     consignmentStatusRowPassedToRepo.value should equal(expectedStatusValue)
   }
 
+  "addConsignmentStatus" should "set user id to override id where present on input" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = "Upload"
+    val expectedStatusValue = "Completed"
+    val overrideUserId = UUID.randomUUID()
+
+    val consignmentStatusRowCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
+    val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
+
+    val mockGetConsignmentStatusRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future(Seq())
+    val mockAddConsignmentStatusRepoResponse = Future(
+      generateConsignmentStatusRow(expectedConsignmentId, expectedStatusType, expectedStatusValue, None)
+    )
+
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(consignmentIdCaptor.capture())).thenReturn(mockGetConsignmentStatusRepoResponse)
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(consignmentStatusRowCaptor.capture())).thenReturn(mockAddConsignmentStatusRepoResponse)
+
+    val addConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue), Some(overrideUserId))
+    consignmentService.addConsignmentStatus(addConsignmentStatusInput).futureValue
+
+    val consignmentStatusRowPassedToRepo = consignmentStatusRowCaptor.getValue
+
+    consignmentIdCaptor.getValue should equal(expectedConsignmentId)
+    consignmentStatusRowPassedToRepo.consignmentid should equal(expectedConsignmentId)
+    consignmentStatusRowPassedToRepo.statustype should equal(expectedStatusType)
+    consignmentStatusRowPassedToRepo.value should equal(expectedStatusValue)
+  }
+
   "addConsignmentStatus" should "return the consignment status row if a row with same statusType doesn't already exist" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid

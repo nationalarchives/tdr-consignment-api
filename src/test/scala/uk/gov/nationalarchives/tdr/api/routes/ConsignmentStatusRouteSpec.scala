@@ -162,6 +162,23 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
   }
 
+  "updateConsignmentStatus" should "x" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val statusType = "Series"
+    val statusValue = "InProgress"
+    val token = validTransferServiceToken("data-load")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+    val expectedResponse = expectedUpdateConsignmentStatusMutationResponse("data_all")
+    val response = runUpdateConsignmentStatusTestMutation("mutation_override_user_id", token)
+
+    response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
+  }
+
   "updateConsignmentStatus" should "allow a transfer adviser user to update the consignment status" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
