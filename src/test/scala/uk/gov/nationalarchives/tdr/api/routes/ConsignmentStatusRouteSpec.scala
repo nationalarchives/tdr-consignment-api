@@ -162,9 +162,9 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
   }
 
-  "updateConsignmentStatus" should "x" in withContainers { case container: PostgreSQLContainer =>
+  "updateConsignmentStatus" should "update statuses where override user id is present in input" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
-    val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
     val statusType = "Series"
     val statusValue = "InProgress"
@@ -177,6 +177,40 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val response = runUpdateConsignmentStatusTestMutation("mutation_override_user_id", token)
 
     response.data.get.updateConsignmentStatus should equal(expectedResponse.data.get.updateConsignmentStatus)
+  }
+
+  "updateConsignmentStatus" should "throw an error when the override user id does not match the consignment user id" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val statusType = "Series"
+    val statusValue = "InProgress"
+    val token = validTransferServiceToken("data-load")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+    val response = runUpdateConsignmentStatusTestMutation("mutation_incorrect_override_user_id", token)
+
+    response.errors.head.message should equal("User 'c44f1b9b-1275-4bc3-831c-808c50a0222d' does not have access to consignment '6e3b76c4-1745-4467-8ac5-b4dd736e1b3e'")
+    response.data.get.updateConsignmentStatus shouldBe None
+  }
+
+  "updateConsignmentStatus" should "throw an error if user does not have permission to override user id" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
+    val statusType = "Series"
+    val statusValue = "InProgress"
+    val token = validTransferServiceToken("some-random-role")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, statusType, statusValue)
+
+    val response = runUpdateConsignmentStatusTestMutation("mutation_incorrect_override_user_id", token)
+
+    response.errors.head.message should equal("User '5be4be46-cbd3-4073-8500-3be04522145d' does not have access to consignment '6e3b76c4-1745-4467-8ac5-b4dd736e1b3e'")
+    response.data.get.updateConsignmentStatus shouldBe None
   }
 
   "updateConsignmentStatus" should "allow a transfer adviser user to update the consignment status" in withContainers { case container: PostgreSQLContainer =>
