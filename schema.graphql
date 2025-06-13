@@ -167,6 +167,7 @@ input ConsignmentStatusInput {
   consignmentId: UUID!
   statusType: String!
   statusValue: String
+  userIdOverride: UUID
 }
 
 type CustomMetadataField {
