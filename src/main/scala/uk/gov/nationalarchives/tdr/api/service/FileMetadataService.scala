@@ -39,28 +39,6 @@ class FileMetadataService(
       .recover(err => throw InputDataException(err.getMessage))
   }
 
-  @deprecated("Use addOrUpdateBulkFileMetadata(input: AddOrUpdateBulkFileMetadataInput, userId: UUID) instead")
-  def updateBulkFileMetadata(input: UpdateBulkFileMetadataInput, userId: UUID): Future[BulkFileMetadata] = {
-    val emptyPropertyValues: Seq[String] = input.metadataProperties.filter(_.value.isEmpty).map(_.filePropertyName)
-
-    if (emptyPropertyValues.nonEmpty) {
-      throw InputDataException(s"Cannot update properties with empty value: ${emptyPropertyValues.mkString(", ")}")
-    }
-
-    val consignmentId = input.consignmentId
-    val distinctMetadataProperties: Set[UpdateFileMetadataInput] = input.metadataProperties.toSet
-    val distinctPropertyNames: Set[String] = distinctMetadataProperties.map(_.filePropertyName)
-    val uniqueFileIds: Set[UUID] = input.fileIds.toSet
-
-    for {
-      _ <- fileMetadataRepository.deleteFileMetadata(uniqueFileIds, distinctPropertyNames)
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(uniqueFileIds, distinctMetadataProperties, userId))
-      _ <- validateFileMetadataService.validateAdditionalMetadata(uniqueFileIds, distinctPropertyNames)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
-      metadataPropertiesAdded = addedRows.map(r => { FileMetadata(r.propertyname, r.value) }).toSet
-    } yield BulkFileMetadata(uniqueFileIds.toSeq, metadataPropertiesAdded.toSeq)
-  }
-
   def addOrUpdateBulkFileMetadata(metadataInput: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
     for {
       customMetadata <- customMetadataService.getCustomMetadata
@@ -80,44 +58,6 @@ class FileMetadataService(
     } yield metadataPropertiesAdded
   }
 
-  def deleteFileMetadata(input: DeleteFileMetadataInput, userId: UUID): Future[DeleteFileMetadata] = {
-    val propertiesToDelete = descriptionDeletionHandler(input.propertyNames)
-    val consignmentId: UUID = input.consignmentId
-    val fileIds: Set[UUID] = input.fileIds.toSet
-    for {
-      customMetadataProperties <- customMetadataService.getCustomMetadata
-      allPropertiesToDelete: Set[String] = customMetadataProperties
-        .collect {
-          case customMetadataProperty if propertiesToDelete.contains(customMetadataProperty.name) =>
-            val namesOfDependenciesToDelete: List[String] = customMetadataProperty.values.flatMap(_.dependencies.map(_.name))
-            namesOfDependenciesToDelete :+ customMetadataProperty.name
-        }
-        .flatten
-        .toSet
-
-      _ = if (allPropertiesToDelete.isEmpty) {
-        throw new IllegalStateException(
-          s"Can't find metadata property '${input.propertyNames.mkString(" or ")}' in the db"
-        )
-      }
-
-      propertyDefaults: Seq[(String, String)] = customMetadataProperties.collect {
-        case customMetadataProperty if allPropertiesToDelete.contains(customMetadataProperty.name) && customMetadataProperty.defaultValue.nonEmpty =>
-          (customMetadataProperty.name, customMetadataProperty.defaultValue.get)
-      }
-
-      metadataToReset: Seq[AddFileMetadataInput] = fileIds.flatMap { fileId =>
-        propertyDefaults.map { case (propertyName, defaultValue) =>
-          AddFileMetadataInput(fileId, defaultValue, userId, propertyName)
-        }
-      }.toSeq
-      _ <- fileMetadataRepository.deleteFileMetadata(fileIds, allPropertiesToDelete)
-      _ <- fileMetadataRepository.addFileMetadata(metadataToReset)
-      _ <- validateFileMetadataService.validateAdditionalMetadata(fileIds, allPropertiesToDelete)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(consignmentId, List(DescriptiveMetadata, ClosureMetadata))
-    } yield DeleteFileMetadata(fileIds.toSeq, allPropertiesToDelete.toSeq)
-  }
-
   private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
     // Ensure that the file metadata is returned to the correct state if the 'description' property is deleted
     // Cannot have a 'DescriptionAlternate' property without a 'description' property
@@ -126,16 +66,6 @@ class FileMetadataService(
     if (originalPropertyNames.contains(Description)) {
       originalPropertyNames ++ Set(DescriptionClosed)
     } else originalPropertyNames
-  }
-
-  private def generateFileMetadataInput(fileIds: Set[UUID], inputs: Set[UpdateFileMetadataInput], userId: UUID): List[AddFileMetadataInput] = {
-    fileIds
-      .flatMap(fileId =>
-        {
-          inputs.map(i => AddFileMetadataInput(fileId, i.value, userId, i.filePropertyName))
-        }.toList
-      )
-      .toList
   }
 
   private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
