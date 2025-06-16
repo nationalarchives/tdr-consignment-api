@@ -42,7 +42,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 
 lazy val akkaVersion = "2.10.0"
 lazy val akkaHttpVersion = "10.7.0"
-lazy val circeVersion = "0.14.13"
+lazy val circeVersion = "0.14.14"
 lazy val testContainersVersion = "0.43.0"
 
 libraryDependencies ++= Seq(
@@ -64,7 +64,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.51",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.149",
-  "org.postgresql" % "postgresql" % "42.7.6",
+  "org.postgresql" % "postgresql" % "42.7.7",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
   "ch.megard" %% "akka-http-cors" % "1.2.0",
