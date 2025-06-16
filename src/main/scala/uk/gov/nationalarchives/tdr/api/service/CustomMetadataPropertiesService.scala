@@ -8,6 +8,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CustomMetadataPropertiesService(customMetadataPropertiesRepository: CustomMetadataPropertiesRepository)(implicit val ec: ExecutionContext) {
+
+  //TODO should replace this with the config schema from da-metadata-schema: https://github.com/nationalarchives/da-metadata-schema/blob/main/config-schema/config.json
   def getCustomMetadata: Future[Seq[CustomMetadataField]] = {
     val propertiesValuesAndDependencies: Future[(Seq[FilepropertyRow], Seq[FilepropertyvaluesRow], Seq[FilepropertydependenciesRow])] =
       for {

@@ -21,8 +21,8 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
 
-    val (inputFileIds: Seq[UUID], inputConsignmentId: UUID, skipValidation: Boolean) = arg match {
-      case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId, addOrUpdateInput.skipValidation)
+    val (inputFileIds: Seq[UUID], inputConsignmentId: UUID) = arg match {
+      case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId)
     }
     val token = ctx.ctx.accessToken
     val userId = token.userId
@@ -35,7 +35,7 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
 
     for {
       fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)
-      noAccess = (fileFields.exists(_.userId != userId) || skipValidation) && !draftMetadataValidatorAccess
+      noAccess = fileFields.exists(_.userId != userId) && !draftMetadataValidatorAccess
     } yield {
       noAccess match {
         case true => throw AuthorisationException("Access denied to file metadata")
