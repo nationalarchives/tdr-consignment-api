@@ -17,13 +17,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileMetadataService(
-    fileMetadataRepository: FileMetadataRepository,
-    consignmentStatusService: ConsignmentStatusService,
-    customMetadataService: CustomMetadataPropertiesService,
-    validateFileMetadataService: ValidateFileMetadataService,
-    fileStatusService: FileStatusService
-)(implicit val ec: ExecutionContext) {
+class FileMetadataService(fileMetadataRepository: FileMetadataRepository, customMetadataService: CustomMetadataPropertiesService)(implicit val ec: ExecutionContext) {
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 
@@ -52,20 +46,8 @@ class FileMetadataService(
       }
       _ <- metadataInput.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(metadataInput.fileMetadata, userId))
-      _ <- processFileMetadata(metadataInput)
-      _ <- consignmentStatusService.updateMetadataConsignmentStatus(metadataInput.consignmentId, List(DescriptiveMetadata, ClosureMetadata))
       metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
     } yield metadataPropertiesAdded
-  }
-
-  private def descriptionDeletionHandler(originalPropertyNames: Seq[String]): Seq[String] = {
-    // Ensure that the file metadata is returned to the correct state if the 'description' property is deleted
-    // Cannot have a 'DescriptionAlternate' property without a 'description' property
-    // 'DescriptionAlternate' property is a dependency of 'DescriptionClosed' property
-    // If 'description' is deleted then 'DescriptionClosed' property to be set back to default of 'false' and 'DescriptionAlternate' to be deleted
-    if (originalPropertyNames.contains(Description)) {
-      originalPropertyNames ++ Set(DescriptionClosed)
-    } else originalPropertyNames
   }
 
   private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
@@ -83,16 +65,6 @@ class FileMetadataService(
       }
     }
 
-  private def processFileMetadata(metadataInput: AddOrUpdateBulkFileMetadataInput): Future[Seq[FilestatusRow]] = {
-    if (metadataInput.skipValidation) {
-      fileStatusService.addAdditionalMetadataStatuses(metadataInput.fileMetadata)
-    } else {
-      validateFileMetadataService.validateAdditionalMetadata(
-        fileIds = metadataInput.fileMetadata.map(_.fileId).toSet,
-        propertiesToValidate = metadataInput.fileMetadata.head.metadata.map(_.filePropertyName).toSet
-      )
-    }
-  }
 }
 
 object FileMetadataService {

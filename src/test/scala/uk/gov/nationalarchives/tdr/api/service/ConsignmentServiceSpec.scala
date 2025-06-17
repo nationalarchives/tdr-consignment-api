@@ -23,7 +23,6 @@ import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.ListHasAsScala
 
 class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -83,9 +82,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val mockConsignmentSeq = 5L
     val mockToken = mock[Token]
     val mockBody = mock[TransferringBody]
-    val consignmentStatusRow = mock[ConsignmentstatusRow]
     when(seriesRepositoryMock.getSeries(seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
-    when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
     when(transferringBodyServiceMock.getBodyByCode(bodyCode)).thenReturn(Future.successful(mockBody))
@@ -106,42 +103,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     result.transferringBodyTdrCode shouldBe Some(bodyCode)
   }
 
-  "addConsignment" should "create the metadata consignment statuses" in {
-    fixedUuidSource.reset
-    val mockConsignmentSeq = 5L
-    val mockToken = mock[Token]
-    val mockBody = mock[TransferringBody]
-    val consignmentStatusRow = mock[ConsignmentstatusRow]
-    val rowCaptor: ArgumentCaptor[Seq[ConsignmentstatusRow]] = ArgumentCaptor.forClass(classOf[Seq[ConsignmentstatusRow]])
-    when(seriesRepositoryMock.getSeries(seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
-    when(consignmentStatusRepoMock.addConsignmentStatuses(rowCaptor.capture())).thenReturn(Future.successful(Seq(consignmentStatusRow)))
-    when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(mockConsignmentSeq))
-    when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
-    when(transferringBodyServiceMock.getBodyByCode(bodyCode)).thenReturn(Future.successful(mockBody))
-    when(mockBody.bodyId).thenReturn(bodyId)
-    when(mockToken.transferringBody).thenReturn(Some(bodyCode))
-
-    val result = consignmentService.addConsignment(AddConsignmentInput(Some(seriesId), "standard"), mockToken).futureValue
-
-    verify(consignmentStatusRepoMock, times(1)).addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])
-
-    val sortedValues = rowCaptor.getAllValues.asScala.flatten.sortBy(r => r.statustype)
-    sortedValues.head.consignmentid should be(result.consignmentid)
-    sortedValues.head.statustype should be(ClosureMetadata)
-    sortedValues.head.value should be(NotEntered)
-
-    sortedValues.last.consignmentid should be(result.consignmentid)
-    sortedValues.last.statustype should be(DescriptiveMetadata)
-    sortedValues.last.value should be(NotEntered)
-  }
-
   "addConsignment" should "link a consignment to the user's ID" in {
     fixedUuidSource.reset
     val mockToken = mock[Token]
     val mockBody = mock[TransferringBody]
-    val consignmentStatusRow = mock[ConsignmentstatusRow]
     when(seriesRepositoryMock.getSeries(seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
-    when(consignmentStatusRepoMock.addConsignmentStatuses(any[Seq[ConsignmentstatusRow]])).thenReturn(Future.successful(Seq(consignmentStatusRow)))
     when(consignmentRepoMock.getNextConsignmentSequence).thenReturn(Future.successful(consignmentSequence))
     when(consignmentRepoMock.addConsignment(any[ConsignmentRow])).thenReturn(mockResponse)
     when(transferringBodyServiceMock.getBodyByCode(bodyCode)).thenReturn(Future.successful(mockBody))

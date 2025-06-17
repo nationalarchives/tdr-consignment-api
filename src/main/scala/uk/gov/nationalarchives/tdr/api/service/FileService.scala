@@ -11,15 +11,15 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.An
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes, defaultStatuses}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes}
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
-import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils.{TreeNodeInput, _}
+import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -108,21 +108,7 @@ class FileService(
     val matchedFileRows: Future[List[FileMatches]] = generateMatchedRows(rows)
     for {
       matches <- matchedFileRows
-      _ <- addDefaultMetadataStatuses(Future.successful(matches))
     } yield matches
-  }
-
-  private def addDefaultMetadataStatuses(fileMatches: Future[List[FileMatches]]): Future[List[FileStatus]] = {
-    for {
-      matches <- fileMatches
-      fileIds = matches.map(_.fileId).toSet
-      statusInputs = fileIds
-        .flatMap(id => {
-          defaultStatuses.map(ds => AddFileStatusInput(id, ds._1, ds._2))
-        })
-        .toList
-      addedStatuses <- fileStatusService.addFileStatuses(AddMultipleFileStatusesInput(statusInputs))
-    } yield addedStatuses
   }
 
   private def generateMatchedRows(rows: Future[List[Rows]]): Future[List[FileMatches]] = {
