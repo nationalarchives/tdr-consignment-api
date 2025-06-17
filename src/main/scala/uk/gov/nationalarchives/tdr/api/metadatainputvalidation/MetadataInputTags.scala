@@ -5,7 +5,7 @@ import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
 import uk.gov.nationalarchives.tdr.api.auth.ValidateBody.updateMetadataRole
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrUpdateBulkFileMetadataInput, DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddOrUpdateBulkFileMetadataInput
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileDetails
@@ -22,8 +22,6 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
     val arg: T = ctx.arg[T](argument.name)
 
     val (inputFileIds: Seq[UUID], inputConsignmentId: UUID, skipValidation: Boolean) = arg match {
-      case updateInput: UpdateBulkFileMetadataInput           => (updateInput.fileIds, updateInput.consignmentId, false)
-      case deleteInput: DeleteFileMetadataInput               => (deleteInput.fileIds, deleteInput.consignmentId, false)
       case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId, addOrUpdateInput.skipValidation)
     }
     val token = ctx.ctx.accessToken
