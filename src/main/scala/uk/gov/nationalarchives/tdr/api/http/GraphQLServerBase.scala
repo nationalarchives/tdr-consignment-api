@@ -52,7 +52,6 @@ trait GraphQLServerBase {
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val antivirusMetadataRepository = new AntivirusMetadataRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
-    val displayPropertiesRepository = new DisplayPropertiesRepository(db)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
     val consignmentService = new ConsignmentService(
       consignmentRepository,
@@ -69,12 +68,10 @@ trait GraphQLServerBase {
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
     val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
-    val validateFileMetadataService = new ValidateFileMetadataService(customMetadataPropertiesService, displayPropertiesService, fileMetadataRepository, fileStatusRepository)
-    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
-    val fileStatusService = new FileStatusService(fileStatusRepository, customMetadataPropertiesService, displayPropertiesService)
+    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, uuidSource, timeSource)
+    val fileStatusService = new FileStatusService(fileStatusRepository)
     val fileMetadataService =
-      new FileMetadataService(fileMetadataRepository, consignmentStatusService, customMetadataPropertiesService, validateFileMetadataService, fileStatusService)
+      new FileMetadataService(fileMetadataRepository, customMetadataPropertiesService)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
     val referenceGeneratorService = new ReferenceGeneratorService(config, SimpleHttpClient())
     val fileService = new FileService(
@@ -102,8 +99,7 @@ trait GraphQLServerBase {
       transferringBodyService,
       consignmentStatusService,
       fileStatusService,
-      customMetadataPropertiesService,
-      displayPropertiesService
+      customMetadataPropertiesService
     )
 
   }

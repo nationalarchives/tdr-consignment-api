@@ -322,17 +322,6 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     files.size shouldBe 0
   }
 
-  "getAllDescendants" should "return all descendants" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val utils = TestUtils(db)
-    val fileRepository = new FileRepository(db)
-    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
-    val folderId = setUpFilesAndDirectories(consignmentId, utils)
-
-    val files = fileRepository.getAllDescendants(Seq(folderId)).futureValue
-    files.size shouldBe 3
-  }
-
   "getPaginatedFiles" should "return all files and folders after the cursor up to the limit value" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)

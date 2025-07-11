@@ -10,16 +10,16 @@ import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes, defaultStatuses}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes}
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
-import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils.{TreeNodeInput, _}
+import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -44,7 +44,11 @@ class FileService(
   private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
   private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
 
-  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
+  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, tokenUserId: UUID): Future[List[FileMatches]] = {
+    val userId = addFileAndMetadataInput.userIdOverride match {
+      case Some(id) => id
+      case _        => tokenUserId
+    }
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
     val filePathInputs = addFileAndMetadataInput.metadataInput.map(i => TreeNodeInput(i.originalPath, Some(i.matchId))).toSet
@@ -101,22 +105,10 @@ class FileService(
       }).toList
     })
 
-    val matchedFileRows = generateMatchedRows(rows)
-    addDefaultMetadataStatuses(matchedFileRows)
-    matchedFileRows
-  }
-
-  private def addDefaultMetadataStatuses(fileMatches: Future[List[FileMatches]]): Future[List[FileStatus]] = {
+    val matchedFileRows: Future[List[FileMatches]] = generateMatchedRows(rows)
     for {
-      matches <- fileMatches
-      fileIds = matches.map(_.fileId).toSet
-      statusInputs = fileIds
-        .flatMap(id => {
-          defaultStatuses.map(ds => AddFileStatusInput(id, ds._1, ds._2))
-        })
-        .toList
-      addedStatuses <- fileStatusService.addFileStatuses(AddMultipleFileStatusesInput(statusInputs))
-    } yield addedStatuses
+      matches <- matchedFileRows
+    } yield matches
   }
 
   private def generateMatchedRows(rows: Future[List[Rows]]): Future[List[FileMatches]] = {
@@ -127,11 +119,6 @@ class FileService(
       case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
       case _                                    => Nil
     }
-  }
-
-  def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
-    // For now only interested in basic file metadata
-    fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
   }
 
   def getFileDetails(ids: Seq[UUID]): Future[Seq[FileDetails]] = {

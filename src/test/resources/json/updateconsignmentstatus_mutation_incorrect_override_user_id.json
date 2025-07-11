@@ -1,0 +1,11 @@
+{
+  "query": "mutation updateConsignmentStatus($updateConsignmentStatusInput: ConsignmentStatusInput!){updateConsignmentStatus(updateConsignmentStatusInput: $updateConsignmentStatusInput)}",
+  "variables": {
+    "updateConsignmentStatusInput": {
+      "userIdOverride": "c44f1b9b-1275-4bc3-831c-808c50a0222d",
+      "consignmentId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+      "statusType": "Series",
+      "statusValue": "Completed"
+    }
+  }
+}
