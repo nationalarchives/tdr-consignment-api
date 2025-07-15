@@ -71,17 +71,40 @@ In order to manually deploy the generated-graphql, follow [these instructions](h
 
 The consignment-api makes use of a commercial Akka licence.
 
-The build requires the token in two places:
-* lightbend.sbt
-* application configuration
+Akka provide:
+* Licence Key: runtime check that valid licence
+* Licence Token: build time access to the Akka binaries
 
-Details about how to use the licence can be found here: https://www.lightbend.com/account/lightbend-platform/credentials
+Details for both can be found in the Akka account: https://account.akka.io/key (access required)
 
-#### lightbend.sbt
+#### Licence Key
 
-The token is stored in a SSM parameter in the TDR management account: `/mgmt/akka/licence_token`.
+Required at runtime.
 
-The licence token is set as a repository secret `AKKA_TOKEN` which is then used by the Github actions where needed.
+Stored in SSM parameter store in each of the TDR environment accounts (intg/staging/prod): `/{env}/akka/licence_key`
+
+Requires manually adding to the SSM parameter
+
+Referenced via ECS task definition secret in the `application.base.conf`:
+```
+    ...
+    akka.licence-key = ${AKKA_LICENCE_KEY}
+    ...
+```
+
+#### Licence Token
+
+Required at build time to access the relevant Akka binaries.
+
+Stored in SSM parameter store in the TDR management account: `/mgmt/akka/licence_token`
+
+Requires manually adding to the SSM parameter
+
+Referenced as a GitHub repository secret so available at build time: `AKKA_TOKEN`
+
+Token value is used in the `akka.sbt` build file.
+
+Repository secret set in the `tdr-terraform-github`
 
 #### Application configuration
 
