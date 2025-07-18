@@ -54,13 +54,12 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementPrivateBeta = service
       .addTransferAgreementPrivateBeta(
-        AddTransferAgreementPrivateBetaInput(consignmentId, allCrownCopyright = true, allEnglish = Option(true), allPublicRecords = true),
+        AddTransferAgreementPrivateBetaInput(consignmentId, allPublicRecords = true, allEnglish = Option(true)),
         userId
       )
       .futureValue
 
     transferAgreementResult.consignmentId shouldBe consignmentId
-    transferAgreementResult.allCrownCopyright shouldBe true
     transferAgreementResult.allEnglish.get shouldBe true
     transferAgreementResult.allPublicRecords shouldBe true
   }
@@ -93,7 +92,7 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementPrivateBeta = service
       .addTransferAgreementPrivateBeta(
-        AddTransferAgreementPrivateBetaInput(consignmentId, allCrownCopyright = true, allEnglish = None, allPublicRecords = true),
+        AddTransferAgreementPrivateBetaInput(consignmentId, allPublicRecords = true, allEnglish = None),
         userId
       )
       .futureValue
