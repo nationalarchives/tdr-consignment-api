@@ -6,7 +6,18 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{Ascending, ConsignmentFilters, ConsignmentOrderBy, ConsignmentReference, CreatedAtTimestamp, Descending, StartUploadInput, UpdateClientSideDraftMetadataFileNameInput, UpdateExportDataInput, UpdateMetadataSchemaLibraryVersionInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
+  Ascending,
+  ConsignmentFilters,
+  ConsignmentOrderBy,
+  ConsignmentReference,
+  CreatedAtTimestamp,
+  Descending,
+  StartUploadInput,
+  UpdateClientSideDraftMetadataFileNameInput,
+  UpdateExportDataInput,
+  UpdateMetadataSchemaLibraryVersionInput
+}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
@@ -578,7 +589,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val consignmentReferences = response.map(_.consignmentreference).toList
     consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
   }
-  
+
   private def createConsignments(utils: TestUtils): Int = {
     val consignments = Map(consignmentIdOne -> "TDR-2021-A", consignmentIdTwo -> "TDR-2021-B", consignmentIdThree -> "TDR-2021-C", consignmentIdFour -> "TDR-2021-D")
     consignments.foreach(item => utils.createConsignment(item._1, userId, consignmentRef = item._2))

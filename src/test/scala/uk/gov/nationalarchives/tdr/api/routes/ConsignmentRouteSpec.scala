@@ -814,7 +814,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   "consignments" should "correctly deserialize orderBy enums and return ordered results" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
-    
+
     val consignment1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
     val consignment2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
 
@@ -831,7 +831,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response2.errors should be(empty)
     response2.data.get.consignments.edges.map(_.node.consignmentid.get) should equal(List(consignment1, consignment2))
   }
-  
+
   "getConsignmentsForMetadataReview" should "return all consignments with `MetadataReview` status `inProgress`" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2024-AFK")

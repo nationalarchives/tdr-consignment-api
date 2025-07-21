@@ -5,7 +5,23 @@ import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
-import sangria.schema.{Argument, BooleanType, EnumType, Field, InputObjectType, IntType, ListType, LongType, ObjectType, OptionInputType, OptionType, ProjectedName, Projector, StringType, fields}
+import sangria.schema.{
+  Argument,
+  BooleanType,
+  EnumType,
+  Field,
+  InputObjectType,
+  IntType,
+  ListType,
+  LongType,
+  ObjectType,
+  OptionInputType,
+  OptionType,
+  ProjectedName,
+  Projector,
+  StringType,
+  fields
+}
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.ConsignmentRow
@@ -71,9 +87,9 @@ object ConsignmentFields {
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
   case class ConsignmentFilters(userId: Option[UUID], consignmentType: Option[String])
-  
+
   case class ConsignmentOrderBy(consignmentOrderField: ConsignmentOrderField, orderDirection: Direction)
-  
+
   sealed trait ConsignmentOrderField {
     val cursorFn: ConsignmentRow => String
   }
@@ -91,26 +107,25 @@ object ConsignmentFields {
 
   implicit val consignmentOrderFieldDecoder: Decoder[ConsignmentOrderField] = Decoder[String].emap {
     case "ConsignmentReference" => Right(ConsignmentReference)
-    case "CreatedAtTimestamp" => Right(CreatedAtTimestamp)
-    case other => Left(s"Unknown ConsignmentOrderField: $other")
+    case "CreatedAtTimestamp"   => Right(CreatedAtTimestamp)
+    case other                  => Left(s"Unknown ConsignmentOrderField: $other")
   }
 
   implicit val consignmentOrderFieldEncoder: Encoder[ConsignmentOrderField] = Encoder[String].contramap {
     case ConsignmentReference => "ConsignmentReference"
-    case CreatedAtTimestamp => "CreatedAtTimestamp"
+    case CreatedAtTimestamp   => "CreatedAtTimestamp"
   }
 
   implicit val directionDecoder: Decoder[Direction] = Decoder[String].emap {
-    case "Ascending" => Right(Ascending)
+    case "Ascending"  => Right(Ascending)
     case "Descending" => Right(Descending)
-    case other => Left(s"Unknown Direction: $other")
+    case other        => Left(s"Unknown Direction: $other")
   }
 
   implicit val directionEncoder: Encoder[Direction] = Encoder[String].contramap {
-    case Ascending => "Ascending"
+    case Ascending  => "Ascending"
     case Descending => "Descending"
   }
-
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -129,16 +144,16 @@ object ConsignmentFields {
   }
   implicit val ConsignmentStatusType: ObjectType[Unit, ConsignmentStatus] =
     deriveObjectType[Unit, ConsignmentStatus]()
-  
+
   implicit val ConsignmentOrderFieldType: EnumType[ConsignmentOrderField] = deriveEnumType[ConsignmentOrderField]()
   implicit val DirectionType: EnumType[Direction] = deriveEnumType[Direction]()
-  
+
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
   implicit val FileMetadataFiltersInputType: InputObjectType[FileMetadataFilters] = deriveInputObjectType[FileMetadataFilters]()
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
   implicit val ConsignmentFiltersInputType: InputObjectType[ConsignmentFilters] = deriveInputObjectType[ConsignmentFilters]()
   implicit val ConsignmentOrderByType: InputObjectType[ConsignmentOrderBy] = deriveInputObjectType[ConsignmentOrderBy]()
-  
+
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
   val ConsignmentFiltersInputArg: Argument[Option[ConsignmentFilters]] = Argument("consignmentFiltersInput", OptionInputType(ConsignmentFiltersInputType))

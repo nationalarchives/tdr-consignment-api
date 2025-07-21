@@ -5,7 +5,17 @@ import slick.jdbc.PostgresProfile.api._
 import slick.lifted.ColumnOrdered
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{Ascending, ConsignmentFilters, ConsignmentOrderBy, ConsignmentReference, CreatedAtTimestamp, Descending, StartUploadInput, UpdateClientSideDraftMetadataFileNameInput, UpdateMetadataSchemaLibraryVersionInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
+  Ascending,
+  ConsignmentFilters,
+  ConsignmentOrderBy,
+  ConsignmentReference,
+  CreatedAtTimestamp,
+  Descending,
+  StartUploadInput,
+  UpdateClientSideDraftMetadataFileNameInput,
+  UpdateMetadataSchemaLibraryVersionInput
+}
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
 import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
@@ -82,9 +92,14 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
       .map(_._1)
     db.run(query.result)
   }
-  
-  
-  def getConsignments(limit: Int, after: Option[String], currentPage: Option[Int] = None, consignmentFilters: Option[ConsignmentFilters] = None, orderBy: ConsignmentOrderBy = ConsignmentOrderBy(ConsignmentReference, Descending)): Future[Seq[ConsignmentRow]] = {
+
+  def getConsignments(
+      limit: Int,
+      after: Option[String],
+      currentPage: Option[Int] = None,
+      consignmentFilters: Option[ConsignmentFilters] = None,
+      orderBy: ConsignmentOrderBy = ConsignmentOrderBy(ConsignmentReference, Descending)
+  ): Future[Seq[ConsignmentRow]] = {
     val offset = currentPage.map(_ * limit).getOrElse(0)
     val (sortFn, cursorFilterFn) = getOrderingFunctions(orderBy)
     val query = Consignment

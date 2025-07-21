@@ -115,7 +115,7 @@ class ConsignmentService(
       lastCursor = if (hasNextPage) Some(orderBy.consignmentOrderField.cursorFn(response.last)) else None
     } yield PaginatedConsignments(lastCursor, paginatedConsignments)
   }
-  
+
   def getConsignmentsForMetadataReview: Future[Seq[Consignment]] = {
     val consignments = consignmentRepository.getConsignmentsForMetadataReview
     consignments.map(rows => rows.map(row => convertRowToConsignment(row)))
