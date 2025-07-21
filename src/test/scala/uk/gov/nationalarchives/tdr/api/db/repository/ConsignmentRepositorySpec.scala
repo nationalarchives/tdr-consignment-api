@@ -6,13 +6,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentstatusRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
-  ConsignmentFilters,
-  StartUploadInput,
-  UpdateClientSideDraftMetadataFileNameInput,
-  UpdateExportDataInput,
-  UpdateMetadataSchemaLibraryVersionInput
-}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{Ascending, ConsignmentFilters, ConsignmentOrderBy, ConsignmentReference, CreatedAtTimestamp, Descending, StartUploadInput, UpdateClientSideDraftMetadataFileNameInput, UpdateExportDataInput, UpdateMetadataSchemaLibraryVersionInput}
 import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
@@ -475,6 +469,116 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignmentStatusFromDb.getString("Value") should be(InProgress)
   }
 
+  "getConsignments" should "return consignments ordered by consignmentReference ascending" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-C")
+    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-A")
+    utils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-B")
+
+    val orderBy = ConsignmentOrderBy(ConsignmentReference, Ascending)
+    val response = consignmentRepository.getConsignments(10, None, None, None, orderBy).futureValue
+
+    val consignmentReferences = response.map(_.consignmentreference).toList
+    consignmentReferences should equal(List("TDR-2021-A", "TDR-2021-B", "TDR-2021-C"))
+  }
+
+  "getConsignments" should "return consignments ordered by createdDatetime descending" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A", timestamp = Timestamp.from(Instant.parse("2024-01-01T10:00:00Z")))
+    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", timestamp = Timestamp.from(Instant.parse("2024-01-03T10:00:00Z")))
+    utils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-C", timestamp = Timestamp.from(Instant.parse("2024-01-02T10:00:00Z")))
+
+    val orderBy = ConsignmentOrderBy(CreatedAtTimestamp, Descending)
+    val response = consignmentRepository.getConsignments(10, None, None, None, orderBy).futureValue
+
+    val consignmentReferences = response.map(_.consignmentreference).toList
+    consignmentReferences should equal(List("TDR-2021-B", "TDR-2021-C", "TDR-2021-A"))
+  }
+
+  "getConsignments" should "correctly apply cursor filter with timestamp ordering ascending" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A", timestamp = Timestamp.from(Instant.parse("2024-01-01T10:00:00Z")))
+    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", timestamp = Timestamp.from(Instant.parse("2024-01-02T10:00:00Z")))
+    utils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-C", timestamp = Timestamp.from(Instant.parse("2024-01-03T10:00:00Z")))
+
+    val orderBy = ConsignmentOrderBy(CreatedAtTimestamp, Ascending)
+    val cursor = Some("2024-01-01 10:00:00")
+    val response = consignmentRepository.getConsignments(10, cursor, None, None, orderBy).futureValue
+
+    response.map(_.consignmentreference).toList should equal(List("TDR-2021-B", "TDR-2021-C"))
+  }
+
+  "getConsignments" should "correctly apply cursor filter with timestamp ordering descending" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A", timestamp = Timestamp.from(Instant.parse("2024-01-01T10:00:00Z")))
+    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", timestamp = Timestamp.from(Instant.parse("2024-01-02T10:00:00Z")))
+    utils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-C", timestamp = Timestamp.from(Instant.parse("2024-01-03T10:00:00Z")))
+
+    val orderBy = ConsignmentOrderBy(CreatedAtTimestamp, Descending)
+    val cursor = Some("2024-01-02 10:00:00")
+    val response = consignmentRepository.getConsignments(10, cursor, None, None, orderBy).futureValue
+
+    response.map(_.consignmentreference).toList should equal(List("TDR-2021-A"))
+  }
+
+  "getConsignments" should "correctly apply cursor filter with reference ordering descending" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B")
+    utils.createConsignment(consignmentIdThree, userId, consignmentRef = "TDR-2021-C")
+
+    val orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)
+    val cursor = Some("TDR-2021-C")
+    val response = consignmentRepository.getConsignments(10, cursor, None, None, orderBy).futureValue
+
+    response.map(_.consignmentreference).toList should equal(List("TDR-2021-B", "TDR-2021-A"))
+  }
+
+  "getConsignments" should "combine ordering with filters correctly" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+
+    utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
+    utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-C")
+
+    val otherUserId = UUID.randomUUID()
+    utils.createConsignment(consignmentIdThree, otherUserId, consignmentRef = "TDR-2021-B")
+
+    val filters = Some(ConsignmentFilters(Some(userId), None))
+    val orderBy = ConsignmentOrderBy(ConsignmentReference, Ascending)
+    val response = consignmentRepository.getConsignments(10, None, None, filters, orderBy).futureValue
+
+    response.map(_.consignmentreference).toList should equal(List("TDR-2021-A", "TDR-2021-C"))
+  }
+
+  "getConsignments" should "use default ordering when orderBy is not specified" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    createConsignments(utils)
+
+    val response = consignmentRepository.getConsignments(10, None, None, None).futureValue
+
+    val consignmentReferences = response.map(_.consignmentreference).toList
+    consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
+  }
+  
   private def createConsignments(utils: TestUtils): Int = {
     val consignments = Map(consignmentIdOne -> "TDR-2021-A", consignmentIdTwo -> "TDR-2021-B", consignmentIdThree -> "TDR-2021-C", consignmentIdFour -> "TDR-2021-D")
     consignments.foreach(item => utils.createConsignment(item._1, userId, consignmentRef = item._2))

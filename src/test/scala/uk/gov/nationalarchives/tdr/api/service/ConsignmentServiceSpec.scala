@@ -672,6 +672,95 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     inputCaptor.getValue.clientSideDraftMetadataFileName should equal(clientSideDraftMetadataFileName)
   }
 
+  "getConsignments" should "set cursor in ConsignmentEdge based on consignmentReference when ordering by reference" in {
+    val consignmentId1 = UUID.randomUUID()
+    val consignmentId2 = UUID.randomUUID()
+    val consignmentRows = List(
+      createConsignmentRow(consignmentId1, "ref-a", 1L, None),
+      createConsignmentRow(consignmentId2, "ref-b", 2L, None)
+    )
+
+    val orderBy = ConsignmentOrderBy(ConsignmentReference, Ascending)
+    when(consignmentRepoMock.getConsignments(2, None, None, None, orderBy))
+      .thenReturn(Future.successful(consignmentRows))
+
+    val response = consignmentService.getConsignments(2, None, None, None, Some(orderBy)).futureValue
+
+    val edges = response.consignmentEdges
+    edges(0).cursor should be("ref-a")
+    edges(1).cursor should be("ref-b")
+    response.lastCursor should be(Some("ref-b"))
+  }
+
+  "getConsignments" should "set cursor in ConsignmentEdge based on timestamp when ordering by createdDatetime" in {
+    val consignmentId1 = UUID.randomUUID()
+    val consignmentId2 = UUID.randomUUID()
+    val timestamp1 = Timestamp.from(Instant.parse("2024-01-01T10:00:00Z"))
+    val timestamp2 = Timestamp.from(Instant.parse("2024-01-02T10:00:00Z"))
+
+    val consignmentRow1 = ConsignmentRow(
+      consignmentid = consignmentId1,
+      seriesid = Some(seriesId),
+      userid = userId,
+      datetime = timestamp1,
+      parentfolder = None,
+      transferinitiateddatetime = Some(timestamp1),
+      transferinitiatedby = None,
+      exportdatetime = Some(timestamp1),
+      exportlocation = None,
+      consignmentsequence = 1L,
+      consignmentreference = "ref-a",
+      consignmenttype = "standard",
+      bodyid = bodyId
+    )
+
+    val consignmentRow2 = ConsignmentRow(
+      consignmentid = consignmentId2,
+      seriesid = Some(seriesId),
+      userid = userId,
+      datetime = timestamp2,
+      parentfolder = None,
+      transferinitiateddatetime = Some(timestamp2),
+      transferinitiatedby = None,
+      exportdatetime = Some(timestamp2),
+      exportlocation = None,
+      consignmentsequence = 2L,
+      consignmentreference = "ref-b",
+      consignmenttype = "standard",
+      bodyid = bodyId
+    )
+
+    val orderBy = ConsignmentOrderBy(CreatedAtTimestamp, Ascending)
+    when(consignmentRepoMock.getConsignments(2, None, None, None, orderBy))
+      .thenReturn(Future.successful(List(consignmentRow1, consignmentRow2)))
+
+    val response = consignmentService.getConsignments(2, None, None, None, Some(orderBy)).futureValue
+
+    val edges = response.consignmentEdges
+    edges(0).cursor should be(timestamp1.toString)
+    edges(1).cursor should be(timestamp2.toString)
+    response.lastCursor should be(Some(timestamp2.toString))
+  }
+
+  "getConsignments" should "use consignmentReference as cursor when orderBy is not specified" in {
+    val consignmentId1 = UUID.randomUUID()
+    val consignmentId2 = UUID.randomUUID()
+    val consignmentRows = List(
+      createConsignmentRow(consignmentId1, "ref-a", 1L, None),
+      createConsignmentRow(consignmentId2, "ref-b", 2L, None)
+    )
+
+    when(consignmentRepoMock.getConsignments(2, None, None, None))
+      .thenReturn(Future.successful(consignmentRows))
+
+    val response = consignmentService.getConsignments(2, None, None, None, None).futureValue
+
+    val edges = response.consignmentEdges
+    edges(0).cursor should be("ref-a")
+    edges(1).cursor should be("ref-b")
+    response.lastCursor should be(Some("ref-b"))
+  }
+
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {
     ConsignmentRow(
       consignmentId,
