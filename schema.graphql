@@ -408,7 +408,7 @@ type Query {
 
 input ConsignmentOrderBy {
   consignmentOrderField: ConsignmentOrderField!
-  orderDirection: OrderDirection!
+  orderDirection: Direction!
 }
 
 enum ConsignmentOrderField {
@@ -416,7 +416,7 @@ enum ConsignmentOrderField {
   ConsignmentReference
 }
 
-enum OrderDirection {
+enum Direction {
   Ascending
   Descending
 }
