@@ -1,3 +1,3 @@
 {
-  "query": "{ consignments(limit: 10, orderBy: { field: ConsignmentReference, direction: Descending }) { pageInfo { startCursor, endCursor, hasNextPage, hasPreviousPage }, edges { node { consignmentid, consignmentReference }}}}"
+  "query": "{ consignments(limit: 10, orderBy: { consignmentOrderField: ConsignmentReference, orderDirection: Descending }) { pageInfo { startCursor, endCursor, hasNextPage, hasPreviousPage }, edges { node { consignmentid, consignmentReference }}}}"
 }
