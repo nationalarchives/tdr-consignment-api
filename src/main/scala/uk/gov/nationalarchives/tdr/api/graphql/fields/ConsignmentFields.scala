@@ -22,8 +22,6 @@ import sangria.schema.{
   StringType,
   fields
 }
-import uk.gov.nationalarchives
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.ConsignmentRow
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment

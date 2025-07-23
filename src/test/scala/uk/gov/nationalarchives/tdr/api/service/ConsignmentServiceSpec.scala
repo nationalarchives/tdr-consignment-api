@@ -328,7 +328,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"))).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))).thenReturn(mockResponse)
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
@@ -364,7 +364,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 3
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(2, Some("consignment-ref1"))).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(2, Some("consignment-ref1"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))).thenReturn(mockResponse)
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
@@ -400,7 +400,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit, None)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, None, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))).thenReturn(mockResponse)
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, None).futureValue
 
@@ -436,7 +436,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit, Some(""))).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some(""), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))).thenReturn(mockResponse)
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("")).futureValue
 
@@ -472,7 +472,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val limit = 2
 
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(consignmentRows)
-    when(consignmentRepoMock.getConsignments(limit, None, 2.some, ConsignmentFilters(userId.some, None).some)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, None, 2.some, ConsignmentFilters(userId.some, None).some, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))).thenReturn(mockResponse)
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, None, ConsignmentFilters(userId.some, None).some, 2.some).futureValue
 
@@ -495,7 +495,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "getConsignments" should "return empty list and no cursor if no consignments" in {
     val limit = 2
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
-    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"))).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))).thenReturn(mockResponse)
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
@@ -506,7 +506,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "getConsignments" should "return empty list and no cursor if limit set to '0'" in {
     val limit = 0
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
-    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"))).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignments(limit, Some("consignment-ref1"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))).thenReturn(mockResponse)
 
     val response: PaginatedConsignments = consignmentService.getConsignments(limit, Some("consignment-ref1")).futureValue
 
@@ -740,25 +740,6 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     edges(0).cursor should be(timestamp1.toString)
     edges(1).cursor should be(timestamp2.toString)
     response.lastCursor should be(Some(timestamp2.toString))
-  }
-
-  "getConsignments" should "use consignmentReference as cursor when orderBy is not specified" in {
-    val consignmentId1 = UUID.randomUUID()
-    val consignmentId2 = UUID.randomUUID()
-    val consignmentRows = List(
-      createConsignmentRow(consignmentId1, "ref-a", 1L, None),
-      createConsignmentRow(consignmentId2, "ref-b", 2L, None)
-    )
-
-    when(consignmentRepoMock.getConsignments(2, None, None, None))
-      .thenReturn(Future.successful(consignmentRows))
-
-    val response = consignmentService.getConsignments(2, None, None, None, None).futureValue
-
-    val edges = response.consignmentEdges
-    edges(0).cursor should be("ref-a")
-    edges(1).cursor should be("ref-b")
-    response.lastCursor should be(Some("ref-b"))
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {

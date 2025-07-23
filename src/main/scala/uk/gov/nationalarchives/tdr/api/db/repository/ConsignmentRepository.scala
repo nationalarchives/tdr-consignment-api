@@ -98,7 +98,7 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
       after: Option[String],
       currentPage: Option[Int] = None,
       consignmentFilters: Option[ConsignmentFilters] = None,
-      orderBy: ConsignmentOrderBy = ConsignmentOrderBy(ConsignmentReference, Descending)
+      orderBy: ConsignmentOrderBy
   ): Future[Seq[ConsignmentRow]] = {
     val offset = currentPage.map(_ * limit).getOrElse(0)
     val (sortFn, cursorFilterFn) = getOrderingFunctions(orderBy)

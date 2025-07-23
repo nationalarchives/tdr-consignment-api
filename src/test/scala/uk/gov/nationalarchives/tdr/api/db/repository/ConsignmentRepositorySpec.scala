@@ -18,7 +18,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
   UpdateExportDataInput,
   UpdateMetadataSchemaLibraryVersionInput
 }
-import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
 import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, InProgressValue, MetadataReviewType}
@@ -156,7 +155,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(2, Some("TDR-2021-D")).futureValue
+    val response = consignmentRepository.getConsignments(2, Some("TDR-2021-D"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
 
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
@@ -170,7 +169,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(10, Some("TDR-2021-A")).futureValue
+    val response = consignmentRepository.getConsignments(10, Some("TDR-2021-A"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
 
     response should have size 0
   }
@@ -181,7 +180,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(2, None).futureValue
+    val response = consignmentRepository.getConsignments(2, None, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
     consignmentIds should contain(consignmentIdFour)
@@ -194,7 +193,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
+    val response = consignmentRepository.getConsignments(2, Some(""), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
     response should have size 0
   }
 
@@ -204,7 +203,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(0, Some("TDR-2021-A")).futureValue
+    val response = consignmentRepository.getConsignments(0, Some("TDR-2021-A"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
     response should have size 0
   }
 
@@ -215,7 +214,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       val utils = TestUtils(db)
       createConsignments(utils)
 
-      val response = consignmentRepository.getConsignments(2, Some("TDR-2021-ZZZ")).futureValue
+      val response = consignmentRepository.getConsignments(2, Some("TDR-2021-ZZZ"), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
       response should have size 2
       val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
       consignmentIds should contain(consignmentIdFour)
@@ -226,7 +225,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
 
-    val response = consignmentRepository.getConsignments(2, Some("")).futureValue
+    val response = consignmentRepository.getConsignments(2, Some(""), orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
     response should have size 0
   }
 
@@ -242,7 +241,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-    val response = consignmentRepository.getConsignments(10, None, consignmentFilters = ConsignmentFilters(userId.some, None).some).futureValue
+    val response = consignmentRepository.getConsignments(10, None, consignmentFilters = ConsignmentFilters(userId.some, None).some, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
 
     response should have size 1
     response.map(cr => cr.consignmentid).head should equal(consignmentIdOne)
@@ -275,7 +274,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     utils.createConsignment(consignmentIdForUser2, user2Id, consignmentRef = "TDR-2021-B")
 
-    val response = consignmentRepository.getConsignments(10, None).futureValue
+    val response = consignmentRepository.getConsignments(10, None, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
 
     response should have size 2
     val consignmentIds: List[UUID] = response.map(cr => cr.consignmentid).toList
@@ -289,7 +288,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(10, None).futureValue
+    val response = consignmentRepository.getConsignments(10, None, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
 
     val consignmentReferences: List[String] = response.map(cr => cr.consignmentreference).toList
 
@@ -303,7 +302,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val response = consignmentRepository.getConsignments(2, None, 1.some).futureValue
+    val response = consignmentRepository.getConsignments(2, None, 1.some, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
 
     val consignmentReferences: List[String] = response.map(cr => cr.consignmentreference).toList
 
@@ -544,7 +543,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     response.map(_.consignmentreference).toList should equal(List("TDR-2021-A"))
   }
 
-  "getConsignments" should "correctly apply cursor filter with reference ordering descending" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignments" should "correctly apply cursor filter with consignment reference ordering descending" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
@@ -560,7 +559,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     response.map(_.consignmentreference).toList should equal(List("TDR-2021-B", "TDR-2021-A"))
   }
 
-  "getConsignments" should "combine ordering with filters correctly" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignments" should "combine ordering by consignment reference ascending with filters correctly" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
