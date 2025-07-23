@@ -258,7 +258,9 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     utils.createConsignment(consignmentIdTwo, userId, consignmentRef = "TDR-2021-B", consignmentType = "judgment")
 
-    val response = consignmentRepository.getConsignments(10, None, consignmentFilters = ConsignmentFilters(None, "judgment".some).some, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending)).futureValue
+    val response = consignmentRepository
+      .getConsignments(10, None, consignmentFilters = ConsignmentFilters(None, "judgment".some).some, orderBy = ConsignmentOrderBy(ConsignmentReference, Descending))
+      .futureValue
 
     response should have size 1
     response.map(cr => cr.consignmentid).head should equal(consignmentIdTwo)
