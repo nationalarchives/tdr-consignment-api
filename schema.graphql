@@ -73,7 +73,6 @@ input AddTransferAgreementComplianceInput {
 input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
   allEnglish: Boolean
 }
 
@@ -430,7 +429,6 @@ type TransferAgreementCompliance {
 type TransferAgreementPrivateBeta {
   consignmentId: UUID!
   allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
   allEnglish: Boolean
 }
 

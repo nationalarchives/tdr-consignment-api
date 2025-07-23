@@ -52,8 +52,7 @@ class TransferAgreementService(
     val time = Timestamp.from(timeSource.now)
     val consignmentId = input.consignmentId
     Seq(
-      ConsignmentmetadataRow(uuidSource.uuid, consignmentId, PublicRecordsConfirmed, input.allPublicRecords.toString, time, userId),
-      ConsignmentmetadataRow(uuidSource.uuid, consignmentId, CrownCopyrightConfirmed, input.allCrownCopyright.toString, time, userId)
+      ConsignmentmetadataRow(uuidSource.uuid, consignmentId, PublicRecordsConfirmed, input.allPublicRecords.toString, time, userId)
     ) ++
       input.allEnglish.map(allEnglish => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, AllEnglishConfirmed, allEnglish.toString, time, userId) :: Nil).getOrElse(Nil)
   }
@@ -63,7 +62,6 @@ class TransferAgreementService(
     TransferAgreementPrivateBeta(
       consignmentId,
       propertyNameToValue(PublicRecordsConfirmed),
-      propertyNameToValue(CrownCopyrightConfirmed),
       propertyNameToValue.get(AllEnglishConfirmed)
     )
   }
@@ -95,7 +93,6 @@ object TransferAgreementService {
   val AllEnglishConfirmed = "AllEnglishConfirmed"
   val PublicRecordsConfirmed = "PublicRecordsConfirmed"
   val AppraisalSelectionSignOffConfirmed = "AppraisalSelectionSignOffConfirmed"
-  val CrownCopyrightConfirmed = "CrownCopyrightConfirmed"
   val InitialOpenRecordsConfirmed = "InitialOpenRecordsConfirmed"
   val SensitivityReviewSignOffConfirmed = "SensitivityReviewSignOffConfirmed"
 
@@ -104,7 +101,6 @@ object TransferAgreementService {
     PublicRecordsConfirmed,
     AppraisalSelectionSignOffConfirmed,
     InitialOpenRecordsConfirmed,
-    CrownCopyrightConfirmed,
     SensitivityReviewSignOffConfirmed
   )
 }
