@@ -1,7 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
-import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
