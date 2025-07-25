@@ -6,6 +6,7 @@ import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentSta
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentReference => ConsignmentReferenceOrderField}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
@@ -101,15 +102,16 @@ class ConsignmentService(
       limit: Int,
       currentCursor: Option[String],
       consignmentFilters: Option[ConsignmentFilters] = None,
-      currentPage: Option[Int] = None
+      currentPage: Option[Int] = None,
+      consignmentOrderBy: Option[ConsignmentOrderBy] = None
   ): Future[PaginatedConsignments] = {
-
     val maxConsignments: Int = min(limit, maxLimit)
+    val orderBy = consignmentOrderBy.getOrElse(ConsignmentOrderBy(ConsignmentReferenceOrderField, Descending))
     for {
-      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, currentPage, consignmentFilters)
+      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, currentPage, consignmentFilters, orderBy)
       hasNextPage = response.nonEmpty
-      lastCursor: Option[String] = if (hasNextPage) Some(response.last.consignmentreference) else None
-      paginatedConsignments = convertToEdges(response)
+      paginatedConsignments = convertToEdges(response, orderBy.consignmentOrderField)
+      lastCursor = if (hasNextPage) Some(orderBy.consignmentOrderField.cursorFn(response.last)) else None
     } yield PaginatedConsignments(lastCursor, paginatedConsignments)
   }
 
@@ -174,10 +176,9 @@ class ConsignmentService(
     )
   }
 
-  private def convertToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
+  private def convertToEdges(consignmentRows: Seq[ConsignmentRow], consignmentOrderField: ConsignmentOrderField): Seq[ConsignmentEdge] = {
     consignmentRows
-      .map(cr => convertRowToConsignment(cr))
-      .map(c => ConsignmentEdge(c, c.consignmentReference))
+      .map(cr => ConsignmentEdge(convertRowToConsignment(cr), consignmentOrderField.cursorFn(cr)))
   }
 
   private def getSeriesName(seriesId: Option[UUID]): Future[Option[String]] = {

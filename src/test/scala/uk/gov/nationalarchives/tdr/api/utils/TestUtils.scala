@@ -215,7 +215,8 @@ class TestUtils(db: JdbcBackend#Database) {
       transferringBodyName: Option[String] = Some("transferringBodyName"),
       transferringBodyTdrCode: Option[String] = Some("transferringBodyTdrCode"),
       metadataSchemaLibraryVersion: Option[String] = Some("1.0.0"),
-      clientSideDraftMetadataFileName: Option[String] = Some("some file name.csv")
+      clientSideDraftMetadataFileName: Option[String] = Some("some file name.csv"),
+      timestamp: Timestamp = Timestamp.from(FixedTimeSource.now)
   ): UUID = {
     val sql =
       """INSERT INTO "Consignment" """ +
@@ -228,13 +229,12 @@ class TestUtils(db: JdbcBackend#Database) {
     val nextSequence: Int = nextResults.getInt("Seq") + 1
 
     val ps: PreparedStatement = connection.prepareStatement(sql)
-    val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
     ps.setObject(1, consignmentId, Types.OTHER)
     ps.setObject(2, seriesId, Types.OTHER)
     ps.setObject(3, userId, Types.OTHER)
-    ps.setTimestamp(4, fixedTimeStamp)
-    ps.setTimestamp(5, fixedTimeStamp)
-    ps.setTimestamp(6, fixedTimeStamp)
+    ps.setTimestamp(4, timestamp)
+    ps.setTimestamp(5, timestamp)
+    ps.setTimestamp(6, timestamp)
     ps.setString(7, consignmentRef)
     ps.setString(8, consignmentType)
     ps.setObject(9, bodyId, Types.OTHER)

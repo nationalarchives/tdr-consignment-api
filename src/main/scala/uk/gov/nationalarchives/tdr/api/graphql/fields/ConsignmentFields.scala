@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
@@ -7,6 +8,7 @@ import sangria.relay._
 import sangria.schema.{
   Argument,
   BooleanType,
+  EnumType,
   Field,
   InputObjectType,
   IntType,
@@ -20,6 +22,7 @@ import sangria.schema.{
   StringType,
   fields
 }
+import uk.gov.nationalarchives.Tables.ConsignmentRow
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataFilters}
@@ -83,6 +86,45 @@ object ConsignmentFields {
 
   case class ConsignmentFilters(userId: Option[UUID], consignmentType: Option[String])
 
+  case class ConsignmentOrderBy(consignmentOrderField: ConsignmentOrderField, orderDirection: Direction)
+
+  sealed trait ConsignmentOrderField {
+    val cursorFn: ConsignmentRow => String
+  }
+
+  case object ConsignmentReference extends ConsignmentOrderField {
+    override val cursorFn: ConsignmentRow => String = _.consignmentreference
+  }
+  case object CreatedAtTimestamp extends ConsignmentOrderField {
+    override val cursorFn: ConsignmentRow => String = _.datetime.toString
+  }
+
+  sealed trait Direction
+  case object Ascending extends Direction
+  case object Descending extends Direction
+
+  implicit val consignmentOrderFieldDecoder: Decoder[ConsignmentOrderField] = Decoder[String].emap {
+    case "ConsignmentReference" => Right(ConsignmentReference)
+    case "CreatedAtTimestamp"   => Right(CreatedAtTimestamp)
+    case other                  => Left(s"Unknown ConsignmentOrderField: $other")
+  }
+
+  implicit val consignmentOrderFieldEncoder: Encoder[ConsignmentOrderField] = Encoder[String].contramap {
+    case ConsignmentReference => "ConsignmentReference"
+    case CreatedAtTimestamp   => "CreatedAtTimestamp"
+  }
+
+  implicit val directionDecoder: Decoder[Direction] = Decoder[String].emap {
+    case "Ascending"  => Right(Ascending)
+    case "Descending" => Right(Descending)
+    case other        => Left(s"Unknown Direction: $other")
+  }
+
+  implicit val directionEncoder: Encoder[Direction] = Encoder[String].contramap {
+    case Ascending  => "Ascending"
+    case Descending => "Descending"
+  }
+
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
   implicit val AntivirusProgressType: ObjectType[Unit, AntivirusProgress] =
@@ -101,10 +143,14 @@ object ConsignmentFields {
   implicit val ConsignmentStatusType: ObjectType[Unit, ConsignmentStatus] =
     deriveObjectType[Unit, ConsignmentStatus]()
 
+  implicit val ConsignmentOrderFieldType: EnumType[ConsignmentOrderField] = deriveEnumType[ConsignmentOrderField]()
+  implicit val DirectionType: EnumType[Direction] = deriveEnumType[Direction]()
+
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
   implicit val FileMetadataFiltersInputType: InputObjectType[FileMetadataFilters] = deriveInputObjectType[FileMetadataFilters]()
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
   implicit val ConsignmentFiltersInputType: InputObjectType[ConsignmentFilters] = deriveInputObjectType[ConsignmentFilters]()
+  implicit val ConsignmentOrderByType: InputObjectType[ConsignmentOrderBy] = deriveInputObjectType[ConsignmentOrderBy]()
 
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
@@ -231,6 +277,7 @@ object ConsignmentFields {
   val LimitArg: Argument[Int] = Argument("limit", IntType)
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val CurrentPageArg: Argument[Option[Int]] = Argument("currentPage", OptionInputType(IntType))
+  val ConsignmentOrderByArg: Argument[Option[ConsignmentOrderBy]] = Argument("orderBy", OptionInputType(ConsignmentOrderByType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
     Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
@@ -264,14 +311,15 @@ object ConsignmentFields {
     Field(
       "consignments",
       consignmentConnections,
-      arguments = List(LimitArg, CurrentCursorArg, CurrentPageArg, ConsignmentFiltersInputArg),
+      arguments = List(LimitArg, CurrentCursorArg, CurrentPageArg, ConsignmentFiltersInputArg, ConsignmentOrderByArg),
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
         val currentCursor = ctx.args.argOpt("currentCursor")
         val currentPage = ctx.args.argOpt("currentPage")
         val consignmentFilters = ctx.args.argOpt("consignmentFiltersInput")
+        val consignmentOrderBy = ctx.args.argOpt("orderBy")
         ctx.ctx.consignmentService
-          .getConsignments(limit, currentCursor, consignmentFilters, currentPage)
+          .getConsignments(limit, currentCursor, consignmentFilters, currentPage, consignmentOrderBy)
           .map(r => {
             val endCursor = r.lastCursor
             val edges = r.consignmentEdges
