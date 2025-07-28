@@ -2,10 +2,16 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
+import slick.lifted.ColumnOrdered
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
+  Ascending,
   ConsignmentFilters,
+  ConsignmentOrderBy,
+  ConsignmentReference,
+  CreatedAtTimestamp,
+  Descending,
   StartUploadInput,
   UpdateClientSideDraftMetadataFileNameInput,
   UpdateMetadataSchemaLibraryVersionInput
@@ -87,16 +93,36 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignments(limit: Int, after: Option[String], currentPage: Option[Int] = None, consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
+  def getConsignments(
+      limit: Int,
+      after: Option[String],
+      currentPage: Option[Int] = None,
+      consignmentFilters: Option[ConsignmentFilters] = None,
+      orderBy: ConsignmentOrderBy
+  ): Future[Seq[ConsignmentRow]] = {
     val offset = currentPage.map(_ * limit).getOrElse(0)
+    val (sortFn, cursorFilterFn) = getOrderingFunctions(orderBy)
     val query = Consignment
       .filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
       .filterOpt(consignmentFilters.flatMap(_.consignmentType))(_.consignmenttype === _)
-      .sortBy(_.consignmentreference.desc.nullsFirst)
-      .filterOpt(after)(_.consignmentreference < _)
+      .sortBy(sortFn)
+      .filterOpt(after)(cursorFilterFn)
       .drop(offset)
       .take(limit)
     db.run(query.result)
+  }
+
+  def getOrderingFunctions(orderBy: ConsignmentOrderBy): (Consignment => ColumnOrdered[_], (Consignment, String) => Rep[Boolean]) = {
+    orderBy match {
+      case ConsignmentOrderBy(ConsignmentReference, Ascending) =>
+        (_.consignmentreference.asc.nullsFirst, (c, cursor) => c.consignmentreference > cursor)
+      case ConsignmentOrderBy(ConsignmentReference, Descending) =>
+        (_.consignmentreference.desc.nullsFirst, (c, cursor) => c.consignmentreference < cursor)
+      case ConsignmentOrderBy(CreatedAtTimestamp, Ascending) =>
+        (_.datetime.asc.nullsFirst, (c, cursor) => c.datetime > Timestamp.valueOf(cursor))
+      case ConsignmentOrderBy(CreatedAtTimestamp, Descending) =>
+        (_.datetime.desc.nullsFirst, (c, cursor) => c.datetime < Timestamp.valueOf(cursor))
+    }
   }
 
   def getTotalConsignments(consignmentFilters: Option[ConsignmentFilters]): Future[Int] = {

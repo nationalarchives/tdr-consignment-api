@@ -17,7 +17,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils._
 
 import java.sql.Timestamp
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.{Instant, LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
 class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestRequest {
@@ -810,6 +810,26 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+  }
+
+  "consignments" should "correctly deserialize orderBy enums and return ordered results" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+
+    val consignment1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
+    val consignment2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+
+    utils.createConsignment(consignmentId = consignment1, consignmentRef = "ref-b", userId = userId, timestamp = Timestamp.from(Instant.parse("2024-01-01T10:00:00Z")))
+    utils.createConsignment(consignmentId = consignment2, consignmentRef = "ref-a", userId = userId, timestamp = Timestamp.from(Instant.parse("2024-01-02T10:00:00Z")))
+
+    val reportingAccessToken = validReportingToken("reporting")
+
+    val response1 = runConsignmentsTestQuery("query_orderBy_createdDatetime_asc", reportingAccessToken)
+    response1.errors should be(empty)
+    response1.data.get.consignments.edges.map(_.node.consignmentid.get) should equal(List(consignment1, consignment2))
+
+    val response2 = runConsignmentsTestQuery("query_orderBy_consignmentReference_desc", reportingAccessToken)
+    response2.errors should be(empty)
+    response2.data.get.consignments.edges.map(_.node.consignmentid.get) should equal(List(consignment1, consignment2))
   }
 
   "getConsignmentsForMetadataReview" should "return all consignments with `MetadataReview` status `inProgress`" in withContainers { case container: PostgreSQLContainer =>
