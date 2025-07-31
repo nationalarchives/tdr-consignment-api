@@ -73,7 +73,6 @@ input AddTransferAgreementComplianceInput {
 input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
-  allEnglish: Boolean
 }
 
 type AntivirusMetadata {
@@ -152,6 +151,16 @@ input ConsignmentFilters {
   consignmentType: String
 }
 
+input ConsignmentOrderBy {
+  consignmentOrderField: ConsignmentOrderField!
+  orderDirection: Direction!
+}
+
+enum ConsignmentOrderField {
+  ConsignmentReference
+  CreatedAtTimestamp
+}
+
 type ConsignmentStatus {
   consignmentStatusId: UUID!
   consignmentId: UUID!
@@ -196,6 +205,11 @@ enum DataType {
   Decimal
   Integer
   Text
+}
+
+enum Direction {
+  Ascending
+  Descending
 }
 
 type FFIDMetadata {
@@ -405,21 +419,6 @@ type Query {
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
 }
 
-input ConsignmentOrderBy {
-  consignmentOrderField: ConsignmentOrderField!
-  orderDirection: Direction!
-}
-
-enum ConsignmentOrderField {
-  CreatedAtTimestamp
-  ConsignmentReference
-}
-
-enum Direction {
-  Ascending
-  Descending
-}
-
 type Series {
   seriesid: UUID!
   bodyid: UUID!
@@ -444,7 +443,6 @@ type TransferAgreementCompliance {
 type TransferAgreementPrivateBeta {
   consignmentId: UUID!
   allPublicRecords: Boolean!
-  allEnglish: Boolean
 }
 
 scalar UUID
