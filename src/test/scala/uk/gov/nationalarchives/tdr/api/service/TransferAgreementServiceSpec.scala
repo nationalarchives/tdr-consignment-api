@@ -38,7 +38,6 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
       ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
     val mockResponse = Future.successful(
       Seq(
-        row("AllEnglishConfirmed", "true"),
         row("CrownCopyrightConfirmed", "true"),
         row("PublicRecordsConfirmed", "true")
       )
@@ -54,13 +53,12 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementPrivateBeta = service
       .addTransferAgreementPrivateBeta(
-        AddTransferAgreementPrivateBetaInput(consignmentId, allPublicRecords = true, allEnglish = Option(true)),
+        AddTransferAgreementPrivateBetaInput(consignmentId, allPublicRecords = true),
         userId
       )
       .futureValue
 
     transferAgreementResult.consignmentId shouldBe consignmentId
-    transferAgreementResult.allEnglish.get shouldBe true
     transferAgreementResult.allPublicRecords shouldBe true
   }
 
@@ -77,7 +75,6 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
 
     val mockResponse = Future.successful(
       Seq(
-        row("CrownCopyrightConfirmed", "true"),
         row("PublicRecordsConfirmed", "true")
       )
     )
@@ -92,13 +89,13 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val service = new TransferAgreementService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, fixedUuidSource, fixedTimeSource)
     val transferAgreementResult: TransferAgreementPrivateBeta = service
       .addTransferAgreementPrivateBeta(
-        AddTransferAgreementPrivateBetaInput(consignmentId, allPublicRecords = true, allEnglish = None),
+        AddTransferAgreementPrivateBetaInput(consignmentId, allPublicRecords = true),
         userId
       )
       .futureValue
 
     metadataCaptor.getValue.exists(_.propertyname == "AllEnglishConfirmed") shouldBe false
-    transferAgreementResult.allEnglish.isEmpty shouldBe true
+
   }
 
   "addTransferAgreementCompliance" should "not set initialOpenRecords in the metadata if the argument is not provided" in {

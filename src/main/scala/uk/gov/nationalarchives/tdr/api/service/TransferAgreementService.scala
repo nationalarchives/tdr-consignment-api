@@ -53,17 +53,12 @@ class TransferAgreementService(
     val consignmentId = input.consignmentId
     Seq(
       ConsignmentmetadataRow(uuidSource.uuid, consignmentId, PublicRecordsConfirmed, input.allPublicRecords.toString, time, userId)
-    ) ++
-      input.allEnglish.map(allEnglish => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, AllEnglishConfirmed, allEnglish.toString, time, userId) :: Nil).getOrElse(Nil)
+    )
   }
 
   private def convertDbRowsToTransferAgreementPrivateBeta(consignmentId: UUID, rows: Seq[ConsignmentmetadataRow]): TransferAgreementPrivateBeta = {
     val propertyNameToValue = rows.map(row => row.propertyname -> row.value.toBoolean).toMap
-    TransferAgreementPrivateBeta(
-      consignmentId,
-      propertyNameToValue(PublicRecordsConfirmed),
-      propertyNameToValue.get(AllEnglishConfirmed)
-    )
+    TransferAgreementPrivateBeta(consignmentId, propertyNameToValue(PublicRecordsConfirmed))
   }
 
   private def convertTAComplianceInputToPropertyRows(input: AddTransferAgreementComplianceInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
@@ -90,14 +85,12 @@ class TransferAgreementService(
 }
 
 object TransferAgreementService {
-  val AllEnglishConfirmed = "AllEnglishConfirmed"
   val PublicRecordsConfirmed = "PublicRecordsConfirmed"
   val AppraisalSelectionSignOffConfirmed = "AppraisalSelectionSignOffConfirmed"
   val InitialOpenRecordsConfirmed = "InitialOpenRecordsConfirmed"
   val SensitivityReviewSignOffConfirmed = "SensitivityReviewSignOffConfirmed"
 
-  val transferAgreementProperties = List(
-    AllEnglishConfirmed,
+  val transferAgreementProperties: List[String] = List(
     PublicRecordsConfirmed,
     AppraisalSelectionSignOffConfirmed,
     InitialOpenRecordsConfirmed,

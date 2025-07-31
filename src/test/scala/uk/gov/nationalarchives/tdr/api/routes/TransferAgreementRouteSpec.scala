@@ -28,8 +28,7 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
 
   case class TransferAgreementPrivateBeta(
       consignmentId: Option[UUID] = None,
-      allPublicRecords: Option[Boolean] = None,
-      allEnglish: Option[Boolean] = None
+      allPublicRecords: Option[Boolean] = None
   )
 
   case class TransferAgreementCompliance(
