@@ -72,6 +72,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignmentRepoMock,
     consignmentStatusRepoMock,
     seriesRepositoryMock,
+    fileMetadataRepositoryMock,
     transferringBodyServiceMock,
     FixedTimeSource,
     fixedUuidSource,
@@ -223,6 +224,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       consignmentRepoMock,
       consignmentStatusRepoMock,
       seriesRepositoryMock,
+      fileMetadataRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
@@ -250,6 +252,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       consignmentRepoMock,
       consignmentStatusRepoMock,
       seriesRepositoryMock,
+      fileMetadataRepositoryMock,
       transferringBodyServiceMock,
       FixedTimeSource,
       fixedUuidSource,
@@ -741,6 +744,16 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     edges(0).cursor should be(timestamp1.toString)
     edges(1).cursor should be(timestamp2.toString)
     response.lastCursor should be(Some(timestamp2.toString))
+  }
+
+  "totalClosedRecords" should "return total number of closed records" in {
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+
+    when(fileMetadataRepositoryMock.totalClosedRecords(consignmentId))
+      .thenReturn(Future.successful(5))
+
+    val closedRecords = consignmentService.totalClosedRecords(consignmentId).futureValue
+    closedRecords should equal(5)
   }
 
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {
