@@ -28,9 +28,7 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
 
   case class TransferAgreementPrivateBeta(
       consignmentId: Option[UUID] = None,
-      allPublicRecords: Option[Boolean] = None,
-      allCrownCopyright: Option[Boolean] = None,
-      allEnglish: Option[Boolean] = None
+      allPublicRecords: Option[Boolean] = None
   )
 
   case class TransferAgreementCompliance(
@@ -183,8 +181,10 @@ class TransferAgreementRouteSpec extends TestContainerUtils with Matchers with T
   }
 
   private def checkTransferAgreementExists(consignmentId: UUID, utils: TestUtils): Unit = {
-    val sql = """SELECT * FROM "ConsignmentMetadata" cm JOIN "ConsignmentProperty" cp ON cp."Name" = cm."PropertyName" """ +
-      """WHERE "ConsignmentId" = ? AND cp."Name" IN (?,?,?,?,?,?);"""
+    val placeholders = List.fill(transferAgreementProperties.size)("?").mkString(",")
+    val sql = s"""SELECT * FROM "ConsignmentMetadata" cm JOIN "ConsignmentProperty" cp ON cp."Name" = cm."PropertyName" """ +
+      s"""WHERE "ConsignmentId" = ? AND cp."Name" IN ($placeholders);"""
+
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
     transferAgreementProperties.zipWithIndex.foreach { case (a, b) =>

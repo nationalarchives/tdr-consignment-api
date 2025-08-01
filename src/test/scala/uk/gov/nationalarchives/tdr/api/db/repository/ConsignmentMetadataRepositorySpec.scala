@@ -19,7 +19,7 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 60.seconds)
 
-  private val consignmentMetadataProperty = "AllEnglishConfirmed"
+  private val consignmentMetadataProperty = "PublicRecordsConfirmed"
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 

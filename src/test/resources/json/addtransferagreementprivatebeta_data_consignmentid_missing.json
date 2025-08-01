@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Field 'AddTransferAgreementPrivateBetaInput.consignmentId' of required type 'UUID!' was not provided. (line 1, column 81):\nmutation {addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: {allEnglish: true, allCrownCopyright: true, allPublicRecords: true}) {consignmentId, allEnglish}}\n                                                                                ^"
+      "message": "Field 'AddTransferAgreementPrivateBetaInput.consignmentId' of required type 'UUID!' was not provided. (line 1, column 81):\nmutation {addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: {allPublicRecords: true}) {consignmentId}}\n                                                                                ^"
     }
   ]
 }
