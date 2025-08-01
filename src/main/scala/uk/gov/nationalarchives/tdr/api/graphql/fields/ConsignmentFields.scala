@@ -205,6 +205,11 @@ object ConsignmentFields {
         resolve = context => DeferChecksSucceeded(context.value.consignmentid)
       ),
       Field(
+        "totalClosedRecords",
+        IntType,
+        resolve = context => DeferClosedRecords(context.value.consignmentid)
+      ),
+      Field(
         "totalFiles",
         IntType,
         resolve = context => DeferTotalFiles(context.value.consignmentid)
