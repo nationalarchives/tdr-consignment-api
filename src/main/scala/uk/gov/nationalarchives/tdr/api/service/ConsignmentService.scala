@@ -23,6 +23,7 @@ class ConsignmentService(
     consignmentRepository: ConsignmentRepository,
     consignmentStatusRepository: ConsignmentStatusRepository,
     seriesRepository: SeriesRepository,
+    fileMetadataRepository: FileMetadataRepository,
     transferringBodyService: TransferringBodyService,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
@@ -47,6 +48,10 @@ class ConsignmentService(
           List(consignmentStatusUploadRow, consignmentStatusClientChecksRow)
         )
       })
+  }
+
+  def totalClosedRecords(consignmentId: UUID): Future[Int] = {
+    fileMetadataRepository.totalClosedRecords(consignmentId)
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {

@@ -116,6 +116,7 @@ type Consignment {
   metadataSchemaLibraryVersion: String
   clientSideDraftMetadataFileName: String
   allChecksSucceeded: Boolean!
+  totalClosedRecords: Int!
   totalFiles: Int!
   totalFileSize: Long!
   fileChecks: FileChecks!

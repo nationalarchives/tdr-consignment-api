@@ -307,6 +307,44 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     sum should equal(0)
   }
 
+  "totalClosedRecords" should "return total number of closed records" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.randomUUID()
+    val utils = TestUtils(container.database)
+    utils.createConsignment(consignmentId, userId)
+    val fileIdOne = UUID.randomUUID()
+    val fileIdTwo = UUID.randomUUID()
+    val fileIdThree = UUID.randomUUID()
+    utils.createFile(fileIdOne, consignmentId)
+    utils.createFile(fileIdTwo, consignmentId)
+    utils.createFile(fileIdThree, consignmentId)
+    utils.addFileProperty("ClosureType")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "ClosureType", "Closed")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "ClosureType", "closed")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdThree.toString, "ClosureType", "Open")
+    val repository = new FileMetadataRepository(container.database)
+    val sum = repository.totalClosedRecords(consignmentId).futureValue
+    sum should equal(2)
+  }
+
+  "totalClosedRecords" should "return zero number of closed records when all of the records are open" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.randomUUID()
+    val utils = TestUtils(container.database)
+    utils.createConsignment(consignmentId, userId)
+    val fileIdOne = UUID.randomUUID()
+    val fileIdTwo = UUID.randomUUID()
+    val fileIdThree = UUID.randomUUID()
+    utils.createFile(fileIdOne, consignmentId)
+    utils.createFile(fileIdTwo, consignmentId)
+    utils.createFile(fileIdThree, consignmentId)
+    utils.addFileProperty("ClosureType")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "ClosureType", "Open")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "ClosureType", "Open")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdThree.toString, "ClosureType", "Open")
+    val repository = new FileMetadataRepository(container.database)
+    val sum = repository.totalClosedRecords(consignmentId).futureValue
+    sum should equal(0)
+  }
+
   private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {
     val response = fileMetadataRepository.getFileMetadata(Some(filePropertyUpdates.consignmentId)).futureValue
     val metadataRowById: Map[UUID, Seq[FilemetadataRow]] = response.groupBy(_.fileid)
