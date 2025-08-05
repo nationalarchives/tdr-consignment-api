@@ -1,7 +1,5 @@
 package uk.gov.nationalarchives.tdr.api.service
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.BeforeAndAfterEach
@@ -9,13 +7,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
-import uk.gov.nationalarchives.tdr.api.db.repository.{CustomMetadataPropertiesRepository, FileRepository, FileStatusRepository}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.CustomMetadataFields.CustomMetadataField
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{AddOrUpdateFileMetadata, AddOrUpdateMetadata}
+import uk.gov.nationalarchives.Tables.FilestatusRow
+import uk.gov.nationalarchives.tdr.api.db.repository.{FileRepository, FileStatusRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
-import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource, TestDataHelper}
+import uk.gov.nationalarchives.tdr.api.utils.FixedUUIDSource
 
 import java.sql.Timestamp
 import java.time.Instant
