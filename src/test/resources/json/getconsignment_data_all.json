@@ -8,6 +8,7 @@
       "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",
+      "totalClosedRecords": 1,
       "totalFiles": 3,
       "totalFileSize": 6,
       "includeTopLevelFolder": true,

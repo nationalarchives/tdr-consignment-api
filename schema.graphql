@@ -118,6 +118,7 @@ type Consignment {
   metadataSchemaLibraryVersion: String
   clientSideDraftMetadataFileName: String
   allChecksSucceeded: Boolean!
+  totalClosedRecords: Int!
   totalFiles: Int!
   totalFileSize: Long!
   fileChecks: FileChecks!
@@ -401,9 +402,24 @@ enum PropertyType {
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
-  consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
+  consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
   getConsignmentsForMetadataReview: [Consignment!]!
   customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
+}
+
+input ConsignmentOrderBy {
+  consignmentOrderField: ConsignmentOrderField!
+  orderDirection: Direction!
+}
+
+enum ConsignmentOrderField {
+  CreatedAtTimestamp
+  ConsignmentReference
+}
+
+enum Direction {
+  Ascending
+  Descending
 }
 
 type Series {
