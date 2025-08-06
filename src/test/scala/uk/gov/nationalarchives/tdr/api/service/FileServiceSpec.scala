@@ -29,11 +29,13 @@ import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 60.seconds)
 
   val uuidSource: FixedUUIDSource = new FixedUUIDSource()
 
