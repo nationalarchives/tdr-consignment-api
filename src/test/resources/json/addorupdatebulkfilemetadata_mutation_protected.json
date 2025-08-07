@@ -8,7 +8,7 @@
           "fileId": "7076f399-b596-4161-a95d-e686c6435710",
           "metadata": [
             {
-              "filePropertyName": "newProperty1",
+              "filePropertyName": "SHA256ClientSideChecksum",
               "value": "value1"
             }
           ]

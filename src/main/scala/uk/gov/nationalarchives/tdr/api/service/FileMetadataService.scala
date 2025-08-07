@@ -34,7 +34,7 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository)(implic
   }
 
   def addOrUpdateBulkFileMetadata(metadataInput: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
-    val protectedMetadata = protectedProperties.map(p => dataHeaderMapper(p))
+    val protectedMetadata = systemProperties.map(p => tdrDataLoadHeaderToPropertyMapper(p))
     metadataInput.fileMetadata.map { addOrUpdateFileMetadata =>
       addOrUpdateFileMetadata.metadata.map { metadata =>
         if (protectedMetadata.contains(metadata.filePropertyName)) {
@@ -157,6 +157,6 @@ object FileMetadataService {
   )
 
   val config: ConfigUtils.MetadataConfiguration = ConfigUtils.loadConfiguration
-  private val protectedProperties: Seq[Reference] = config.getPropertiesByPropertyType("System")
-  private val dataHeaderMapper: String => String = config.propertyToOutputMapper("tdrDataLoadHeader")
+  private val systemProperties: Seq[Reference] = config.getPropertiesByPropertyType("System")
+  private val tdrDataLoadHeaderToPropertyMapper: String => String = config.propertyToOutputMapper("tdrDataLoadHeader")
 }
