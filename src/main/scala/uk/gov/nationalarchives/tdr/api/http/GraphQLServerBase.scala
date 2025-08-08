@@ -77,7 +77,6 @@ trait GraphQLServerBase {
     val referenceGeneratorService = new ReferenceGeneratorService(config, SimpleHttpClient())
     val fileService = new FileService(
       fileRepository,
-      customMetadataPropertiesRepository,
       ffidMetadataService,
       antivirusMetadataService,
       fileStatusService,
