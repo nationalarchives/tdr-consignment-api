@@ -314,8 +314,6 @@ type FileMatches {
 }
 
 input FileMetadataFilters {
-  closureMetadata: Boolean = false
-  descriptiveMetadata: Boolean = false
   properties: [String!]
 }
 

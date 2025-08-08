@@ -168,7 +168,6 @@ class FileMetadataRouteSpec extends TestContainerUtils with Matchers with TestRe
     val (consignmentId, _) = utils.seedDatabaseWithDefaultEntries()
 
     val fileId = UUID.fromString("7076f399-b596-4161-a95d-e686c6435710")
-    utils.addFileProperty("newProperty1")
     utils.createFile(fileId, consignmentId)
 
     val expectedResponse: GraphqlAddOrUpdateBulkFileMetadataMutationData =

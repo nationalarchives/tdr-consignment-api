@@ -103,7 +103,7 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
   }
 }
 
-case class FileMetadataFilters(closureMetadata: Boolean = false, descriptiveMetadata: Boolean = false, properties: Option[List[String]] = None)
+case class FileMetadataFilters(properties: Option[List[String]] = None)
 
 case class FileFilters(
     fileTypeIdentifier: Option[String] = None,

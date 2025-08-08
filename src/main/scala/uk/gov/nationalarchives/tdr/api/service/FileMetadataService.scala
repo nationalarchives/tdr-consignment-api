@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import sangria.macros.derive.GraphQLDeprecated
-import uk.gov.nationalarchives.Tables.{FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.FilemetadataRow
 import uk.gov.nationalarchives.tdr.api.db.repository.FileMetadataRepository
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
@@ -9,15 +9,15 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMet
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
+import uk.gov.nationalarchives.tdr.schemautils.ConfigUtils
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileMetadataService(fileMetadataRepository: FileMetadataRepository, customMetadataService: CustomMetadataPropertiesService)(implicit val ec: ExecutionContext) {
+class FileMetadataService(fileMetadataRepository: FileMetadataRepository)(implicit val ec: ExecutionContext) {
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = fileMetadataRepository.getSumOfFileSizes(consignmentId)
 
@@ -34,16 +34,16 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository, custom
   }
 
   def addOrUpdateBulkFileMetadata(metadataInput: AddOrUpdateBulkFileMetadataInput, userId: UUID): Future[List[FileMetadataWithFileId]] = {
-    for {
-      customMetadata <- customMetadataService.getCustomMetadata
-      protectedMetadata = customMetadata.filter(!_.editable).map(_.name)
-      _ = metadataInput.fileMetadata.map { addOrUpdateFileMetadata =>
-        addOrUpdateFileMetadata.metadata.map { metadata =>
-          if (protectedMetadata.contains(metadata.filePropertyName)) {
-            throw InputDataException(s"Protected metadata property found: ${metadata.filePropertyName}")
-          }
+    val protectedMetadata = systemProperties.map(p => tdrDataLoadHeaderToPropertyMapper(p))
+    metadataInput.fileMetadata.map { addOrUpdateFileMetadata =>
+      addOrUpdateFileMetadata.metadata.map { metadata =>
+        if (protectedMetadata.contains(metadata.filePropertyName)) {
+          throw InputDataException(s"Protected metadata property found: ${metadata.filePropertyName}")
         }
       }
+    }
+
+    for {
       _ <- metadataInput.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
       addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(metadataInput.fileMetadata, userId))
       metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
@@ -155,4 +155,8 @@ object FileMetadataService {
       titleClosed: Option[Boolean],
       descriptionClosed: Option[Boolean]
   )
+
+  val config: ConfigUtils.MetadataConfiguration = ConfigUtils.loadConfiguration
+  private val systemProperties: Seq[Reference] = config.getPropertiesByPropertyType("System")
+  private val tdrDataLoadHeaderToPropertyMapper: String => String = config.propertyToOutputMapper("tdrDataLoadHeader")
 }

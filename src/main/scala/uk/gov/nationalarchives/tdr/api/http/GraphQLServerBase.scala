@@ -72,12 +72,11 @@ trait GraphQLServerBase {
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, uuidSource, timeSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
     val fileMetadataService =
-      new FileMetadataService(fileMetadataRepository, customMetadataPropertiesService)
+      new FileMetadataService(fileMetadataRepository)
     val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
     val referenceGeneratorService = new ReferenceGeneratorService(config, SimpleHttpClient())
     val fileService = new FileService(
       fileRepository,
-      customMetadataPropertiesRepository,
       ffidMetadataService,
       antivirusMetadataService,
       fileStatusService,
