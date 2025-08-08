@@ -3,13 +3,12 @@ package uk.gov.nationalarchives.tdr.api.service
 import cats.implicits.catsSyntaxOptionId
 import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
-import org.mockito.stubbing.ScalaOngoingStubbing
 import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import uk.gov.nationalarchives.Tables.{AvmetadataRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilepropertyvaluesRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{AvmetadataRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileFields
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
@@ -648,7 +647,6 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileRepositoryMock.addFiles(fileRowCaptor.capture(), metadataRowCaptor.capture())).thenReturn(Future(()))
     when(fileStatusServiceMock.addFileStatuses(any[AddMultipleFileStatusesInput])).thenReturn(Future(Nil))
     when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
-    mockCustomMetadataValuesResponse(customMetadataPropertiesRepositoryMock)
 
     val service = new FileService(
       fileRepositoryMock,
@@ -1312,25 +1310,5 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       Some(parentId),
       uploadmatchid = uploadMatchId
     )
-  }
-
-  private def mockCustomMetadataValuesResponse(customMetadataMock: CustomMetadataPropertiesRepository): ScalaOngoingStubbing[Future[Seq[FilepropertyvaluesRow]]] = {
-    val defaultMetadataRows = defaultMetadataProperties.map(defaultMetadata => {
-      FilepropertyvaluesRow(
-        defaultMetadata,
-        defaultMetadata match {
-          case RightsCopyright  => defaultCopyright
-          case LegalStatus      => defaultLegalStatus
-          case HeldBy           => defaultHeldBy
-          case Language         => defaultLanguage
-          case ClosureType      => defaultClosureType
-          case DescriptionClosed => "false"
-          case TitleClosed => "false"
-        },
-        Some(true)
-      )
-    })
-
-    when(customMetadataMock.getCustomMetadataValuesWithDefault).thenReturn(Future(defaultMetadataRows))
   }
 }
