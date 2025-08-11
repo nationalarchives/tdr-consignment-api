@@ -84,9 +84,11 @@ class FileService(
         row(fileId, treeNode.name, Filename),
         row(fileId, treeNode.reference.getOrElse(""), FileReference),
         row(fileId, parentFileReference.getOrElse(""), ParentReference)
-      ) ++ defaultPropertyValues.map(fileProperty => {
-        row(fileId, fileProperty._2, tdrDataLoadHeaderToPropertyMapper(fileProperty._1))
-      }).toList
+      ) ++ defaultPropertyValues
+        .map(fileProperty => {
+          row(fileId, fileProperty._2, tdrDataLoadHeaderToPropertyMapper(fileProperty._1))
+        })
+        .toList
 
       if (treeNode.treeNodeType.isFileType) {
         val input = addFileAndMetadataInput.metadataInput
@@ -203,7 +205,7 @@ class FileService(
   private def getPropertyNames(fileMetadataFilters: Option[FileMetadataFilters]): Future[Seq[String]] = {
     fileMetadataFilters match {
       case Some(FileMetadataFilters(properties)) => Future(properties.getOrElse(Nil))
-      case None => Future(Nil)
+      case None                                  => Future(Nil)
     }
   }
 }
