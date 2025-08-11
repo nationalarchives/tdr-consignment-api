@@ -51,11 +51,14 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       utils.createFilePropertyValues(
         defaultMetadataProperty,
         defaultMetadataProperty match {
-          case RightsCopyright  => defaultCopyright
-          case LegalStatus      => defaultLegalStatus
-          case HeldBy           => defaultHeldBy
-          case Language         => defaultLanguage
-          case FoiExemptionCode => defaultFoiExemptionCode
+          case RightsCopyright   => defaultCopyright
+          case LegalStatus       => defaultLegalStatus
+          case HeldBy            => defaultHeldBy
+          case Language          => defaultLanguage
+          case ClosureType       => defaultClosureType
+          case DescriptionClosed => "false"
+          case TitleClosed       => "false"
+
         },
         default = true,
         1,
