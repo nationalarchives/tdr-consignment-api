@@ -557,6 +557,18 @@ object TestUtils {
     }
   }
 
+  def setPropertyDefaultValues(defaultMetadataProperty: String): String = {
+    defaultMetadataProperty match {
+      case RightsCopyright   => defaultCopyright
+      case LegalStatus       => defaultLegalStatus
+      case HeldBy            => defaultHeldBy
+      case Language          => defaultLanguage
+      case ClosureType       => defaultClosureType
+      case DescriptionClosed => "false"
+      case TitleClosed       => "false"
+    }
+  }
+
   def unmarshalResponse[A]()(implicit mat: Materializer, ec: ExecutionContext, decoder: Decoder[A]): FromResponseUnmarshaller[A] = Unmarshaller(_ => { res =>
     {
       Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))

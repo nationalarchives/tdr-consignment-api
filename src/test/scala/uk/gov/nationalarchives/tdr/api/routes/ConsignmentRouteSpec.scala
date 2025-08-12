@@ -652,7 +652,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       ConsignmentParams(consignmentId3, "consignment-ref3", List(file3Id), statusParams = List(StatusParams(statusId3, "Upload", "Completed")))
     )
     utils.addFileProperty(SHA256ServerSideChecksum)
+    utils.addFileProperty(FoiExemptionCode)
     setUpConsignments(consignmentParams, utils, fileRef = "REF1")
+    utils.addFileMetadata(UUID.randomUUID().toString, file1Id.toString, FoiExemptionCode, "open")
+    utils.addFileMetadata(UUID.randomUUID().toString, file2Id.toString, FoiExemptionCode, "open")
+    utils.addFileMetadata(UUID.randomUUID().toString, file3Id.toString, FoiExemptionCode, "open")
 
     utils.createFileStatusValues(UUID.randomUUID(), file2Id, "Upload", "Success")
     utils.createFileStatusValues(UUID.randomUUID(), file3Id, "Upload", "Success")
@@ -1026,15 +1030,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         UUID.randomUUID().toString,
         parentId.toString,
         defaultMetadataProperty,
-        defaultMetadataProperty match {
-          case RightsCopyright   => defaultCopyright
-          case LegalStatus       => defaultLegalStatus
-          case HeldBy            => defaultHeldBy
-          case Language          => defaultLanguage
-          case ClosureType       => defaultClosureType
-          case DescriptionClosed => "false"
-          case TitleClosed       => "false"
-        }
+        setPropertyDefaultValues(defaultMetadataProperty)
       )
     }
   }
