@@ -557,6 +557,18 @@ object TestUtils {
     }
   }
 
+  def setPropertyDefaultValues(defaultMetadataProperty: String): String = {
+    defaultMetadataProperty match {
+      case RightsCopyright   => defaultCopyright
+      case LegalStatus       => defaultLegalStatus
+      case HeldBy            => defaultHeldBy
+      case Language          => defaultLanguage
+      case ClosureType       => defaultClosureType
+      case DescriptionClosed => "false"
+      case TitleClosed       => "false"
+    }
+  }
+
   def unmarshalResponse[A]()(implicit mat: Materializer, ec: ExecutionContext, decoder: Decoder[A]): FromResponseUnmarshaller[A] = Unmarshaller(_ => { res =>
     {
       Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))
@@ -571,10 +583,11 @@ object TestUtils {
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
   val serverSideProperties: List[String] = List(FileUUID, FileReference, ParentReference)
-  val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
+  val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, ClosureType, DescriptionClosed, TitleClosed)
   val defaultCopyright: String = "Crown Copyright"
   val defaultLegalStatus: String = "Public Record"
   val defaultHeldBy: String = "TNA"
   val defaultLanguage: String = "English"
   val defaultFoiExemptionCode = "open"
+  val defaultClosureType = "Open"
 }

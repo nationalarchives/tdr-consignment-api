@@ -241,7 +241,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val identificationBasisMatch = "TEST DATA identification"
     val puidMatch = "TEST DATA puid"
 
-    List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitleClosed, DescriptionClosed, ClosureStartDate, ClosureType).foreach(utils.addFileProperty(_))
+    List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, ClosureStartDate, FoiExemptionCode).foreach(utils.addFileProperty(_))
 
     utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID, fileRef = Some("REF1"), uploadMatchId = Some("1"))
     utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID, fileRef = Some("REF2"), uploadMatchId = Some("2"))
@@ -268,11 +268,16 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     utils.addFileMetadata("06209e0d-95d0-4f13-8933-e5b9d00eb435", fileOneId, SHA256ServerSideChecksum)
     utils.addFileMetadata("c4759aae-dc68-45ec-aee1-5a562c7b42cc", fileTwoId, SHA256ServerSideChecksum)
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, FoiExemptionCode, "FoiExemptionCode value")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId, FoiExemptionCode, "FoiExemptionCode value")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionCode, "FoiExemptionCode value")
     (clientSideProperties ++ defaultMetadataProperties).foreach(propertyName => {
       utils.addFileProperty(propertyName)
       val value = propertyName match {
         case ClientSideFileLastModifiedDate => "2021-03-11 12:30:30.592853"
         case ClientSideFileSize             => "2"
+        case TitleClosed                    => "false"
+        case DescriptionClosed              => "false"
         case _                              => s"$propertyName value"
       }
       utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, propertyName, value)
@@ -647,7 +652,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       ConsignmentParams(consignmentId3, "consignment-ref3", List(file3Id), statusParams = List(StatusParams(statusId3, "Upload", "Completed")))
     )
     utils.addFileProperty(SHA256ServerSideChecksum)
+    utils.addFileProperty(FoiExemptionCode)
     setUpConsignments(consignmentParams, utils, fileRef = "REF1")
+    utils.addFileMetadata(UUID.randomUUID().toString, file1Id.toString, FoiExemptionCode, "open")
+    utils.addFileMetadata(UUID.randomUUID().toString, file2Id.toString, FoiExemptionCode, "open")
+    utils.addFileMetadata(UUID.randomUUID().toString, file3Id.toString, FoiExemptionCode, "open")
 
     utils.createFileStatusValues(UUID.randomUUID(), file2Id, "Upload", "Success")
     utils.createFileStatusValues(UUID.randomUUID(), file3Id, "Upload", "Success")
@@ -1021,13 +1030,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         UUID.randomUUID().toString,
         parentId.toString,
         defaultMetadataProperty,
-        defaultMetadataProperty match {
-          case RightsCopyright  => defaultCopyright
-          case LegalStatus      => defaultLegalStatus
-          case HeldBy           => defaultHeldBy
-          case Language         => defaultLanguage
-          case FoiExemptionCode => defaultFoiExemptionCode
-        }
+        setPropertyDefaultValues(defaultMetadataProperty)
       )
     }
   }
