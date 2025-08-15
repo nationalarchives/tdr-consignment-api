@@ -14,6 +14,5 @@ case class ConsignmentApiContext(
     transferAgreementService: TransferAgreementService,
     transferringBodyService: TransferringBodyService,
     consignmentStatusService: ConsignmentStatusService,
-    fileStatusService: FileStatusService,
-    customMetadataPropertiesService: CustomMetadataPropertiesService
+    fileStatusService: FileStatusService
 )

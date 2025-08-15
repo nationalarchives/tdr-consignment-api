@@ -67,8 +67,6 @@ trait GraphQLServerBase {
     val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
     val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
-    val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
-    val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, uuidSource, timeSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
     val fileMetadataService =
@@ -98,8 +96,7 @@ trait GraphQLServerBase {
       transferAgreementService,
       transferringBodyService,
       consignmentStatusService,
-      fileStatusService,
-      customMetadataPropertiesService
+      fileStatusService
     )
 
   }

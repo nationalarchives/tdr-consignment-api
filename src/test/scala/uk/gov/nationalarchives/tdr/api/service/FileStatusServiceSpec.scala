@@ -22,7 +22,6 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
   val fileRepositoryMock: FileRepository = mock[FileRepository]
-  val customMetadataServiceMock: CustomMetadataPropertiesService = mock[CustomMetadataPropertiesService]
   val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
   val consignmentId: UUID = UUID.randomUUID()
   val fixedUuidSource = new FixedUUIDSource()
