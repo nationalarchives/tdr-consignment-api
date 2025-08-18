@@ -39,6 +39,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   val uuidSource: FixedUUIDSource = new FixedUUIDSource()
 
   val consignmentStatusRepositoryMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
+  val metadataReviewLogRepositoryMock: MetadataReviewLogRepository = mock[MetadataReviewLogRepository]
   val fileMetadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
   val fileRepositoryMock: FileRepository = mock[FileRepository]
   val fileStatusRepositoryMock: FileStatusRepository = mock[FileStatusRepository]
