@@ -42,7 +42,7 @@ object ConsignmentStatusFields {
       "addConsignmentStatus",
       ConsignmentStatusType,
       arguments = AddConsignmentStatusArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentStatusService.addConsignmentStatus(ctx.arg(AddConsignmentStatusArg)),
+      resolve = ctx => ctx.ctx.consignmentStatusService.addConsignmentStatus(ctx.arg(AddConsignmentStatusArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateUserHasAccessToConsignment(AddConsignmentStatusArg))
     ),
     Field(
@@ -50,9 +50,7 @@ object ConsignmentStatusFields {
       OptionType(IntType),
       arguments = UpdateConsignmentStatusArg :: Nil,
       resolve = ctx =>
-        ctx.ctx.consignmentStatusService.updateConsignmentStatus(
-          ctx.arg(UpdateConsignmentStatusArg)
-        ),
+        ctx.ctx.consignmentStatusService.updateConsignmentStatus(ctx.arg(UpdateConsignmentStatusArg), ctx.ctx.accessToken.userId),
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentStatusArg, updateConsignment = true))
     )
   )
