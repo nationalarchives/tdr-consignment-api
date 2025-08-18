@@ -56,7 +56,8 @@ class ConsignmentStatusService(
         consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
       }
       _ <- metadataReviewLogEntry(addConsignmentStatusInput, userId)
-        .map(metadataReviewLogRepository.addLogEntry).getOrElse(Future.unit)
+        .map(metadataReviewLogRepository.addLogEntry)
+        .getOrElse(Future.unit)
     } yield {
       toConsignmentStatus(consignmentStatusRow)
     }
@@ -74,13 +75,14 @@ class ConsignmentStatusService(
     validateStatusTypeAndValue(updateConsignmentStatusInput)
     for {
       rows <- consignmentStatusRepository.updateConsignmentStatus(
-      updateConsignmentStatusInput.consignmentId,
-      updateConsignmentStatusInput.statusType,
-      updateConsignmentStatusInput.statusValue.get,
-      Timestamp.from(timeSource.now)
+        updateConsignmentStatusInput.consignmentId,
+        updateConsignmentStatusInput.statusType,
+        updateConsignmentStatusInput.statusValue.get,
+        Timestamp.from(timeSource.now)
       )
       _ <- metadataReviewLogEntry(updateConsignmentStatusInput, userId)
-        .map(metadataReviewLogRepository.addLogEntry).getOrElse(Future.unit)
+        .map(metadataReviewLogRepository.addLogEntry)
+        .getOrElse(Future.unit)
     } yield rows
   }
 
@@ -94,15 +96,17 @@ class ConsignmentStatusService(
       throw InputDataException(s"Invalid ConsignmentStatus input: either '$statusType' or '$statusValue'")
     }
   }
-  
+
   private def metadataReviewLogEntry(consignmentStatusInput: ConsignmentStatusInput, userId: UUID): Option[MetadatareviewlogRow] = {
-    val action = Option.when(consignmentStatusInput.statusType == "MetadataReview") {
-      consignmentStatusInput.statusValue.map {
-        case "InProgress" => "Submission"
-        case "Completed"  => "Approval"
-        case "CompletedWithIssues" => "Rejection"  
+    val action = Option
+      .when(consignmentStatusInput.statusType == "MetadataReview") {
+        consignmentStatusInput.statusValue.map {
+          case "InProgress"          => "Submission"
+          case "Completed"           => "Approval"
+          case "CompletedWithIssues" => "Rejection"
+        }
       }
-    }.flatten
+      .flatten
     action.map(a => MetadatareviewlogRow(uuidSource.uuid, consignmentStatusInput.consignmentId, userId, a, Timestamp.from(timeSource.now)))
   }
 }
@@ -123,5 +127,5 @@ object ConsignmentStatusService {
     )
   val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set("ServerFFID", "ServerChecksum", "ServerAntivirus")
   val validStatusValues: Set[String] = Set("InProgress", "Completed", "CompletedWithIssues", "Failed")
-  
+
 }

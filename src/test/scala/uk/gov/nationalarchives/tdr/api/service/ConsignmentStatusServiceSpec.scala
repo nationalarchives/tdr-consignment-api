@@ -51,7 +51,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     "InProgress",
     "Failed"
   )
-  
+
   val dummyUserId: UUID = UUID.randomUUID()
 
   "addConsignmentStatus" should "pass the correct consignment status and value to the repository method" in {
@@ -436,7 +436,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       modifiedTime
     )
   }
-  
+
   "addConsignmentStatus" should "not call metadata review log repository for non-MetadataReview status types" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
@@ -472,7 +472,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
     when(consignmentStatusRepositoryMock.getConsignmentStatus(any[UUID])).thenReturn(mockGetConsignmentStatusRepoResponse)
     when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockAddConsignmentStatusRepoResponse)
-    // Mock the addLogEntry to return any successful Future - we only care about what gets passed to it
     when(metadataReviewLogRepositoryMock.addLogEntry(metadataReviewLogRowCaptor.capture()))
       .thenReturn(Future.successful(mock[MetadatareviewlogRow]))
 

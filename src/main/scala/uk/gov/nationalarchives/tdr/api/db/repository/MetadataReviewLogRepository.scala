@@ -6,7 +6,7 @@ import uk.gov.nationalarchives.Tables.{Metadatareviewlog, MetadatareviewlogRow}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MetadataReviewLogRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext)  {
+class MetadataReviewLogRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
 
   def addLogEntry(logRow: MetadatareviewlogRow): Future[MetadatareviewlogRow] = {
     val insert = Metadatareviewlog += logRow
