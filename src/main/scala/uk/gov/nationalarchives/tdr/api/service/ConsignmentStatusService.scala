@@ -6,6 +6,8 @@ import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepositor
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue, MetadataReviewType}
+import uk.gov.nationalarchives.tdr.api.utils.{Approval, Rejection, Submission}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import java.sql.Timestamp
@@ -99,11 +101,11 @@ class ConsignmentStatusService(
 
   private def metadataReviewLogEntry(consignmentStatusInput: ConsignmentStatusInput, userId: UUID): Option[MetadatareviewlogRow] = {
     val action = Option
-      .when(consignmentStatusInput.statusType == "MetadataReview") {
+      .when(consignmentStatusInput.statusType == MetadataReviewType.id) {
         consignmentStatusInput.statusValue.map {
-          case "InProgress"          => "Submission"
-          case "Completed"           => "Approval"
-          case "CompletedWithIssues" => "Rejection"
+          case InProgressValue.value          => Submission.value
+          case CompletedValue.value          => Approval.value
+          case CompletedWithIssuesValue.value => Rejection.value
         }
       }
       .flatten
@@ -126,6 +128,5 @@ object ConsignmentStatusService {
       "MetadataReview"
     )
   val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set("ServerFFID", "ServerChecksum", "ServerAntivirus")
-  val validStatusValues: Set[String] = Set("InProgress", "Completed", "CompletedWithIssues", "Failed")
-
+  val validStatusValues: Set[String] = Set(InProgressValue.value, CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value)
 }
