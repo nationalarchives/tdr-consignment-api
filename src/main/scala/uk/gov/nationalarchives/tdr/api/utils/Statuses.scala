@@ -67,4 +67,8 @@ object Statuses {
   case object InProgressValue extends StatusValue { val value: String = "InProgress" }
 
   case object CompletedValue extends StatusValue { val value: String = "Completed" }
+
+  case object CompletedWithIssuesValue extends StatusValue { val value: String = "CompletedWithIssues" }
+
+  case object FailedValue extends StatusValue { val value: String = "Failed" }
 }
