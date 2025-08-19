@@ -104,7 +104,7 @@ class ConsignmentStatusService(
       .when(consignmentStatusInput.statusType == MetadataReviewType.id) {
         consignmentStatusInput.statusValue.map {
           case InProgressValue.value          => Submission.value
-          case CompletedValue.value          => Approval.value
+          case CompletedValue.value           => Approval.value
           case CompletedWithIssuesValue.value => Rejection.value
         }
       }
