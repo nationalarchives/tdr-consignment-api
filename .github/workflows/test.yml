@@ -12,7 +12,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: sbt/setup-sbt@f20dc1bc1f8be605c44ffbcec6f17f708a4af9d1
       - run: sbt scalafmtCheckAll 'graphqlValidateSchema "build" "consignmentApi"'
         env:
@@ -22,7 +22,7 @@ jobs:
     outputs:
       files: ${{ steps.generate-files.outputs.files }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: sbt/setup-sbt@f20dc1bc1f8be605c44ffbcec6f17f708a4af9d1
       - id: generate-files
         run: |
@@ -35,7 +35,7 @@ jobs:
       matrix:
         file: ${{ fromJSON(needs.setup-tests.outputs.files) }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: sbt/setup-sbt@f20dc1bc1f8be605c44ffbcec6f17f708a4af9d1
       - run: |
           docker build -f Dockerfile-tests -t tests .
