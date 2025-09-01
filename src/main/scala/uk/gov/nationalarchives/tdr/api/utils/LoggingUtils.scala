@@ -13,3 +13,8 @@ class LoggingUtils(logger: Logger) {
 object LoggingUtils {
   def apply(logger: Logger): LoggingUtils = new LoggingUtils(logger)
 }
+
+sealed trait MetadataReviewAction { val value: String }
+case object Submission extends MetadataReviewAction { val value = "Submission" }
+case object Approval extends MetadataReviewAction { val value = "Approval" }
+case object Rejection extends MetadataReviewAction { val value = "Rejection" }
