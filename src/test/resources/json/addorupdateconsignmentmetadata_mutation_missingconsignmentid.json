@@ -1,0 +1,17 @@
+{
+  "query": "mutation addOrUpdateConsignmentMetadata($addOrUpdateConsignmentMetadataInput: AddOrUpdateConsignmentMetadataInput!) {addOrUpdateConsignmentMetadata(addOrUpdateConsignmentMetadataInput:$addOrUpdateConsignmentMetadataInput) {consignmentId,propertyName,value}}",
+  "variables": {
+    "addOrUpdateConsignmentMetadataInput": {
+      "consignmentMetadata": [
+        {
+          "propertyName": "JudgmentType",
+          "value": "Judgment"
+        },
+        {
+          "propertyName": "PublicRecordsConfirmed",
+          "value": "true"
+        }
+      ]
+    }
+  }
+}
