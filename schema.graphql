@@ -53,6 +53,11 @@ input AddOrUpdateBulkFileMetadataInput {
   fileMetadata: [AddOrUpdateFileMetadata!]!
 }
 
+input AddOrUpdateConsignmentMetadataInput {
+  consignmentId: UUID!
+  consignmentMetadata: [ConsignmentMetadata!]!
+}
+
 input AddOrUpdateFileMetadata {
   fileId: UUID!
   metadata: [AddOrUpdateMetadata!]!
@@ -150,6 +155,17 @@ type ConsignmentEdge {
 input ConsignmentFilters {
   userId: UUID
   consignmentType: String
+}
+
+input ConsignmentMetadata {
+  propertyName: String!
+  value: String!
+}
+
+type ConsignmentMetadataWithConsignmentId {
+  consignmentId: UUID!
+  propertyName: String!
+  value: String!
 }
 
 input ConsignmentOrderBy {
@@ -369,6 +385,7 @@ type Mutation {
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
   updateConsignmentMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersion: UpdateMetadataSchemaLibraryVersionInput!): Int
   updateClientSideDraftMetadataFileName(updateClientSideDraftMetadataFileName: UpdateClientSideDraftMetadataFileNameInput!): Int
+  addOrUpdateConsignmentMetadata(addOrUpdateConsignmentMetadataInput: AddOrUpdateConsignmentMetadataInput!): [ConsignmentMetadataWithConsignmentId!]!
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
