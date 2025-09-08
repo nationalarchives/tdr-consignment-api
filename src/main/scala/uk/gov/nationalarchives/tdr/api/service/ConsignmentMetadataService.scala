@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentMetadataRepository
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentMetadata, ConsignmentMetadataFilter}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentMetadataFields.{AddOrUpdateConsignmentMetadataInput, ConsignmentMetadataWithConsignmentId}
 
 import java.sql.Timestamp
@@ -27,5 +28,11 @@ class ConsignmentMetadataService(
     val time = Timestamp.from(timeSource.now)
     val consignmentId = input.consignmentId
     input.consignmentMetadata.map(metadata => ConsignmentmetadataRow(uuidSource.uuid, consignmentId, metadata.propertyName, metadata.value, time, userId))
+  }
+
+  def getConsignmentMetadata(consignmentId: UUID, filter: Option[ConsignmentMetadataFilter]): Future[List[ConsignmentMetadata]] = {
+    consignmentMetadataRepository.getConsignmentMetadata(consignmentId, filter).map { rows =>
+      rows.map(row => ConsignmentMetadata(row.propertyname, row.value)).toList
+    }
   }
 }

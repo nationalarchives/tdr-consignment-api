@@ -40,6 +40,7 @@ class ConsignmentMetadataRouteSpec extends TestContainerUtils with Matchers with
     val consignmentId: UUID = fixedUUIDSource.uuid
     utils.createConsignment(consignmentId, userId)
     utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, "JudgmentType", "press_summary")
+    consignmentProperties.foreach(utils.addConsignmentProperty)
 
     val expectedResponse: GraphqlAddOrUpdateConsignmentMetadataMutationData = expectedAddOrUpdateConsignmentMetadataMutationResponse("data_all")
     val response: GraphqlAddOrUpdateConsignmentMetadataMutationData = runAddOrUpdateConsignmentMetadataTestMutation("mutation_alldata", validUserToken())

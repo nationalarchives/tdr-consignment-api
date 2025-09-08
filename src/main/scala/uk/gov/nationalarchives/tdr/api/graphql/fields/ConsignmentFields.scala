@@ -88,6 +88,10 @@ object ConsignmentFields {
 
   case class ConsignmentOrderBy(consignmentOrderField: ConsignmentOrderField, orderDirection: Direction)
 
+  case class ConsignmentMetadata(propertyName: String, value: String)
+
+  case class ConsignmentMetadataFilter(propertyNames: List[String])
+
   sealed trait ConsignmentOrderField {
     val cursorFn: ConsignmentRow => String
   }
@@ -143,6 +147,9 @@ object ConsignmentFields {
   implicit val ConsignmentStatusType: ObjectType[Unit, ConsignmentStatus] =
     deriveObjectType[Unit, ConsignmentStatus]()
 
+  implicit val ConsignmentMetadataType: ObjectType[Unit, ConsignmentMetadata] =
+    deriveObjectType[Unit, ConsignmentMetadata]()
+
   implicit val ConsignmentOrderFieldType: EnumType[ConsignmentOrderField] = deriveEnumType[ConsignmentOrderField]()
   implicit val DirectionType: EnumType[Direction] = deriveEnumType[Direction]()
 
@@ -151,10 +158,13 @@ object ConsignmentFields {
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
   implicit val ConsignmentFiltersInputType: InputObjectType[ConsignmentFilters] = deriveInputObjectType[ConsignmentFilters]()
   implicit val ConsignmentOrderByType: InputObjectType[ConsignmentOrderBy] = deriveInputObjectType[ConsignmentOrderBy]()
+  implicit val ConsignmentMetadataFilterInputType: InputObjectType[ConsignmentMetadataFilter] = deriveInputObjectType[ConsignmentMetadataFilter]()
 
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
   val ConsignmentFiltersInputArg: Argument[Option[ConsignmentFilters]] = Argument("consignmentFiltersInput", OptionInputType(ConsignmentFiltersInputType))
+  val ConsignmentMetadataFilterInputArg: Argument[Option[ConsignmentMetadataFilter]] =
+    Argument("consignmentMetadataFiltersInput", OptionInputType(ConsignmentMetadataFilterInputType))
 
   def getQueriedFileFields(projected: Vector[ProjectedName]): QueriedFileFields = QueriedFileFields(
     projected.exists(_.name == "originalFilePath"),
@@ -263,6 +273,12 @@ object ConsignmentFields {
         "consignmentStatuses",
         ListType(ConsignmentStatusType),
         resolve = context => DeferConsignmentStatuses(context.value.consignmentid)
+      ),
+      Field(
+        "consignmentMetadata",
+        ListType(ConsignmentMetadataType),
+        arguments = ConsignmentMetadataFilterInputArg :: Nil,
+        resolve = context => DeferConsignmentMetadata(context.value.consignmentid, context.args.arg(ConsignmentMetadataFilterInputArg))
       )
     )
   )

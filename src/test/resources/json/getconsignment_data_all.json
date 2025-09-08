@@ -15,6 +15,16 @@
       "seriesName": "seriesName",
       "transferringBodyName": "transferringBodyName",
       "transferringBodyTdrCode": "transferringBodyTdrCode",
+      "consignmentMetadata": [
+        {
+          "propertyName": "JudgmentType",
+          "value": "press_summary"
+        },
+        {
+          "propertyName": "PublicRecordsConfirmed",
+          "value": "true"
+        }
+      ],
       "files": [
         {
           "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",

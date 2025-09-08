@@ -6,6 +6,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.ConsignmentMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -84,7 +85,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       transferringBodyName: Option[String],
       transferringBodyTdrCode: Option[String],
       metadataSchemaLibraryVersion: Option[String] = None,
-      clientSideDraftMetadataFileName: Option[String] = None
+      clientSideDraftMetadataFileName: Option[String] = None,
+      consignmentMetadata: List[ConsignmentMetadata] = Nil
   )
 
   case class ConsignmentStatus(
@@ -240,6 +242,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val extensionMatch = "txt"
     val identificationBasisMatch = "TEST DATA identification"
     val puidMatch = "TEST DATA puid"
+    val consignmentProperties = List("JudgmentType", "PublicRecordsConfirmed")
+    consignmentProperties.foreach(utils.addConsignmentProperty)
+    utils.addConsignmentMetadata(UUID.randomUUID(), defaultConsignmentId, "JudgmentType", "press_summary")
+    utils.addConsignmentMetadata(UUID.randomUUID(), defaultConsignmentId, "PublicRecordsConfirmed", "true")
 
     List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, ClosureStartDate, FoiExemptionCode).foreach(utils.addFileProperty(_))
 
@@ -330,6 +336,32 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val response: GraphqlQueryData = runTestQuery("query_filemetadata", validUserToken())
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_file_metadata")
+    response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return consignment metadata for the specified property names" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
+    val fileId = UUID.fromString("3ce8ef99-a999-4bae-8425-325a67f2d3da")
+
+    val extensionMatch = "txt"
+    val identificationBasisMatch = "TEST DATA identification"
+    val puidMatch = "TEST DATA puid"
+
+    utils.createConsignment(consignmentId, userId, fixedSeriesId)
+    utils.createFile(fileId, consignmentId)
+    val consignmentProperties = List("JudgmentType", "PublicRecordsConfirmed")
+    consignmentProperties.foreach(utils.addConsignmentProperty)
+    utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, "JudgmentType", "press_summary")
+    utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, "PublicRecordsConfirmed", "true")
+
+    generateMetadataPropertiesForFile(fileId, utils, true)
+
+    val fileOneFfidMetadataId = utils.addFFIDMetadata(fileId.toString)
+    utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
+
+    val response: GraphqlQueryData = runTestQuery("query_consignment_metadata", validUserToken())
+    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_consignment_metadata")
     response should equal(expectedResponse)
   }
 
