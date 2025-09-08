@@ -495,13 +495,13 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.next()
   }
 
-  def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String): Unit = {
+  def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String, value: String = "Result of ConsignmentMetadata processing"): Unit = {
     val sql = s"""insert into "ConsignmentMetadata" ("MetadataId", "ConsignmentId", "PropertyName", "Value", "Datetime", "UserId") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, metadataId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setString(3, propertyName)
-    ps.setString(4, "Result of ConsignmentMetadata processing")
+    ps.setString(4, value)
     ps.setTimestamp(5, Timestamp.from(FixedTimeSource.now))
     ps.setObject(6, userId, Types.OTHER)
 

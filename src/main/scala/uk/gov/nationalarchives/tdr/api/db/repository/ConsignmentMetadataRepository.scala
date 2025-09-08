@@ -16,6 +16,14 @@ class ConsignmentMetadataRepository(db: JdbcBackend#Database)(implicit val execu
     db.run(insertQuery ++= rows)
   }
 
+  def deleteConsignmentMetadata(consignmentId: UUID, propertyNames: Set[String]): Future[Int] = {
+    val query = Consignmentmetadata
+      .filter(_.consignmentid === consignmentId)
+      .filter(_.propertyname inSetBind propertyNames)
+      .delete
+    db.run(query)
+  }
+
   def getConsignmentMetadata(consignmentId: UUID, propertyNames: String*): Future[Seq[ConsignmentmetadataRow]] = {
     val query = Consignmentmetadata
       .filter(_.consignmentid === consignmentId)
