@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.53",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.168",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.171",
   "org.postgresql" % "postgresql" % "42.7.7",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
@@ -71,8 +71,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.18",
   "net.logstash.logback" % "logstash-logback-encoder" % "8.1",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.2",
-  "software.amazon.awssdk" % "rds" % "2.33.0",
-  "software.amazon.awssdk" % "sts" % "2.33.0",
+  "software.amazon.awssdk" % "rds" % "2.33.4",
+  "software.amazon.awssdk" % "sts" % "2.33.4",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
@@ -82,12 +82,12 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-pki" % akkaVersion,
   "com.tngtech.keycloakmock" % "mock" % "0.18.2" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.255",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.256",
   "io.github.hakky54" % "logcaptor" % "2.12.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.76"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.84"
 )
 
 //Akka Alpakka requires slick v3.5.2
