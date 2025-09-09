@@ -135,8 +135,8 @@ type Consignment {
   files(fileFiltersInput: FileFilters): [File!]!
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
-  consignmentMetadata: [ConsignmentMetadata!]!
   consignmentStatuses: [ConsignmentStatus!]!
+  consignmentMetadata(consignmentMetadataFiltersInput: ConsignmentMetadataFilter): [ConsignmentMetadata!]!
 }
 
 "A connection to a list of items."
@@ -166,6 +166,10 @@ input ConsignmentFilters {
 type ConsignmentMetadata {
   propertyName: String!
   value: String!
+}
+
+input ConsignmentMetadataFilter {
+  propertyNames: [String!]!
 }
 
 type ConsignmentMetadataWithConsignmentId {
