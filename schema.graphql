@@ -194,36 +194,6 @@ input ConsignmentStatusInput {
   userIdOverride: UUID
 }
 
-type CustomMetadataField {
-  name: String!
-  fullName: String
-  description: String
-  propertyType: PropertyType!
-  propertyGroup: String
-  dataType: DataType!
-  editable: Boolean!
-  multiValue: Boolean!
-  defaultValue: String
-  values: [CustomMetadataValues!]!
-  uiOrdinal: Int!
-  allowExport: Boolean!
-  exportOrdinal: Int
-}
-
-type CustomMetadataValues {
-  dependencies: [CustomMetadataField!]!
-  value: String!
-  uiOrdinal: Int!
-}
-
-enum DataType {
-  Boolean
-  DateTime
-  Decimal
-  Integer
-  Text
-}
-
 enum Direction {
   Ascending
   Descending
