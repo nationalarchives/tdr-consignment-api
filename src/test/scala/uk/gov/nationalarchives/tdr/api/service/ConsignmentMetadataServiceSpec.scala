@@ -7,7 +7,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.ConsignmentmetadataRow
 import uk.gov.nationalarchives.tdr.api.db.repository.ConsignmentMetadataRepository
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentMetadataFields.{AddOrUpdateConsignmentMetadataInput, ConsignmentMetadata}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentMetadata, ConsignmentMetadataFilter}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentMetadataFields.{AddOrUpdateConsignmentMetadata, AddOrUpdateConsignmentMetadataInput}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 
 import java.sql.Timestamp
@@ -44,8 +45,8 @@ class ConsignmentMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with 
     val addOrUpdateConsignmentMetadataInput = AddOrUpdateConsignmentMetadataInput(
       consignmentId,
       Seq(
-        ConsignmentMetadata("JudgmentType", "Judgment"),
-        ConsignmentMetadata("PublicRecordsConfirmed", "true")
+        AddOrUpdateConsignmentMetadata("JudgmentType", "Judgment"),
+        AddOrUpdateConsignmentMetadata("PublicRecordsConfirmed", "true")
       )
     )
     val service = new ConsignmentMetadataService(consignmentMetadataRepositoryMock, fixedUuidSource, fixedTimeSource)
@@ -54,5 +55,33 @@ class ConsignmentMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with 
       .futureValue
 
     result.size shouldBe 2
+  }
+
+  "getConsignmentMetadata" should "return metadata for a consignment with filter" in {
+    val repositoryMock = mock[ConsignmentMetadataRepository]
+    val consignmentId = UUID.randomUUID()
+    val filter = Some(ConsignmentMetadataFilter(List("Property1")))
+    val rows = Seq(
+      ConsignmentmetadataRow(UUID.randomUUID(), consignmentId, "Property1", "Value1", Timestamp.valueOf("2024-06-01 12:00:00"), UUID.randomUUID())
+    )
+    when(repositoryMock.getConsignmentMetadata(consignmentId, filter)).thenReturn(Future.successful(rows))
+
+    val service = new ConsignmentMetadataService(repositoryMock, null, null)
+    val result = service.getConsignmentMetadata(consignmentId, filter).futureValue
+
+    result should contain theSameElementsAs Seq(
+      ConsignmentMetadata("Property1", "Value1")
+    )
+  }
+
+  "getConsignmentMetadata" should "return an empty list if no metadata exists" in {
+    val repositoryMock = mock[ConsignmentMetadataRepository]
+    val consignmentId = UUID.randomUUID()
+    when(repositoryMock.getConsignmentMetadata(consignmentId, None)).thenReturn(Future.successful(Seq.empty))
+
+    val service = new ConsignmentMetadataService(repositoryMock, null, null)
+    val result = service.getConsignmentMetadata(consignmentId, None).futureValue
+
+    result shouldBe empty
   }
 }

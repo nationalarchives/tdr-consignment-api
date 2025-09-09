@@ -53,9 +53,14 @@ input AddOrUpdateBulkFileMetadataInput {
   fileMetadata: [AddOrUpdateFileMetadata!]!
 }
 
+input AddOrUpdateConsignmentMetadata {
+  propertyName: String!
+  value: String!
+}
+
 input AddOrUpdateConsignmentMetadataInput {
   consignmentId: UUID!
-  consignmentMetadata: [ConsignmentMetadata!]!
+  consignmentMetadata: [AddOrUpdateConsignmentMetadata!]!
 }
 
 input AddOrUpdateFileMetadata {
@@ -131,6 +136,7 @@ type Consignment {
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
   consignmentStatuses: [ConsignmentStatus!]!
+  consignmentMetadata(consignmentMetadataFiltersInput: ConsignmentMetadataFilter): [ConsignmentMetadata!]!
 }
 
 "A connection to a list of items."
@@ -157,9 +163,13 @@ input ConsignmentFilters {
   consignmentType: String
 }
 
-input ConsignmentMetadata {
+type ConsignmentMetadata {
   propertyName: String!
   value: String!
+}
+
+input ConsignmentMetadataFilter {
+  propertyNames: [String!]!
 }
 
 type ConsignmentMetadataWithConsignmentId {

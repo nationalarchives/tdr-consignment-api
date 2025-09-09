@@ -1,10 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import cats.implicits.catsSyntaxOptionId
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import uk.gov.nationalarchives.Tables._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.ConsignmentMetadataFilter
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
@@ -46,13 +48,14 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
       utils.addConsignmentProperty(consignmentMetadataProperty2)
       val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
       val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
+      val consignmentFilters = ConsignmentMetadataFilter(List(consignmentMetadataProperty1, consignmentMetadataProperty2))
       utils.createConsignment(consignmentId, userId)
       utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, consignmentMetadataProperty1, "Yes")
       utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, consignmentMetadataProperty2, "Judgment")
 
       val result = consignmentMetadataRepository.deleteConsignmentMetadata(consignmentId, Set(consignmentMetadataProperty1, consignmentMetadataProperty2)).futureValue
       result should equal(2)
-      val response = consignmentMetadataRepository.getConsignmentMetadata(consignmentId, consignmentMetadataProperty1, consignmentMetadataProperty2).futureValue
+      val response = consignmentMetadataRepository.getConsignmentMetadata(consignmentId, consignmentFilters.some).futureValue
       response.isEmpty should equal(true)
 
   }
@@ -65,7 +68,8 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
     val consignmentId = UUID.fromString("d511ecee-89ac-4643-b62d-76a41984a92b")
     utils.createConsignment(consignmentId, userId)
     utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, consignmentMetadataProperty1)
-    val response = consignmentMetadataRepository.getConsignmentMetadata(consignmentId, consignmentMetadataProperty1).futureValue.head
+    val consignmentFilters = ConsignmentMetadataFilter(List(consignmentMetadataProperty1))
+    val response = consignmentMetadataRepository.getConsignmentMetadata(consignmentId, consignmentFilters.some).futureValue.head
     response.value should equal("Result of ConsignmentMetadata processing")
     response.propertyname should equal(consignmentMetadataProperty1)
     response.consignmentid should equal(consignmentId)
