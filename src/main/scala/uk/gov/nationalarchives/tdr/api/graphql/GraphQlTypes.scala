@@ -14,6 +14,7 @@ object GraphQlTypes {
   private val MutationType = ObjectType(
     "Mutation",
     ConsignmentFields.mutationFields ++
+      ConsignmentMetadataFields.mutationFields ++
       TransferAgreementFields.mutationFields ++
       FileFields.mutationFields ++
       ConsignmentStatusFields.mutationFields ++
