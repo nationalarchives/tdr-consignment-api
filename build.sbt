@@ -72,7 +72,7 @@ libraryDependencies ++= Seq(
   "net.logstash.logback" % "logstash-logback-encoder" % "8.1",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.2",
   "software.amazon.awssdk" % "rds" % "2.33.5",
-  "software.amazon.awssdk" % "sts" % "2.33.4",
+  "software.amazon.awssdk" % "sts" % "2.33.5",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
