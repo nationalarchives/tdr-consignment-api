@@ -1,3 +1,0 @@
-{
-  "query": "query customMetadata($consignmentId:UUID!){customMetadata(consignmentid:$consignmentId){name, description, fullName, propertyType, propertyGroup, dataType, editable, multiValue, defaultValue}}"
-}
