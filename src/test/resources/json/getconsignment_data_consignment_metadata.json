@@ -1,0 +1,12 @@
+{
+  "data": {
+    "getConsignment": {
+      "consignmentMetadata": [
+        {
+          "propertyName": "JudgmentType",
+          "value": "press_summary"
+        }
+      ]
+    }
+  }
+}

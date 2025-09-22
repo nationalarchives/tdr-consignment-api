@@ -14,11 +14,11 @@ import java.util.UUID
 object ConsignmentMetadataFields {
 
   case class ConsignmentMetadataWithConsignmentId(consignmentId: UUID, propertyName: String, value: String)
-  case class ConsignmentMetadata(propertyName: String, value: String)
-  case class AddOrUpdateConsignmentMetadataInput(consignmentId: UUID, consignmentMetadata: Seq[ConsignmentMetadata]) extends UserOwnsConsignment
+  case class AddOrUpdateConsignmentMetadata(propertyName: String, value: String)
+  case class AddOrUpdateConsignmentMetadataInput(consignmentId: UUID, consignmentMetadata: Seq[AddOrUpdateConsignmentMetadata]) extends UserOwnsConsignment
 
   implicit val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
-  implicit val InputAddOrUpdateMetadataType: InputObjectType[ConsignmentMetadata] = deriveInputObjectType[ConsignmentMetadata]()
+  implicit val InputAddOrUpdateMetadataType: InputObjectType[AddOrUpdateConsignmentMetadata] = deriveInputObjectType[AddOrUpdateConsignmentMetadata]()
 
   val AddOrUpdateBulkFileMetadataInputType: InputObjectType[AddOrUpdateConsignmentMetadataInput] = deriveInputObjectType[AddOrUpdateConsignmentMetadataInput]()
 

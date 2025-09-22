@@ -53,9 +53,14 @@ input AddOrUpdateBulkFileMetadataInput {
   fileMetadata: [AddOrUpdateFileMetadata!]!
 }
 
+input AddOrUpdateConsignmentMetadata {
+  propertyName: String!
+  value: String!
+}
+
 input AddOrUpdateConsignmentMetadataInput {
   consignmentId: UUID!
-  consignmentMetadata: [ConsignmentMetadata!]!
+  consignmentMetadata: [AddOrUpdateConsignmentMetadata!]!
 }
 
 input AddOrUpdateFileMetadata {
@@ -131,6 +136,7 @@ type Consignment {
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
   consignmentStatuses: [ConsignmentStatus!]!
+  consignmentMetadata(consignmentMetadataFiltersInput: ConsignmentMetadataFilter): [ConsignmentMetadata!]!
 }
 
 "A connection to a list of items."
@@ -157,9 +163,13 @@ input ConsignmentFilters {
   consignmentType: String
 }
 
-input ConsignmentMetadata {
+type ConsignmentMetadata {
   propertyName: String!
   value: String!
+}
+
+input ConsignmentMetadataFilter {
+  propertyNames: [String!]!
 }
 
 type ConsignmentMetadataWithConsignmentId {
@@ -192,36 +202,6 @@ input ConsignmentStatusInput {
   statusType: String!
   statusValue: String
   userIdOverride: UUID
-}
-
-type CustomMetadataField {
-  name: String!
-  fullName: String
-  description: String
-  propertyType: PropertyType!
-  propertyGroup: String
-  dataType: DataType!
-  editable: Boolean!
-  multiValue: Boolean!
-  defaultValue: String
-  values: [CustomMetadataValues!]!
-  uiOrdinal: Int!
-  allowExport: Boolean!
-  exportOrdinal: Int
-}
-
-type CustomMetadataValues {
-  dependencies: [CustomMetadataField!]!
-  value: String!
-  uiOrdinal: Int!
-}
-
-enum DataType {
-  Boolean
-  DateTime
-  Decimal
-  Integer
-  Text
 }
 
 enum Direction {
@@ -421,18 +401,11 @@ input PaginationInput {
   fileFilters: FileFilters
 }
 
-enum PropertyType {
-  Defined
-  Supplied
-  System
-}
-
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
   consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
   getConsignmentsForMetadataReview: [Consignment!]!
-  customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
 }
 
 type Series {
