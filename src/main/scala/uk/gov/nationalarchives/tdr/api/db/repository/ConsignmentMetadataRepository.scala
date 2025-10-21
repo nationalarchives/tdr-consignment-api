@@ -5,6 +5,7 @@ import slick.jdbc.JdbcBackend
 import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Consignmentmetadata, _}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.ConsignmentMetadataFilter
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -16,10 +17,18 @@ class ConsignmentMetadataRepository(db: JdbcBackend#Database)(implicit val execu
     db.run(insertQuery ++= rows)
   }
 
-  def getConsignmentMetadata(consignmentId: UUID, propertyNames: String*): Future[Seq[ConsignmentmetadataRow]] = {
+  def deleteConsignmentMetadata(consignmentId: UUID, propertyNames: Set[String]): Future[Int] = {
     val query = Consignmentmetadata
       .filter(_.consignmentid === consignmentId)
-      .filter(_.propertyname inSet propertyNames.toSet)
+      .filter(_.propertyname inSetBind propertyNames)
+      .delete
+    db.run(query)
+  }
+
+  def getConsignmentMetadata(consignmentId: UUID, filter: Option[ConsignmentMetadataFilter]): Future[Seq[ConsignmentmetadataRow]] = {
+    val query = Consignmentmetadata
+      .filter(_.consignmentid === consignmentId)
+      .filterOpt(filter.map(_.propertyNames.toSet))(_.propertyname inSet _)
     db.run(query.result)
   }
 }

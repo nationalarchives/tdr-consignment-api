@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Protected metadata property found: newProperty1",
+      "message": "Protected metadata property found: SHA256ClientSideChecksum",
       "path": [
         "addOrUpdateBulkFileMetadata"
       ],

@@ -6,6 +6,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.ConsignmentMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -84,7 +85,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       transferringBodyName: Option[String],
       transferringBodyTdrCode: Option[String],
       metadataSchemaLibraryVersion: Option[String] = None,
-      clientSideDraftMetadataFileName: Option[String] = None
+      clientSideDraftMetadataFileName: Option[String] = None,
+      consignmentMetadata: List[ConsignmentMetadata] = Nil
   )
 
   case class ConsignmentStatus(
@@ -240,8 +242,12 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val extensionMatch = "txt"
     val identificationBasisMatch = "TEST DATA identification"
     val puidMatch = "TEST DATA puid"
+    val consignmentProperties = List("JudgmentType", "PublicRecordsConfirmed")
+    consignmentProperties.foreach(utils.addConsignmentProperty)
+    utils.addConsignmentMetadata(UUID.randomUUID(), defaultConsignmentId, "JudgmentType", "press_summary")
+    utils.addConsignmentMetadata(UUID.randomUUID(), defaultConsignmentId, "PublicRecordsConfirmed", "true")
 
-    List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, TitleClosed, DescriptionClosed, ClosureStartDate, ClosureType).foreach(utils.addFileProperty(_))
+    List(SHA256ServerSideChecksum, ClosurePeriod, FoiExemptionAsserted, ClosureStartDate, FoiExemptionCode).foreach(utils.addFileProperty(_))
 
     utils.createFile(UUID.fromString(fileOneId), defaultConsignmentId, fileName = "fileOneName", parentId = parentUUID, fileRef = Some("REF1"), uploadMatchId = Some("1"))
     utils.createFile(UUID.fromString(fileTwoId), defaultConsignmentId, fileName = "fileTwoName", parentId = parentUUID, fileRef = Some("REF2"), uploadMatchId = Some("2"))
@@ -268,11 +274,16 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     utils.addFileMetadata("06209e0d-95d0-4f13-8933-e5b9d00eb435", fileOneId, SHA256ServerSideChecksum)
     utils.addFileMetadata("c4759aae-dc68-45ec-aee1-5a562c7b42cc", fileTwoId, SHA256ServerSideChecksum)
+    utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, FoiExemptionCode, "FoiExemptionCode value")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileTwoId, FoiExemptionCode, "FoiExemptionCode value")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionCode, "FoiExemptionCode value")
     (clientSideProperties ++ defaultMetadataProperties).foreach(propertyName => {
       utils.addFileProperty(propertyName)
       val value = propertyName match {
         case ClientSideFileLastModifiedDate => "2021-03-11 12:30:30.592853"
         case ClientSideFileSize             => "2"
+        case TitleClosed                    => "false"
+        case DescriptionClosed              => "false"
         case _                              => s"$propertyName value"
       }
       utils.addFileMetadata(UUID.randomUUID().toString, fileOneId, propertyName, value)
@@ -325,6 +336,32 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val response: GraphqlQueryData = runTestQuery("query_filemetadata", validUserToken())
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_file_metadata")
+    response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return consignment metadata for the specified property names" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("c31b3d3e-1931-421b-a829-e2ef4cd8930c")
+    val fileId = UUID.fromString("3ce8ef99-a999-4bae-8425-325a67f2d3da")
+
+    val extensionMatch = "txt"
+    val identificationBasisMatch = "TEST DATA identification"
+    val puidMatch = "TEST DATA puid"
+
+    utils.createConsignment(consignmentId, userId, fixedSeriesId)
+    utils.createFile(fileId, consignmentId)
+    val consignmentProperties = List("JudgmentType", "PublicRecordsConfirmed")
+    consignmentProperties.foreach(utils.addConsignmentProperty)
+    utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, "JudgmentType", "press_summary")
+    utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, "PublicRecordsConfirmed", "true")
+
+    generateMetadataPropertiesForFile(fileId, utils, true)
+
+    val fileOneFfidMetadataId = utils.addFFIDMetadata(fileId.toString)
+    utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
+
+    val response: GraphqlQueryData = runTestQuery("query_consignment_metadata", validUserToken())
+    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_consignment_metadata")
     response should equal(expectedResponse)
   }
 
@@ -647,7 +684,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       ConsignmentParams(consignmentId3, "consignment-ref3", List(file3Id), statusParams = List(StatusParams(statusId3, "Upload", "Completed")))
     )
     utils.addFileProperty(SHA256ServerSideChecksum)
+    utils.addFileProperty(FoiExemptionCode)
     setUpConsignments(consignmentParams, utils, fileRef = "REF1")
+    utils.addFileMetadata(UUID.randomUUID().toString, file1Id.toString, FoiExemptionCode, "open")
+    utils.addFileMetadata(UUID.randomUUID().toString, file2Id.toString, FoiExemptionCode, "open")
+    utils.addFileMetadata(UUID.randomUUID().toString, file3Id.toString, FoiExemptionCode, "open")
 
     utils.createFileStatusValues(UUID.randomUUID(), file2Id, "Upload", "Success")
     utils.createFileStatusValues(UUID.randomUUID(), file3Id, "Upload", "Success")
@@ -1021,13 +1062,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
         UUID.randomUUID().toString,
         parentId.toString,
         defaultMetadataProperty,
-        defaultMetadataProperty match {
-          case RightsCopyright  => defaultCopyright
-          case LegalStatus      => defaultLegalStatus
-          case HeldBy           => defaultHeldBy
-          case Language         => defaultLanguage
-          case FoiExemptionCode => defaultFoiExemptionCode
-        }
+        setPropertyDefaultValues(defaultMetadataProperty)
       )
     }
   }

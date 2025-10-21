@@ -495,13 +495,13 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.next()
   }
 
-  def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String): Unit = {
+  def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String, value: String = "Result of ConsignmentMetadata processing"): Unit = {
     val sql = s"""insert into "ConsignmentMetadata" ("MetadataId", "ConsignmentId", "PropertyName", "Value", "Datetime", "UserId") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, metadataId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setString(3, propertyName)
-    ps.setString(4, "Result of ConsignmentMetadata processing")
+    ps.setString(4, value)
     ps.setTimestamp(5, Timestamp.from(FixedTimeSource.now))
     ps.setObject(6, userId, Types.OTHER)
 
@@ -557,6 +557,18 @@ object TestUtils {
     }
   }
 
+  def setPropertyDefaultValues(defaultMetadataProperty: String): String = {
+    defaultMetadataProperty match {
+      case RightsCopyright   => defaultCopyright
+      case LegalStatus       => defaultLegalStatus
+      case HeldBy            => defaultHeldBy
+      case Language          => defaultLanguage
+      case ClosureType       => defaultClosureType
+      case DescriptionClosed => "false"
+      case TitleClosed       => "false"
+    }
+  }
+
   def unmarshalResponse[A]()(implicit mat: Materializer, ec: ExecutionContext, decoder: Decoder[A]): FromResponseUnmarshaller[A] = Unmarshaller(_ => { res =>
     {
       Unmarshaller.stringUnmarshaller(res.entity).map(s => getDataFromString[A](s))
@@ -571,10 +583,11 @@ object TestUtils {
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
   val serverSideProperties: List[String] = List(FileUUID, FileReference, ParentReference)
-  val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
+  val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, ClosureType, DescriptionClosed, TitleClosed)
   val defaultCopyright: String = "Crown Copyright"
   val defaultLegalStatus: String = "Public Record"
   val defaultHeldBy: String = "TNA"
   val defaultLanguage: String = "English"
   val defaultFoiExemptionCode = "open"
+  val defaultClosureType = "Open"
 }

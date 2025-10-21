@@ -12,12 +12,11 @@ import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
 
 object TransferAgreementFields {
-  case class TransferAgreementPrivateBeta(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Option[Boolean])
+  case class TransferAgreementPrivateBeta(consignmentId: UUID, allPublicRecords: Boolean)
 
   case class TransferAgreementCompliance(consignmentId: UUID, appraisalSelectionSignedOff: Boolean, initialOpenRecords: Option[Boolean], sensitivityReviewSignedOff: Boolean)
 
-  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID, allPublicRecords: Boolean, allCrownCopyright: Boolean, allEnglish: Option[Boolean])
-      extends UserOwnsConsignment
+  case class AddTransferAgreementPrivateBetaInput(consignmentId: UUID, allPublicRecords: Boolean) extends UserOwnsConsignment
 
   case class AddTransferAgreementComplianceInput(
       consignmentId: UUID,
@@ -26,19 +25,19 @@ object TransferAgreementFields {
       sensitivityReviewSignedOff: Boolean
   ) extends UserOwnsConsignment
 
-  val TransferAgreementPrivateBetaType: ObjectType[Unit, TransferAgreementPrivateBeta] = deriveObjectType[Unit, TransferAgreementPrivateBeta]()
-  val TransferAgreementComplianceType: ObjectType[Unit, TransferAgreementCompliance] = deriveObjectType[Unit, TransferAgreementCompliance]()
+  private val TransferAgreementPrivateBetaType: ObjectType[Unit, TransferAgreementPrivateBeta] = deriveObjectType[Unit, TransferAgreementPrivateBeta]()
+  private val TransferAgreementComplianceType: ObjectType[Unit, TransferAgreementCompliance] = deriveObjectType[Unit, TransferAgreementCompliance]()
 
-  val AddTransferAgreementPrivateBetaInputType: InputObjectType[AddTransferAgreementPrivateBetaInput] =
+  private val AddTransferAgreementPrivateBetaInputType: InputObjectType[AddTransferAgreementPrivateBetaInput] =
     deriveInputObjectType[AddTransferAgreementPrivateBetaInput]()
-  val AddTransferAgreementComplianceInputType: InputObjectType[AddTransferAgreementComplianceInput] =
+  private val AddTransferAgreementComplianceInputType: InputObjectType[AddTransferAgreementComplianceInput] =
     deriveInputObjectType[AddTransferAgreementComplianceInput]()
 
-  val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
+  private val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
 
-  val TransferAgreementPrivateBetaInputArg: Argument[AddTransferAgreementPrivateBetaInput] =
+  private val TransferAgreementPrivateBetaInputArg: Argument[AddTransferAgreementPrivateBetaInput] =
     Argument("addTransferAgreementPrivateBetaInput", AddTransferAgreementPrivateBetaInputType)
-  val TransferAgreementComplianceInputArg: Argument[AddTransferAgreementComplianceInput] =
+  private val TransferAgreementComplianceInputArg: Argument[AddTransferAgreementComplianceInput] =
     Argument("addTransferAgreementComplianceInput", AddTransferAgreementComplianceInputType)
 
   val mutationFields: List[Field[ConsignmentApiContext, Unit]] = fields[ConsignmentApiContext, Unit](
