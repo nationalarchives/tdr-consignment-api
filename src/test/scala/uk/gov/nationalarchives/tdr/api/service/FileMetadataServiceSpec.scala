@@ -286,16 +286,16 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FileMetadataService.FileUUID shouldEqual "UUID"
   }
 
-  private class AddOrUpdateBulkMetadataTestSetUp() {
+  private class AddOrUpdateBulkMetadataTestSetUp {
     val userId: UUID = UUID.randomUUID()
     val consignmentId: UUID = UUID.randomUUID()
-    val fileId1: UUID = UUID.randomUUID()
-    val fileId2: UUID = UUID.randomUUID()
+    private val fileId1: UUID = UUID.randomUUID()
+    private val fileId2: UUID = UUID.randomUUID()
     val fileId3: UUID = UUID.randomUUID()
 
     val inputFileIds: Seq[UUID] = Seq(fileId1, fileId2, fileId3)
 
-    val fixedUUIDSource = new FixedUUIDSource()
+    private val fixedUUIDSource = new FixedUUIDSource()
     fixedUUIDSource.reset
 
     val metadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
