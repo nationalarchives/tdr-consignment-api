@@ -202,7 +202,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (fileTwoRow, Some(fileMetadataRow(fileIdTwo, "ClientSideFileLastModifiedDate", timestamp.toString))),
       (fileTwoRow, Some(fileMetadataRow(fileIdTwo, "SHA256ClientSideChecksum", "checksum"))),
       (fileThreeRow, Some(fileMetadataRow(fileIdThree, "ClientSideFileLastModifiedDate", timestamp.toString))),
-      (fileThreeRow, Some(fileMetadataRow(fileIdThree, "EvidenceProvidedBy","provided by test"))),
+      (fileThreeRow, Some(fileMetadataRow(fileIdThree, "EvidenceProvidedBy", "provided by test"))),
       (parentFolderRow, None)
     )
     val mockFileStatusResponse = Future(
@@ -260,7 +260,23 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileThree = files.find(_.fileId == fileIdThree).get
     fileThree.fileName.get shouldBe "fileThreeName"
     fileThree.uploadMatchId.get shouldBe "3"
-    fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None, Some("provided by test"))
+    fileThree.metadata shouldBe FileMetadataValues(
+      None,
+      None,
+      Some(timestamp.toLocalDateTime),
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      Some("provided by test")
+    )
     fileThree.originalFilePath.isDefined should be(false)
   }
 
