@@ -17,6 +17,7 @@ trait AuthorisationTag extends ValidationTag {
   val antiVirusRole = "antivirus"
   val checksumRole = "checksum"
   val dataLoadRole = "data-load"
+  val dataLoadAccessRole = "data_load_access"
   val fileFormatRole = "file_format"
   val exportRole = "export"
   val reportingRole = "reporting"
@@ -77,7 +78,8 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateCo
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val arg: T = ctx.arg[T](argument.name)
-    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole)
+    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole) ||
+      token.transferServiceRoles.contains(dataLoadAccessRole)
     lazy val hasUserIdOverrideAccess: Boolean = token.transferServiceRoles.contains(dataLoadRole)
 
     val userId: UUID = arg match {
