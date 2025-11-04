@@ -43,11 +43,34 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository)(implic
       }
     }
 
+    // Separate empty values (for deletion) from non-empty values (for upsert)
+    val (emptyValueMetadata, nonEmptyValueMetadata) = metadataInput.fileMetadata
+      .flatMap { fileMetadata =>
+        fileMetadata.metadata.map { metadata =>
+          (fileMetadata.fileId, metadata)
+        }
+      }
+      .partition { case (_, metadata) => metadata.value.isEmpty }
+
+    // Delete properties with empty values
+    val deleteFutures = emptyValueMetadata
+      .groupBy(_._1)
+      .map { case (fileId, metadataList) =>
+        val propertiesToDelete = metadataList.map(_._2.filePropertyName).toSet
+        fileMetadataRepository.deleteFileMetadata(fileId, propertiesToDelete)
+      }
+      .toSeq
+
+    // Upsert properties with non-empty values
+    val fileMetadataInputs = nonEmptyValueMetadata.map { case (fileId, metadata) =>
+      AddFileMetadataInput(fileId, metadata.value, userId, metadata.filePropertyName)
+    }.toList
+
     for {
-      _ <- metadataInput.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(metadataInput.fileMetadata, userId))
-      metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
-    } yield metadataPropertiesAdded
+      _ <- Future.sequence(deleteFutures)
+      insertedRows <- if (fileMetadataInputs.nonEmpty) fileMetadataRepository.addOrUpdateFileMetadata(fileMetadataInputs) else Future.successful(Seq.empty)
+      medataPropertiesAdded = insertedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
+    } yield medataPropertiesAdded
   }
 
   private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {

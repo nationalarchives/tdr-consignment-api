@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.GetResult
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize, ClosureType}
 
@@ -17,6 +18,65 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     FilemetadataRow(dbGeneratedValues._1, fileMetadata._1, fileMetadata._2, dbGeneratedValues._2, fileMetadata._3, fileMetadata._4)
   )
 
+  // Helper to dedupe incoming rows (last value wins)
+  private def dedupe(rows: Seq[AddFileMetadataInput]): Seq[AddFileMetadataInput] =
+    rows.foldLeft(Map.empty[(UUID, String), AddFileMetadataInput]) { (acc, r) => acc + ((r.fileId -> r.filePropertyName) -> r) }.values.toSeq
+
+  // Build a multi-row atomic upsert DBIO that deletes rows with empty values and upserts rows with non-empty values
+  private def upsertFileMetadataAction(rows: Seq[AddFileMetadataInput]): DBIO[Seq[FilemetadataRow]] = {
+    implicit val getResult: GetResult[(UUID, UUID, String, Timestamp, UUID, String)] =
+      GetResult(r => (r.nextObject().asInstanceOf[UUID], r.nextObject().asInstanceOf[UUID], r.nextString(), r.nextTimestamp(), r.nextObject().asInstanceOf[UUID], r.nextString()))
+
+    val deduped = dedupe(rows)
+    if (deduped.isEmpty) DBIO.successful(Seq.empty)
+    else {
+      // Separate empty values (for deletion) from non-empty values (for upsert)
+      val (emptyValueRows, nonEmptyValueRows) = deduped.partition(_.value.isEmpty)
+
+      // Delete rows with empty values
+      val deleteActions = emptyValueRows.map { row =>
+        Filemetadata
+          .filter(_.fileid === row.fileId)
+          .filter(_.propertyname === row.filePropertyName)
+          .delete
+      }
+
+      // Upsert rows with non-empty values
+      val upsertAction = if (nonEmptyValueRows.nonEmpty) {
+        val valuesClause = nonEmptyValueRows
+          .map { r =>
+            s"('${r.fileId}', '${r.value.replace("'", "''")}', '${r.userId}', '${r.filePropertyName.replace("'", "''")}')"
+          }
+          .mkString(", ")
+
+        val sqlQuery = s"""
+          INSERT INTO "FileMetadata" ("FileId", "Value", "UserId", "PropertyName")
+          VALUES $valuesClause
+          ON CONFLICT ("FileId", "PropertyName")
+          DO UPDATE SET
+            "Value" = EXCLUDED."Value",
+            "UserId" = EXCLUDED."UserId",
+            "Datetime" = CURRENT_TIMESTAMP
+          RETURNING "MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName"
+        """
+
+        sql"#$sqlQuery"
+          .as[(UUID, UUID, String, Timestamp, UUID, String)]
+          .map(_.map { case (metadataId, fileId, value, datetime, userId, propertyName) =>
+            FilemetadataRow(metadataId, fileId, value, datetime, userId, propertyName)
+          })
+      } else {
+        DBIO.successful(Seq.empty[FilemetadataRow])
+      }
+
+      // Execute deletes first, then upserts
+      for {
+        _ <- DBIO.sequence(deleteActions)
+        upsertedRows <- upsertAction
+      } yield upsertedRows
+    }
+  }
+
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = {
     val query = Filemetadata
       .join(File)
@@ -30,7 +90,12 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
   }
 
   def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
-    db.run(insertFileMetadataQuery ++= rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
+    addOrUpdateFileMetadata(rows)
+  }
+
+  def addOrUpdateFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
+    if (rows.isEmpty) Future.successful(Seq.empty)
+    else db.run(upsertFileMetadataAction(rows).transactionally)
   }
 
   def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {

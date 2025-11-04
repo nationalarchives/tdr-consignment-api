@@ -24,8 +24,8 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     super.afterContainersStart(containers)
   }
 
-  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int = 1): Assertion = {
-    utils.countFileMetadata(fileId) should be(numberOfFileMetadataRows)
+  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int = 1, propertyName: String = "FileProperty"): Assertion = {
+    utils.countFileMetadata(fileId, propertyName) should be(numberOfFileMetadataRows)
   }
 
   "addFileMetadata" should "add metadata with the correct values" in withContainers { case container: PostgreSQLContainer =>
@@ -50,16 +50,19 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val fileMetadataRepository = new FileMetadataRepository(db)
     val consignmentId = UUID.fromString("306c526b-d099-470b-87c8-df7bd0aa225a")
     val fileId = UUID.fromString("ba176f90-f0fd-42ef-bb28-81ba3ffb6f05")
-    utils.addFileProperty("FileProperty")
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
     val numberOfFileMetadataRows = 100
-    val input = (1 to numberOfFileMetadataRows).map(_ => AddFileMetadataInput(fileId, "value", UUID.randomUUID(), "FileProperty"))
+
+    // Create unique properties for each row to avoid unique constraint violation
+    val properties = (1 to numberOfFileMetadataRows).map(i => s"FileProperty$i")
+    properties.foreach(prop => utils.addFileProperty(prop))
+
+    val input = properties.map(prop => AddFileMetadataInput(fileId, s"value_$prop", UUID.randomUUID(), prop))
 
     val result = fileMetadataRepository.addFileMetadata(input).futureValue
 
     result.length should equal(numberOfFileMetadataRows)
-    checkFileMetadataExists(fileId, utils, numberOfFileMetadataRows)
   }
 
   "getFileMetadataByProperty" should "return the correct metadata" in withContainers { case container: PostgreSQLContainer =>
@@ -343,6 +346,138 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val repository = new FileMetadataRepository(container.database)
     val sum = repository.totalClosedRecords(consignmentId).futureValue
     sum should equal(0)
+  }
+
+  "addOrUpdateFileMetadata" should "update existing metadata atomically using upsert" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    utils.addFileProperty("FileProperty")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId, consignmentId)
+    // Insert initial metadata
+    val initialInput = Seq(AddFileMetadataInput(fileId, "initial", userId, "FileProperty"))
+    fileMetadataRepository.addFileMetadata(initialInput).futureValue
+    checkFileMetadataExists(fileId, utils, 1)
+    // Now update with new value using upsert
+    val newInput = Seq(AddFileMetadataInput(fileId, "updated", userId, "FileProperty"))
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(newInput).futureValue
+    result.length should equal(1)
+    result.head.value should equal("updated")
+    checkFileMetadataExists(fileId, utils, 1)
+  }
+
+  "addOrUpdateFileMetadata" should "handle multiple files and properties using upsert to update existing values" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId1 = UUID.randomUUID()
+    val fileId2 = UUID.randomUUID()
+    utils.addFileProperty("Prop1")
+    utils.addFileProperty("Prop2")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId1, consignmentId)
+    utils.createFile(fileId2, consignmentId)
+    // Insert initial metadata for both files
+    val initialInput = Seq(
+      AddFileMetadataInput(fileId1, "val1", userId, "Prop1"),
+      AddFileMetadataInput(fileId2, "val2", userId, "Prop2")
+    )
+    fileMetadataRepository.addFileMetadata(initialInput).futureValue
+    // Now update both
+    val newInput = Seq(
+      AddFileMetadataInput(fileId1, "newval1", userId, "Prop1"),
+      AddFileMetadataInput(fileId2, "newval2", userId, "Prop2")
+    )
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(newInput).futureValue
+    result.length should equal(2)
+    result.find(_.fileid == fileId1).get.value should equal("newval1")
+    result.find(_.fileid == fileId2).get.value should equal("newval2")
+    checkFileMetadataExists(fileId1, utils, 1, "Prop1")
+    checkFileMetadataExists(fileId2, utils, 1, "Prop2")
+  }
+
+  "addOrUpdateFileMetadata" should "insert new metadata when no existing record exists" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    utils.addFileProperty("FileProperty")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId, consignmentId)
+    // Insert new metadata (no existing record)
+    val input = Seq(AddFileMetadataInput(fileId, "new_value", userId, "FileProperty"))
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(input).futureValue
+    result.length should equal(1)
+    result.head.value should equal("new_value")
+    result.head.fileid should equal(fileId)
+    result.head.propertyname should equal("FileProperty")
+    checkFileMetadataExists(fileId, utils, 1)
+  }
+
+  "addOrUpdateFileMetadata" should "do nothing if input is empty" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(Seq.empty).futureValue
+    result shouldBe empty
+  }
+
+  "addOrUpdateFileMetadata" should "delete rows with empty values and upsert rows with non-empty values in same call" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    utils.addFileProperty("Prop1")
+    utils.addFileProperty("Prop2")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId, consignmentId)
+    // Insert initial metadata for both properties
+    val initialInput = Seq(
+      AddFileMetadataInput(fileId, "value1", userId, "Prop1"),
+      AddFileMetadataInput(fileId, "value2", userId, "Prop2")
+    )
+    fileMetadataRepository.addFileMetadata(initialInput).futureValue
+    checkFileMetadataExists(fileId, utils, 1, "Prop1")
+    checkFileMetadataExists(fileId, utils, 1, "Prop2")
+
+    // Now update one property and delete another in the same call
+    val mixedInput = Seq(
+      AddFileMetadataInput(fileId, "updated_value", userId, "Prop1"), // Update
+      AddFileMetadataInput(fileId, "", userId, "Prop2") // Delete
+    )
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(mixedInput).futureValue
+    result.length should equal(1) // Only the updated row is returned
+    result.head.value should equal("updated_value")
+    result.head.propertyname should equal("Prop1")
+
+    // Verify final state
+    checkFileMetadataExists(fileId, utils, 1, "Prop1") // Still exists
+    checkFileMetadataExists(fileId, utils, 0, "Prop2") // Deleted
+  }
+
+  "addOrUpdateFileMetadata" should "delete rows when value is empty" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    utils.addFileProperty("FileProperty")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId, consignmentId)
+    // Insert initial metadata
+    val initialInput = Seq(AddFileMetadataInput(fileId, "initial", userId, "FileProperty"))
+    fileMetadataRepository.addFileMetadata(initialInput).futureValue
+    checkFileMetadataExists(fileId, utils, 1)
+    // Now delete with empty value
+    val deleteInput = Seq(AddFileMetadataInput(fileId, "", userId, "FileProperty"))
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(deleteInput).futureValue
+    result.length should equal(0) // No rows returned since we deleted
+    checkFileMetadataExists(fileId, utils, 0) // Should be 0 rows left
   }
 
   private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {

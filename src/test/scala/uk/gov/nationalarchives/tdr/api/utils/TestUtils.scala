@@ -76,11 +76,11 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.getInt("num")
   }
 
-  def countFileMetadata(fileId: UUID): Int = {
+  def countFileMetadata(fileId: UUID, propertyName: String = "FileProperty"): Int = {
     val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
     val ps = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
-    ps.setString(2, "FileProperty")
+    ps.setString(2, propertyName)
     val rs = ps.executeQuery()
     rs.next()
     rs.getInt("num")
@@ -336,7 +336,13 @@ class TestUtils(db: JdbcBackend#Database) {
   }
 
   def addFileMetadata(metadataId: String, fileId: String, propertyName: String, value: String = "Result of FileMetadata processing"): Unit = {
-    val sql = s"""INSERT INTO "FileMetadata" ("MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName") VALUES (?, ?, ?, ?, ?, ?)"""
+    val sql = s"""INSERT INTO "FileMetadata" ("MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName")
+                  VALUES (?, ?, ?, ?, ?, ?)
+                  ON CONFLICT ("FileId", "PropertyName")
+                  DO UPDATE SET
+                    "Value" = EXCLUDED."Value",
+                    "UserId" = EXCLUDED."UserId",
+                    "Datetime" = CURRENT_TIMESTAMP"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, metadataId, Types.OTHER)
     ps.setObject(2, fileId, Types.OTHER)

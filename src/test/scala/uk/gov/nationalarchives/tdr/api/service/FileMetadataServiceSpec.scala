@@ -80,7 +80,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     result.value should equal(value)
   }
 
-  "addOrUpdateBulkFileMetadata" should "delete existing metadata rows and add new metadata rows based on the input" in {
+  "addOrUpdateBulkFileMetadata" should "upsert metadata rows with non-empty values without deleting" in {
     val testSetUp = new AddOrUpdateBulkMetadataTestSetUp()
 
     testSetUp.stubRepoResponses()
@@ -94,29 +94,28 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val input = AddOrUpdateBulkFileMetadataInput(testSetUp.consignmentId, addOrUpdateBulkFileMetadata)
 
     service.addOrUpdateBulkFileMetadata(input, testSetUp.userId).futureValue
-    verify(testSetUp.metadataRepositoryMock, times(3)).deleteFileMetadata(any[UUID], any[Set[String]])
 
-    val deleteFileMetadataIdsArg: UUID = testSetUp.deleteFileMetadataIdsArgCaptor.getValue
-    val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
-    val addFileMetadataArgument: Seq[AddFileMetadataInput] = testSetUp.addFileMetadataCaptor.getValue
+    // Should not call delete since all values are non-empty
+    verify(testSetUp.metadataRepositoryMock, times(0)).deleteFileMetadata(any[UUID], any[Set[String]])
+    // Should call addOrUpdateFileMetadata once with all the non-empty values
+    verify(testSetUp.metadataRepositoryMock, times(1)).addOrUpdateFileMetadata(any[Seq[AddFileMetadataInput]])
+
+    val addOrUpdateFileMetadataArgument: Seq[AddFileMetadataInput] = testSetUp.addOrUpdateFileMetadataCaptor.getValue
 
     val expectedUpdatedPropertyNames: Set[String] = Set("propertyName1", "propertyName2")
     val expectedUpdatedPropertyValues: Set[String] = Set("newValue1", "newValue2")
 
-    deleteFileMetadataIdsArg should equal(testSetUp.fileId3)
-    deleteFileMetadataPropertiesArg should equal(expectedUpdatedPropertyNames)
-
-    addFileMetadataArgument.size should equal(6)
-    val addedFileIds = addFileMetadataArgument.map(_.fileId).toSet
+    addOrUpdateFileMetadataArgument.size should equal(6)
+    val addedFileIds = addOrUpdateFileMetadataArgument.map(_.fileId).toSet
     addedFileIds should equal(testSetUp.inputFileIds.toSet)
 
-    val addedPropertyValues = addFileMetadataArgument.map(_.value).toSet
+    val addedPropertyValues = addOrUpdateFileMetadataArgument.map(_.value).toSet
     addedPropertyValues.size should equal(2)
-    addedPropertyValues.subsetOf(expectedUpdatedPropertyValues) should equal(true)
+    addedPropertyValues should equal(expectedUpdatedPropertyValues)
 
-    val addedProperties = addFileMetadataArgument.map(_.filePropertyName).toSet
+    val addedProperties = addOrUpdateFileMetadataArgument.map(_.filePropertyName).toSet
     addedProperties.size should equal(2)
-    addedProperties.subsetOf(expectedUpdatedPropertyNames) should equal(true)
+    addedProperties should equal(expectedUpdatedPropertyNames)
   }
 
   "addOrUpdateBulkFileMetadata" should "not update properties, and throw an error if input contains a protected property" in {
@@ -144,12 +143,12 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     }
 
     verify(testSetUp.metadataRepositoryMock, times(0)).deleteFileMetadata(any[UUID], any[Set[String]])
-    verify(testSetUp.metadataRepositoryMock, times(0)).addFileMetadata(any[Seq[AddFileMetadataInput]])
+    verify(testSetUp.metadataRepositoryMock, times(0)).addOrUpdateFileMetadata(any[Seq[AddFileMetadataInput]])
 
     thrownException.getMessage should include("Protected metadata property found: SHA256ServerSideChecksum")
   }
 
-  "addOrUpdateBulkFileMetadata" should "delete properties with empty values but not add empty properties" in {
+  "addOrUpdateBulkFileMetadata" should "delete properties with empty values and upsert properties with non-empty values" in {
     val testSetUp = new AddOrUpdateBulkMetadataTestSetUp()
 
     testSetUp.stubRepoResponses()
@@ -163,24 +162,27 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
 
     service.addOrUpdateBulkFileMetadata(input, testSetUp.userId).futureValue
     verify(testSetUp.metadataRepositoryMock, times(3)).deleteFileMetadata(any[UUID], any[Set[String]])
+    verify(testSetUp.metadataRepositoryMock, times(1)).addOrUpdateFileMetadata(any[Seq[AddFileMetadataInput]])
 
     val deleteFileMetadataPropertiesArg: Set[String] = testSetUp.deletePropertyNamesCaptor.getValue
-    val addFileMetadataArgument: Seq[AddFileMetadataInput] = testSetUp.addFileMetadataCaptor.getValue
+    val addOrUpdateFileMetadataArgument: Seq[AddFileMetadataInput] = testSetUp.addOrUpdateFileMetadataCaptor.getValue
 
-    val expectedUpdatedPropertyNames: Set[String] = Set("propertyName1", "propertyName2")
+    val expectedDeletedPropertyNames: Set[String] = Set("propertyName2")
 
-    deleteFileMetadataPropertiesArg.size should equal(2)
-    deleteFileMetadataPropertiesArg should equal(expectedUpdatedPropertyNames)
+    deleteFileMetadataPropertiesArg.size should equal(1)
+    deleteFileMetadataPropertiesArg should equal(expectedDeletedPropertyNames)
 
-    addFileMetadataArgument.size should equal(3)
-    val addedFileIds = addFileMetadataArgument.map(_.fileId).toSet
+    addOrUpdateFileMetadataArgument.size should equal(3)
+    val addedFileIds = addOrUpdateFileMetadataArgument.map(_.fileId).toSet
     addedFileIds should equal(testSetUp.inputFileIds.toSet)
 
-    val addedPropertyValues = addFileMetadataArgument.map(_.value).toSet
+    val addedPropertyValues = addOrUpdateFileMetadataArgument.map(_.value).toSet
     addedPropertyValues.size should equal(1)
+    addedPropertyValues should equal(Set("newValue1"))
 
-    val addedProperties = addFileMetadataArgument.map(_.filePropertyName).toSet
+    val addedProperties = addOrUpdateFileMetadataArgument.map(_.filePropertyName).toSet
     addedProperties.size should equal(1)
+    addedProperties should equal(Set("propertyName1"))
   }
 
   "getFileMetadata" should "call the repository with the correct arguments" in {
@@ -301,18 +303,18 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val metadataRepositoryMock: FileMetadataRepository = mock[FileMetadataRepository]
 
     val deletePropertyNamesCaptor: ArgumentCaptor[Set[String]] = ArgumentCaptor.forClass(classOf[Set[String]])
-    val addFileMetadataCaptor: ArgumentCaptor[Seq[AddFileMetadataInput]] = ArgumentCaptor.forClass(classOf[Seq[AddFileMetadataInput]])
+    val addOrUpdateFileMetadataCaptor: ArgumentCaptor[Seq[AddFileMetadataInput]] = ArgumentCaptor.forClass(classOf[Seq[AddFileMetadataInput]])
     val deleteFileMetadataIdsArgCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
 
     def stubRepoResponses(
         deleteFileMetadataResponse: Int = 0,
-        addFileMetadataResponse: Seq[FilemetadataRow] = Seq()
+        addOrUpdateFileMetadataResponse: Seq[FilemetadataRow] = Seq()
     ): Unit = {
 
       when(metadataRepositoryMock.deleteFileMetadata(deleteFileMetadataIdsArgCaptor.capture(), deletePropertyNamesCaptor.capture()))
         .thenReturn(Future(deleteFileMetadataResponse))
-      when(metadataRepositoryMock.addFileMetadata(addFileMetadataCaptor.capture()))
-        .thenReturn(Future(addFileMetadataResponse))
+      when(metadataRepositoryMock.addOrUpdateFileMetadata(addOrUpdateFileMetadataCaptor.capture()))
+        .thenReturn(Future(addOrUpdateFileMetadataResponse))
     }
   }
 }
