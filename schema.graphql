@@ -365,6 +365,7 @@ type Mutation {
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
   updateConsignmentMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersion: UpdateMetadataSchemaLibraryVersionInput!): Int
   updateClientSideDraftMetadataFileName(updateClientSideDraftMetadataFileName: UpdateClientSideDraftMetadataFileNameInput!): Int
+  updateParentFolder(updateParentFolderInput: UpdateParentFolderInput!): Int
   addOrUpdateConsignmentMetadata(addOrUpdateConsignmentMetadataInput: AddOrUpdateConsignmentMetadataInput!): [ConsignmentMetadataWithConsignmentId!]!
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
@@ -456,6 +457,11 @@ input UpdateExportDataInput {
 input UpdateMetadataSchemaLibraryVersionInput {
   consignmentId: UUID!
   metadataSchemaLibraryVersion: String!
+}
+
+input UpdateParentFolderInput {
+    consignmentId: UUID!
+    parentFolder: String!
 }
 
 scalar ZonedDateTime
