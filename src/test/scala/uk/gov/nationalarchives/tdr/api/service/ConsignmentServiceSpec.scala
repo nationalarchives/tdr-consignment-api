@@ -756,6 +756,18 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     closedRecords should equal(5)
   }
 
+  "updateParentFolder" should "update the parent folder for a given consignment" in {
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val parentFolder = "TestParentFolder"
+    val input = UpdateParentFolderInput(consignmentId, parentFolder)
+    when(consignmentRepoMock.updateParentFolder(consignmentId, parentFolder)).thenReturn(Future.successful(1))
+
+    val result = consignmentService.updateParentFolder(input).futureValue
+
+    verify(consignmentRepoMock).updateParentFolder(consignmentId, parentFolder)
+    result shouldBe 1
+  }
+
   private def createConsignmentRow(consignmentId: UUID, consignmentRef: String, consignmentSeq: Long, exportLocation: Option[String]) = {
     ConsignmentRow(
       consignmentId,
