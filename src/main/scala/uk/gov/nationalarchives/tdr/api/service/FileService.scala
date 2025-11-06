@@ -116,12 +116,18 @@ class FileService(
   }
 
   private def generateMatchedRows(rows: Future[List[Rows]]): Future[List[FileMatches]] = {
-    for {
-      rowsWithMatchId <- rows
-      _ <- rowsWithMatchId.grouped(fileUploadBatchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
-    } yield rowsWithMatchId.flatMap {
-      case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
-      case _                                    => Nil
+    rows.flatMap { rowsWithMatchId =>
+      val batched: Seq[Seq[Rows]] = rowsWithMatchId.grouped(fileUploadBatchSize).toSeq
+      val insertFutures: Seq[Future[Unit]] = batched.map { batch =>
+        val fileRows = batch.map(_.fileRow)
+        val metadataRows = batch.flatMap(_.metadataRows)
+        fileRepository.addFiles(fileRows, metadataRows)
+      }
+      Future.sequence(insertFutures).map { _ =>
+        rowsWithMatchId.collect {
+          case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId)
+        }
+      }
     }
   }
 
