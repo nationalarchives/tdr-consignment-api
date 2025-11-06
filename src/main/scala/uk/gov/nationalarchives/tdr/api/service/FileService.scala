@@ -124,8 +124,8 @@ class FileService(
         fileRepository.addFiles(fileRows, metadataRows)
       }
       Future.sequence(insertFutures).map { _ =>
-        rowsWithMatchId.collect {
-          case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId)
+        rowsWithMatchId.collect { case MatchedFileRows(fileRow, _, matchId) =>
+          FileMatches(fileRow.fileid, matchId)
         }
       }
     }
