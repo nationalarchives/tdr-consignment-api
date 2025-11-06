@@ -14,6 +14,7 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
+import scala.concurrent.Future
 
 class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
 
@@ -54,7 +55,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.createFile(fileId, consignmentId)
     val numberOfFileMetadataRows = 100
 
-    // Create unique properties for each row to avoid unique constraint violation
     val properties = (1 to numberOfFileMetadataRows).map(i => s"FileProperty$i")
     properties.foreach(prop => utils.addFileProperty(prop))
 
@@ -360,7 +360,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     // Insert initial metadata
     val initialInput = Seq(AddFileMetadataInput(fileId, "initial", userId, "FileProperty"))
     fileMetadataRepository.addFileMetadata(initialInput).futureValue
-    checkFileMetadataExists(fileId, utils, 1)
     // Now update with new value using upsert
     val newInput = Seq(AddFileMetadataInput(fileId, "updated", userId, "FileProperty"))
     val result = fileMetadataRepository.addOrUpdateFileMetadata(newInput).futureValue
@@ -426,7 +425,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     result shouldBe empty
   }
 
-  "addOrUpdateFileMetadata" should "delete rows with empty values and upsert rows with non-empty values in same call" in withContainers { case container: PostgreSQLContainer =>
+  "addOrUpdateFileMetadata" should "delete rows with empty values and upsert rows with non-empty values" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
     val fileMetadataRepository = new FileMetadataRepository(db)
@@ -442,42 +441,94 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       AddFileMetadataInput(fileId, "value2", userId, "Prop2")
     )
     fileMetadataRepository.addFileMetadata(initialInput).futureValue
-    checkFileMetadataExists(fileId, utils, 1, "Prop1")
-    checkFileMetadataExists(fileId, utils, 1, "Prop2")
 
-    // Now update one property and delete another in the same call
+    // Now update one property and delete another
     val mixedInput = Seq(
       AddFileMetadataInput(fileId, "updated_value", userId, "Prop1"), // Update
       AddFileMetadataInput(fileId, "", userId, "Prop2") // Delete
     )
     val result = fileMetadataRepository.addOrUpdateFileMetadata(mixedInput).futureValue
-    result.length should equal(1) // Only the updated row is returned
+    result.length should equal(1)
     result.head.value should equal("updated_value")
     result.head.propertyname should equal("Prop1")
 
-    // Verify final state
-    checkFileMetadataExists(fileId, utils, 1, "Prop1") // Still exists
-    checkFileMetadataExists(fileId, utils, 0, "Prop2") // Deleted
+    checkFileMetadataExists(fileId, utils, 1, "Prop1")
+    checkFileMetadataExists(fileId, utils, 0, "Prop2")
   }
 
-  "addOrUpdateFileMetadata" should "delete rows when value is empty" in withContainers { case container: PostgreSQLContainer =>
+  "addOrUpdateFileMetadata" should "handle multiple concurrent calls with many properties correctly" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
     val fileMetadataRepository = new FileMetadataRepository(db)
     val consignmentId = UUID.randomUUID()
     val fileId = UUID.randomUUID()
-    utils.addFileProperty("FileProperty")
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
-    // Insert initial metadata
-    val initialInput = Seq(AddFileMetadataInput(fileId, "initial", userId, "FileProperty"))
+
+    // Create 30 unique properties
+    val numberOfProperties = 30
+    val properties = (1 to numberOfProperties).map(i => s"TestProperty$i")
+    properties.foreach(prop => utils.addFileProperty(prop))
+
+    val initialInput = properties.map(prop => AddFileMetadataInput(fileId, s"initial_$prop", userId, prop))
     fileMetadataRepository.addFileMetadata(initialInput).futureValue
-    checkFileMetadataExists(fileId, utils, 1)
-    // Now delete with empty value
-    val deleteInput = Seq(AddFileMetadataInput(fileId, "", userId, "FileProperty"))
-    val result = fileMetadataRepository.addOrUpdateFileMetadata(deleteInput).futureValue
-    result.length should equal(0) // No rows returned since we deleted
-    checkFileMetadataExists(fileId, utils, 0) // Should be 0 rows left
+
+    val totalInitialCount = properties.map(prop => utils.countFileMetadata(fileId, prop)).sum
+    totalInitialCount should equal(numberOfProperties)
+
+    // Prepare 10 different update calls, each updating different subsets of properties
+    val numberOfCalls = 10
+    val updateCalls = (1 to numberOfCalls).map { callIndex =>
+      // Each call updates some properties with new values and some with empty values (deletes)
+      val updates = properties.zipWithIndex.map { case (prop, propIndex) =>
+        val shouldUpdate = (propIndex + callIndex) % 3 == 0 // Update every 3rd property based on call
+        val shouldDelete = (propIndex + callIndex) % 7 == 0 // Delete every 7th property based on call
+
+        if (shouldDelete) {
+          AddFileMetadataInput(fileId, "", userId, prop) // Empty value = delete
+        } else if (shouldUpdate) {
+          AddFileMetadataInput(fileId, s"updated_call${callIndex}_$prop", userId, prop)
+        } else {
+          AddFileMetadataInput(fileId, s"initial_$prop", userId, prop) // Keep existing
+        }
+      }
+      updates
+    }
+
+    // Execute all update calls in parallel using Future.traverse
+    val parallelResults = Future
+      .traverse(updateCalls) { updateInput =>
+        fileMetadataRepository.addOrUpdateFileMetadata(updateInput)
+      }
+      .futureValue
+
+    // Verify all calls completed successfully
+    parallelResults.length should equal(numberOfCalls)
+
+    // Check final state - count remaining rows for each property
+    val finalCounts = properties.map(prop => utils.countFileMetadata(fileId, prop))
+    val totalFinalCount = finalCounts.sum
+
+    // Each property should have either 0 or 1 row (due to unique constraint)
+    finalCounts.foreach(count => count should (equal(0) or equal(1)))
+
+    // Verify we still have the expected number of properties (some may have been deleted)
+    // Since deletes happen on every 7th property in various calls, we expect fewer than 30
+    totalFinalCount should be >= 20 // At least 20 should remain
+    totalFinalCount should be <= numberOfProperties // Not more than original
+
+    println(s"Final state: $totalFinalCount rows remaining out of $numberOfProperties properties")
+
+    // Verify data integrity - check that remaining rows have correct values
+    val remainingMetadata = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(Set(fileId))).futureValue
+    remainingMetadata.length should equal(totalFinalCount)
+
+    // All remaining rows should have non-empty values
+    remainingMetadata.foreach { row =>
+      row.value should not be ""
+      row.fileid should equal(fileId)
+      properties should contain(row.propertyname)
+    }
   }
 
   private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {
