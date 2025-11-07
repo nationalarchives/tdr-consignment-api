@@ -531,7 +531,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val initialCount = utils.countAllFileMetadata()
     initialCount should equal(numberOfFiles * numberOfProperties)
 
-
     val numberOfSimultaneousClientCalls = 2
     val filesPerCall = numberOfFiles / numberOfSimultaneousClientCalls
     val updateCalls = (0 until numberOfSimultaneousClientCalls).map { callIndex =>
