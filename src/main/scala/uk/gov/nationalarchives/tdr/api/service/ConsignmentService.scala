@@ -160,6 +160,10 @@ class ConsignmentService(
     consignmentRepository.updateClientSideDraftMetadataFileName(input)
   }
 
+  def updateParentFolder(input: UpdateParentFolderInput): Future[Int] = {
+    consignmentRepository.updateParentFolder(input.consignmentId, input.parentFolder)
+  }
+
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
     Consignment(
       row.consignmentid,
