@@ -203,4 +203,12 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
       .update(Some(input.clientSideDraftMetadataFileName))
     db.run(update)
   }
+
+  def updateParentFolder(consignmentId: UUID, parentFolder: String): Future[Int] = {
+    val update = Consignment
+      .filter(_.consignmentid === consignmentId)
+      .map(_.parentfolder)
+      .update(Some(parentFolder))
+    db.run(update)
+  }
 }
