@@ -1,6 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import org.postgresql.util.PSQLException
+import org.slf4j.LoggerFactory
 import slick.jdbc.H2Profile.ProfileAction
 import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
@@ -11,9 +12,12 @@ import uk.gov.nationalarchives.tdr.api.utils.RetryUtils._
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
+
+  private val logger = LoggerFactory.getLogger(getClass)
+  private val DEADLOCK_SQL_STATE = "40P01" // PostgreSQL deadlock detected SQL state code https://www.postgresql.org/docs/current/errcodes-appendix.html
 
   private val insertFileMetadataQuery = Filemetadata.map(t => (t.fileid, t.value, t.userid, t.propertyname)) returning Filemetadata
     .map(r => (r.metadataid, r.datetime)) into ((fileMetadata, dbGeneratedValues) =>
@@ -47,40 +51,30 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
         val bulkUpdateAction = bulkUpsertAction(batch).transactionally
 
         val isDeadlock: Throwable => Boolean = {
-          case e: PSQLException if e.getSQLState == "40P01" =>
-            println(s"DEADLOCK DETECTED: ${e.getMessage}")
+          case e: PSQLException if e.getSQLState == DEADLOCK_SQL_STATE =>
             true
           case e: PSQLException if e.getMessage != null && e.getMessage.toLowerCase.contains("deadlock") =>
-            println(s"DEADLOCK DETECTED (by message): ${e.getMessage}")
             true
-          case e =>
-            println(s"NON-DEADLOCK EXCEPTION: ${e.getClass.getSimpleName}: ${e.getMessage}")
+          case _ =>
             false
         }
-
         // 1. Optimistically try a bulk update first.
         retry(
           db.run(bulkUpdateAction),
           retries = 3,
           delay = 50.millis,
           isRetryable = isDeadlock
-        ).recoverWith {
-          // 2. Catch ANY exception after retries fail and check if it's a deadlock
-          case e: Throwable =>
-            println(s"RETRY EXHAUSTED, CHECKING FOR DEADLOCK FALLBACK: ${e.getClass.getSimpleName}: ${e.getMessage}")
-            e match {
-              case psql: PSQLException
-                  if psql.getSQLState == "40P01" ||
-                    (psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock")) =>
-                println(s"CONFIRMED DEADLOCK - FALLBACK TO ADVISORY LOCKS: ${psql.getMessage}")
-                executeAdvisoryLockFallback(batch)
-              case psql: PSQLException if psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock") =>
-                println(s"DEADLOCK BY MESSAGE - FALLBACK TO ADVISORY LOCKS: ${psql.getMessage}")
-                executeAdvisoryLockFallback(batch)
-              case _ =>
-                println(s"NON-DEADLOCK FAILURE - RE-THROWING: ${e.getMessage}")
-                Future.failed(e)
-            }
+        ).recoverWith { case e: Throwable =>
+          e match {
+            case psql: PSQLException
+                if psql.getSQLState == DEADLOCK_SQL_STATE ||
+                  (psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock")) =>
+              executeAdvisoryLockFallback(batch)
+            case psql: PSQLException if psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock") =>
+              executeAdvisoryLockFallback(batch)
+            case _ =>
+              Future.failed(e)
+          }
         }
       }
       Future.sequence(batchFutures).map(_.flatten)
@@ -137,28 +131,43 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     } yield inserted
   }
 
-  // Helper method for advisory lock fallback
   private def executeAdvisoryLockFallback(batch: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
-    println(s"ULTIMATE SEQUENTIAL FALLBACK: Processing ${batch.length} rows one-by-one")
+    val uniqueFileIds = batch.map(_.fileId).toSet
+    logger.info(s"ADVISORY LOCK FALLBACK: Processing ${uniqueFileIds.size} files with proper advisory locks")
 
-    // Process each row individually, sequentially, in separate transactions
-    // This is the ultimate fallback - slow but guaranteed to work
-    val sequentialResults = batch.foldLeft(Future.successful(Seq.empty[FilemetadataRow])) { (accFuture, row) =>
+    // Process each file with its own advisory lock, sequentially to avoid lock conflicts
+    val sequentialResults = uniqueFileIds.toList.foldLeft(Future.successful(Seq.empty[FilemetadataRow])) { (accFuture, fileId) =>
       accFuture.flatMap { acc =>
-        println(s"SEQUENTIAL: Processing row for file ${row.fileId}, property ${row.filePropertyName}")
+        val fileRows = batch.filter(_.fileId == fileId)
+        val fileAction = withAdvisoryLock(fileId) {
+          DBIO.sequence(fileRows.map(singleRowUpsertAction)).map(_.flatten)
+        }.transactionally
 
-        val singleRowAction = singleRowUpsertAction(row).transactionally
-
-        db.run(singleRowAction)
-          .map { rowResult =>
-            val results = rowResult.toSeq
-            println(s"SEQUENTIAL: Completed row for file ${row.fileId}, got ${results.length} results")
-            acc ++ results
+        db.run(fileAction)
+          .map { fileResults =>
+            acc ++ fileResults
           }
           .recover { case e =>
-            println(s"SEQUENTIAL ERROR for file ${row.fileId}, property ${row.filePropertyName}: ${e.getMessage}")
-            // Even if individual rows fail, continue with others
-            acc
+            e match {
+              case psql: PSQLException
+                  if psql.getSQLState == DEADLOCK_SQL_STATE ||
+                    (psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock")) =>
+                val rowResults = fileRows.foldLeft(acc) { (rowAcc, row) =>
+                  val singleRowAction = singleRowUpsertAction(row).transactionally
+                  try {
+                    val future = db.run(singleRowAction)
+                    val result = scala.concurrent.Await.result(future, 30.seconds)
+                    rowAcc ++ result.toSeq
+                  } catch {
+                    case e: Exception =>
+                      logger.warn(s"Failed to upsert row for FileId: ${row.fileId}, PropertyName: ${row.filePropertyName} due to: ${e.getMessage}")
+                      rowAcc // Continue with other rows even if one fails
+                  }
+                }
+                rowResults
+              case _ =>
+                throw e // Re-throw non-deadlock errors
+            }
           }
       }
     }
@@ -194,6 +203,17 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
       sql"#$upsertQuery".as[FilemetadataRow].map(_.headOption)
     }
   }
+
+  private def withAdvisoryLock[R](fileId: UUID)(action: DBIO[R]): DBIO[R] = {
+    val lockId = Math.abs(fileId.hashCode().toLong)
+    for {
+      _ <- pgAdvisoryXactLock(lockId)
+      result <- action
+    } yield result
+  }
+
+  // PostgreSQL advisory lock helper methods
+  private def pgAdvisoryXactLock(lockId: Long): DBIO[Unit] = sql"SELECT pg_advisory_xact_lock($lockId)".as[Unit].head
 
   def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {
     val query = Filemetadata
@@ -245,19 +265,6 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     db.run(query)
   }
 
-  private def withAdvisoryLock[R](fileId: UUID)(action: DBIO[R]): DBIO[R] = {
-    // PostgreSQL advisory locks are based on a 64-bit integer.
-    // We create a unique, deterministic lock ID from the file's UUID.
-    val lockId = fileId.getMostSignificantBits
-
-    // The lock is transaction-scoped (pg_advisory_xact_lock), so it's automatically released at the end of the transaction.
-    for {
-      _ <- pgAdvisoryXactLock(lockId)
-      result <- action
-    } yield result
-  }
-
-  private def pgAdvisoryXactLock(lockId: Long): DBIO[Unit] = sql"SELECT pg_advisory_xact_lock($lockId)".as[Unit].head
 }
 
 case class FileMetadataUpdate(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID)
