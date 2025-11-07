@@ -10,7 +10,6 @@ import scala.util.Random
 object RetryUtils {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  // Create a dedicated ActorSystem for retry operations
   private lazy val retryActorSystem: ActorSystem = ActorSystem("retry-system")
 
   def retry[T](
@@ -24,7 +23,6 @@ object RetryUtils {
         val jitter = Random.nextInt(100).millis
         val nextDelay = delay + jitter
         logger.warn(s"Deadlock detected, will retry... Retries left: $retries. Delaying for $nextDelay. Error: ${e.getMessage}")
-        // Use the retryActorSystem implicitly
         implicit val system: ActorSystem = retryActorSystem
         akka.pattern.after(nextDelay)(retry(f, retries - 1, delay, isRetryable))
       case e =>
