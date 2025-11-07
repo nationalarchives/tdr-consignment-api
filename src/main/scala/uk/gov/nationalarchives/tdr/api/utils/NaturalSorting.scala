@@ -13,7 +13,7 @@ object NaturalSorting {
       val l = Math.min(a.length, b.length)
       (0 until l).segmentLength(i => a(i) equals b(i)) match {
         case i if i == l => Math.signum(a.length - b.length).toInt
-        case i =>
+        case i           =>
           (a(i), b(i)) match {
             case (INT(c), INT(d)) => Math.signum(c.toInt - d.toInt).toInt
             case (c, d)           => c compareTo d

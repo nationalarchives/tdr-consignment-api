@@ -38,7 +38,7 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
       noAccess = fileFields.exists(_.userId != userId) && !draftMetadataValidatorAccess
     } yield {
       noAccess match {
-        case true => throw AuthorisationException("Access denied to file metadata")
+        case true                                                           => throw AuthorisationException("Access denied to file metadata")
         case _ if inputErrors(fileFields, inputFileIds, inputConsignmentId) =>
           throw InputDataException("Input contains directory id or contains non-existing file id or consignment id is incorrect")
         case _ => continue
