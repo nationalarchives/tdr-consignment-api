@@ -19,7 +19,7 @@ import scala.concurrent.Future
 class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(2, Seconds))
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(180, Seconds))
 
   override def afterContainersStart(containers: containerDef.Container): Unit = {
     super.afterContainersStart(containers)
@@ -408,9 +408,10 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     utils.addFileProperty("FileProperty")
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
-    // Insert new metadata (no existing record)
+
     val input = Seq(AddFileMetadataInput(fileId, "new_value", userId, "FileProperty"))
     val result = fileMetadataRepository.addOrUpdateFileMetadata(input).futureValue
+
     result.length should equal(1)
     result.head.value should equal("new_value")
     result.head.fileid should equal(fileId)
@@ -444,8 +445,8 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
     // Now update one property and delete another
     val mixedInput = Seq(
-      AddFileMetadataInput(fileId, "updated_value", userId, "Prop1"), // Update
-      AddFileMetadataInput(fileId, "", userId, "Prop2") // Delete
+      AddFileMetadataInput(fileId, "updated_value", userId, "Prop1"),
+      AddFileMetadataInput(fileId, "", userId, "Prop2")
     )
     val result = fileMetadataRepository.addOrUpdateFileMetadata(mixedInput).futureValue
     result.length should equal(1)
@@ -495,7 +496,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       updates
     }
 
-    // Execute all update calls in parallel using Future.traverse
     val parallelResults = Future
       .traverse(updateCalls) { updateInput =>
         fileMetadataRepository.addOrUpdateFileMetadata(updateInput)
@@ -512,12 +512,8 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     // Each property should have either 0 or 1 row (due to unique constraint)
     finalCounts.foreach(count => count should (equal(0) or equal(1)))
 
-    // Verify we still have the expected number of properties (some may have been deleted)
-    // Since deletes happen on every 7th property in various calls, we expect fewer than 30
-    totalFinalCount should be >= 20 // At least 20 should remain
-    totalFinalCount should be <= numberOfProperties // Not more than original
-
-    println(s"Final state: $totalFinalCount rows remaining out of $numberOfProperties properties")
+    totalFinalCount should be >= 20
+    totalFinalCount should be <= numberOfProperties
 
     // Verify data integrity - check that remaining rows have correct values
     val remainingMetadata = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(Set(fileId))).futureValue
@@ -528,6 +524,86 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
       row.value should not be ""
       row.fileid should equal(fileId)
       properties should contain(row.propertyname)
+    }
+  }
+
+  "addOrUpdateFileMetadata" should "handle multiple concurrent calls with many files correctly" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    utils.createConsignment(consignmentId, userId)
+
+    // Create 10,000 file IDs
+    val numberOfFiles = 10000
+    val fileIds = (1 to numberOfFiles).map(_ => UUID.randomUUID())
+    fileIds.foreach(fileId => utils.createFile(fileId, consignmentId))
+
+    // Add twenty properties for each file
+    val numberOfProperties = 20
+    val properties = (1 to numberOfProperties).map(i => s"Prop$i")
+    properties.foreach(p => utils.createFileProperty(p, "description", "propertyType", "text", editable = true, multivalue = false, "group", "fullName"))
+
+    // Initial insert for all files
+    val initialInputs = fileIds.flatMap { fileId =>
+      properties.map(p => AddFileMetadataInput(fileId, s"initial_$p", userId, p))
+    }
+    fileMetadataRepository.addOrUpdateFileMetadata(initialInputs).futureValue
+
+    // Verify initial state
+    val initialCount = utils.countAllFileMetadata()
+    initialCount should equal(numberOfFiles * numberOfProperties)
+
+    println("Syncing initial data to the database before concurrent updates..." + System.currentTimeMillis())
+    // Prepare 20 concurrent calls, each updating a subset of files with all properties
+    val numberOfCalls = 20
+    val filesPerCall = numberOfFiles / numberOfCalls
+    val updateCalls = (0 until numberOfCalls).map { callIndex =>
+      val startIndex = callIndex * filesPerCall
+      val endIndex = if (callIndex == numberOfCalls - 1) numberOfFiles else (callIndex + 1) * filesPerCall
+      val filesToUpdate = fileIds.slice(startIndex, endIndex)
+
+      // Each call updates ALL properties for its subset of files
+      filesToUpdate.flatMap { fileId =>
+        properties.zipWithIndex.map { case (prop, propIndex) =>
+          if (propIndex % 2 == 0) {
+            AddFileMetadataInput(fileId, s"updated_${prop}_call$callIndex", userId, prop) // Update even properties
+          } else {
+            AddFileMetadataInput(fileId, "", userId, prop) // Set odd properties to empty string
+          }
+        }
+      }
+    }
+
+    // Execute all update calls in parallel
+    val parallelResults = Future.traverse(updateCalls) { updateInput =>
+      fileMetadataRepository.addOrUpdateFileMetadata(updateInput)
+    }.futureValue
+
+    println("end concurrent updates..." + System.currentTimeMillis())
+    // Verify all calls completed
+    parallelResults.length should equal(numberOfCalls)
+
+    // Verify final state
+    // All 10,000 files will have all 20 properties updated through the concurrent calls.
+    // Since no rows are deleted, final count should be 10,000 files * 20 properties = 200,000 rows.
+    val finalCount = utils.countAllFileMetadata()
+    finalCount should equal(numberOfFiles * numberOfProperties/2)
+
+    // Verify data integrity for a sample of files
+    val sampleFileIds = fileIds.take(10)
+    val finalMetadata = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(sampleFileIds.toSet)).futureValue
+    finalMetadata.length should equal(10 * numberOfProperties/2) // 10 files, numberOfProperties properties each
+    finalMetadata.foreach { row =>
+      val propNumber = row.propertyname.stripPrefix("Prop").toInt
+      val propIndex = propNumber - 1 // Convert 1-based property number to 0-based index
+      if (propIndex % 2 == 0) {
+        // Even-indexed properties (Prop1, Prop3, Prop5, etc.) should have updated values
+        row.value should startWith("updated_Prop")
+      } else {
+        // Odd-indexed properties (Prop2, Prop4, Prop6, etc.) should have empty string values
+        row.value should equal("")
+      }
     }
   }
 

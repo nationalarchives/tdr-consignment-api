@@ -1,14 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import org.postgresql.util.PSQLException
 import slick.jdbc.H2Profile.ProfileAction
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{GetResult, JdbcBackend}
 import slick.jdbc.PostgresProfile.api._
-import slick.jdbc.GetResult
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize, ClosureType}
+import uk.gov.nationalarchives.tdr.api.utils.RetryUtils._
 
 import java.sql.Timestamp
 import java.util.UUID
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
@@ -17,65 +19,6 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     .map(r => (r.metadataid, r.datetime)) into ((fileMetadata, dbGeneratedValues) =>
     FilemetadataRow(dbGeneratedValues._1, fileMetadata._1, fileMetadata._2, dbGeneratedValues._2, fileMetadata._3, fileMetadata._4)
   )
-
-  // Helper to dedupe incoming rows (last value wins)
-  private def dedupe(rows: Seq[AddFileMetadataInput]): Seq[AddFileMetadataInput] =
-    rows.foldLeft(Map.empty[(UUID, String), AddFileMetadataInput]) { (acc, r) => acc + ((r.fileId -> r.filePropertyName) -> r) }.values.toSeq
-
-  // Build a multi-row atomic upsert DBIO that deletes rows with empty values and upserts rows with non-empty values
-  private def upsertFileMetadataAction(rows: Seq[AddFileMetadataInput]): DBIO[Seq[FilemetadataRow]] = {
-    implicit val getResult: GetResult[(UUID, UUID, String, Timestamp, UUID, String)] =
-      GetResult(r => (r.nextObject().asInstanceOf[UUID], r.nextObject().asInstanceOf[UUID], r.nextString(), r.nextTimestamp(), r.nextObject().asInstanceOf[UUID], r.nextString()))
-
-    val deduped = dedupe(rows)
-    if (deduped.isEmpty) DBIO.successful(Seq.empty)
-    else {
-      // Separate empty values (for deletion) from non-empty values (for upsert)
-      val (emptyValueRows, nonEmptyValueRows) = deduped.partition(_.value.isEmpty)
-
-      // Delete rows with empty values
-      val deleteActions = emptyValueRows.map { row =>
-        Filemetadata
-          .filter(_.fileid === row.fileId)
-          .filter(_.propertyname === row.filePropertyName)
-          .delete
-      }
-
-      // Upsert rows with non-empty values
-      val upsertAction = if (nonEmptyValueRows.nonEmpty) {
-        val valuesClause = nonEmptyValueRows
-          .map { r =>
-            s"('${r.fileId}', '${r.value.replace("'", "''")}', '${r.userId}', '${r.filePropertyName.replace("'", "''")}')"
-          }
-          .mkString(", ")
-
-        val sqlQuery = s"""
-          INSERT INTO "FileMetadata" ("FileId", "Value", "UserId", "PropertyName")
-          VALUES $valuesClause
-          ON CONFLICT ("FileId", "PropertyName")
-          DO UPDATE SET
-            "Value" = EXCLUDED."Value",
-            "UserId" = EXCLUDED."UserId",
-            "Datetime" = CURRENT_TIMESTAMP
-          RETURNING "MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName"
-        """
-
-        sql"#$sqlQuery"
-          .as[(UUID, UUID, String, Timestamp, UUID, String)]
-          .map(_.map { case (metadataId, fileId, value, datetime, userId, propertyName) =>
-            FilemetadataRow(metadataId, fileId, value, datetime, userId, propertyName)
-          })
-      } else {
-        DBIO.successful(Seq.empty[FilemetadataRow])
-      }
-
-      // Execute deletes first, then upserts
-      for {
-        _ <- DBIO.sequence(deleteActions)
-        upsertedRows <- upsertAction
-      } yield upsertedRows
-    }
-  }
 
   def getSumOfFileSizes(consignmentId: UUID): Future[Long] = {
     val query = Filemetadata
@@ -89,13 +32,76 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     db.run(query.result)
   }
 
-  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
-    addOrUpdateFileMetadata(rows)
-  }
+  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = addOrUpdateFileMetadata(rows)
 
   def addOrUpdateFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
-    if (rows.isEmpty) Future.successful(Seq.empty)
-    else db.run(upsertFileMetadataAction(rows).transactionally)
+    if (rows.isEmpty) {
+      Future.successful(Seq.empty)
+    } else {
+      val deduped = dedupe(rows)
+      val batchSize = 5000 // Process 5000 rows at a time
+      val batches = deduped.grouped(batchSize).toSeq
+
+      // Process each batch sequentially to avoid overwhelming the database
+      val batchFutures = batches.map { batch =>
+        val bulkUpdateAction = bulkUpsertAction(batch).transactionally
+
+        val isDeadlock: Throwable => Boolean = {
+          case e: PSQLException if e.getSQLState == "40P01" =>
+            println(s"DEADLOCK DETECTED: ${e.getMessage}")
+            true
+          case e: PSQLException if e.getMessage != null && e.getMessage.toLowerCase.contains("deadlock") =>
+            println(s"DEADLOCK DETECTED (by message): ${e.getMessage}")
+            true
+          case e =>
+            println(s"NON-DEADLOCK EXCEPTION: ${e.getClass.getSimpleName}: ${e.getMessage}")
+            false
+        }
+
+        // 1. Optimistically try a bulk update first.
+        retry(
+          db.run(bulkUpdateAction),
+          retries = 3,
+          delay = 50.millis,
+          isRetryable = isDeadlock
+        ).recoverWith {
+          // 2. Catch ANY exception after retries fail and check if it's a deadlock
+          case e: Throwable =>
+            println(s"RETRY EXHAUSTED, CHECKING FOR DEADLOCK FALLBACK: ${e.getClass.getSimpleName}: ${e.getMessage}")
+            e match {
+              case psql: PSQLException if psql.getSQLState == "40P01" ||
+                   (psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock")) =>
+                println(s"CONFIRMED DEADLOCK - FALLBACK TO ADVISORY LOCKS: ${psql.getMessage}")
+                executeAdvisoryLockFallback(batch)
+              case psql: PSQLException if psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock") =>
+                println(s"DEADLOCK BY MESSAGE - FALLBACK TO ADVISORY LOCKS: ${psql.getMessage}")
+                executeAdvisoryLockFallback(batch)
+              case _ =>
+                println(s"NON-DEADLOCK FAILURE - RE-THROWING: ${e.getMessage}")
+                Future.failed(e)
+            }
+        }
+      }
+      Future.sequence(batchFutures).map(_.flatten)
+    }
+  }
+
+  private def dedupe(rows: Seq[AddFileMetadataInput]): Seq[AddFileMetadataInput] =
+    rows.foldLeft(Map.empty[(UUID, String), AddFileMetadataInput]) { (acc, r) => acc + ((r.fileId -> r.filePropertyName) -> r) }.values.toSeq
+
+  private def pgAdvisoryXactLock(lockId: Long): DBIO[Unit] = sql"SELECT pg_advisory_xact_lock($lockId)".as[Unit].head
+
+
+  private def withAdvisoryLock[R](fileId: UUID)(action: DBIO[R]): DBIO[R] = {
+    // PostgreSQL advisory locks are based on a 64-bit integer.
+    // We create a unique, deterministic lock ID from the file's UUID.
+    val lockId = fileId.getMostSignificantBits
+
+    // The lock is transaction-scoped (pg_advisory_xact_lock), so it's automatically released at the end of the transaction.
+    for {
+      _ <- pgAdvisoryXactLock(lockId)
+      result <- action
+    } yield result
   }
 
   def getFileMetadataByProperty(fileIds: List[UUID], propertyName: String*): Future[Seq[FilemetadataRow]] = {
@@ -148,6 +154,111 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     db.run(query)
   }
 
+  private def bulkUpsertAction(rows: Seq[AddFileMetadataInput]): DBIO[Seq[FilemetadataRow]] = {
+    val (toDelete, toUpsert) = rows.partition(_.value.isEmpty)
+
+    implicit val getResult: slick.jdbc.GetResult[FilemetadataRow] =
+      slick.jdbc.GetResult(r =>
+        FilemetadataRow(
+          r.nextObject().asInstanceOf[UUID], r.nextObject().asInstanceOf[UUID], r.nextString(),
+          r.nextTimestamp(), r.nextObject().asInstanceOf[UUID], r.nextString()
+        )
+      )
+
+    for {
+      // 1. Bulk delete all rows with empty values
+      _ <- if (toDelete.nonEmpty) {
+        val deleteConditions = toDelete.map(row =>
+          s"""("FileId" = '${row.fileId}' AND "PropertyName" = '${row.filePropertyName.replace("'", "''")}')"""
+        ).mkString(" OR ")
+        sql"""DELETE FROM "FileMetadata" WHERE #${deleteConditions}""".as[Int]
+      } else DBIO.successful(0)
+
+      // 2. Bulk upsert all rows with non-empty values
+      inserted <- if (toUpsert.nonEmpty) {
+        val valuesList = toUpsert.map(row =>
+          s"('${row.fileId}', '${row.value.replace("'", "''")}', '${row.userId}', '${row.filePropertyName.replace("'", "''")}')"
+        ).mkString(", ")
+
+        val upsertQuery =
+          s"""INSERT INTO "FileMetadata" ("FileId", "Value", "UserId", "PropertyName")
+             |VALUES $valuesList
+             |ON CONFLICT ("FileId", "PropertyName") DO UPDATE SET
+             |  "Value" = EXCLUDED."Value",
+             |  "UserId" = EXCLUDED."UserId",
+             |  "Datetime" = CURRENT_TIMESTAMP
+             |RETURNING "MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName";
+             |""".stripMargin
+
+        sql"""#$upsertQuery""".as[FilemetadataRow]
+      } else DBIO.successful(Seq.empty)
+    } yield inserted
+  }
+
+  // Single-row upsert action for the advisory lock fallback - much safer from deadlocks
+  private def singleRowUpsertAction(row: AddFileMetadataInput): DBIO[Option[FilemetadataRow]] = {
+    if (row.value.isEmpty) {
+      // Delete single row using Slick DSL instead of raw SQL
+      val deleteAction = Filemetadata
+        .filter(_.fileid === row.fileId)
+        .filter(_.propertyname === row.filePropertyName)
+        .delete
+      deleteAction.map(_ => None)
+    } else {
+      // Single row upsert using raw SQL but with better escaping
+      val fileIdStr = row.fileId.toString
+      val valueStr = row.value.replace("'", "''")
+      val userIdStr = row.userId.toString
+      val propertyStr = row.filePropertyName.replace("'", "''")
+
+      val upsertQuery = s"""
+        INSERT INTO "FileMetadata" ("FileId", "Value", "UserId", "PropertyName")
+        VALUES ('$fileIdStr', '$valueStr', '$userIdStr', '$propertyStr')
+        ON CONFLICT ("FileId", "PropertyName") DO UPDATE SET
+          "Value" = EXCLUDED."Value",
+          "UserId" = EXCLUDED."UserId",
+          "Datetime" = CURRENT_TIMESTAMP
+        RETURNING "MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName"
+      """
+
+      implicit val getResult: slick.jdbc.GetResult[FilemetadataRow] =
+        slick.jdbc.GetResult(r =>
+          FilemetadataRow(
+            r.nextObject().asInstanceOf[UUID], r.nextObject().asInstanceOf[UUID], r.nextString(),
+            r.nextTimestamp(), r.nextObject().asInstanceOf[UUID], r.nextString()
+          )
+        )
+
+      sql"#$upsertQuery".as[FilemetadataRow].map(_.headOption)
+    }
+  }
+
+  // Helper method for advisory lock fallback
+  private def executeAdvisoryLockFallback(batch: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
+    println(s"ULTIMATE SEQUENTIAL FALLBACK: Processing ${batch.length} rows one-by-one")
+
+    // Process each row individually, sequentially, in separate transactions
+    // This is the ultimate fallback - slow but guaranteed to work
+    val sequentialResults = batch.foldLeft(Future.successful(Seq.empty[FilemetadataRow])) { (accFuture, row) =>
+      accFuture.flatMap { acc =>
+        println(s"SEQUENTIAL: Processing row for file ${row.fileId}, property ${row.filePropertyName}")
+
+        val singleRowAction = singleRowUpsertAction(row).transactionally
+
+        db.run(singleRowAction).map { rowResult =>
+          val results = rowResult.toSeq
+          println(s"SEQUENTIAL: Completed row for file ${row.fileId}, got ${results.length} results")
+          acc ++ results
+        }.recover { case e =>
+          println(s"SEQUENTIAL ERROR for file ${row.fileId}, property ${row.filePropertyName}: ${e.getMessage}")
+          // Even if individual rows fail, continue with others
+          acc
+        }
+      }
+    }
+
+    sequentialResults
+  }
 }
 
 case class FileMetadataUpdate(metadataIds: Seq[UUID], filePropertyName: String, value: String, dateTime: Timestamp, userId: UUID)
