@@ -526,12 +526,20 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val initialInputs = fileIds.flatMap { fileId =>
       properties.map(p => AddFileMetadataInput(fileId, s"initial_$p", userId, p))
     }
-    fileMetadataRepository.addOrUpdateFileMetadata(initialInputs).futureValue
+
+    // Split into chunks of 1000 files and make separate calls as persistence lambda has limits
+    val chunkSize = 1000
+    val chunks = initialInputs.grouped(chunkSize).toSeq
+    Future
+      .traverse(chunks) { chunk =>
+        fileMetadataRepository.addOrUpdateFileMetadata(chunk)
+      }
+      .futureValue
 
     val initialCount = utils.countAllFileMetadata()
     initialCount should equal(numberOfFiles * numberOfProperties)
 
-    val numberOfSimultaneousClientCalls = 2
+    val numberOfSimultaneousClientCalls = numberOfFiles / 1000
     val filesPerCall = numberOfFiles / numberOfSimultaneousClientCalls
     val updateCalls = (0 until numberOfSimultaneousClientCalls).map { callIndex =>
       val startIndex = callIndex * filesPerCall

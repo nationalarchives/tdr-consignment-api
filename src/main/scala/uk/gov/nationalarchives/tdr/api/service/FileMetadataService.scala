@@ -73,14 +73,6 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository)(implic
     } yield medataPropertiesAdded
   }
 
-  private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
-    (for {
-      addOrUpdateFileMetadata <- fileMetadata
-      addOrUpdateMetadata <- addOrUpdateFileMetadata.metadata
-      if addOrUpdateMetadata.value.nonEmpty
-    } yield AddFileMetadataInput(addOrUpdateFileMetadata.fileId, addOrUpdateMetadata.value, userId, addOrUpdateMetadata.filePropertyName)).toList
-  }
-
   def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
     fileMetadataRepository.getFileMetadata(consignmentId, selectedFileIds).map { rows =>
       rows.groupBy(_.fileid).map { case (fileId, fileMetadata) =>

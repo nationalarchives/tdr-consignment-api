@@ -36,48 +36,68 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     db.run(query.result)
   }
 
-  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = addOrUpdateFileMetadata(rows)
+  def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
+    db.run(insertFileMetadataQuery ++= rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
+  }
 
+  /** Adds or updates file metadata entries with multi-layer deadlock prevention. NOT PERFORMANT FOR LARGE BATCHES - use for small to medium sized batches only. The caller in draft
+    * metadata persistence lambda batches input to max size of 1000 (Would be simpler to just use that limit here, but keeping it flexible for potential future use cases)
+    *
+    *   1. Optimistic bulk operation with retry mechanism for transient deadlocks
+    *   2. Advisory lock fallback for persistent deadlocks (per-file locking)
+    *   3. Ultimate sequential fallback for extreme scenarios (row-by-row processing)
+    *
+    * @param rows
+    *   Sequence of file metadata inputs to insert or update. Empty values trigger deletion. Duplicate (fileId, propertyName) combinations are deduplicated automatically.
+    * @return
+    *   Future containing sequence of FilemetadataRow objects representing the final state after all operations complete. Deleted entries are not included in the result.
+    *
+    * @note
+    *   Uses PostgreSQL ON CONFLICT for atomic upsert operations
+    * @note
+    *   Implements exponential backoff retry (3 attempts, 50ms base delay)
+    * @note
+    *   Advisory locks prevent concurrent modifications to the same file
+    * @note
+    *   Sequential fallback guarantees completion even under extreme deadlock conditions
+    */
   def addOrUpdateFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
     if (rows.isEmpty) {
       Future.successful(Seq.empty)
     } else {
       val deduped = dedupe(rows)
-      val batchSize = 2000 // Process 5000 rows at a time
-      val batches = deduped.grouped(batchSize).toSeq
+      val bulkUpdateAction = bulkUpsertAction(deduped).transactionally
 
-      // Process each batch sequentially to avoid overwhelming the database
-      val batchFutures = batches.map { batch =>
-        val bulkUpdateAction = bulkUpsertAction(batch).transactionally
+      val isDeadlock: Throwable => Boolean = {
+        case e: PSQLException if e.getSQLState == DEADLOCK_SQL_STATE =>
+          logger.warn(s"DEADLOCK DETECTED: ${e.getMessage}")
+          true
+        case e: PSQLException if e.getMessage != null && e.getMessage.toLowerCase.contains("deadlock") =>
+          logger.warn(s"DEADLOCK DETECTED (by message): ${e.getMessage}")
+          true
+        case e =>
+          logger.info(s"NON-DEADLOCK EXCEPTION: ${e.getClass.getSimpleName}: ${e.getMessage}")
+          false
+      }
 
-        val isDeadlock: Throwable => Boolean = {
-          case e: PSQLException if e.getSQLState == DEADLOCK_SQL_STATE =>
-            true
-          case e: PSQLException if e.getMessage != null && e.getMessage.toLowerCase.contains("deadlock") =>
-            true
+      // 1. Optimistically try a bulk update first.
+      retry(
+        db.run(bulkUpdateAction),
+        retries = 3,
+        delay = 50.millis,
+        isRetryable = isDeadlock
+      ).recoverWith { case e: Throwable =>
+        e match {
+          case psql: PSQLException
+              if psql.getSQLState == DEADLOCK_SQL_STATE ||
+                (psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock")) =>
+            executeAdvisoryLockFallback(deduped)
+          case psql: PSQLException if psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock") =>
+            executeAdvisoryLockFallback(deduped)
           case _ =>
-            false
-        }
-        // 1. Optimistically try a bulk update first.
-        retry(
-          db.run(bulkUpdateAction),
-          retries = 3,
-          delay = 50.millis,
-          isRetryable = isDeadlock
-        ).recoverWith { case e: Throwable =>
-          e match {
-            case psql: PSQLException
-                if psql.getSQLState == DEADLOCK_SQL_STATE ||
-                  (psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock")) =>
-              executeAdvisoryLockFallback(batch)
-            case psql: PSQLException if psql.getMessage != null && psql.getMessage.toLowerCase.contains("deadlock") =>
-              executeAdvisoryLockFallback(batch)
-            case _ =>
-              Future.failed(e)
-          }
+            Future.failed(e)
         }
       }
-      Future.sequence(batchFutures).map(_.flatten)
     }
   }
 
