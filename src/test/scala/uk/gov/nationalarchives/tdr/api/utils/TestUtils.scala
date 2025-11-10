@@ -336,13 +336,7 @@ class TestUtils(db: JdbcBackend#Database) {
   }
 
   def addFileMetadata(metadataId: String, fileId: String, propertyName: String, value: String = "Result of FileMetadata processing"): Unit = {
-    val sql = s"""INSERT INTO "FileMetadata" ("MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName")
-                  VALUES (?, ?, ?, ?, ?, ?)
-                  ON CONFLICT ("FileId", "PropertyName")
-                  DO UPDATE SET
-                    "Value" = EXCLUDED."Value",
-                    "UserId" = EXCLUDED."UserId",
-                    "Datetime" = CURRENT_TIMESTAMP"""
+    val sql = s"""INSERT INTO "FileMetadata" ("MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, metadataId, Types.OTHER)
     ps.setObject(2, fileId, Types.OTHER)
