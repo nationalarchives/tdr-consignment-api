@@ -40,8 +40,7 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
     db.run(insertFileMetadataQuery ++= rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
   }
 
-  /** Adds or updates file metadata entries with multi-layer deadlock prevention.
-    * NOT PERFORMANT FOR LARGE BATCHES - use for small to medium sized batches only. The caller in draft
+  /** Adds or updates file metadata entries with multi-layer deadlock prevention. NOT PERFORMANT FOR LARGE BATCHES - use for small to medium sized batches only. The caller in draft
     * metadata persistence lambda batches input to max size of 1000 (Would be simpler to just use that limit here, but keeping it flexible for potential future use cases)
     *
     *   1. Optimistic bulk operation with retry mechanism for transient deadlocks
