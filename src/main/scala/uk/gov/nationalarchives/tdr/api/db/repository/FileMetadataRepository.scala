@@ -80,8 +80,6 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
           logger.info(s"NON-DEADLOCK EXCEPTION: ${e.getClass.getSimpleName}: ${e.getMessage}")
           false
       }
-
-      // 1. Optimistically try a bulk update first.
       retry(
         db.run(bulkUpdateAction),
         retries = 3,
