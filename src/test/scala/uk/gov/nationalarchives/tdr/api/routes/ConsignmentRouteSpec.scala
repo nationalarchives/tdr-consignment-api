@@ -302,7 +302,6 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureStartDate, "2021-04-11 12:30:30.592853")
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionAsserted, "2021-03-12 12:30:30.592853")
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosurePeriod, "1")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureType, "Closed")
 
     val fileOneFfidMetadataId = utils.addFFIDMetadata(fileOneId)
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
