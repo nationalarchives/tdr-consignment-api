@@ -368,13 +368,13 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     fileMetadataRepository.addFileMetadata(initialInput).futureValue
     // Now update both
     val newInput = Seq(
-      AddFileMetadataInput(fileId1, "newval1", userId, "Prop1"),
-      AddFileMetadataInput(fileId2, "newval2", userId, "Prop2")
+      AddFileMetadataInput(fileId1, "new-value-1", userId, "Prop1"),
+      AddFileMetadataInput(fileId2, "new-value-2", userId, "Prop2")
     )
     val result = fileMetadataRepository.addOrUpdateFileMetadata(newInput).futureValue
     result.length should equal(2)
-    result.find(_.fileid == fileId1).get.value should equal("newval1")
-    result.find(_.fileid == fileId2).get.value should equal("newval2")
+    result.find(_.fileid == fileId1).get.value should equal("new-value-1")
+    result.find(_.fileid == fileId2).get.value should equal("new-value-2")
     checkFileMetadataExists(fileId1, utils, 1, "Prop1")
     checkFileMetadataExists(fileId2, utils, 1, "Prop2")
   }
