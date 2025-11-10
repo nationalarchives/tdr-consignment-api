@@ -406,37 +406,6 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     result shouldBe empty
   }
 
-  "addOrUpdateFileMetadata" should "delete rows with empty values and upsert rows with non-empty values" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val utils = TestUtils(db)
-    val fileMetadataRepository = new FileMetadataRepository(db)
-    val consignmentId = UUID.randomUUID()
-    val fileId = UUID.randomUUID()
-    utils.addFileProperty("Prop1")
-    utils.addFileProperty("Prop2")
-    utils.createConsignment(consignmentId, userId)
-    utils.createFile(fileId, consignmentId)
-    // Insert initial metadata for both properties
-    val initialInput = Seq(
-      AddFileMetadataInput(fileId, "value1", userId, "Prop1"),
-      AddFileMetadataInput(fileId, "value2", userId, "Prop2")
-    )
-    fileMetadataRepository.addFileMetadata(initialInput).futureValue
-
-    // Now update one property and delete another
-    val mixedInput = Seq(
-      AddFileMetadataInput(fileId, "updated_value", userId, "Prop1"),
-      AddFileMetadataInput(fileId, "", userId, "Prop2")
-    )
-    val result = fileMetadataRepository.addOrUpdateFileMetadata(mixedInput).futureValue
-    result.length should equal(1)
-    result.head.value should equal("updated_value")
-    result.head.propertyname should equal("Prop1")
-
-    checkFileMetadataExists(fileId, utils, 1, "Prop1")
-    checkFileMetadataExists(fileId, utils, 0, "Prop2")
-  }
-
   "addOrUpdateFileMetadata" should "handle multiple concurrent calls with many properties correctly" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
@@ -507,7 +476,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     }
   }
 
-  "addOrUpdateFileMetadata" should "handle two calls with 5000 files correctly updating or deleting 40 properties" in withContainers { case container: PostgreSQLContainer =>
+  "addOrUpdateFileMetadata" should "handle ten calls with 1000 files correctly updating or deleting 40 properties" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
     val fileMetadataRepository = new FileMetadataRepository(db)
