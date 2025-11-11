@@ -287,7 +287,7 @@ object FileService {
     ): Seq[File] = {
       fileRows.map(fr => {
         val id = fr.fileid
-        val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None))
+        val metadata = fileMetadata.getOrElse(id, FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None))
         val statuses = fileStatuses.filter(_.fileId == id)
         File(
           id,

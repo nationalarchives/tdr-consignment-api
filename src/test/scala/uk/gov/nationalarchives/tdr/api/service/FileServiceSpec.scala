@@ -242,24 +242,24 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val parentFolder = files.find(_.fileId == parentFolderId).get
     parentFolder.fileName.get shouldBe "folderName"
     parentFolder.uploadMatchId shouldBe None
-    parentFolder.metadata shouldBe FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+    parentFolder.metadata shouldBe FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
     val fileOne = files.find(_.fileId == fileIdOne).get
     fileOne.fileName.get shouldBe "fileOneName"
     fileOne.uploadMatchId.get shouldBe "1"
-    fileOne.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None, None)
+    fileOne.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
     fileOne.originalFilePath.isDefined should be(false)
 
     val fileTwo = files.find(_.fileId == fileIdTwo).get
     fileTwo.fileName.get shouldBe "fileTwoName"
     fileTwo.uploadMatchId.get shouldBe "2"
-    fileTwo.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None, None)
+    fileTwo.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
     fileTwo.originalFilePath.isDefined should be(false)
 
     val fileThree = files.find(_.fileId == fileIdThree).get
     fileThree.fileName.get shouldBe "fileThreeName"
     fileThree.uploadMatchId.get shouldBe "3"
-    fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None, None)
+    fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
     fileThree.originalFilePath.isDefined should be(false)
   }
 

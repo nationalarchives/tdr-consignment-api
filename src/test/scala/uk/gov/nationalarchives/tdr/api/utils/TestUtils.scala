@@ -76,11 +76,11 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.getInt("num")
   }
 
-  def countFileMetadata(fileId: UUID): Int = {
+  def countFileMetadata(fileId: UUID, propertyName: String = "FileProperty"): Int = {
     val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
     val ps = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
-    ps.setString(2, "FileProperty")
+    ps.setString(2, propertyName)
     val rs = ps.executeQuery()
     rs.next()
     rs.getInt("num")
