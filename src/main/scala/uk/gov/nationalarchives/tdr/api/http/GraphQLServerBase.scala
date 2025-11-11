@@ -39,7 +39,7 @@ trait GraphQLServerBase {
     case (_, ex: Throwable) => throw ex
   }
 
-  protected def generateConsignmentApiContext(accessToken: Token, db: JdbcBackend#DatabaseDef)(implicit ec: ExecutionContext): ConsignmentApiContext = {
+  protected def generateConsignmentApiContext(accessToken: Token, db: JdbcBackend#Database)(implicit ec: ExecutionContext): ConsignmentApiContext = {
     val uuidSourceClass: Class[_] = Class.forName(config.getString("source.uuid"))
     val uuidSource: UUIDSource = uuidSourceClass.getDeclaredConstructor().newInstance().asInstanceOf[UUIDSource]
     val timeSource = new CurrentTimeSource
@@ -52,35 +52,32 @@ trait GraphQLServerBase {
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val antivirusMetadataRepository = new AntivirusMetadataRepository(db)
     val fileStatusRepository = new FileStatusRepository(db)
-    val displayPropertiesRepository = new DisplayPropertiesRepository(db)
+    val metadataReviewLogRepository = new MetadataReviewLogRepository(db)
     val transferringBodyService = new TransferringBodyService(new TransferringBodyRepository(db))
     val consignmentService = new ConsignmentService(
       consignmentRepository,
       consignmentStatusRepository,
       seriesRepository,
+      fileMetadataRepository,
       transferringBodyService,
       timeSource,
       uuidSource,
       config
     )
     val seriesService = new SeriesService(seriesRepository, uuidSource)
-    val transferAgreementService = new TransferAgreementService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
+    val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
+    val transferAgreementService = new TransferAgreementService(consignmentMetadataRepository, consignmentStatusRepository, uuidSource, timeSource)
     val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
-    val clientFileMetadataService = new ClientFileMetadataService(fileMetadataRepository)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
-    val customMetadataPropertiesRepository = new CustomMetadataPropertiesRepository(db)
-    val customMetadataPropertiesService = new CustomMetadataPropertiesService(customMetadataPropertiesRepository)
-    val displayPropertiesService = new DisplayPropertiesService(displayPropertiesRepository)
-    val validateFileMetadataService =
-      new ValidateFileMetadataService(customMetadataPropertiesService, displayPropertiesService, fileMetadataRepository, fileStatusRepository, config)
-    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, fileStatusRepository, uuidSource, timeSource)
-    val fileMetadataService = new FileMetadataService(fileMetadataRepository, consignmentStatusService, customMetadataPropertiesService, validateFileMetadataService)
-    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
+    val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, metadataReviewLogRepository, uuidSource, timeSource)
+    val consignmentMetadataService = new ConsignmentMetadataService(consignmentMetadataRepository, uuidSource, timeSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
+    val fileMetadataService =
+      new FileMetadataService(fileMetadataRepository)
+    val ffidMetadataService = new FFIDMetadataService(ffidMetadataRepository, ffidMetadataMatchesRepository, timeSource, uuidSource)
     val referenceGeneratorService = new ReferenceGeneratorService(config, SimpleHttpClient())
     val fileService = new FileService(
       fileRepository,
-      customMetadataPropertiesRepository,
       ffidMetadataService,
       antivirusMetadataService,
       fileStatusService,
@@ -93,7 +90,6 @@ trait GraphQLServerBase {
     ConsignmentApiContext(
       accessToken,
       antivirusMetadataService,
-      clientFileMetadataService,
       consignmentService,
       ffidMetadataService,
       fileMetadataService,
@@ -104,8 +100,7 @@ trait GraphQLServerBase {
       transferringBodyService,
       consignmentStatusService,
       fileStatusService,
-      customMetadataPropertiesService,
-      displayPropertiesService
+      consignmentMetadataService
     )
 
   }

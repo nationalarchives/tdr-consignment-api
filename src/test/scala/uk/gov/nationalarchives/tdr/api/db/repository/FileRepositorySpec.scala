@@ -211,16 +211,19 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     folderInfo._2.contains(NodeType.directoryTypeIdentifier) shouldBe true
     folderInfo._3 shouldBe userId
     folderInfo._4 shouldBe consignmentId
+    folderInfo._5 shouldBe None
 
     val fileOneInfo = files.filter(_._1 == fileOneId).head
     fileOneInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
     fileOneInfo._3 shouldBe userId
     fileOneInfo._4 shouldBe consignmentId
+    fileOneInfo._5 shouldBe Some("1")
 
     val fileTwoInfo = files.filter(_._1 == fileTwoId).head
     fileTwoInfo._2.contains(NodeType.fileTypeIdentifier) shouldBe true
     fileTwoInfo._3 shouldBe userId
     fileTwoInfo._4 shouldBe consignmentId
+    fileTwoInfo._5 shouldBe Some("2")
   }
 
   "getFiles" should "return files, file metadata and folders where no type filter applied" in withContainers { case container: PostgreSQLContainer =>
@@ -289,7 +292,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileOneId, consignmentId)
-    utils.createFile(fileTwoId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId, uploadMatchId = Some("2"))
     val fileIds = Set(fileOneId, fileTwoId)
 
     val files = fileRepository.getFileFields(fileIds).futureValue
@@ -299,11 +302,13 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     files.head._2 shouldBe Some(NodeType.fileTypeIdentifier)
     files.head._3 shouldBe userId
     files.head._4 shouldBe consignmentId
+    files.head._5 shouldBe None
 
     files(1)._1 shouldBe fileTwoId
     files(1)._2 shouldBe Some(NodeType.fileTypeIdentifier)
     files(1)._3 shouldBe userId
     files(1)._4 shouldBe consignmentId
+    files(1)._5 shouldBe Some("2")
   }
 
   "getFileFields" should "return an empty Seq if given no fileID" in withContainers { case container: PostgreSQLContainer =>
@@ -315,17 +320,6 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val files = fileRepository.getFileFields(fileIds).futureValue
 
     files.size shouldBe 0
-  }
-
-  "getAllDescendants" should "return all descendants" in withContainers { case container: PostgreSQLContainer =>
-    val db = container.database
-    val utils = TestUtils(db)
-    val fileRepository = new FileRepository(db)
-    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
-    val folderId = setUpFilesAndDirectories(consignmentId, utils)
-
-    val files = fileRepository.getAllDescendants(Seq(folderId)).futureValue
-    files.size shouldBe 3
   }
 
   "getPaginatedFiles" should "return all files and folders after the cursor up to the limit value" in withContainers { case container: PostgreSQLContainer =>
@@ -437,8 +431,8 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
   private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): UUID = {
     utils.createConsignment(consignmentId, userId)
     utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
-    utils.createFile(fileOneId, consignmentId, fileName = "FileName1", parentId = Some(folderOneId))
-    utils.createFile(fileTwoId, consignmentId, fileName = "FileName2", parentId = Some(folderOneId))
+    utils.createFile(fileOneId, consignmentId, fileName = "FileName1", parentId = Some(folderOneId), uploadMatchId = Some("1"))
+    utils.createFile(fileTwoId, consignmentId, fileName = "FileName2", parentId = Some(folderOneId), uploadMatchId = Some("2"))
 
     utils.addFileProperty("FilePropertyOne")
     utils.addFileProperty("FilePropertyTwo")

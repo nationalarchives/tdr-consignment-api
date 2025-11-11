@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Consignmentstatus, ConsignmentstatusRow}
@@ -8,13 +9,9 @@ import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.Future
 
-class ConsignmentStatusRepository(db: Database) {
+class ConsignmentStatusRepository(db: JdbcBackend#Database) {
   private val insertQuery = Consignmentstatus returning Consignmentstatus.map(_.consignmentstatusid) into
     ((consignmentStatus, consignmentstatusid) => consignmentStatus.copy(consignmentstatusid = consignmentstatusid))
-
-  def addConsignmentStatuses(consignmentStatusRows: Seq[ConsignmentstatusRow]): Future[Seq[ConsignmentstatusRow]] = {
-    db.run(insertQuery ++= consignmentStatusRows)
-  }
 
   def addConsignmentStatus(consignmentStatusRow: ConsignmentstatusRow): Future[Tables.ConsignmentstatusRow] = {
     db.run(insertQuery += consignmentStatusRow)

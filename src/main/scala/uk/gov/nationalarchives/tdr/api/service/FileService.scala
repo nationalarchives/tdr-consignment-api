@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow, FilepropertyRow}
+import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -10,16 +10,17 @@ import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, AllDescendantsInput, FileMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes, defaultStatuses}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes}
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
+import uk.gov.nationalarchives.tdr.schemautils.ConfigUtils
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -28,7 +29,6 @@ import scala.math.min
 
 class FileService(
     fileRepository: FileRepository,
-    customMetadataPropertiesRepository: CustomMetadataPropertiesRepository,
     ffidMetadataService: FFIDMetadataService,
     avMetadataService: AntivirusMetadataService,
     fileStatusService: FileStatusService,
@@ -44,76 +44,75 @@ class FileService(
   private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
   private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
 
-  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, userId: UUID): Future[List[FileMatches]] = {
+  def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, tokenUserId: UUID): Future[List[FileMatches]] = {
+    val userId = addFileAndMetadataInput.userIdOverride match {
+      case Some(id) => id
+      case _        => tokenUserId
+    }
     val now = Timestamp.from(timeSource.now)
     val consignmentId = addFileAndMetadataInput.consignmentId
-    val filePaths = addFileAndMetadataInput.metadataInput.map(_.originalPath).toSet
-    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePaths, fileTypeIdentifier)
-    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(addFileAndMetadataInput.emptyDirectories.toSet, directoryTypeIdentifier)
+    val filePathInputs = addFileAndMetadataInput.metadataInput.map(i => TreeNodeInput(i.originalPath, Some(i.matchId))).toSet
+    val emptyDirectoriesInputs = addFileAndMetadataInput.emptyDirectories.map(i => TreeNodeInput(i)).toSet
+    val allFileNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(filePathInputs, fileTypeIdentifier)
+    val allEmptyDirectoryNodes: Map[String, TreeNode] = treeNodesUtils.generateNodes(emptyDirectoriesInputs, directoryTypeIdentifier)
 
     val row: (UUID, String, String) => FilemetadataRow = FilemetadataRow(uuidSource.uuid, _, _, now, userId, _)
-    val rows: Future[List[Rows]] = customMetadataPropertiesRepository.getCustomMetadataValuesWithDefault.map(filePropertyValue => {
-      ((allEmptyDirectoryNodes ++ allFileNodes) map { case (path, treeNode) =>
-        val parentNode: Option[TreeNode] = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)))
-        val parentId = parentNode.map(_.id)
-        val parentFileReference = parentNode.flatMap(_.reference)
-        val fileId = treeNode.id
-        val fileRow = FileRow(
-          fileId,
-          consignmentId,
-          userId,
-          now,
-          filetype = Some(treeNode.treeNodeType),
-          filename = Some(treeNode.name),
-          parentid = parentId,
-          filereference = treeNode.reference,
-          parentreference = parentFileReference
-        )
+    val defaultPropertyValues = metadataConfig.getPropertiesWithDefaultValue
 
-        val commonMetadataRows = List(
-          row(fileId, path, ClientSideOriginalFilepath),
-          row(fileId, treeNode.treeNodeType, FileType),
-          row(fileId, treeNode.name, Filename),
-          row(fileId, treeNode.reference.getOrElse(""), FileReference),
-          row(fileId, parentFileReference.getOrElse(""), ParentReference)
-        ) ++ filePropertyValue.map(fileProperty => row(fileId, fileProperty.propertyvalue, fileProperty.propertyname)).toList
+    val rows: Future[List[Rows]] = Future.successful(((allEmptyDirectoryNodes ++ allFileNodes) map { case (path, treeNode) =>
+      val parentNode: Option[TreeNode] = treeNode.parentPath.map(path => allFileNodes.getOrElse(path, allEmptyDirectoryNodes(path)))
+      val parentId = parentNode.map(_.id)
+      val parentFileReference = parentNode.flatMap(_.reference)
+      val fileId = treeNode.id
+      val fileRow = FileRow(
+        fileId,
+        consignmentId,
+        userId,
+        now,
+        filetype = Some(treeNode.treeNodeType),
+        filename = Some(treeNode.name),
+        parentid = parentId,
+        filereference = treeNode.reference,
+        parentreference = parentFileReference,
+        uploadmatchid = treeNode.matchId
+      )
 
-        if (treeNode.treeNodeType.isFileType) {
-          val input = addFileAndMetadataInput.metadataInput
-            .filter(m => {
-              val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
-              pathWithoutSlash == path
-            })
-            .head
-
-          val fileMetadataRows = List(
-            row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
-            row(fileId, input.fileSize.toString, ClientSideFileSize),
-            row(fileId, input.checksum, SHA256ClientSideChecksum)
-          )
-          MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId)
-        } else {
-          DirectoryRows(fileRow, commonMetadataRows)
-        }
-      }).toList
-    })
-
-    val matchedFileRows = generateMatchedRows(rows)
-    addDefaultMetadataStatuses(matchedFileRows)
-    matchedFileRows
-  }
-
-  private def addDefaultMetadataStatuses(fileMatches: Future[List[FileMatches]]): Future[List[FileStatus]] = {
-    for {
-      matches <- fileMatches
-      fileIds = matches.map(_.fileId).toSet
-      statusInputs = fileIds
-        .flatMap(id => {
-          defaultStatuses.map(ds => AddFileStatusInput(id, ds._1, ds._2))
+      val commonMetadataRows = List(
+        row(fileId, fileId.toString, FileUUID),
+        row(fileId, path, ClientSideOriginalFilepath),
+        row(fileId, treeNode.treeNodeType, FileType),
+        row(fileId, treeNode.name, Filename),
+        row(fileId, treeNode.reference.getOrElse(""), FileReference),
+        row(fileId, parentFileReference.getOrElse(""), ParentReference)
+      ) ++ defaultPropertyValues
+        .map(fileProperty => {
+          row(fileId, fileProperty._2, tdrDataLoadHeaderToPropertyMapper(fileProperty._1))
         })
         .toList
-      addedStatuses <- fileStatusService.addFileStatuses(AddMultipleFileStatusesInput(statusInputs))
-    } yield addedStatuses
+
+      if (treeNode.treeNodeType.isFileType) {
+        val input = addFileAndMetadataInput.metadataInput
+          .filter(m => {
+            val pathWithoutSlash = if (m.originalPath.startsWith("/")) m.originalPath.tail else m.originalPath
+            pathWithoutSlash == path
+          })
+          .head
+
+        val fileMetadataRows = List(
+          row(fileId, input.lastModified.toTimestampString, ClientSideFileLastModifiedDate),
+          row(fileId, input.fileSize.toString, ClientSideFileSize),
+          row(fileId, input.checksum, SHA256ClientSideChecksum)
+        )
+        MatchedFileRows(fileRow, fileMetadataRows ++ commonMetadataRows, input.matchId)
+      } else {
+        DirectoryRows(fileRow, commonMetadataRows)
+      }
+    }).toList)
+
+    val matchedFileRows: Future[List[FileMatches]] = generateMatchedRows(rows)
+    for {
+      matches <- matchedFileRows
+    } yield matches
   }
 
   private def generateMatchedRows(rows: Future[List[Rows]]): Future[List[FileMatches]] = {
@@ -126,19 +125,14 @@ class FileService(
     }
   }
 
-  def getAllDescendants(input: AllDescendantsInput): Future[Seq[File]] = {
-    // For now only interested in basic file metadata
-    fileRepository.getAllDescendants(input.parentIds).map(_.toFiles(Map(), List(), List(), Map()))
-  }
-
   def getFileDetails(ids: Seq[UUID]): Future[Seq[FileDetails]] = {
-    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3, f._4)))
+    fileRepository.getFileFields(ids.toSet).map(_.map(f => FileDetails(f._1, f._2, f._3, f._4, f._5)))
   }
 
   def getOwnersOfFiles(fileIds: Seq[UUID]): Future[Seq[FileOwnership]] = {
     fileRepository
       .getFileFields(fileIds.toSet)
-      .map(_.map { case (fileId, _, userId, _) => FileOwnership(fileId, userId) })
+      .map(_.map { case (fileId, _, userId, _, _) => FileOwnership(fileId, userId) })
   }
 
   def fileCount(consignmentId: UUID): Future[Int] = {
@@ -210,19 +204,16 @@ class FileService(
 
   private def getPropertyNames(fileMetadataFilters: Option[FileMetadataFilters]): Future[Seq[String]] = {
     fileMetadataFilters match {
-      case Some(FileMetadataFilters(closureMetadata, descriptiveMetadata, properties)) =>
-        for {
-          metadataProperties <- customMetadataPropertiesRepository.getCustomMetadataProperty
-          closureMetadataPropertyNames = if (closureMetadata) metadataProperties.closureFields.toPropertyNames else Nil
-          descriptiveMetadataPropertyNames = if (descriptiveMetadata) metadataProperties.descriptiveFields.toPropertyNames else Nil
-          propertyNames = if (properties.nonEmpty) metadataProperties.additionalFields(properties).toPropertyNames else Nil
-        } yield closureMetadataPropertyNames ++ descriptiveMetadataPropertyNames ++ propertyNames
-      case None => Future(Nil)
+      case Some(FileMetadataFilters(properties)) => Future(properties.getOrElse(Nil))
+      case None                                  => Future(Nil)
     }
   }
 }
 
 object FileService {
+  private val metadataConfig: ConfigUtils.MetadataConfiguration = ConfigUtils.loadConfiguration
+  private val tdrDataLoadHeaderToPropertyMapper = metadataConfig.propertyToOutputMapper("tdrDataLoadHeader")
+
   implicit class FileRowHelper(fr: Option[FileRow]) {
     def fileType: Option[String] = fr.flatMap(_.filetype)
 
@@ -261,6 +252,7 @@ object FileService {
           val statuses = fileStatuses.filter(_.fileId == fileId)
           File(
             fileId,
+            fr.uploadmatchid,
             fr.filetype,
             fr.filename,
             fr.filereference,
@@ -299,6 +291,7 @@ object FileService {
         val statuses = fileStatuses.filter(_.fileId == id)
         File(
           id,
+          fr.uploadmatchid,
           fr.filetype,
           fr.filename,
           fr.filereference,
@@ -314,27 +307,12 @@ object FileService {
     }
   }
 
-  implicit class FilePropertyRowsHelper(fields: Seq[FilepropertyRow]) {
-    def toPropertyNames: Seq[String] = fields.map(_.name)
-
-    def closureFields: Seq[FilepropertyRow] = {
-      fields.filter(f => f.propertygroup.contains("MandatoryClosure") || f.propertygroup.contains("OptionalClosure"))
-    }
-
-    def descriptiveFields: Seq[FilepropertyRow] = {
-      fields.filter(f => f.propertygroup.contains("MandatoryMetadata") || f.propertygroup.contains("OptionalMetadata"))
-    }
-
-    def additionalFields(properties: Option[List[String]]): Seq[FilepropertyRow] =
-      properties.map(properties => fields.filter(f => properties.contains(f.name))).getOrElse(Nil)
-  }
-
   trait Rows {
     val fileRow: FileRow
     val metadataRows: List[FilemetadataRow]
   }
 
-  case class MatchedFileRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], matchId: Long) extends Rows
+  case class MatchedFileRows(fileRow: FileRow, metadataRows: List[FilemetadataRow], matchId: String) extends Rows
 
   case class DirectoryRows(fileRow: FileRow, metadataRows: List[FilemetadataRow]) extends Rows
 
@@ -342,5 +320,5 @@ object FileService {
 
   case class TDRConnection[T](pageInfo: PageInfo, edges: Seq[Edge[T]], totalItems: Int, totalPages: Int) extends Connection[T]
 
-  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID, consignmentId: UUID)
+  case class FileDetails(fileId: UUID, fileType: Option[String], userId: UUID, consignmentId: UUID, uploadMatchId: Option[String])
 }

@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.{GetResult, JdbcBackend}
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
@@ -10,7 +10,7 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileRepository(db: Database)(implicit val executionContext: ExecutionContext) {
+class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
   implicit val getFileResult: GetResult[FileRow] = GetResult(r =>
     FileRow(
       UUID.fromString(r.nextString()),
@@ -20,7 +20,8 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
       r.nextBooleanOption(),
       r.nextStringOption(),
       r.nextStringOption(),
-      r.nextStringOption().map(UUID.fromString)
+      r.nextStringOption().map(UUID.fromString),
+      uploadmatchid = r.nextStringOption()
     )
   )
 
@@ -66,7 +67,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   def getFileFields(ids: Set[UUID]): Future[Seq[FileFields]] = {
     val query = File
       .filter(_.fileid inSet ids)
-      .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid))
+      .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid, res.uploadmatchid))
 
     db.run(query.result)
   }
@@ -94,35 +95,6 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
     db.run(query.result)
   }
 
-  def getAllDescendants(fileIds: Seq[UUID]): Future[Seq[FileRow]] = {
-
-    val sql =
-      sql"""WITH RECURSIVE children AS (
-           SELECT
-            "FileId"::text,
-            "ConsignmentId"::text,
-            "UserId"::text,
-            "Datetime",
-            "ChecksumMatches",
-            "FileType",
-            "FileName",
-            "ParentId"::text
-           FROM "File"
-            WHERE "FileId"::text IN #${fileIds.mkString("('", "','", "')")}
-            UNION SELECT
-             f."FileId"::text,
-             f."ConsignmentId"::text,
-             f."UserId"::text,
-             f."Datetime",
-             f."ChecksumMatches",
-             f."FileType",
-             f."FileName",
-             f."ParentId"::text
-            FROM "File" f INNER JOIN children c ON c."FileId"::text = f."ParentId"::text
-        ) SELECT * FROM children;""".stripMargin.as[FileRow]
-    db.run(sql)
-  }
-
   def getConsignmentParentFolder(consignmentId: UUID): Future[Seq[Tables.FileRow]] = {
     val query = File
       .filter(_.consignmentid === consignmentId)
@@ -131,7 +103,7 @@ class FileRepository(db: Database)(implicit val executionContext: ExecutionConte
   }
 }
 
-case class FileMetadataFilters(closureMetadata: Boolean = false, descriptiveMetadata: Boolean = false, properties: Option[List[String]] = None)
+case class FileMetadataFilters(properties: Option[List[String]] = None)
 
 case class FileFilters(
     fileTypeIdentifier: Option[String] = None,
@@ -142,5 +114,5 @@ case class FileFilters(
 
 object FileRepository {
   type FileRepositoryMetadata = (FileRow, Option[FilemetadataRow])
-  type FileFields = (UUID, Option[String], UUID, UUID)
+  type FileFields = (UUID, Option[String], UUID, UUID, Option[String])
 }

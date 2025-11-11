@@ -1,15 +1,16 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.H2Profile.ProfileAction
+import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
-import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize}
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize, ClosureType}
 
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileMetadataRepository(db: Database)(implicit val executionContext: ExecutionContext) {
+class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
 
   private val insertFileMetadataQuery = Filemetadata.map(t => (t.fileid, t.value, t.userid, t.propertyname)) returning Filemetadata
     .map(r => (r.metadataid, r.datetime)) into ((fileMetadata, dbGeneratedValues) =>
@@ -62,9 +63,20 @@ class FileMetadataRepository(db: Database)(implicit val executionContext: Execut
     db.run(DBIO.sequence(dbUpdate).transactionally)
   }
 
-  def deleteFileMetadata(selectedFileIds: Set[UUID], propertyNames: Set[String]): Future[Int] = {
+  def totalClosedRecords(consignmentId: UUID): Future[Int] = {
     val query = Filemetadata
-      .filter(_.fileid inSetBind selectedFileIds)
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .filter(_._2.consignmentid === consignmentId)
+      .filter(_._1.propertyname === ClosureType)
+      .filter(_._1.value.toLowerCase === "closed")
+      .length
+    db.run(query.result)
+  }
+
+  def deleteFileMetadata(fileId: UUID, propertyNames: Set[String]): Future[Int] = {
+    val query = Filemetadata
+      .filter(_.fileid === fileId)
       .filter(_.propertyname inSetBind propertyNames)
       .delete
 

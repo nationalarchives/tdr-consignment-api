@@ -4,9 +4,8 @@ import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, UpdateConsignmentSeriesIdInput}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput}
-import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
+import uk.gov.nationalarchives.tdr.api.graphql.validation.{ServiceTransfer, UserOwnsConsignment}
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileOwnership
 
@@ -17,10 +16,12 @@ import scala.language.postfixOps
 trait AuthorisationTag extends ValidationTag {
   val antiVirusRole = "antivirus"
   val checksumRole = "checksum"
-  val clientFileMetadataRole = "client_file_metadata"
+  val dataLoadRole = "data-load"
+  val dataLoadAccessRole = "data_load_access"
   val fileFormatRole = "file_format"
   val exportRole = "export"
   val reportingRole = "reporting"
+  val updateMetadataRole = "update_metadata"
 }
 
 trait SyncAuthorisationTag extends AuthorisationTag {
@@ -73,27 +74,38 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
   }
 }
 
-case class ValidateUserHasAccessToConsignment[T](argument: Argument[T]) extends AuthorisationTag {
+case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateConsignment: Boolean = false) extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
-    val userId = token.userId
-    val exportAccess = token.backendChecksRoles.contains(exportRole)
-
     val arg: T = ctx.arg[T](argument.name)
+    val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole) ||
+      token.transferServiceRoles.contains(dataLoadAccessRole)
+    lazy val hasUserIdOverrideAccess: Boolean = token.transferServiceRoles.contains(dataLoadRole)
+
+    val userId: UUID = arg match {
+      case st: ServiceTransfer if st.userIdOverride.isDefined && hasUserIdOverrideAccess => st.userIdOverride.get
+      case _                                                                             => token.userId
+    }
+
     val consignmentId: UUID = arg match {
       case uoc: UserOwnsConsignment => uoc.consignmentId
       case id: UUID                 => id
     }
-
-    ctx.ctx.consignmentService
-      .getConsignment(consignmentId)
-      .map(consignment => {
-        if (consignment.isDefined && (consignment.get.userid == userId || exportAccess)) {
-          continue
-        } else {
-          throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
-        }
-      })
+    lazy val tnaUserAccess = if (updateConsignment) {
+      token.isTransferAdviser
+    } else {
+      token.isTNAUser
+    }
+    for {
+      consignment <- ctx.ctx.consignmentService.getConsignment(consignmentId)
+      canReviewConsignment <- if (tnaUserAccess) ctx.ctx.consignmentService.getConsignmentForMetadataReview(consignmentId) else Future(None)
+    } yield {
+      if (consignment.isDefined && (consignment.get.userid == userId || hasAccess || canReviewConsignment.isDefined)) {
+        continue
+      } else {
+        throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")
+      }
+    }
   }
 }
 
@@ -121,21 +133,6 @@ object ValidateHasChecksumMetadataAccess extends SyncAuthorisationTag {
     } else {
       val tokenUserId = token.userId
       throw AuthorisationException(s"User '$tokenUserId' does not have permission to update checksum metadata")
-    }
-  }
-}
-
-object ValidateHasClientFileMetadataAccess extends SyncAuthorisationTag {
-  override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
-    val token = ctx.ctx.accessToken
-    val clientFileMetadataAccess = token.backendChecksRoles.contains(clientFileMetadataRole)
-    val fileId = ctx.arg[UUID]("fileId")
-
-    if (clientFileMetadataAccess) {
-      continue
-    } else {
-      val tokenUserId = token.userId
-      throw AuthorisationException(s"User '$tokenUserId' does not have permission to access the client file metadata for file $fileId")
     }
   }
 }
@@ -170,8 +167,6 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val arg: T = ctx.arg[T](argument.name)
     val fileIds: Seq[UUID] = arg match {
-      case input: DeleteFileMetadataInput      => input.fileIds
-      case input: UpdateBulkFileMetadataInput  => input.fileIds
       case input: AddFileStatusInput           => Seq(input.fileId)
       case input: AddMultipleFileStatusesInput => input.statuses.map(_.fileId)
     }
@@ -208,6 +203,18 @@ object ValidateHasConsignmentsAccess extends SyncAuthorisationTag {
     } else {
       val tokenUserId = token.userId
       throw AuthorisationException(s"User $tokenUserId does not have permission to access the consignments")
+    }
+  }
+}
+
+object ValidateIsTnaUser extends SyncAuthorisationTag {
+  override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
+    val token = ctx.ctx.accessToken
+    if (token.isTNAUser) {
+      continue
+    } else {
+      val tokenUserId = token.userId
+      throw AuthorisationException(s"User $tokenUserId does not have permission to review consignments")
     }
   }
 }

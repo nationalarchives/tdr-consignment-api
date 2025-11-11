@@ -7,7 +7,7 @@ import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ClosureMetadata, DescriptiveMetadata, NotEntered, PasswordProtected, Zip}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{PasswordProtected, Zip}
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService._
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
@@ -19,7 +19,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.io.Source.fromResource
 
-class TestUtils(db: JdbcBackend#DatabaseDef) {
+class TestUtils(db: JdbcBackend#Database) {
   val connection: Connection = db.source.createConnection()
 
   def deleteTables(): Boolean = {
@@ -211,29 +211,30 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       consignmentRef: String = s"TDR-${Instant.now.getNano}-TESTMTB",
       consignmentType: String = "standard",
       bodyId: UUID = fixedBodyId,
-      includeStatusRows: Boolean = true,
       seriesName: Option[String] = Some("seriesName"),
       transferringBodyName: Option[String] = Some("transferringBodyName"),
-      transferringBodyTdrCode: Option[String] = Some("transferringBodyTdrCode")
+      transferringBodyTdrCode: Option[String] = Some("transferringBodyTdrCode"),
+      metadataSchemaLibraryVersion: Option[String] = Some("1.0.0"),
+      clientSideDraftMetadataFileName: Option[String] = Some("some file name.csv"),
+      timestamp: Timestamp = Timestamp.from(FixedTimeSource.now)
   ): UUID = {
     val sql =
       """INSERT INTO "Consignment" """ +
         """("ConsignmentId", "SeriesId", "UserId", "Datetime", "TransferInitiatedDatetime",
-          |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence", "SeriesName", "TransferringBodyName", "TransferringBodyTdrCode")""".stripMargin +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+          |"ExportDatetime", "ConsignmentReference", "ConsignmentType", "BodyId", "ConsignmentSequence", "SeriesName", "TransferringBodyName", "TransferringBodyTdrCode","MetadataSchemaLibraryVersion","ClientSideDraftMetadataFileName")""".stripMargin +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     val nextValStatement = connection.prepareStatement("select nextval('consignment_sequence_id') as Seq")
     val nextResults: ResultSet = nextValStatement.executeQuery()
     nextResults.next()
     val nextSequence: Int = nextResults.getInt("Seq") + 1
 
     val ps: PreparedStatement = connection.prepareStatement(sql)
-    val fixedTimeStamp = Timestamp.from(FixedTimeSource.now)
     ps.setObject(1, consignmentId, Types.OTHER)
     ps.setObject(2, seriesId, Types.OTHER)
     ps.setObject(3, userId, Types.OTHER)
-    ps.setTimestamp(4, fixedTimeStamp)
-    ps.setTimestamp(5, fixedTimeStamp)
-    ps.setTimestamp(6, fixedTimeStamp)
+    ps.setTimestamp(4, timestamp)
+    ps.setTimestamp(5, timestamp)
+    ps.setTimestamp(6, timestamp)
     ps.setString(7, consignmentRef)
     ps.setString(8, consignmentType)
     ps.setObject(9, bodyId, Types.OTHER)
@@ -241,11 +242,9 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setString(11, seriesName.orNull)
     ps.setString(12, transferringBodyName.orNull)
     ps.setString(13, transferringBodyTdrCode.orNull)
+    ps.setString(14, metadataSchemaLibraryVersion.orNull)
+    ps.setString(15, clientSideDraftMetadataFileName.orNull)
     ps.executeUpdate()
-    if (includeStatusRows) {
-      createConsignmentStatus(consignmentId, DescriptiveMetadata, NotEntered)
-      createConsignmentStatus(consignmentId, ClosureMetadata, NotEntered)
-    }
     consignmentId
   }
 
@@ -294,10 +293,11 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
       parentId: Option[UUID] = None,
       userId: UUID = userId,
       fileRef: Option[String] = None,
-      parentRef: Option[String] = None
+      parentRef: Option[String] = None,
+      uploadMatchId: Option[String] = None
   ): Unit = {
     val sql =
-      s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId", "FileReference", "ParentReference") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+      s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId", "FileReference", "ParentReference", "UploadMatchId") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
@@ -308,6 +308,7 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     ps.setObject(7, parentId.map(_.toString).orNull, Types.OTHER)
     ps.setString(8, fileRef.orNull)
     ps.setString(9, parentRef.orNull)
+    ps.setString(10, uploadMatchId.orNull)
     ps.executeUpdate()
   }
 
@@ -420,27 +421,16 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     })
   }
 
-  def addFileProperty(name: String, propertyGroup: String): Unit = {
-    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype", "PropertyGroup") VALUES (?, ?, ?, ?)"""
-    val defaultPropertyType = "System"
+  def addFileProperty(name: String, propertyType: String = "System", propertyGroup: String = "System"): Unit = {
+    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype", "PropertyGroup", "Editable") VALUES (?, ?, ?, ?, ?)"""
     val defaultDataType = "text"
+    val editable = propertyType != "System"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
-    ps.setString(2, defaultPropertyType)
+    ps.setString(2, propertyType)
     ps.setString(3, defaultDataType)
     ps.setString(4, propertyGroup)
-    ps.executeUpdate()
-  }
-
-  def addFileProperty(name: String): Unit = {
-    val defaultPropertyType = "System"
-    val defaultDataType = "text"
-    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype") VALUES (?, ?, ?)"""
-    val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setString(1, name)
-    ps.setString(2, defaultPropertyType)
-    ps.setString(3, defaultDataType)
-
+    ps.setBoolean(5, editable)
     ps.executeUpdate()
   }
 
@@ -505,13 +495,13 @@ class TestUtils(db: JdbcBackend#DatabaseDef) {
     rs.next()
   }
 
-  def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String): Unit = {
+  def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String, value: String = "Result of ConsignmentMetadata processing"): Unit = {
     val sql = s"""insert into "ConsignmentMetadata" ("MetadataId", "ConsignmentId", "PropertyName", "Value", "Datetime", "UserId") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, metadataId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setString(3, propertyName)
-    ps.setString(4, "Result of ConsignmentMetadata processing")
+    ps.setString(4, value)
     ps.setTimestamp(5, Timestamp.from(FixedTimeSource.now))
     ps.setObject(6, userId, Types.OTHER)
 
@@ -553,7 +543,7 @@ object TestUtils {
   val fixedSeriesId: UUID = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
   val fixedBodyId: UUID = UUID.fromString("4da472a5-16b3-4521-a630-5917a0722359")
 
-  def apply(db: JdbcBackend#DatabaseDef): TestUtils = new TestUtils(db)
+  def apply(db: JdbcBackend#Database): TestUtils = new TestUtils(db)
 
   def getDataFromFile[A](prefix: String)(fileName: String)(implicit decoder: Decoder[A]): A = {
     getDataFromString(fromResource(s"$prefix$fileName.json").mkString)
@@ -564,6 +554,18 @@ object TestUtils {
     result match {
       case Right(data) => data
       case Left(e)     => throw e
+    }
+  }
+
+  def setPropertyDefaultValues(defaultMetadataProperty: String): String = {
+    defaultMetadataProperty match {
+      case RightsCopyright   => defaultCopyright
+      case LegalStatus       => defaultLegalStatus
+      case HeldBy            => defaultHeldBy
+      case Language          => defaultLanguage
+      case ClosureType       => defaultClosureType
+      case DescriptionClosed => "false"
+      case TitleClosed       => "false"
     }
   }
 
@@ -580,11 +582,12 @@ object TestUtils {
   case class Locations(column: Int, line: Int)
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
-  val serverSideProperties: List[String] = List(FileReference, ParentReference)
-  val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, FoiExemptionCode)
+  val serverSideProperties: List[String] = List(FileUUID, FileReference, ParentReference)
+  val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, ClosureType, DescriptionClosed, TitleClosed)
   val defaultCopyright: String = "Crown Copyright"
   val defaultLegalStatus: String = "Public Record"
   val defaultHeldBy: String = "TNA"
   val defaultLanguage: String = "English"
   val defaultFoiExemptionCode = "open"
+  val defaultClosureType = "Open"
 }

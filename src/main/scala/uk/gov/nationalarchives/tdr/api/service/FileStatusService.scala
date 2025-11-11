@@ -40,14 +40,6 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
     } yield toFileStatuses(rows).toList
   }
 
-  @deprecated("Use getFileStatuses(consignmentId: UUID, statusTypes: Set[String], selectedFileIds: Option[Set[UUID]] = None)")
-  def getFileStatus(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, String]] = {
-    for {
-      ffidStatus <- getFileStatuses(consignmentId, Set(FFID), selectedFileIds)
-      fileStatusMap = ffidStatus.flatMap(row => Map(row.fileId -> row.statusValue)).toMap
-    } yield fileStatusMap
-  }
-
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
     val statusTypes = Set(ChecksumMatch, Antivirus, FFID, Redaction)
     fileStatusRepository
@@ -68,10 +60,8 @@ object FileStatusService {
   val Upload = "Upload"
   val ServerChecksum = "ServerChecksum"
   val ClientChecks = "ClientChecks"
-  val ClosureMetadata = "ClosureMetadata"
-  val DescriptiveMetadata = "DescriptiveMetadata"
 
-  val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks, ClosureMetadata, DescriptiveMetadata)
+  val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks)
 
   // Values
   val Success = "Success"
@@ -84,8 +74,4 @@ object FileStatusService {
   val ZeroByteFile = "ZeroByteFile"
   val InProgress = "InProgress"
   val Completed = "Completed"
-  val Incomplete = "Incomplete"
-  val NotEntered = "NotEntered"
-
-  val defaultStatuses: Map[String, String] = Map(ClosureMetadata -> NotEntered, DescriptiveMetadata -> NotEntered)
 }

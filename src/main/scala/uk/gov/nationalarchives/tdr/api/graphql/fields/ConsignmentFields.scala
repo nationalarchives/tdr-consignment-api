@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
 import sangria.macros.derive._
 import sangria.marshalling.circe._
@@ -7,6 +8,7 @@ import sangria.relay._
 import sangria.schema.{
   Argument,
   BooleanType,
+  EnumType,
   Field,
   InputObjectType,
   IntType,
@@ -20,13 +22,14 @@ import sangria.schema.{
   StringType,
   fields
 }
+import uk.gov.nationalarchives.Tables.ConsignmentRow
 import uk.gov.nationalarchives.tdr.api.auth._
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ValidateNoPreviousUploadForConsignment
 import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataFilters}
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
-import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
+import uk.gov.nationalarchives.tdr.api.graphql.validation.{ServiceTransfer, UserOwnsConsignment}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValue, FileMetadataValues}
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
 
@@ -50,7 +53,9 @@ object ConsignmentFields {
       includeTopLevelFolder: Option[Boolean],
       seriesName: Option[String],
       transferringBodyName: Option[String],
-      transferringBodyTdrCode: Option[String]
+      transferringBodyTdrCode: Option[String],
+      metadataSchemaLibraryVersion: Option[String],
+      clientSideDraftMetadataFileName: Option[String]
   )
 
   case class ConsignmentEdge(node: Consignment, cursor: String) extends Edge[Consignment]
@@ -67,17 +72,64 @@ object ConsignmentFields {
 
   case class FileChecks(antivirusProgress: AntivirusProgress, checksumProgress: ChecksumProgress, ffidProgress: FFIDProgress)
 
-  case class TransferringBody(name: String, tdrCode: String)
-
   case class StartUploadInput(consignmentId: UUID, parentFolder: String, includeTopLevelFolder: Boolean = false) extends UserOwnsConsignment
 
   case class UpdateExportDataInput(consignmentId: UUID, exportLocation: String, exportDatetime: Option[ZonedDateTime], exportVersion: String)
 
   case class UpdateConsignmentSeriesIdInput(consignmentId: UUID, seriesId: UUID) extends UserOwnsConsignment
 
+  case class UpdateMetadataSchemaLibraryVersionInput(consignmentId: UUID, metadataSchemaLibraryVersion: String) extends UserOwnsConsignment
+
+  case class UpdateClientSideDraftMetadataFileNameInput(consignmentId: UUID, clientSideDraftMetadataFileName: String) extends UserOwnsConsignment
+
   case class PaginationInput(limit: Option[Int], currentPage: Option[Int], currentCursor: Option[String], fileFilters: Option[FileFilters])
 
   case class ConsignmentFilters(userId: Option[UUID], consignmentType: Option[String])
+
+  case class ConsignmentOrderBy(consignmentOrderField: ConsignmentOrderField, orderDirection: Direction)
+
+  case class ConsignmentMetadata(propertyName: String, value: String)
+
+  case class ConsignmentMetadataFilter(propertyNames: List[String])
+
+  case class UpdateParentFolderInput(consignmentId: UUID, parentFolder: String, userIdOverride: Option[UUID] = None) extends UserOwnsConsignment with ServiceTransfer
+
+  sealed trait ConsignmentOrderField {
+    val cursorFn: ConsignmentRow => String
+  }
+
+  case object ConsignmentReference extends ConsignmentOrderField {
+    override val cursorFn: ConsignmentRow => String = _.consignmentreference
+  }
+  case object CreatedAtTimestamp extends ConsignmentOrderField {
+    override val cursorFn: ConsignmentRow => String = _.datetime.toString
+  }
+
+  sealed trait Direction
+  case object Ascending extends Direction
+  case object Descending extends Direction
+
+  implicit val consignmentOrderFieldDecoder: Decoder[ConsignmentOrderField] = Decoder[String].emap {
+    case "ConsignmentReference" => Right(ConsignmentReference)
+    case "CreatedAtTimestamp"   => Right(CreatedAtTimestamp)
+    case other                  => Left(s"Unknown ConsignmentOrderField: $other")
+  }
+
+  implicit val consignmentOrderFieldEncoder: Encoder[ConsignmentOrderField] = Encoder[String].contramap {
+    case ConsignmentReference => "ConsignmentReference"
+    case CreatedAtTimestamp   => "CreatedAtTimestamp"
+  }
+
+  implicit val directionDecoder: Decoder[Direction] = Decoder[String].emap {
+    case "Ascending"  => Right(Ascending)
+    case "Descending" => Right(Descending)
+    case other        => Left(s"Unknown Direction: $other")
+  }
+
+  implicit val directionEncoder: Encoder[Direction] = Encoder[String].contramap {
+    case Ascending  => "Ascending"
+    case Descending => "Descending"
+  }
 
   implicit val FileChecksType: ObjectType[Unit, FileChecks] =
     deriveObjectType[Unit, FileChecks]()
@@ -87,8 +139,6 @@ object ConsignmentFields {
     deriveObjectType[Unit, ChecksumProgress]()
   implicit val FfidProgressType: ObjectType[Unit, FFIDProgress] =
     deriveObjectType[Unit, FFIDProgress]()
-  implicit val TransferringBodyType: ObjectType[Unit, TransferringBody] =
-    deriveObjectType[Unit, TransferringBody]()
   implicit val FileMetadataValueType: ObjectType[Unit, FileMetadataValue] =
     deriveObjectType[Unit, FileMetadataValue]()
   implicit val FileType: ObjectType[Unit, File] =
@@ -99,14 +149,24 @@ object ConsignmentFields {
   implicit val ConsignmentStatusType: ObjectType[Unit, ConsignmentStatus] =
     deriveObjectType[Unit, ConsignmentStatus]()
 
+  implicit val ConsignmentMetadataType: ObjectType[Unit, ConsignmentMetadata] =
+    deriveObjectType[Unit, ConsignmentMetadata]()
+
+  implicit val ConsignmentOrderFieldType: EnumType[ConsignmentOrderField] = deriveEnumType[ConsignmentOrderField]()
+  implicit val DirectionType: EnumType[Direction] = deriveEnumType[Direction]()
+
   implicit val PaginationInputType: InputObjectType[PaginationInput] = deriveInputObjectType[PaginationInput]()
   implicit val FileMetadataFiltersInputType: InputObjectType[FileMetadataFilters] = deriveInputObjectType[FileMetadataFilters]()
   implicit val FileFiltersInputType: InputObjectType[FileFilters] = deriveInputObjectType[FileFilters]()
   implicit val ConsignmentFiltersInputType: InputObjectType[ConsignmentFilters] = deriveInputObjectType[ConsignmentFilters]()
+  implicit val ConsignmentOrderByType: InputObjectType[ConsignmentOrderBy] = deriveInputObjectType[ConsignmentOrderBy]()
+  implicit val ConsignmentMetadataFilterInputType: InputObjectType[ConsignmentMetadataFilter] = deriveInputObjectType[ConsignmentMetadataFilter]()
 
   val PaginationInputArg: Argument[Option[PaginationInput]] = Argument("paginationInput", OptionInputType(PaginationInputType))
   val FileFiltersInputArg: Argument[Option[FileFilters]] = Argument("fileFiltersInput", OptionInputType(FileFiltersInputType))
   val ConsignmentFiltersInputArg: Argument[Option[ConsignmentFilters]] = Argument("consignmentFiltersInput", OptionInputType(ConsignmentFiltersInputType))
+  val ConsignmentMetadataFilterInputArg: Argument[Option[ConsignmentMetadataFilter]] =
+    Argument("consignmentMetadataFiltersInput", OptionInputType(ConsignmentMetadataFilterInputType))
 
   def getQueriedFileFields(projected: Vector[ProjectedName]): QueriedFileFields = QueriedFileFields(
     projected.exists(_.name == "originalFilePath"),
@@ -149,10 +209,17 @@ object ConsignmentFields {
       Field("seriesName", OptionType(StringType), resolve = _.value.seriesName),
       Field("transferringBodyName", OptionType(StringType), resolve = _.value.transferringBodyName),
       Field("transferringBodyTdrCode", OptionType(StringType), resolve = _.value.transferringBodyTdrCode),
+      Field("metadataSchemaLibraryVersion", OptionType(StringType), resolve = _.value.metadataSchemaLibraryVersion),
+      Field("clientSideDraftMetadataFileName", OptionType(StringType), resolve = _.value.clientSideDraftMetadataFileName),
       Field(
         "allChecksSucceeded",
         BooleanType,
         resolve = context => DeferChecksSucceeded(context.value.consignmentid)
+      ),
+      Field(
+        "totalClosedRecords",
+        IntType,
+        resolve = context => DeferClosedRecords(context.value.consignmentid)
       ),
       Field(
         "totalFiles",
@@ -178,11 +245,6 @@ object ConsignmentFields {
         "parentFolderId",
         OptionType(UuidType),
         resolve = context => DeferParentFolderId(context.value.consignmentid)
-      ),
-      Field(
-        "transferringBody",
-        OptionType(TransferringBodyType),
-        resolve = context => DeferConsignmentBody(context.value.consignmentid)
       ),
       Field(
         "files",
@@ -213,6 +275,12 @@ object ConsignmentFields {
         "consignmentStatuses",
         ListType(ConsignmentStatusType),
         resolve = context => DeferConsignmentStatuses(context.value.consignmentid)
+      ),
+      Field(
+        "consignmentMetadata",
+        ListType(ConsignmentMetadataType),
+        arguments = ConsignmentMetadataFilterInputArg :: Nil,
+        resolve = context => DeferConsignmentMetadata(context.value.consignmentid, context.args.arg(ConsignmentMetadataFilterInputArg))
       )
     )
   )
@@ -221,17 +289,27 @@ object ConsignmentFields {
   implicit val UpdateExportDataInputType: InputObjectType[UpdateExportDataInput] = deriveInputObjectType[UpdateExportDataInput]()
   implicit val StartUploadInputType: InputObjectType[StartUploadInput] = deriveInputObjectType[StartUploadInput]()
   implicit val UpdateConsignmentSeriesIdInputType: InputObjectType[UpdateConsignmentSeriesIdInput] = deriveInputObjectType[UpdateConsignmentSeriesIdInput]()
+  implicit val UpdateMetadataSchemaLibraryVersionInputType: InputObjectType[UpdateMetadataSchemaLibraryVersionInput] =
+    deriveInputObjectType[UpdateMetadataSchemaLibraryVersionInput]()
+  implicit val UpdateClientSideDraftMetadataFileNameType: InputObjectType[UpdateClientSideDraftMetadataFileNameInput] =
+    deriveInputObjectType[UpdateClientSideDraftMetadataFileNameInput]()
+  implicit val UpdateParentFolderInputType: InputObjectType[UpdateParentFolderInput] = deriveInputObjectType[UpdateParentFolderInput]()
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
   val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
-  val UserIdArg: Argument[Option[UUID]] = Argument("userId", OptionInputType(UuidType))
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
   val CurrentPageArg: Argument[Option[Int]] = Argument("currentPage", OptionInputType(IntType))
+  val ConsignmentOrderByArg: Argument[Option[ConsignmentOrderBy]] = Argument("orderBy", OptionInputType(ConsignmentOrderByType))
   val StartUploadArg: Argument[StartUploadInput] = Argument("startUploadInput", StartUploadInputType)
   val UpdateConsignmentSeriesIdArg: Argument[UpdateConsignmentSeriesIdInput] =
     Argument("updateConsignmentSeriesId", UpdateConsignmentSeriesIdInputType)
+  val UpdateMetadataSchemaLibraryVersionArg: Argument[UpdateMetadataSchemaLibraryVersionInput] =
+    Argument("updateMetadataSchemaLibraryVersion", UpdateMetadataSchemaLibraryVersionInputType)
+  val UpdateClientSideDraftMetadataFileNameInputArg: Argument[UpdateClientSideDraftMetadataFileNameInput] =
+    Argument("updateClientSideDraftMetadataFileName", UpdateClientSideDraftMetadataFileNameType)
+  val UpdateParentFolderInputArg: Argument[UpdateParentFolderInput] = Argument("updateParentFolderInput", UpdateParentFolderInputType)
 
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[ConsignmentApiContext, Connection, Consignment](
@@ -258,14 +336,15 @@ object ConsignmentFields {
     Field(
       "consignments",
       consignmentConnections,
-      arguments = List(LimitArg, CurrentCursorArg, CurrentPageArg, ConsignmentFiltersInputArg),
+      arguments = List(LimitArg, CurrentCursorArg, CurrentPageArg, ConsignmentFiltersInputArg, ConsignmentOrderByArg),
       resolve = ctx => {
         val limit: Int = ctx.args.arg("limit")
         val currentCursor = ctx.args.argOpt("currentCursor")
         val currentPage = ctx.args.argOpt("currentPage")
         val consignmentFilters = ctx.args.argOpt("consignmentFiltersInput")
+        val consignmentOrderBy = ctx.args.argOpt("orderBy")
         ctx.ctx.consignmentService
-          .getConsignments(limit, currentCursor, consignmentFilters, currentPage)
+          .getConsignments(limit, currentCursor, consignmentFilters, currentPage, consignmentOrderBy)
           .map(r => {
             val endCursor = r.lastCursor
             val edges = r.consignmentEdges
@@ -281,6 +360,13 @@ object ConsignmentFields {
           })
       },
       tags = List(ValidateHasConsignmentsAccess)
+    ),
+    Field(
+      "getConsignmentsForMetadataReview",
+      ListType(ConsignmentType),
+      arguments = Nil,
+      resolve = ctx => ctx.ctx.consignmentService.getConsignmentsForMetadataReview,
+      tags = List(ValidateIsTnaUser)
     )
   )
 
@@ -323,6 +409,27 @@ object ConsignmentFields {
       arguments = UpdateConsignmentSeriesIdArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateSeriesOfConsignment(ctx.arg(UpdateConsignmentSeriesIdArg)),
       tags = List(ValidateUserHasAccessToConsignment(UpdateConsignmentSeriesIdArg), ValidateUpdateConsignmentSeriesId)
+    ),
+    Field(
+      "updateConsignmentMetadataSchemaLibraryVersion",
+      OptionType(IntType),
+      arguments = UpdateMetadataSchemaLibraryVersionArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateMetadataSchemaLibraryVersion(ctx.arg(UpdateMetadataSchemaLibraryVersionArg)),
+      tags = List(ValidateUserHasAccessToConsignment(UpdateMetadataSchemaLibraryVersionArg))
+    ),
+    Field(
+      "updateClientSideDraftMetadataFileName",
+      OptionType(IntType),
+      arguments = UpdateClientSideDraftMetadataFileNameInputArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateClientSideDraftMetadataFileName(ctx.arg(UpdateClientSideDraftMetadataFileNameInputArg)),
+      tags = List(ValidateUserHasAccessToConsignment(UpdateClientSideDraftMetadataFileNameInputArg))
+    ),
+    Field(
+      "updateParentFolder",
+      OptionType(IntType),
+      arguments = UpdateParentFolderInputArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateParentFolder(ctx.arg(UpdateParentFolderInputArg)),
+      tags = List(ValidateUserHasAccessToConsignment(UpdateParentFolderInputArg))
     )
   )
 }

@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.graphql
 
 import sangria.execution.deferred.{Deferred, UnsupportedDeferError}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileFilters
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileChecks, PaginationInput, TransferringBody}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentMetadata, ConsignmentMetadataFilter, FileChecks, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
@@ -21,14 +21,15 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
         context.fileStatusService.getConsignmentFileProgress(consignmentId)
       case DeferParentFolder(consignmentId)        => context.consignmentService.getConsignmentParentFolder(consignmentId)
       case DeferParentFolderId(consignmentId)      => context.fileService.getConsignmentParentFolderId(consignmentId)
-      case DeferConsignmentBody(consignmentId)     => context.consignmentService.getTransferringBodyOfConsignment(consignmentId)
       case DeferConsignmentStatuses(consignmentId) => context.consignmentStatusService.getConsignmentStatuses(consignmentId)
       case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
         context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
       case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields) =>
         context.fileService.getPaginatedFiles(consignmentId, paginationInput, queriedFileFields)
-      case DeferChecksSucceeded(consignmentId) => context.fileStatusService.allChecksSucceeded(consignmentId)
-      case other                               => throw UnsupportedDeferError(other)
+      case DeferChecksSucceeded(consignmentId)             => context.fileStatusService.allChecksSucceeded(consignmentId)
+      case DeferClosedRecords(consignmentId)               => context.consignmentService.totalClosedRecords(consignmentId)
+      case DeferConsignmentMetadata(consignmentId, filter) => context.consignmentMetadataService.getConsignmentMetadata(consignmentId, filter)
+      case other                                           => throw UnsupportedDeferError(other)
     }
   }
   // scalastyle:on cyclomatic.complexity
@@ -39,13 +40,14 @@ case class DeferFileSizeSum(consignmentId: UUID) extends Deferred[Long]
 case class DeferFileChecksProgress(consignmentId: UUID) extends Deferred[FileChecks]
 case class DeferParentFolder(consignmentId: UUID) extends Deferred[Option[String]]
 case class DeferParentFolderId(consignmentId: UUID) extends Deferred[Option[UUID]]
-case class DeferConsignmentBody(consignmentId: UUID) extends Deferred[TransferringBody]
 case class DeferFiles(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields) extends Deferred[List[File]]
 case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: QueriedFileFields) extends Deferred[TDRConnection[File]]
+case class DeferClosedRecords(consignmentId: UUID) extends Deferred[Int]
 
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]
 
 case class DeferConsignmentStatuses(consignmentId: UUID) extends Deferred[List[ConsignmentStatus]]
+case class DeferConsignmentMetadata(consignmentId: UUID, filter: Option[ConsignmentMetadataFilter]) extends Deferred[List[ConsignmentMetadata]]
 
 case class QueriedFileFields(
     originalFilePath: Boolean = false,

@@ -1,0 +1,8 @@
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Variable '$addOrUpdateConsignmentMetadataInput' expected value of type 'AddOrUpdateConsignmentMetadataInput!' but got: {\"consignmentMetadata\":[{\"propertyName\":\"JudgmentType\",\"value\":\"Judgment\"},{\"propertyName\":\"PublicRecordsConfirmed\",\"value\":\"true\"}]}. Reason: 'consignmentId' Expected non-null value, found null. (line 1, column 41):\nmutation addOrUpdateConsignmentMetadata($addOrUpdateConsignmentMetadataInput: AddOrUpdateConsignmentMetadataInput!) {addOrUpdateConsignmentMetadata(addOrUpdateConsignmentMetadataInput:$addOrUpdateConsignmentMetadataInput) {consignmentId,propertyName,value}}\n                                        ^"
+    }
+  ]
+}

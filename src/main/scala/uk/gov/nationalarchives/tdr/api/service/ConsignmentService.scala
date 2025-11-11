@@ -1,11 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
-import uk.gov.nationalarchives.Tables.{BodyRow, ConsignmentRow, ConsignmentstatusRow}
+import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentReference => ConsignmentReferenceOrderField}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
@@ -22,6 +23,7 @@ class ConsignmentService(
     consignmentRepository: ConsignmentRepository,
     consignmentStatusRepository: ConsignmentStatusRepository,
     seriesRepository: SeriesRepository,
+    fileMetadataRepository: FileMetadataRepository,
     transferringBodyService: TransferringBodyService,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
@@ -46,6 +48,10 @@ class ConsignmentService(
           List(consignmentStatusUploadRow, consignmentStatusClientChecksRow)
         )
       })
+  }
+
+  def totalClosedRecords(consignmentId: UUID): Future[Int] = {
+    fileMetadataRepository.totalClosedRecords(consignmentId)
   }
 
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
@@ -88,10 +94,7 @@ class ConsignmentService(
         transferringbodyname = Some(body.name),
         transferringbodytdrcode = Some(body.tdrCode)
       )
-      descriptiveMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, DescriptiveMetadata, NotEntered, timestampNow, Option(timestampNow))
-      closureMetadataStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, ClosureMetadata, NotEntered, timestampNow, Option(timestampNow))
       consignment <- consignmentRepository.addConsignment(consignmentRow).map(row => convertRowToConsignment(row))
-      _ <- consignmentStatusRepository.addConsignmentStatuses(Seq(descriptiveMetadataStatusRow, closureMetadataStatusRow))
     } yield consignment
   }
 
@@ -104,16 +107,27 @@ class ConsignmentService(
       limit: Int,
       currentCursor: Option[String],
       consignmentFilters: Option[ConsignmentFilters] = None,
-      currentPage: Option[Int] = None
+      currentPage: Option[Int] = None,
+      consignmentOrderBy: Option[ConsignmentOrderBy] = None
   ): Future[PaginatedConsignments] = {
-
     val maxConsignments: Int = min(limit, maxLimit)
+    val orderBy = consignmentOrderBy.getOrElse(ConsignmentOrderBy(ConsignmentReferenceOrderField, Descending))
     for {
-      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, currentPage, consignmentFilters)
+      response <- consignmentRepository.getConsignments(maxConsignments, currentCursor, currentPage, consignmentFilters, orderBy)
       hasNextPage = response.nonEmpty
-      lastCursor: Option[String] = if (hasNextPage) Some(response.last.consignmentreference) else None
-      paginatedConsignments = convertToEdges(response)
+      paginatedConsignments = convertToEdges(response, orderBy.consignmentOrderField)
+      lastCursor = if (hasNextPage) Some(orderBy.consignmentOrderField.cursorFn(response.last)) else None
     } yield PaginatedConsignments(lastCursor, paginatedConsignments)
+  }
+
+  def getConsignmentsForMetadataReview: Future[Seq[Consignment]] = {
+    val consignments = consignmentRepository.getConsignmentsForMetadataReview
+    consignments.map(rows => rows.map(row => convertRowToConsignment(row)))
+  }
+
+  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Option[Consignment]] = {
+    val consignment = consignmentRepository.getConsignmentForMetadataReview(consignmentId)
+    consignment.map(rows => rows.map(row => convertRowToConsignment(row)).headOption)
   }
 
   def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: UpdateConsignmentSeriesIdInput): Future[Int] = {
@@ -123,11 +137,6 @@ class ConsignmentService(
       seriesStatus = if (result == 1) Completed else Failed
       _ <- consignmentStatusRepository.updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, "Series", seriesStatus, Timestamp.from(timeSource.now))
     } yield result
-  }
-
-  def getTransferringBodyOfConsignment(consignmentId: UUID): Future[Option[TransferringBody]] = {
-    val consignment: Future[Seq[BodyRow]] = consignmentRepository.getTransferringBodyOfConsignment(consignmentId)
-    consignment.map(rows => rows.headOption.map(transferringBody => TransferringBody(transferringBody.name, transferringBody.tdrcode)))
   }
 
   def consignmentHasFiles(consignmentId: UUID): Future[Boolean] = {
@@ -141,6 +150,18 @@ class ConsignmentService(
   def getTotalPages(limit: Int, consignmentFilters: Option[ConsignmentFilters]): Future[Int] = {
     val maxConsignmentsLimit: Int = min(limit, maxLimit)
     consignmentRepository.getTotalConsignments(consignmentFilters).map(totalItems => Math.ceil(totalItems.toDouble / maxConsignmentsLimit.toDouble).toInt)
+  }
+
+  def updateMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersionInput: UpdateMetadataSchemaLibraryVersionInput): Future[Int] = {
+    consignmentRepository.updateMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersionInput)
+  }
+
+  def updateClientSideDraftMetadataFileName(input: UpdateClientSideDraftMetadataFileNameInput): Future[Int] = {
+    consignmentRepository.updateClientSideDraftMetadataFileName(input)
+  }
+
+  def updateParentFolder(input: UpdateParentFolderInput): Future[Int] = {
+    consignmentRepository.updateParentFolder(input.consignmentId, input.parentFolder)
   }
 
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
@@ -158,14 +179,15 @@ class ConsignmentService(
       row.includetoplevelfolder,
       row.seriesname,
       row.transferringbodyname,
-      row.transferringbodytdrcode
+      row.transferringbodytdrcode,
+      row.metadataschemalibraryversion,
+      row.clientsidedraftmetadatafilename
     )
   }
 
-  private def convertToEdges(consignmentRows: Seq[ConsignmentRow]): Seq[ConsignmentEdge] = {
+  private def convertToEdges(consignmentRows: Seq[ConsignmentRow], consignmentOrderField: ConsignmentOrderField): Seq[ConsignmentEdge] = {
     consignmentRows
-      .map(cr => convertRowToConsignment(cr))
-      .map(c => ConsignmentEdge(c, c.consignmentReference))
+      .map(cr => ConsignmentEdge(convertRowToConsignment(cr), consignmentOrderField.cursorFn(cr)))
   }
 
   private def getSeriesName(seriesId: Option[UUID]): Future[Option[String]] = {

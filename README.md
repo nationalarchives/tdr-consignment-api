@@ -13,7 +13,7 @@ You need either a default profile set up or you need to set the AWS_ACCESS_KEY_I
 
 Set up the database
 ```
-docker run --name postgres -p 5432:5432 -e POSTGRES_USER=tdr -e POSTGRES_PASSWORD=password -e POSTGRES_DB=consignmentapi -d postgres:14.4
+docker run --name postgres -p 5432:5432 -e POSTGRES_USER=tdr -e POSTGRES_PASSWORD=password -e POSTGRES_DB=consignmentapi -d postgres:17.2
 git clone https://github.com/nationalarchives/tdr-consignment-api-data.git
 cd tdr-consignment-api-data.git
 sbt flywayMigrate
@@ -28,7 +28,7 @@ Run the api:
 
 1. The repository and route tests use a docker container for the database. To run the tests locally, you will need to build this database.
 ```shell
-docker build -f Dockerfile-tests -t tests .
+docker build --no-cache -f Dockerfile-tests -t tests .
 ```
 
 2. In order to run the tests run the command `sbt test`
@@ -45,6 +45,14 @@ Within your test run configuration, set the VM of:
 If this is not set, you may see errors with the message: 
 
 `Could not resolve substitution to a value: ${DB_PORT}`
+
+#### Removing tests
+
+If an API test is removed because it is no longer needed, you will need to modify the list of required status checks on Github.
+
+These can be found in "Settings > Branches" under the `master` branch.
+
+The branch status checks are run when a pull request is raised and will get stuck if it tries to run a check on a test that is no longer present. You can remove the test at this point and the checks will carry on to completion.   
 
 ### Graphql Schema
 
@@ -63,11 +71,50 @@ In order to manually deploy the generated-graphql, follow [these instructions](h
 
 The consignment-api makes use of a commercial Akka licence.
 
-The build requires a licence token which is stored as an SSM parameter in TDR management account: `/mgmt/akka/licence_token`.
+Akka provide:
+* Licence Key: runtime check that valid licence
+* Licence Token: build time access to the Akka binaries
 
-The licence token is set as a repository secret `AKKA_TOKEN` which is then used by the Github actions where needed.
+Details for both can be found in the Akka account: https://account.akka.io/key (access required)
 
-Details about how to use the licence can be found here: https://www.lightbend.com/account/lightbend-platform/credentials
+#### Licence Key
+
+Required at runtime.
+
+Stored in SSM parameter store in each of the TDR environment accounts (intg/staging/prod): `/{env}/akka/licence_key`
+
+Requires manually adding to the SSM parameter
+
+Referenced via ECS task definition secret in the `application.base.conf`:
+```
+    ...
+    akka.licence-key = ${AKKA_LICENCE_KEY}
+    ...
+```
+
+#### Licence Token
+
+Required at build time to access the relevant Akka binaries.
+
+Stored in SSM parameter store in the TDR management account: `/mgmt/akka/licence_token`
+
+Requires manually adding to the SSM parameter
+
+Referenced as a GitHub repository secret so available at build time: `AKKA_TOKEN`
+
+Token value is used in the `akka.sbt` build file.
+
+Repository secret set in the `tdr-terraform-github`
+
+#### Application configuration
+
+The token is stored in a SSM parameter in the TDR environment accounts (intg / staging / prod): {environment}/akka/licence_token
+
+The token value is passed as an environment secret to the ECS task where is can be picked up in the application configuration file.
+
+### Updating Licence Token
+
+Both sets of SSM parameters need to be updated with the new licence token:
 
 #### Running locally
 

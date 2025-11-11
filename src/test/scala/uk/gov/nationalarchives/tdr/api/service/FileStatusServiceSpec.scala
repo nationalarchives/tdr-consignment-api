@@ -36,7 +36,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   def fileStatusRow(statusType: String, value: String): FilestatusRow =
     FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), statusType, value, Timestamp.from(Instant.now))
 
-  "addFileStatus" should "add a file status row in the db" in {
+  "addFileStatuses" should "add a file status row in the db" in {
 
     val fileStatusCaptor: ArgumentCaptor[List[AddFileStatusInput]] = ArgumentCaptor.forClass(classOf[List[AddFileStatusInput]])
 
@@ -212,13 +212,6 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     response should equal(false)
   }
 
-  "getFileStatus" should "return a Map Consisting of a FileId key and status value" in {
-    mockResponse(Set(FFID), Seq(FilestatusRow(UUID.randomUUID(), consignmentId, FFID, Success, Timestamp.from(Instant.now))))
-    val response = createFileStatusService().getFileStatus(consignmentId).futureValue
-    val expected = Map(consignmentId -> Success)
-    response should equal(expected)
-  }
-
   "getFileStatuses" should "return expected file status types" in {
     val fileId1 = UUID.randomUUID()
     val fileId2 = UUID.randomUUID()
@@ -268,9 +261,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
       FileStatusService.Redaction,
       FileStatusService.Upload,
       FileStatusService.ServerChecksum,
-      FileStatusService.ClientChecks,
-      FileStatusService.ClosureMetadata,
-      FileStatusService.DescriptiveMetadata
+      FileStatusService.ClientChecks
     )
 
     FileStatusService.allFileStatusTypes should equal(expectedTypes)
@@ -284,8 +275,6 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.Upload should equal("Upload")
     FileStatusService.ServerChecksum should equal("ServerChecksum")
     FileStatusService.ClientChecks should equal("ClientChecks")
-    FileStatusService.ClosureMetadata should equal("ClosureMetadata")
-    FileStatusService.DescriptiveMetadata should equal("DescriptiveMetadata")
   }
 
   "'status values'" should "have the correct values assigned" in {
@@ -298,13 +287,6 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.ZeroByteFile should equal("ZeroByteFile")
     FileStatusService.InProgress should equal("InProgress")
     FileStatusService.Completed should equal("Completed")
-    FileStatusService.NotEntered should equal("NotEntered")
-  }
-
-  "'defaultStatuses'" should "contain the correct statuses and values" in {
-    FileStatusService.defaultStatuses.size shouldBe 2
-    FileStatusService.defaultStatuses(ClosureMetadata) should equal(NotEntered)
-    FileStatusService.defaultStatuses(DescriptiveMetadata) should equal(NotEntered)
   }
 
   "getConsignmentFileProgress" should "return total processed files if all checks are successful" in {

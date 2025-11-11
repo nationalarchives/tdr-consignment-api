@@ -2,11 +2,12 @@ package uk.gov.nationalarchives.tdr.api.metadatainputvalidation
 
 import sangria.execution.BeforeFieldResult
 import sangria.schema.{Argument, Context}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.{DeleteFileMetadataInput, UpdateBulkFileMetadataInput}
+import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
+import uk.gov.nationalarchives.tdr.api.auth.ValidateBody.updateMetadataRole
+import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.AddOrUpdateBulkFileMetadataInput
 import uk.gov.nationalarchives.tdr.api.graphql.{ConsignmentApiContext, ValidationTag}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
-import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
-import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.service.FileService.FileDetails
 
 import java.util.UUID
@@ -21,22 +22,23 @@ case class ValidateMetadataInput[T](argument: Argument[T]) extends MetadataInput
     val arg: T = ctx.arg[T](argument.name)
 
     val (inputFileIds: Seq[UUID], inputConsignmentId: UUID) = arg match {
-      case updateInput: UpdateBulkFileMetadataInput => (updateInput.fileIds, updateInput.consignmentId)
-      case deleteInput: DeleteFileMetadataInput     => (deleteInput.fileIds, deleteInput.consignmentId)
+      case addOrUpdateInput: AddOrUpdateBulkFileMetadataInput => (addOrUpdateInput.fileMetadata.map(_.fileId), addOrUpdateInput.consignmentId)
     }
-
-    val userId = ctx.ctx.accessToken.userId
+    val token = ctx.ctx.accessToken
+    val userId = token.userId
 
     if (inputFileIds.isEmpty) {
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
 
+    val draftMetadataValidatorAccess = token.draftMetadataRoles.contains(updateMetadataRole)
+
     for {
       fileFields <- ctx.ctx.fileService.getFileDetails(inputFileIds)
-      nonOwnership = fileFields.exists(_.userId != userId)
+      noAccess = fileFields.exists(_.userId != userId) && !draftMetadataValidatorAccess
     } yield {
-      nonOwnership match {
-        case true => throw AuthorisationException(s"User '$userId' does not own the files they are trying to access")
+      noAccess match {
+        case true => throw AuthorisationException("Access denied to file metadata")
         case _ if inputErrors(fileFields, inputFileIds, inputConsignmentId) =>
           throw InputDataException("Input contains directory id or contains non-existing file id or consignment id is incorrect")
         case _ => continue

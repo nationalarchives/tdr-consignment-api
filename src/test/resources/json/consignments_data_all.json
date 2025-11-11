@@ -15,12 +15,9 @@
             "createdDatetime": "2020-01-01T09:00:00Z",
             "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
             "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
-            "transferringBody": {
-              "name": "Default transferring body name",
-              "tdrCode": "default-transferring-body-code"
-            },
             "seriesName": "seriesName",
             "transferringBodyName": "transferringBodyName",
+            "transferringBodyTdrCode": "transferringBodyTdrCode",
             "consignmentid": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
             "consignmentReference": "consignment-ref2",
             "totalFiles": 1,
@@ -92,18 +89,6 @@
             },
             "consignmentStatuses": [
               {
-                "createdDatetime": "2020-01-01T09:00:00Z",
-                "statusType": "DescriptiveMetadata",
-                "value": "NotEntered",
-                "consignmentId": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8"
-              },
-              {
-                "createdDatetime": "2020-01-01T09:00:00Z",
-                "statusType": "ClosureMetadata",
-                "value": "NotEntered",
-                "consignmentId": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8"
-              },
-              {
                 "consignmentId": "5c761efa-ae1a-4ec8-bb08-dc609fce51f8",
                 "statusType": "Upload",
                 "value": "Completed",
@@ -119,12 +104,9 @@
             "createdDatetime": "2020-01-01T09:00:00Z",
             "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
             "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
-            "transferringBody": {
-              "name": "Default transferring body name",
-              "tdrCode": "default-transferring-body-code"
-            },
             "seriesName": "seriesName",
             "transferringBodyName": "transferringBodyName",
+            "transferringBodyTdrCode": "transferringBodyTdrCode",
             "consignmentid": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
             "consignmentReference": "consignment-ref1",
             "totalFiles": 1,
@@ -190,18 +172,6 @@
               }
             },
             "consignmentStatuses": [
-              {
-                "createdDatetime": "2020-01-01T09:00:00Z",
-                "statusType": "DescriptiveMetadata",
-                "value": "NotEntered",
-                "consignmentId": "c31b3d3e-1931-421b-a829-e2ef4cd8930c"
-              },
-              {
-                "createdDatetime": "2020-01-01T09:00:00Z",
-                "statusType": "ClosureMetadata",
-                "value": "NotEntered",
-                "consignmentId": "c31b3d3e-1931-421b-a829-e2ef4cd8930c"
-              },
               {
                 "consignmentId": "c31b3d3e-1931-421b-a829-e2ef4cd8930c",
                 "statusType": "Upload",

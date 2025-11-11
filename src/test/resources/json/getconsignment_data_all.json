@@ -6,19 +6,120 @@
       "createdDatetime": "2020-01-01T09:00:00Z",
       "transferInitiatedDatetime": "2020-01-01T09:00:00Z",
       "userid": "4ab14990-ed63-4615-8336-56fbb9960300",
-      "transferringBody": {
-        "name": "Default transferring body name",
-        "tdrCode": "default-transferring-body-code"
-      },
       "consignmentid": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
       "consignmentReference": "TEST-TDR-2021-MTB",
+      "totalClosedRecords": 1,
       "totalFiles": 3,
       "totalFileSize": 6,
       "includeTopLevelFolder": true,
       "seriesName": "seriesName",
       "transferringBodyName": "transferringBodyName",
       "transferringBodyTdrCode": "transferringBodyTdrCode",
+      "consignmentMetadata": [
+        {
+          "propertyName": "JudgmentType",
+          "value": "press_summary"
+        },
+        {
+          "propertyName": "PublicRecordsConfirmed",
+          "value": "true"
+        }
+      ],
       "files": [
+        {
+          "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+          "fileType": "File",
+          "fileName": "fileThreeName",
+          "fileReference": "REF3",
+          "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "parentReference": "REF1",
+          "uploadMatchId": "3",
+          "fileStatus": "Success",
+          "metadata": {
+            "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
+            "legalStatus": "LegalStatus value",
+            "clientSideFileSize": 2,
+            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+            "rightsCopyright": "RightsCopyright value",
+            "heldBy": "HeldBy value",
+            "foiExemptionCode": "FoiExemptionCode value",
+            "ClosurePeriod": 1,
+            "ClosureStartDate": "2021-04-11T12:30:30.592853",
+            "FoiExemptionAsserted": "2021-03-12T12:30:30.592853",
+            "TitleClosed": true,
+            "DescriptionClosed": true,
+            "language": "Language value"
+          },
+          "ffidMetadata": {
+            "method": "TEST DATA method",
+            "softwareVersion": "TEST DATA software version",
+            "datetime": 1577869200000,
+            "software": "TEST DATA software",
+            "matches": [
+              {
+                "extension": "txt",
+                "identificationBasis": "TEST DATA identification",
+                "puid": "TEST DATA puid"
+              }
+            ],
+            "containerSignatureFileVersion": "TEST DATA container signature file version",
+            "binarySignatureFileVersion": "TEST DATA binary signature file version"
+          },
+          "fileStatuses": [
+            {
+              "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
+        },
+        {
+          "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+          "fileType": "File",
+          "fileName": "fileOneName",
+          "fileReference": "REF1",
+          "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
+          "parentReference": null,
+          "uploadMatchId": "1",
+          "fileStatus": "Success",
+          "metadata": {
+            "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
+            "legalStatus": "LegalStatus value",
+            "clientSideFileSize": 2,
+            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
+            "rightsCopyright": "RightsCopyright value",
+            "heldBy": "HeldBy value",
+            "foiExemptionCode": "FoiExemptionCode value",
+            "language": "Language value"
+          },
+          "ffidMetadata": {
+            "method": "TEST DATA method",
+            "softwareVersion": "TEST DATA software version",
+            "datetime": 1577869200000,
+            "software": "TEST DATA software",
+            "matches": [
+              {
+                "extension": "txt",
+                "identificationBasis": "TEST DATA identification",
+                "puid": "TEST DATA puid"
+              }
+            ],
+            "containerSignatureFileVersion": "TEST DATA container signature file version",
+            "binarySignatureFileVersion": "TEST DATA binary signature file version"
+          },
+          "fileStatuses": [
+            {
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "statusType": "ChecksumMatch",
+              "statusValue": "Failed"
+            },
+            {
+              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
+              "statusType": "FFID",
+              "statusValue": "Success"
+            }
+          ]
+        },
         {
           "fileId": "42910a85-85c3-40c3-888f-32f697bfadb6",
           "fileType": "File",
@@ -26,8 +127,13 @@
           "fileReference": "REF2",
           "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
           "parentReference": null,
+          "uploadMatchId": "2",
           "originalFilePath": null,
           "fileMetadata": [
+            {
+              "name": "UUID",
+              "value": "42910a85-85c3-40c3-888f-32f697bfadb6"
+            },
             {
               "name": "SHA256ServerSideChecksum",
               "value": "Result of FileMetadata processing"
@@ -120,98 +226,6 @@
               "statusValue": "Success"
             }
           ]
-        },
-        {
-          "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
-          "fileType": "File",
-          "fileName": "fileOneName",
-          "fileReference": "REF1",
-          "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "parentReference": null,
-          "fileStatus": "Success",
-          "metadata": {
-            "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
-            "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 2,
-            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
-            "rightsCopyright": "RightsCopyright value",
-            "heldBy": "HeldBy value",
-            "foiExemptionCode": "FoiExemptionCode value",
-            "language": "Language value"
-          },
-          "ffidMetadata": {
-            "method": "TEST DATA method",
-            "softwareVersion": "TEST DATA software version",
-            "datetime": 1577869200000,
-            "software": "TEST DATA software",
-            "matches": [
-              {
-                "extension": "txt",
-                "identificationBasis": "TEST DATA identification",
-                "puid": "TEST DATA puid"
-              }
-            ],
-            "containerSignatureFileVersion": "TEST DATA container signature file version",
-            "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          },
-          "fileStatuses": [
-            {
-              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
-              "statusType": "ChecksumMatch",
-              "statusValue": "Failed"
-            },
-            {
-              "fileId": "e7ba59c9-5b8b-4029-9f27-2d03957463ad",
-              "statusType": "FFID",
-              "statusValue": "Success"
-            }
-          ]
-        },
-        {
-          "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
-          "fileType": "File",
-          "fileName": "fileThreeName",
-          "fileReference": "REF3",
-          "parentId": "7b19b272-d4d1-4d77-bf25-511dc6489d12",
-          "parentReference": "REF1",
-          "fileStatus": "Success",
-          "metadata": {
-            "clientSideOriginalFilePath": "ClientSideOriginalFilepath value",
-            "legalStatus": "LegalStatus value",
-            "clientSideFileSize": 2,
-            "clientSideLastModifiedDate": "2021-03-11T12:30:30.592853",
-            "rightsCopyright": "RightsCopyright value",
-            "heldBy": "HeldBy value",
-            "foiExemptionCode": "FoiExemptionCode value",
-            "ClosurePeriod": 1,
-            "ClosureStartDate": "2021-04-11T12:30:30.592853",
-            "FoiExemptionAsserted": "2021-03-12T12:30:30.592853",
-            "TitleClosed": true,
-            "DescriptionClosed": true,
-            "language": "Language value"
-          },
-          "ffidMetadata": {
-            "method": "TEST DATA method",
-            "softwareVersion": "TEST DATA software version",
-            "datetime": 1577869200000,
-            "software": "TEST DATA software",
-            "matches": [
-              {
-                "extension": "txt",
-                "identificationBasis": "TEST DATA identification",
-                "puid": "TEST DATA puid"
-              }
-            ],
-            "containerSignatureFileVersion": "TEST DATA container signature file version",
-            "binarySignatureFileVersion": "TEST DATA binary signature file version"
-          },
-          "fileStatuses": [
-            {
-              "fileId": "9757f402-ee1a-43a2-ae2a-81a9ea9729b9",
-              "statusType": "FFID",
-              "statusValue": "Success"
-            }
-          ]
         }
       ],
       "parentFolder": "ALL CONSIGNMENT DATA PARENT FOLDER",
@@ -227,18 +241,6 @@
         }
       },
       "consignmentStatuses": [
-        {
-          "createdDatetime": "2020-01-01T09:00:00Z",
-          "statusType": "DescriptiveMetadata",
-          "value": "NotEntered",
-          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
-        },
-        {
-          "createdDatetime": "2020-01-01T09:00:00Z",
-          "statusType": "ClosureMetadata",
-          "value": "NotEntered",
-          "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb"
-        },
         {
           "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
           "statusType": "Upload",

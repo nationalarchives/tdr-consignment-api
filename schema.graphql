@@ -20,6 +20,7 @@ input AddFileAndMetadataInput {
   consignmentId: UUID!
   metadataInput: [ClientSideMetadataInput!]!
   emptyDirectories: [String!] = []
+  userIdOverride: UUID
 }
 
 input AddFileMetadataWithFileIdInput {
@@ -47,6 +48,31 @@ input AddMultipleFileStatusesInput {
   statuses: [AddFileStatusInput!]!
 }
 
+input AddOrUpdateBulkFileMetadataInput {
+  consignmentId: UUID!
+  fileMetadata: [AddOrUpdateFileMetadata!]!
+}
+
+input AddOrUpdateConsignmentMetadata {
+  propertyName: String!
+  value: String!
+}
+
+input AddOrUpdateConsignmentMetadataInput {
+  consignmentId: UUID!
+  consignmentMetadata: [AddOrUpdateConsignmentMetadata!]!
+}
+
+input AddOrUpdateFileMetadata {
+  fileId: UUID!
+  metadata: [AddOrUpdateMetadata!]!
+}
+
+input AddOrUpdateMetadata {
+  filePropertyName: String!
+  value: String!
+}
+
 input AddTransferAgreementComplianceInput {
   consignmentId: UUID!
   appraisalSelectionSignedOff: Boolean!
@@ -57,13 +83,6 @@ input AddTransferAgreementComplianceInput {
 input AddTransferAgreementPrivateBetaInput {
   consignmentId: UUID!
   allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
-  allEnglish: Boolean
-}
-
-input AllDescendantsInput {
-  consignmentId: UUID!
-  parentIds: [UUID!]!
 }
 
 type AntivirusMetadata {
@@ -79,22 +98,8 @@ type AntivirusProgress {
   filesProcessed: Int!
 }
 
-type BulkFileMetadata {
-  fileIds: [UUID!]!
-  metadataProperties: [FileMetadata!]!
-}
-
 type ChecksumProgress {
   filesProcessed: Int!
-}
-
-type ClientFileMetadata {
-  fileId: UUID!
-  originalPath: String
-  checksum: String
-  checksumType: String
-  lastModified: Long!
-  fileSize: Long
 }
 
 input ClientSideMetadataInput {
@@ -102,7 +107,7 @@ input ClientSideMetadataInput {
   checksum: String!
   lastModified: Long!
   fileSize: Long!
-  matchId: Long!
+  matchId: String!
 }
 
 type Consignment {
@@ -118,17 +123,20 @@ type Consignment {
   seriesName: String
   transferringBodyName: String
   transferringBodyTdrCode: String
+  metadataSchemaLibraryVersion: String
+  clientSideDraftMetadataFileName: String
   allChecksSucceeded: Boolean!
+  totalClosedRecords: Int!
   totalFiles: Int!
   totalFileSize: Long!
   fileChecks: FileChecks!
   parentFolder: String
   parentFolderId: UUID
-  transferringBody: TransferringBody
   files(fileFiltersInput: FileFilters): [File!]!
   paginatedFiles(paginationInput: PaginationInput): FileConnection!
   consignmentReference: String!
   consignmentStatuses: [ConsignmentStatus!]!
+  consignmentMetadata(consignmentMetadataFiltersInput: ConsignmentMetadataFilter): [ConsignmentMetadata!]!
 }
 
 "A connection to a list of items."
@@ -155,6 +163,31 @@ input ConsignmentFilters {
   consignmentType: String
 }
 
+type ConsignmentMetadata {
+  propertyName: String!
+  value: String!
+}
+
+input ConsignmentMetadataFilter {
+  propertyNames: [String!]!
+}
+
+type ConsignmentMetadataWithConsignmentId {
+  consignmentId: UUID!
+  propertyName: String!
+  value: String!
+}
+
+input ConsignmentOrderBy {
+  consignmentOrderField: ConsignmentOrderField!
+  orderDirection: Direction!
+}
+
+enum ConsignmentOrderField {
+  ConsignmentReference
+  CreatedAtTimestamp
+}
+
 type ConsignmentStatus {
   consignmentStatusId: UUID!
   consignmentId: UUID!
@@ -168,58 +201,12 @@ input ConsignmentStatusInput {
   consignmentId: UUID!
   statusType: String!
   statusValue: String
+  userIdOverride: UUID
 }
 
-type CustomMetadataField {
-  name: String!
-  fullName: String
-  description: String
-  propertyType: PropertyType!
-  propertyGroup: String
-  dataType: DataType!
-  editable: Boolean!
-  multiValue: Boolean!
-  defaultValue: String
-  values: [CustomMetadataValues!]!
-  uiOrdinal: Int!
-  allowExport: Boolean!
-  exportOrdinal: Int
-}
-
-type CustomMetadataValues {
-  dependencies: [CustomMetadataField!]!
-  value: String!
-  uiOrdinal: Int!
-}
-
-enum DataType {
-  Integer
-  DateTime
-  Text
-  Boolean
-  Decimal
-}
-
-type DeleteFileMetadata {
-  fileIds: [UUID!]!
-  filePropertyNames: [String!]!
-}
-
-input DeleteFileMetadataInput {
-  fileIds: [UUID!]!
-  propertyNames: [String!]!
-  consignmentId: UUID!
-}
-
-type DisplayAttribute {
-  attribute: String!
-  value: String
-  type: DataType!
-}
-
-type DisplayPropertyField {
-  propertyName: String!
-  attributes: [DisplayAttribute!]!
+enum Direction {
+  Ascending
+  Descending
 }
 
 type FFIDMetadata {
@@ -269,6 +256,7 @@ type FFIDProgress {
 
 type File {
   fileId: UUID!
+  uploadMatchId: String
   fileType: String
   fileName: String
   fileReference: String
@@ -318,17 +306,10 @@ input FileFilters {
 
 type FileMatches {
   fileId: UUID!
-  matchId: Long!
-}
-
-type FileMetadata {
-  filePropertyName: String!
-  value: String!
+  matchId: String!
 }
 
 input FileMetadataFilters {
-  closureMetadata: Boolean = false
-  descriptiveMetadata: Boolean = false
   properties: [String!]
 }
 
@@ -347,7 +328,7 @@ type FileMetadataValues {
   heldBy: String
   language: String
   foiExemptionCode: String
-  closurePeriod: Int
+  closurePeriod: String
   closureStartDate: LocalDateTime
   foiExemptionAsserted: LocalDateTime
   titleClosed: Boolean
@@ -382,6 +363,10 @@ type Mutation {
   updateExportData(exportData: UpdateExportDataInput!): Int
   startUpload(startUploadInput: StartUploadInput!): String!
   updateConsignmentSeriesId(updateConsignmentSeriesId: UpdateConsignmentSeriesIdInput!): Int
+  updateConsignmentMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersion: UpdateMetadataSchemaLibraryVersionInput!): Int
+  updateClientSideDraftMetadataFileName(updateClientSideDraftMetadataFileName: UpdateClientSideDraftMetadataFileNameInput!): Int
+  updateParentFolder(updateParentFolderInput: UpdateParentFolderInput!): Int
+  addOrUpdateConsignmentMetadata(addOrUpdateConsignmentMetadataInput: AddOrUpdateConsignmentMetadataInput!): [ConsignmentMetadataWithConsignmentId!]!
   addTransferAgreementPrivateBeta(addTransferAgreementPrivateBetaInput: AddTransferAgreementPrivateBetaInput!): TransferAgreementPrivateBeta!
   addTransferAgreementCompliance(addTransferAgreementComplianceInput: AddTransferAgreementComplianceInput!): TransferAgreementCompliance!
   addFilesAndMetadata(addFilesAndMetadataInput: AddFileAndMetadataInput!): [FileMatches!]!
@@ -389,8 +374,7 @@ type Mutation {
   updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput!): Int
   addBulkAntivirusMetadata(addBulkAntivirusMetadataInput: AddAntivirusMetadataInput!): [AntivirusMetadata!]!
   addMultipleFileMetadata(addMultipleFileMetadataInput: AddFileMetadataWithFileIdInput!): [FileMetadataWithFileId!]!
-  updateBulkFileMetadata(updateBulkFileMetadataInput: UpdateBulkFileMetadataInput!): BulkFileMetadata!
-  deleteFileMetadata(deleteFileMetadataInput: DeleteFileMetadataInput!): DeleteFileMetadata!
+  addOrUpdateBulkFileMetadata(addOrUpdateBulkFileMetadataInput: AddOrUpdateBulkFileMetadataInput!): [FileMetadataWithFileId!]!
   addBulkFFIDMetadata(addBulkFFIDMetadataInput: FFIDMetadataInput!): [FFIDMetadata!]!
   addFinalTransferConfirmation(addFinalTransferConfirmationInput: AddFinalTransferConfirmationInput!): FinalTransferConfirmation!
   addMultipleFileStatuses(addMultipleFileStatusesInput: AddMultipleFileStatusesInput!): [FileStatus!]!
@@ -418,20 +402,11 @@ input PaginationInput {
   fileFilters: FileFilters
 }
 
-enum PropertyType {
-  System
-  Defined
-  Supplied
-}
-
 type Query {
   getSeries(body: String!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
-  consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters): ConsignmentConnection!
-  getClientFileMetadata(fileId: UUID!): ClientFileMetadata!
-  customMetadata(consignmentid: UUID!): [CustomMetadataField!]!
-  displayProperties(consignmentid: UUID!): [DisplayPropertyField!]!
-  allDescendants(allDescendantsInput: AllDescendantsInput!): [File!]!
+  consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
+  getConsignmentsForMetadataReview: [Consignment!]!
 }
 
 type Series {
@@ -458,21 +433,13 @@ type TransferAgreementCompliance {
 type TransferAgreementPrivateBeta {
   consignmentId: UUID!
   allPublicRecords: Boolean!
-  allCrownCopyright: Boolean!
-  allEnglish: Boolean
-}
-
-type TransferringBody {
-  name: String!
-  tdrCode: String!
 }
 
 scalar UUID
 
-input UpdateBulkFileMetadataInput {
+input UpdateClientSideDraftMetadataFileNameInput {
   consignmentId: UUID!
-  fileIds: [UUID!]!
-  metadataProperties: [UpdateFileMetadataInput!]!
+  clientSideDraftMetadataFileName: String!
 }
 
 input UpdateConsignmentSeriesIdInput {
@@ -487,10 +454,15 @@ input UpdateExportDataInput {
   exportVersion: String!
 }
 
-input UpdateFileMetadataInput {
-  filePropertyIsMultiValue: Boolean!
-  filePropertyName: String!
-  value: String!
+input UpdateMetadataSchemaLibraryVersionInput {
+  consignmentId: UUID!
+  metadataSchemaLibraryVersion: String!
+}
+
+input UpdateParentFolderInput {
+    consignmentId: UUID!
+    parentFolder: String!
+    userIdOverride: UUID
 }
 
 scalar ZonedDateTime

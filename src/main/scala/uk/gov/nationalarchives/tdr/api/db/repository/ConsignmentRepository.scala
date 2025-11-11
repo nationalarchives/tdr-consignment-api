@@ -1,17 +1,30 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import java.sql.Timestamp
-import java.util.UUID
+import slick.jdbc.JdbcBackend
 import slick.jdbc.PostgresProfile.api._
+import slick.lifted.ColumnOrdered
 import uk.gov.nationalarchives.Tables.{Body, BodyRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, File, Series, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentFilters, StartUploadInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
+  Ascending,
+  ConsignmentFilters,
+  ConsignmentOrderBy,
+  ConsignmentReference,
+  CreatedAtTimestamp,
+  Descending,
+  StartUploadInput,
+  UpdateClientSideDraftMetadataFileNameInput,
+  UpdateMetadataSchemaLibraryVersionInput
+}
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
+import java.sql.Timestamp
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConsignmentRepository(db: Database, timeSource: TimeSource) {
+class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
 
   private val insertQuery = Consignment returning Consignment.map(_.consignmentid) into
     ((consignment, consignmentid) => consignment.copy(consignmentid = consignmentid))
@@ -59,16 +72,57 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignments(limit: Int, after: Option[String], currentPage: Option[Int] = None, consignmentFilters: Option[ConsignmentFilters] = None): Future[Seq[ConsignmentRow]] = {
+  def getConsignmentsForMetadataReview: Future[Seq[ConsignmentRow]] = {
+    val query = Consignment
+      .join(Consignmentstatus)
+      .on(_.consignmentid === _.consignmentid)
+      .filter(_._2.statustype === MetadataReviewType.id)
+      .filter(_._2.value === InProgressValue.value)
+      .map(_._1)
+    db.run(query.result)
+  }
+
+  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
+    val query = Consignment
+      .join(Consignmentstatus)
+      .on(_.consignmentid === _.consignmentid)
+      .filter(_._1.consignmentid === consignmentId)
+      .filter(_._2.statustype === MetadataReviewType.id)
+      .filter(_._2.value === InProgressValue.value)
+      .map(_._1)
+    db.run(query.result)
+  }
+
+  def getConsignments(
+      limit: Int,
+      after: Option[String],
+      currentPage: Option[Int] = None,
+      consignmentFilters: Option[ConsignmentFilters] = None,
+      orderBy: ConsignmentOrderBy
+  ): Future[Seq[ConsignmentRow]] = {
     val offset = currentPage.map(_ * limit).getOrElse(0)
+    val (sortFn, cursorFilterFn) = getOrderingFunctions(orderBy)
     val query = Consignment
       .filterOpt(consignmentFilters.flatMap(_.userId))(_.userid === _)
       .filterOpt(consignmentFilters.flatMap(_.consignmentType))(_.consignmenttype === _)
-      .sortBy(_.consignmentreference.desc.nullsFirst)
-      .filterOpt(after)(_.consignmentreference < _)
+      .sortBy(sortFn)
+      .filterOpt(after)(cursorFilterFn)
       .drop(offset)
       .take(limit)
     db.run(query.result)
+  }
+
+  def getOrderingFunctions(orderBy: ConsignmentOrderBy): (Consignment => ColumnOrdered[_], (Consignment, String) => Rep[Boolean]) = {
+    orderBy match {
+      case ConsignmentOrderBy(ConsignmentReference, Ascending) =>
+        (_.consignmentreference.asc.nullsFirst, (c, cursor) => c.consignmentreference > cursor)
+      case ConsignmentOrderBy(ConsignmentReference, Descending) =>
+        (_.consignmentreference.desc.nullsFirst, (c, cursor) => c.consignmentreference < cursor)
+      case ConsignmentOrderBy(CreatedAtTimestamp, Ascending) =>
+        (_.datetime.asc.nullsFirst, (c, cursor) => c.datetime > Timestamp.valueOf(cursor))
+      case ConsignmentOrderBy(CreatedAtTimestamp, Descending) =>
+        (_.datetime.desc.nullsFirst, (c, cursor) => c.datetime < Timestamp.valueOf(cursor))
+    }
   }
 
   def getTotalConsignments(consignmentFilters: Option[ConsignmentFilters]): Future[Int] = {
@@ -134,4 +188,27 @@ class ConsignmentRepository(db: Database, timeSource: TimeSource) {
     db.run(query.result).map(_.headOption.flatten)
   }
 
+  def updateMetadataSchemaLibraryVersion(updateMetadataSchemaLibraryVersionInput: UpdateMetadataSchemaLibraryVersionInput): Future[Int] = {
+    val update = Consignment
+      .filter(_.consignmentid === updateMetadataSchemaLibraryVersionInput.consignmentId)
+      .map(_.metadataschemalibraryversion)
+      .update(Some(updateMetadataSchemaLibraryVersionInput.metadataSchemaLibraryVersion))
+    db.run(update)
+  }
+
+  def updateClientSideDraftMetadataFileName(input: UpdateClientSideDraftMetadataFileNameInput): Future[Int] = {
+    val update = Consignment
+      .filter(_.consignmentid === input.consignmentId)
+      .map(_.clientsidedraftmetadatafilename)
+      .update(Some(input.clientSideDraftMetadataFileName))
+    db.run(update)
+  }
+
+  def updateParentFolder(consignmentId: UUID, parentFolder: String): Future[Int] = {
+    val update = Consignment
+      .filter(_.consignmentid === consignmentId)
+      .map(_.parentfolder)
+      .update(Some(parentFolder))
+    db.run(update)
+  }
 }
