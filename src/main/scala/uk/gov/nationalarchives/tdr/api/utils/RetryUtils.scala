@@ -13,11 +13,11 @@ object RetryUtils {
   private lazy val retryActorSystem: ActorSystem = ActorSystem("retry-system")
 
   def retry[T](
-                f: => Future[T],
-                retries: Int,
-                delay: FiniteDuration,
-                isRetryable: Throwable => Boolean
-              )(implicit ec: ExecutionContext): Future[T] = {
+      f: => Future[T],
+      retries: Int,
+      delay: FiniteDuration,
+      isRetryable: Throwable => Boolean
+  )(implicit ec: ExecutionContext): Future[T] = {
     f.recoverWith {
       case e if isRetryable(e) && retries > 0 =>
         val jitter = Random.nextInt(100).millis
