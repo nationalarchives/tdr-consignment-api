@@ -68,7 +68,6 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.7.8",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "ch.megard" %% "akka-http-cors" % "1.2.0",
   "ch.qos.logback" % "logback-classic" % "1.5.21",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
   "software.amazon.awssdk" % "rds" % "2.34.5",
