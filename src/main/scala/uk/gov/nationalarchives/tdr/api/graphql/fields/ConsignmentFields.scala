@@ -29,7 +29,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataF
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
-import uk.gov.nationalarchives.tdr.api.graphql.validation.UserOwnsConsignment
+import uk.gov.nationalarchives.tdr.api.graphql.validation.{ServiceTransfer, UserOwnsConsignment}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValue, FileMetadataValues}
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
 
@@ -91,6 +91,8 @@ object ConsignmentFields {
   case class ConsignmentMetadata(propertyName: String, value: String)
 
   case class ConsignmentMetadataFilter(propertyNames: List[String])
+
+  case class UpdateParentFolderInput(consignmentId: UUID, parentFolder: String, userIdOverride: Option[UUID] = None) extends UserOwnsConsignment with ServiceTransfer
 
   sealed trait ConsignmentOrderField {
     val cursorFn: ConsignmentRow => String
@@ -291,6 +293,7 @@ object ConsignmentFields {
     deriveInputObjectType[UpdateMetadataSchemaLibraryVersionInput]()
   implicit val UpdateClientSideDraftMetadataFileNameType: InputObjectType[UpdateClientSideDraftMetadataFileNameInput] =
     deriveInputObjectType[UpdateClientSideDraftMetadataFileNameInput]()
+  implicit val UpdateParentFolderInputType: InputObjectType[UpdateParentFolderInput] = deriveInputObjectType[UpdateParentFolderInput]()
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
@@ -306,6 +309,7 @@ object ConsignmentFields {
     Argument("updateMetadataSchemaLibraryVersion", UpdateMetadataSchemaLibraryVersionInputType)
   val UpdateClientSideDraftMetadataFileNameInputArg: Argument[UpdateClientSideDraftMetadataFileNameInput] =
     Argument("updateClientSideDraftMetadataFileName", UpdateClientSideDraftMetadataFileNameType)
+  val UpdateParentFolderInputArg: Argument[UpdateParentFolderInput] = Argument("updateParentFolderInput", UpdateParentFolderInputType)
 
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[ConsignmentApiContext, Connection, Consignment](
@@ -419,6 +423,13 @@ object ConsignmentFields {
       arguments = UpdateClientSideDraftMetadataFileNameInputArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.updateClientSideDraftMetadataFileName(ctx.arg(UpdateClientSideDraftMetadataFileNameInputArg)),
       tags = List(ValidateUserHasAccessToConsignment(UpdateClientSideDraftMetadataFileNameInputArg))
+    ),
+    Field(
+      "updateParentFolder",
+      OptionType(IntType),
+      arguments = UpdateParentFolderInputArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.updateParentFolder(ctx.arg(UpdateParentFolderInputArg)),
+      tags = List(ValidateUserHasAccessToConsignment(UpdateParentFolderInputArg))
     )
   )
 }

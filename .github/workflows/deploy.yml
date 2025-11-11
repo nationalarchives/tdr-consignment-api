@@ -20,7 +20,7 @@ permissions:
   contents: write
 jobs:
   deploy:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/ecs_deploy.yml@main
+    uses: nationalarchives/tdr-github-actions/.github/workflows/ecs_deploy.yml@fa53af529582c850a4575b9af2f91e441166c68d # v0.0.7
     with:
       service: consignmentapi
       image-name: consignment-api
