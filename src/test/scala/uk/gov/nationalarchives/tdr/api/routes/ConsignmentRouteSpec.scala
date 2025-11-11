@@ -301,10 +301,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     })
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureStartDate, "2021-04-11 12:30:30.592853")
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionAsserted, "2021-03-12 12:30:30.592853")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, TitleClosed, "true")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, DescriptionClosed, "true")
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosurePeriod, "1")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureType, "Closed")
 
     val fileOneFfidMetadataId = utils.addFFIDMetadata(fileOneId)
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
@@ -867,8 +864,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   "consignments" should "correctly deserialize orderBy enums and return ordered results" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
 
-    val consignment1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
-    val consignment2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+    val consignment1 = UUID.randomUUID()
+    val consignment2 = UUID.randomUUID()
 
     utils.createConsignment(consignmentId = consignment1, consignmentRef = "ref-b", userId = userId, timestamp = Timestamp.from(Instant.parse("2024-01-01T10:00:00Z")))
     utils.createConsignment(consignmentId = consignment2, consignmentRef = "ref-a", userId = userId, timestamp = Timestamp.from(Instant.parse("2024-01-02T10:00:00Z")))
