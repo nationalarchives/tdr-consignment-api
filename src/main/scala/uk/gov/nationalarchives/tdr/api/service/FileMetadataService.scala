@@ -43,19 +43,34 @@ class FileMetadataService(fileMetadataRepository: FileMetadataRepository)(implic
       }
     }
 
-    for {
-      _ <- metadataInput.fileMetadata.map(fileMetadata => fileMetadataRepository.deleteFileMetadata(fileMetadata.fileId, fileMetadata.metadata.map(_.filePropertyName).toSet)).head
-      addedRows <- fileMetadataRepository.addFileMetadata(generateFileMetadataInput(metadataInput.fileMetadata, userId))
-      metadataPropertiesAdded = addedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
-    } yield metadataPropertiesAdded
-  }
+    // Separate empty values (for deletion) from non-empty values (for upsert)
+    val (emptyValueMetadata, nonEmptyValueMetadata) = metadataInput.fileMetadata
+      .flatMap { fileMetadata =>
+        fileMetadata.metadata.map { metadata =>
+          (fileMetadata.fileId, metadata)
+        }
+      }
+      .partition { case (_, metadata) => metadata.value.isEmpty }
 
-  private def generateFileMetadataInput(fileMetadata: Seq[AddOrUpdateFileMetadata], userId: UUID): List[AddFileMetadataInput] = {
-    (for {
-      addOrUpdateFileMetadata <- fileMetadata
-      addOrUpdateMetadata <- addOrUpdateFileMetadata.metadata
-      if addOrUpdateMetadata.value.nonEmpty
-    } yield AddFileMetadataInput(addOrUpdateFileMetadata.fileId, addOrUpdateMetadata.value, userId, addOrUpdateMetadata.filePropertyName)).toList
+    // Delete properties with empty values
+    val deleteFutures = emptyValueMetadata
+      .groupBy(_._1)
+      .map { case (fileId, metadataList) =>
+        val propertiesToDelete = metadataList.map(_._2.filePropertyName).toSet
+        fileMetadataRepository.deleteFileMetadata(fileId, propertiesToDelete)
+      }
+      .toSeq
+
+    // Upsert properties with non-empty values
+    val fileMetadataInputs = nonEmptyValueMetadata.map { case (fileId, metadata) =>
+      AddFileMetadataInput(fileId, metadata.value, userId, metadata.filePropertyName)
+    }.toList
+
+    for {
+      _ <- Future.sequence(deleteFutures)
+      insertedRows <- if (fileMetadataInputs.nonEmpty) fileMetadataRepository.addOrUpdateFileMetadata(fileMetadataInputs) else Future.successful(Seq.empty)
+      medataPropertiesAdded = insertedRows.map(r => FileMetadataWithFileId(r.propertyname, r.fileid, r.value)).toList
+    } yield medataPropertiesAdded
   }
 
   def getFileMetadata(consignmentId: Option[UUID], selectedFileIds: Option[Set[UUID]] = None): Future[Map[UUID, FileMetadataValues]] =
@@ -92,6 +107,7 @@ object FileMetadataService {
   val HeldBy = "HeldBy"
   val Language = "Language"
   val FoiExemptionCode = "FoiExemptionCode"
+  val EvidenceProvidedBy = "EvidenceProvidedBy"
   val clientSideProperties: List[String] =
     List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize, Filename, FileType)
 
@@ -113,7 +129,8 @@ object FileMetadataService {
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(TitleClosed).map(_.toBoolean),
-      propertyNameMap.get(DescriptionClosed).map(_.toBoolean)
+      propertyNameMap.get(DescriptionClosed).map(_.toBoolean),
+      propertyNameMap.get(EvidenceProvidedBy)
     )
   }
 
@@ -153,7 +170,8 @@ object FileMetadataService {
       closureStartDate: Option[LocalDateTime],
       foiExemptionAsserted: Option[LocalDateTime],
       titleClosed: Option[Boolean],
-      descriptionClosed: Option[Boolean]
+      descriptionClosed: Option[Boolean],
+      evidenceProvidedBy: Option[String]
   )
 
   val config: ConfigUtils.MetadataConfiguration = ConfigUtils.loadConfiguration
