@@ -4,5 +4,5 @@ import scala.language.postfixOps
 
 object ApiServer extends App {
 
-  new AkkaHttpServer()
+  new PekkoHttpServer()
 }

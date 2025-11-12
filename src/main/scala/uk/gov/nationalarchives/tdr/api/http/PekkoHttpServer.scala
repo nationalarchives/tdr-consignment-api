@@ -10,9 +10,9 @@ import com.typesafe.scalalogging.Logger
 import scala.concurrent.Await
 import scala.language.postfixOps
 
-class AkkaHttpServer {
+class PekkoHttpServer {
   val port = 8080
-  val logger: Logger = Logger("AkkaHttpServer")
+  val logger: Logger = Logger("PekkoHttpServer")
 
   implicit val actorSystem: ActorSystem = ActorSystem("graphql-server")
   implicit val materializer: Materializer = Materializer(actorSystem)
