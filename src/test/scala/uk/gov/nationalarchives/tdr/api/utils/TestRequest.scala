@@ -1,12 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import akka.http.scaladsl.unmarshalling.FromResponseUnmarshaller
-import akka.stream.alpakka.slick.javadsl.SlickSession
-import akka.testkit.TestDuration
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import org.apache.pekko.http.scaladsl.unmarshalling.FromResponseUnmarshaller
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
+import org.apache.pekko.testkit.TestDuration
 import com.typesafe.config.ConfigFactory
 import io.circe.Decoder
 import org.scalatest.flatspec.AnyFlatSpec

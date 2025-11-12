@@ -1,7 +1,7 @@
 {
-  "name": "Sangria akka-http Example",
-  "description": "An example GraphQL server written with akka-http and sangria.",
-  "repository": "https://github.com/sangria-graphql/sangria-akka-http-example",
+  "name": "Sangria pekko-http Example",
+  "description": "An example GraphQL server written with pekko-http and sangria.",
+  "repository": "https://github.com/nationalarchives/tdr-consignment-api",
   "logo": "https://raw.githubusercontent.com/sangria-graphql/sangria-logo/master/sangria-icon.png",
-  "keywords": ["scala", "sangria", "graphql"]
+  "keywords": ["scala", "sangria", "graphql", "pekko"]
 }

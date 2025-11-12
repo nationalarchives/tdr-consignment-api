@@ -1,10 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import akka.http.scaladsl.model.HttpMethods.{GET, OPTIONS, POST}
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives.{complete, options, respondWithHeaders, _}
-import akka.http.scaladsl.server.{Directive0, Route}
+import org.apache.pekko.http.scaladsl.model.HttpMethods.{GET, OPTIONS, POST}
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.Directives.{complete, options, respondWithHeaders, _}
+import org.apache.pekko.http.scaladsl.server.{Directive0, Route}
 import com.typesafe.config.Config
 
 import scala.jdk.CollectionConverters._

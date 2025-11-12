@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
+import org.apache.pekko.stream.Materializer
 import io.circe.Decoder
 import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
@@ -76,11 +76,11 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.getInt("num")
   }
 
-  def countFileMetadata(fileId: UUID): Int = {
+  def countFileMetadata(fileId: UUID, propertyName: String = "FileProperty"): Int = {
     val sql = s"""SELECT COUNT(*) as num FROM "FileMetadata" WHERE "FileId" = ? AND "PropertyName" = ?;"""
     val ps = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
-    ps.setString(2, "FileProperty")
+    ps.setString(2, propertyName)
     val rs = ps.executeQuery()
     rs.next()
     rs.getInt("num")

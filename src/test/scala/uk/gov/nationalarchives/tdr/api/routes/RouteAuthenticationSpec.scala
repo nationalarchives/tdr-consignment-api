@@ -1,10 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.headers.HttpChallenge
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
-import akka.http.scaladsl.server.AuthenticationFailedRejection.{CredentialsMissing, CredentialsRejected}
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.model.headers.HttpChallenge
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.AuthenticationFailedRejection.{CredentialsMissing, CredentialsRejected}
+import org.apache.pekko.http.scaladsl.server.{AuthenticationFailedRejection, Route}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
