@@ -94,7 +94,7 @@ class Routes(val config: Config, slickSession: SlickSession) extends Cors {
   private val logger = Logger(classOf[Routes])
 
   // We return None rather than a failed future because we're following the async authenticator docs
-  // https://doc.akka.io/docs/akka-http/10.0/routing-dsl/directives/security-directives/authenticateOAuth2Async.html
+  // https://pekko.apache.org/docs/pekko-http/current/routing-dsl/directives/security-directives/authenticateOAuth2.html
   def tokenAuthenticator(credentials: Credentials): Future[Option[Token]] = {
     credentials match {
       case Credentials.Provided(token) =>

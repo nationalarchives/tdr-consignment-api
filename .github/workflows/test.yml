@@ -38,5 +38,3 @@ jobs:
       - run: |
           docker build -f Dockerfile-tests -t tests .
           sbt 'testOnly *${{ matrix.file }}*'
-        env:
-          AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
