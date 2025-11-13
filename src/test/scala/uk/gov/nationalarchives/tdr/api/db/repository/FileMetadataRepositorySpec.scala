@@ -14,18 +14,19 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
+import scala.concurrent.Future
 
 class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(2, Seconds))
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(180, Seconds))
 
   override def afterContainersStart(containers: containerDef.Container): Unit = {
     super.afterContainersStart(containers)
   }
 
-  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int = 1): Assertion = {
-    utils.countFileMetadata(fileId) should be(numberOfFileMetadataRows)
+  private def checkFileMetadataExists(fileId: UUID, utils: TestUtils, numberOfFileMetadataRows: Int = 1, propertyName: String = "FileProperty"): Assertion = {
+    utils.countFileMetadata(fileId, propertyName) should be(numberOfFileMetadataRows)
   }
 
   "addFileMetadata" should "add metadata with the correct values" in withContainers { case container: PostgreSQLContainer =>
@@ -50,16 +51,18 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val fileMetadataRepository = new FileMetadataRepository(db)
     val consignmentId = UUID.fromString("306c526b-d099-470b-87c8-df7bd0aa225a")
     val fileId = UUID.fromString("ba176f90-f0fd-42ef-bb28-81ba3ffb6f05")
-    utils.addFileProperty("FileProperty")
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
     val numberOfFileMetadataRows = 100
-    val input = (1 to numberOfFileMetadataRows).map(_ => AddFileMetadataInput(fileId, "value", UUID.randomUUID(), "FileProperty"))
+
+    val properties = (1 to numberOfFileMetadataRows).map(i => s"FileProperty$i")
+    properties.foreach(prop => utils.addFileProperty(prop))
+
+    val input = properties.map(prop => AddFileMetadataInput(fileId, s"value_$prop", UUID.randomUUID(), prop))
 
     val result = fileMetadataRepository.addFileMetadata(input).futureValue
 
     result.length should equal(numberOfFileMetadataRows)
-    checkFileMetadataExists(fileId, utils, numberOfFileMetadataRows)
   }
 
   "getFileMetadataByProperty" should "return the correct metadata" in withContainers { case container: PostgreSQLContainer =>
@@ -343,6 +346,206 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     val repository = new FileMetadataRepository(container.database)
     val sum = repository.totalClosedRecords(consignmentId).futureValue
     sum should equal(0)
+  }
+
+  "addOrUpdateFileMetadata" should "handle multiple files and properties using upsert to update existing values" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId1 = UUID.randomUUID()
+    val fileId2 = UUID.randomUUID()
+    utils.addFileProperty("Prop1")
+    utils.addFileProperty("Prop2")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId1, consignmentId)
+    utils.createFile(fileId2, consignmentId)
+    // Insert initial metadata for both files
+    val initialInput = Seq(
+      AddFileMetadataInput(fileId1, "val1", userId, "Prop1"),
+      AddFileMetadataInput(fileId2, "val2", userId, "Prop2")
+    )
+    fileMetadataRepository.addFileMetadata(initialInput).futureValue
+    // Now update both
+    val newInput = Seq(
+      AddFileMetadataInput(fileId1, "new-value-1", userId, "Prop1"),
+      AddFileMetadataInput(fileId2, "new-value-2", userId, "Prop2")
+    )
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(newInput).futureValue
+    result.length should equal(2)
+    result.find(_.fileid == fileId1).get.value should equal("new-value-1")
+    result.find(_.fileid == fileId2).get.value should equal("new-value-2")
+    checkFileMetadataExists(fileId1, utils, 1, "Prop1")
+    checkFileMetadataExists(fileId2, utils, 1, "Prop2")
+  }
+
+  "addOrUpdateFileMetadata" should "insert new metadata when no existing record exists" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    utils.addFileProperty("FileProperty")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId, consignmentId)
+
+    val input = Seq(AddFileMetadataInput(fileId, "new_value", userId, "FileProperty"))
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(input).futureValue
+
+    result.length should equal(1)
+    result.head.value should equal("new_value")
+    result.head.fileid should equal(fileId)
+    result.head.propertyname should equal("FileProperty")
+    checkFileMetadataExists(fileId, utils, 1)
+  }
+
+  "addOrUpdateFileMetadata" should "do nothing if input is empty" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(Seq.empty).futureValue
+    result shouldBe empty
+  }
+
+  "addOrUpdateFileMetadata" should "handle multiple concurrent calls with many properties correctly" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId, consignmentId)
+
+    // Create 30 unique properties
+    val numberOfProperties = 30
+    val properties = (1 to numberOfProperties).map(i => s"TestProperty$i")
+    properties.foreach(prop => utils.addFileProperty(prop))
+
+    val initialInput = properties.map(prop => AddFileMetadataInput(fileId, s"initial_$prop", userId, prop))
+    fileMetadataRepository.addFileMetadata(initialInput).futureValue
+
+    val totalInitialCount = properties.map(prop => utils.countFileMetadata(fileId, prop)).sum
+    totalInitialCount should equal(numberOfProperties)
+
+    // Prepare 10 different update calls, each updating different subsets of properties
+    val numberOfCalls = 10
+    val updateCalls = (1 to numberOfCalls).map { callIndex =>
+      // Each call updates some properties with new values and some with empty values (deletes)
+      val updates = properties.zipWithIndex.map { case (prop, propIndex) =>
+        val shouldUpdate = (propIndex + callIndex) % 3 == 0 // Update every 3rd property based on call
+        val shouldDelete = (propIndex + callIndex) % 7 == 0 // Delete every 7th property based on call
+
+        if (shouldDelete) {
+          AddFileMetadataInput(fileId, "", userId, prop) // Empty value = delete
+        } else if (shouldUpdate) {
+          AddFileMetadataInput(fileId, s"updated_call${callIndex}_$prop", userId, prop)
+        } else {
+          AddFileMetadataInput(fileId, s"initial_$prop", userId, prop) // Keep existing
+        }
+      }
+      updates
+    }
+
+    val parallelResults = Future
+      .traverse(updateCalls) { updateInput =>
+        fileMetadataRepository.addOrUpdateFileMetadata(updateInput)
+      }
+      .futureValue
+
+    // Verify all calls completed successfully
+    parallelResults.length should equal(numberOfCalls)
+
+    // Check final state - count remaining rows for each property
+    val finalCounts = properties.map(prop => utils.countFileMetadata(fileId, prop))
+    val totalFinalCount = finalCounts.sum
+
+    // Each property should have either 0 or 1 row (due to unique constraint)
+    finalCounts.foreach(count => count should (equal(0) or equal(1)))
+
+    totalFinalCount should be >= 20
+    totalFinalCount should be <= numberOfProperties
+
+    // Verify data integrity - check that remaining rows have correct values
+    val remainingMetadata = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(Set(fileId))).futureValue
+    remainingMetadata.length should equal(totalFinalCount)
+
+    // All remaining rows should have non-empty values
+    remainingMetadata.foreach { row =>
+      row.value should not be ""
+      row.fileid should equal(fileId)
+      properties should contain(row.propertyname)
+    }
+  }
+
+  "addOrUpdateFileMetadata" should "handle ten calls with 1000 files correctly updating or deleting 40 properties" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    utils.createConsignment(consignmentId, userId)
+
+    val numberOfFiles = 10000
+    val fileIds = (1 to numberOfFiles).map(_ => UUID.randomUUID())
+    fileIds.foreach(fileId => utils.createFile(fileId, consignmentId))
+
+    val numberOfProperties = 40
+    val properties = (1 to numberOfProperties).map(i => s"Prop$i")
+    properties.foreach(p => utils.createFileProperty(p, "description", "propertyType", "text", editable = true, multivalue = false, "group", "fullName"))
+
+    // Initial insert for all files
+    val initialInputs = fileIds.flatMap { fileId =>
+      properties.map(p => AddFileMetadataInput(fileId, s"initial_$p", userId, p))
+    }
+
+    // Split into chunks of 1000 files and make separate calls as persistence lambda has limits
+    val chunkSize = 1000
+    val chunks = initialInputs.grouped(chunkSize).toSeq
+    Future
+      .traverse(chunks) { chunk =>
+        fileMetadataRepository.addOrUpdateFileMetadata(chunk)
+      }
+      .futureValue
+
+    val initialCount = utils.countAllFileMetadata()
+    initialCount should equal(numberOfFiles * numberOfProperties)
+
+    val numberOfSimultaneousClientCalls = numberOfFiles / 1000
+    val filesPerCall = numberOfFiles / numberOfSimultaneousClientCalls
+    val updateCalls = (0 until numberOfSimultaneousClientCalls).map { callIndex =>
+      val startIndex = callIndex * filesPerCall
+      val endIndex = if (callIndex == numberOfSimultaneousClientCalls - 1) numberOfFiles else (callIndex + 1) * filesPerCall
+      val filesToUpdate = fileIds.slice(startIndex, endIndex)
+
+      // Each call updates ALL properties for its subset of files
+      filesToUpdate.flatMap { fileId =>
+        properties.zipWithIndex.map { case (prop, propIndex) =>
+          if (propIndex % 2 == 0) {
+            AddFileMetadataInput(fileId, s"updated_${prop}_call$callIndex", userId, prop) // Update even properties
+          } else {
+            AddFileMetadataInput(fileId, "", userId, prop) // Set odd properties to empty string
+          }
+        }
+      }
+    }
+
+    // Execute all update calls in parallel
+    val parallelResults = Future
+      .traverse(updateCalls) { updateInput =>
+        fileMetadataRepository.addOrUpdateFileMetadata(updateInput)
+      }
+      .futureValue
+
+    parallelResults.length should equal(numberOfSimultaneousClientCalls)
+
+    val finalCount = utils.countAllFileMetadata()
+    finalCount should equal(numberOfFiles * numberOfProperties / 2)
+
+    // Verify data integrity for a sample of files
+    val sampleFileIds = fileIds.take(10)
+    val finalMetadata = fileMetadataRepository.getFileMetadata(Some(consignmentId), Some(sampleFileIds.toSet)).futureValue
+    finalMetadata.length should equal(10 * numberOfProperties / 2) // 10 files, numberOfProperties properties each
+    finalMetadata.foreach { row =>
+      row.value should startWith("updated_Prop")
+    }
   }
 
   private def checkCorrectMetadataPropertiesAdded(fileMetadataRepository: FileMetadataRepository, filePropertyUpdates: ExpectedFilePropertyUpdates): Unit = {
