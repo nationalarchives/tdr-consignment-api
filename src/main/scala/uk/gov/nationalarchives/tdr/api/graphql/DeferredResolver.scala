@@ -6,6 +6,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{Consign
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.File
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,6 +15,32 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
   // We may at some point need to do authorisation in this method. There is a ensurePermissions method which needs to be called before returning data.
   // scalastyle:off cyclomatic.complexity
   override def resolve(deferred: Vector[Deferred[Any]], context: ConsignmentApiContext, queryState: Any)(implicit ec: ExecutionContext): Vector[Future[Any]] = {
+    // Extract all consignment IDs for status requests to batch them
+    val consignmentStatusDefers = deferred.collect { case d: DeferConsignmentStatuses => d }
+
+    // If there are multiple consignment status requests, batch them
+    val consignmentStatusFuture: Future[Map[UUID, List[ConsignmentStatus]]] = if (consignmentStatusDefers.nonEmpty) {
+      val consignmentIds = consignmentStatusDefers.map(_.consignmentId)
+      context.consignmentStatusService.getConsignmentStatusesByConsignmentIds(consignmentIds).map { rows =>
+        rows.groupBy(_.consignmentid).map { case (id, statusRows) =>
+          id -> statusRows
+            .map(row =>
+              ConsignmentStatus(
+                row.consignmentstatusid,
+                row.consignmentid,
+                row.statustype,
+                row.value,
+                row.createddatetime.toZonedDateTime,
+                row.modifieddatetime.map(timestamp => timestamp.toZonedDateTime)
+              )
+            )
+            .toList
+        }
+      }
+    } else {
+      Future.successful(Map.empty)
+    }
+
     deferred.map {
       case DeferTotalFiles(consignmentId)  => context.fileService.fileCount(consignmentId)
       case DeferFileSizeSum(consignmentId) => context.fileMetadataService.getSumOfFileSizes(consignmentId)
@@ -21,7 +48,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
         context.fileStatusService.getConsignmentFileProgress(consignmentId)
       case DeferParentFolder(consignmentId)        => context.consignmentService.getConsignmentParentFolder(consignmentId)
       case DeferParentFolderId(consignmentId)      => context.fileService.getConsignmentParentFolderId(consignmentId)
-      case DeferConsignmentStatuses(consignmentId) => context.consignmentStatusService.getConsignmentStatuses(consignmentId)
+      case DeferConsignmentStatuses(consignmentId) => consignmentStatusFuture.map(_.getOrElse(consignmentId, List.empty))
       case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
         context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
       case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields) =>
@@ -32,7 +59,6 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case other                                           => throw UnsupportedDeferError(other)
     }
   }
-  // scalastyle:on cyclomatic.complexity
 }
 
 case class DeferTotalFiles(consignmentId: UUID) extends Deferred[Int]
