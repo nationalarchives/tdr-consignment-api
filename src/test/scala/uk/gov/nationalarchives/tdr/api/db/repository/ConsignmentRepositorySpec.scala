@@ -593,6 +593,21 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignmentReferences should equal(List("TDR-2021-D", "TDR-2021-C", "TDR-2021-B", "TDR-2021-A"))
   }
 
+  "updateParentFolder" should "update the parent folder for a given consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val consignmentId = UUID.randomUUID()
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentId, userId)
+    val newParentFolder = "UpdatedParentFolder"
+
+    val response = consignmentRepository.updateParentFolder(consignmentId, newParentFolder).futureValue
+    val consignmentFromDb = utils.getConsignment(consignmentId)
+
+    response should be(1)
+    consignmentFromDb.getString("ParentFolder") should equal(newParentFolder)
+  }
+
   private def createConsignments(utils: TestUtils): Int = {
     val consignments = Map(consignmentIdOne -> "TDR-2021-A", consignmentIdTwo -> "TDR-2021-B", consignmentIdThree -> "TDR-2021-C", consignmentIdFour -> "TDR-2021-D")
     consignments.foreach(item => utils.createConsignment(item._1, userId, consignmentRef = item._2))

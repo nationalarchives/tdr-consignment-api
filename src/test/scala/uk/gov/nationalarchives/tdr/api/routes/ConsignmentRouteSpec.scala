@@ -32,6 +32,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val updateConsignmentMetadataSchemaLibraryVersionPrefix: String = "json/updateconsignmentmetadataschemalibraryversion_"
   private val updateClientSideDraftMetadataFileNamePrefix: String = "json/updateconsignment_draft_metadata_filename_"
   private val getConsignmentForMetadataReviewJsonFilePrefix: String = "json/getconsignmentsformetadatareview_"
+  private val updateParentFolderJsonFilePrefix: String = "json/updateparentfolder_"
 
   val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
   val parentUUID: Option[UUID] = UUID.fromString("7b19b272-d4d1-4d77-bf25-511dc6489d12").some
@@ -63,6 +64,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class GraphqlMutationUpdateMetadataSchemaLibraryVersion(data: Option[UpdateMetadataSchemaLibraryVersion], errors: List[GraphqlError] = Nil)
 
   case class GraphqlMutationUpdateDraftMetadataFileName(data: Option[UpdateDraftMetadataFileName], errors: List[GraphqlError] = Nil)
+
+  case class GraphqlMutationUpdateParentFolder(data: Option[UpdateParentFolder], errors: List[GraphqlError] = Nil)
 
   case class Consignment(
       consignmentid: Option[UUID] = None,
@@ -136,6 +139,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class FileStatus(fileId: UUID, statusType: String, statusValue: String)
 
+  case class UpdateParentFolder(updateParentFolder: Int)
+
   case class File(
       fileId: UUID,
       uploadMatchId: Option[String],
@@ -190,6 +195,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     runTestRequest[GraphqlMutationUpdateMetadataSchemaLibraryVersion](updateConsignmentMetadataSchemaLibraryVersionPrefix)
   val runUpdateClientSideDraftMetadataFileNameMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateDraftMetadataFileName =
     runTestRequest[GraphqlMutationUpdateDraftMetadataFileName](updateClientSideDraftMetadataFileNamePrefix)
+  val runUpdateUpdateParentFolderMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateParentFolder =
+    runTestRequest[GraphqlMutationUpdateParentFolder](updateParentFolderJsonFilePrefix)
   val expectedQueryResponse: String => GraphqlQueryData = getDataFromFile[GraphqlQueryData](getConsignmentJsonFilePrefix)
   val expectedConsignmentsQueryResponse: String => GraphqlConsignmentsQueryData = getDataFromFile[GraphqlConsignmentsQueryData](consignmentsJsonFilePrefix)
   val expectedMutationResponse: String => GraphqlMutationData = getDataFromFile[GraphqlMutationData](addConsignmentJsonFilePrefix)
@@ -201,6 +208,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     getDataFromFile[GraphqlMutationUpdateDraftMetadataFileName](updateClientSideDraftMetadataFileNamePrefix)
   val expectedGetConsignmentForMetadataResponse: String => ConsignmentsForMetadataReviewData =
     getDataFromFile[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
+  val expectedUpdateParentFolderResponse: String => GraphqlMutationUpdateParentFolder =
+    getDataFromFile[GraphqlMutationUpdateParentFolder](updateParentFolderJsonFilePrefix)
 
   "addConsignment" should "create a consignment of type 'standard' when standard consignment type provided" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
@@ -292,10 +301,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     })
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureStartDate, "2021-04-11 12:30:30.592853")
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, FoiExemptionAsserted, "2021-03-12 12:30:30.592853")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, TitleClosed, "true")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, DescriptionClosed, "true")
     utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosurePeriod, "1")
-    utils.addFileMetadata(UUID.randomUUID().toString, fileThreeId, ClosureType, "Closed")
 
     val fileOneFfidMetadataId = utils.addFFIDMetadata(fileOneId)
     utils.addFFIDMetadataMatches(fileOneFfidMetadataId.toString, extensionMatch, identificationBasisMatch, puidMatch)
@@ -858,8 +864,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   "consignments" should "correctly deserialize orderBy enums and return ordered results" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
 
-    val consignment1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
-    val consignment2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+    val consignment1 = UUID.randomUUID()
+    val consignment2 = UUID.randomUUID()
 
     utils.createConsignment(consignmentId = consignment1, consignmentRef = "ref-b", userId = userId, timestamp = Timestamp.from(Instant.parse("2024-01-01T10:00:00Z")))
     utils.createConsignment(consignmentId = consignment2, consignmentRef = "ref-a", userId = userId, timestamp = Timestamp.from(Instant.parse("2024-01-02T10:00:00Z")))
@@ -983,6 +989,16 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       runUpdateClientSideDraftMetadataFileNameMutation("mutation_all", validUserToken(body = defaultBodyCode))
 
     response.data.get.updateClientSideDraftMetadataFileName should equal(expectedResponse.data.get.updateClientSideDraftMetadataFileName)
+  }
+
+  "updateParentFolder" should "update the parent folder for a consignment" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.createConsignment(new FixedUUIDSource().uuid, userId)
+
+    val expectedResponse: GraphqlMutationUpdateParentFolder = expectedUpdateParentFolderResponse("data_all")
+    val response: GraphqlMutationUpdateParentFolder = runUpdateUpdateParentFolderMutation("mutation_all", validUserToken(body = defaultBodyCode))
+
+    response.data.get.updateParentFolder should equal(expectedResponse.data.get.updateParentFolder)
   }
 
   private def checkConsignmentExists(consignmentId: UUID, utils: TestUtils): Unit = {
