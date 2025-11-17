@@ -22,6 +22,11 @@ class ConsignmentStatusRepository(db: JdbcBackend#Database) {
     db.run(query.result)
   }
 
+  def getConsignmentStatusByConsignmentIds(consignmentIds: Seq[UUID]): Future[Seq[ConsignmentstatusRow]] = {
+    val query = Consignmentstatus.filter(_.consignmentid inSet consignmentIds)
+    db.run(query.result)
+  }
+
   def updateConsignmentStatus(consignmentId: UUID, statusType: String, statusValue: String, modifiedTimestamp: Timestamp): Future[Int] = {
     val dbUpdate = Consignmentstatus
       .filter(cs => cs.consignmentid === consignmentId && cs.statustype === statusType)
