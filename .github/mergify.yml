@@ -1,6 +1,11 @@
 queue_rules:
   - name: default
-    conditions:
+    batch_size: 1
+    queue_conditions:
+      - "check-success=validate"
+      - "check-success~=test"
+      - "check-success=security/snyk (nationalarchives)"
+    merge_conditions:
       - "check-success=validate"
       - "check-success~=test"
       - "check-success=security/snyk (nationalarchives)"
