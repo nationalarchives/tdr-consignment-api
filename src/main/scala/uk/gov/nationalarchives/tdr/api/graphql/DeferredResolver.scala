@@ -15,13 +15,13 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
   // scalastyle:off cyclomatic.complexity
   override def resolve(deferred: Vector[Deferred[Any]], context: ConsignmentApiContext, queryState: Any)(implicit ec: ExecutionContext): Vector[Future[Any]] = {
     deferred.map {
-      case DeferTotalFiles(consignmentId)  => context.fileService.fileCount(consignmentId)
-      case DeferFileSizeSum(consignmentId) => context.fileMetadataService.getSumOfFileSizes(consignmentId)
+      case DeferTotalFiles(consignmentId)         => context.fileService.fileCount(consignmentId)
+      case DeferFileSizeSum(consignmentId)        => context.fileMetadataService.getSumOfFileSizes(consignmentId)
       case DeferFileChecksProgress(consignmentId) =>
         context.fileStatusService.getConsignmentFileProgress(consignmentId)
-      case DeferParentFolder(consignmentId)        => context.consignmentService.getConsignmentParentFolder(consignmentId)
-      case DeferParentFolderId(consignmentId)      => context.fileService.getConsignmentParentFolderId(consignmentId)
-      case DeferConsignmentStatuses(consignmentId) => context.consignmentStatusService.getConsignmentStatuses(consignmentId)
+      case DeferParentFolder(consignmentId)                                               => context.consignmentService.getConsignmentParentFolder(consignmentId)
+      case DeferParentFolderId(consignmentId)                                             => context.fileService.getConsignmentParentFolderId(consignmentId)
+      case DeferConsignmentStatuses(consignmentId)                                        => context.consignmentStatusService.getConsignmentStatuses(consignmentId)
       case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
         context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
       case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields) =>
