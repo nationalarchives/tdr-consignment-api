@@ -5,6 +5,10 @@ queue_rules:
       - "check-success=validate"
       - "check-success~=test"
       - "check-success=security/snyk (nationalarchives)"
+    merge_conditions:
+      - "check-success=validate"
+      - "check-success~=test"
+      - "check-success=security/snyk (nationalarchives)"
 pull_request_rules:
   - name: automatic merge for Scala Steward
     conditions:
