@@ -83,7 +83,7 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.94"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.95"
 )
 
 dependencyOverrides ++= Seq(
