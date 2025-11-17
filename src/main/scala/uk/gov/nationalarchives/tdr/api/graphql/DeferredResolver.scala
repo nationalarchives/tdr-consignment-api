@@ -59,6 +59,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
       case other                                           => throw UnsupportedDeferError(other)
     }
   }
+  // scalastyle:on cyclomatic.complexity
 }
 
 case class DeferTotalFiles(consignmentId: UUID) extends Deferred[Int]
