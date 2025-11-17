@@ -20,7 +20,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
 
     // If there are multiple consignment status requests, batch them
     val consignmentStatusFuture: Future[Map[UUID, List[ConsignmentStatus]]] = if (consignmentStatusDefers.nonEmpty) {
-      val consignmentIds = consignmentStatusDefers.map(_.consignmentId)
+      val consignmentIds = consignmentStatusDefers.map(_.consignmentId).distinct
       context.consignmentStatusService.getConsignmentStatusesByConsignmentIds(consignmentIds).map { rows =>
         rows.groupBy(_.consignmentid).map { case (id, statusRows) =>
           id -> statusRows
