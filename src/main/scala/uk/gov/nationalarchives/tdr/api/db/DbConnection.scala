@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db
 
-import akka.stream.alpakka.slick.scaladsl.SlickSession
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import slick.jdbc.JdbcBackend
 import slick.jdbc.hikaricp.HikariCPJdbcDataSource
 

@@ -7,7 +7,7 @@
         {
           "originalPath": "topDirectory/originalPath",
           "checksum": "checksum",
-          "lastModified": "1",
+          "lastModified": 1,
           "fileSize": 123,
           "matchId": "1"
         },

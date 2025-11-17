@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
+import org.apache.pekko.stream.Materializer
 import io.circe.Decoder
 import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
