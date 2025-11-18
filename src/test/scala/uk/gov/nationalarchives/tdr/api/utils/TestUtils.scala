@@ -111,28 +111,6 @@ class TestUtils(db: JdbcBackend#Database) {
     }.to(LazyList).toList
   }
 
-  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int, uiOrdinal: Option[Int] = None): Unit = {
-    val sql = s"""INSERT INTO "FilePropertyValues" ("PropertyName", "PropertyValue", "Default", "Dependencies", "SecondaryValue", "Ordinal") VALUES (?, ?, ?, ?, ?, ?)"""
-
-    val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setString(1, propertyName)
-    ps.setString(2, propertyValue)
-    ps.setBoolean(3, default)
-    ps.setInt(4, dependencies)
-    ps.setInt(5, secondaryvalue)
-    ps.setInt(6, uiOrdinal.getOrElse(Int.MinValue))
-    ps.executeUpdate()
-  }
-
-  def createFilePropertyDependencies(groupId: Int, propertyName: String, default: String): Unit = {
-    val sql = s"""INSERT INTO "FilePropertyDependencies" ("GroupId", "PropertyName", "Default") VALUES (?, ?, ?)"""
-    val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setInt(1, groupId)
-    ps.setString(2, propertyName)
-    ps.setString(3, default)
-    ps.executeUpdate()
-  }
-
   def createAllowedPuids(puid: String, description: String, consignmentType: String): Unit = {
     val sql = s"""INSERT INTO "AllowedPuids" ("PUID", "PUID Description", "Created Date", "Modified Date", "ConsignmentType") VALUES (?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
