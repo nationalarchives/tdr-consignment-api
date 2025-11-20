@@ -47,15 +47,6 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
     utils.createConsignment(consignmentId, userId)
 
-    defaultMetadataProperties.foreach { defaultMetadataProperty =>
-      utils.createFilePropertyValues(
-        defaultMetadataProperty,
-        setPropertyDefaultValues(defaultMetadataProperty),
-        default = true,
-        1,
-        1
-      )
-    }
     val referenceMockServer = getReferencesMockServer(4)
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3

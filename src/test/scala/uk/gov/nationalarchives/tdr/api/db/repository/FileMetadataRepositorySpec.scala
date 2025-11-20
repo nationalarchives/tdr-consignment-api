@@ -489,7 +489,7 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
 
     val numberOfProperties = 40
     val properties = (1 to numberOfProperties).map(i => s"Prop$i")
-    properties.foreach(p => utils.createFileProperty(p, "description", "propertyType", "text", editable = true, multivalue = false, "group", "fullName"))
+    properties.foreach(p => utils.createFileProperty(p, "description", "text", "fullName"))
 
     // Initial insert for all files
     val initialInputs = fileIds.flatMap { fileId =>
