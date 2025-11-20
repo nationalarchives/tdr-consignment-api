@@ -73,6 +73,10 @@ class ConsignmentStatusService(
     }
   }
 
+  def getConsignmentStatusesByConsignmentIds(consignmentIds: Seq[UUID]): Future[Seq[ConsignmentstatusRow]] = {
+    consignmentStatusRepository.getConsignmentStatusByConsignmentIds(consignmentIds)
+  }
+
   def updateConsignmentStatus(updateConsignmentStatusInput: ConsignmentStatusInput, userId: UUID): Future[Int] = {
     validateStatusTypeAndValue(updateConsignmentStatusInput)
     for {
