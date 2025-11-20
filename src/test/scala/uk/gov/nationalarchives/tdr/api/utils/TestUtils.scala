@@ -111,28 +111,6 @@ class TestUtils(db: JdbcBackend#Database) {
     }.to(LazyList).toList
   }
 
-  def createFilePropertyValues(propertyName: String, propertyValue: String, default: Boolean, dependencies: Int, secondaryvalue: Int, uiOrdinal: Option[Int] = None): Unit = {
-    val sql = s"""INSERT INTO "FilePropertyValues" ("PropertyName", "PropertyValue", "Default", "Dependencies", "SecondaryValue", "Ordinal") VALUES (?, ?, ?, ?, ?, ?)"""
-
-    val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setString(1, propertyName)
-    ps.setString(2, propertyValue)
-    ps.setBoolean(3, default)
-    ps.setInt(4, dependencies)
-    ps.setInt(5, secondaryvalue)
-    ps.setInt(6, uiOrdinal.getOrElse(Int.MinValue))
-    ps.executeUpdate()
-  }
-
-  def createFilePropertyDependencies(groupId: Int, propertyName: String, default: String): Unit = {
-    val sql = s"""INSERT INTO "FilePropertyDependencies" ("GroupId", "PropertyName", "Default") VALUES (?, ?, ?)"""
-    val ps: PreparedStatement = connection.prepareStatement(sql)
-    ps.setInt(1, groupId)
-    ps.setString(2, propertyName)
-    ps.setString(3, default)
-    ps.executeUpdate()
-  }
-
   def createAllowedPuids(puid: String, description: String, consignmentType: String): Unit = {
     val sql = s"""INSERT INTO "AllowedPuids" ("PUID", "PUID Description", "Created Date", "Modified Date", "ConsignmentType") VALUES (?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
@@ -159,31 +137,19 @@ class TestUtils(db: JdbcBackend#Database) {
   def createFileProperty(
       name: String,
       description: String,
-      propertytype: String,
       datatype: String,
-      editable: Boolean,
-      multivalue: Boolean,
-      propertygroup: String,
-      fullname: String,
-      exportOrdinal: Int = 1,
-      allowExport: Boolean = false
+      fullname: String
   ): Unit = {
     val sql =
       s"""INSERT INTO "FileProperty" ("Name", "Description", "CreatedDatetime", "ModifiedDatetime",""" +
-        s""" "PropertyType", "Datatype", "Editable", "MultiValue", "PropertyGroup", "FullName", "ExportOrdinal", "AllowExport") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        s""" "Datatype", "FullName") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
     ps.setString(2, description)
     ps.setTimestamp(3, Timestamp.from(Instant.now()))
     ps.setTimestamp(4, Timestamp.from(Instant.now()))
-    ps.setString(5, propertytype)
-    ps.setString(6, datatype)
-    ps.setBoolean(7, editable)
-    ps.setBoolean(8, multivalue)
-    ps.setString(9, propertygroup)
-    ps.setString(10, fullname)
-    ps.setInt(11, exportOrdinal)
-    ps.setBoolean(12, allowExport)
+    ps.setString(5, datatype)
+    ps.setString(6, fullname)
     ps.executeUpdate()
   }
 
@@ -421,16 +387,12 @@ class TestUtils(db: JdbcBackend#Database) {
     })
   }
 
-  def addFileProperty(name: String, propertyType: String = "System", propertyGroup: String = "System"): Unit = {
-    val sql = s"""INSERT INTO "FileProperty" ("Name", "PropertyType", "Datatype", "PropertyGroup", "Editable") VALUES (?, ?, ?, ?, ?)"""
+  def addFileProperty(name: String): Unit = {
+    val sql = s"""INSERT INTO "FileProperty" ("Name", "Datatype") VALUES (?, ?)"""
     val defaultDataType = "text"
-    val editable = propertyType != "System"
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setString(1, name)
-    ps.setString(2, propertyType)
-    ps.setString(3, defaultDataType)
-    ps.setString(4, propertyGroup)
-    ps.setBoolean(5, editable)
+    ps.setString(2, defaultDataType)
     ps.executeUpdate()
   }
 
