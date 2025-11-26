@@ -12,12 +12,13 @@ trait ValidationTag extends FieldTag {
     val validationResult = validateAsync(ctx)
 
     // Awaiting a Future is risky because the thread will block until the response is returned or the timeout is reached.
-    // It could cause the API to be slow because akka-http cannot assign threads to new requests while this one is
+    // It could cause the API to be slow because pekko-http cannot assign threads to new requests while this one is
     // blocked.
     //
     // We are only using Await because Sangria middleware does not support Futures like the main resolvers do. We should
     // remove it when we find a way to do authorisation in a completely async way in Sangria.
     Await.result(validationResult, 180 seconds)
+
   }
 
   def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]]

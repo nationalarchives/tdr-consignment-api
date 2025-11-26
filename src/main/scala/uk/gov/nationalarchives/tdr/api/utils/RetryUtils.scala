@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration
@@ -24,7 +24,7 @@ object RetryUtils {
         val nextDelay = delay + jitter
         logger.warn(s"Deadlock detected, will retry... Retries left: $retries. Delaying for $nextDelay. Error: ${e.getMessage}")
         implicit val system: ActorSystem = retryActorSystem
-        akka.pattern.after(nextDelay)(retry(f, retries - 1, delay, isRetryable))
+        org.apache.pekko.pattern.after(nextDelay)(retry(f, retries - 1, delay, isRetryable))
       case e =>
         logger.error(s"Operation failed after all retries: ${e.getMessage}", e)
         Future.failed(e)

@@ -35,7 +35,7 @@ trait GraphQLServerBase {
       handleException(resultMarshaller, ErrorCodes.invalidConsignmentState, message)
     case (resultMarshaller, InputDataException(message, _)) =>
       handleException(resultMarshaller, ErrorCodes.invalidInputData, message)
-    // Sangria catches all unhandled exceptions and returns a response. We'll rethrow them here so Akka can deal with them.
+    // Sangria catches all unhandled exceptions and returns a response. We'll rethrow them here so Pekko can deal with them.
     case (_, ex: Throwable) => throw ex
   }
 

@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
-import akka.stream.alpakka.slick.javadsl.SlickSession
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, StatusCodes}
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers

@@ -1,18 +1,18 @@
 package uk.gov.nationalarchives.tdr.api.http
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.stream.Materializer
-import akka.stream.alpakka.slick.javadsl.SlickSession
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 
 import scala.concurrent.Await
 import scala.language.postfixOps
 
-class AkkaHttpServer {
+class PekkoHttpServer {
   val port = 8080
-  val logger: Logger = Logger("AkkaHttpServer")
+  val logger: Logger = Logger("PekkoHttpServer")
 
   implicit val actorSystem: ActorSystem = ActorSystem("graphql-server")
   implicit val materializer: Materializer = Materializer(actorSystem)
