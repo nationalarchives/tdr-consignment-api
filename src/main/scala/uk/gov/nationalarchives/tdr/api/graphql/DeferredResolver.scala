@@ -42,13 +42,13 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
     }
 
     deferred.map {
-      case DeferTotalFiles(consignmentId)  => context.fileService.fileCount(consignmentId)
-      case DeferFileSizeSum(consignmentId) => context.fileMetadataService.getSumOfFileSizes(consignmentId)
+      case DeferTotalFiles(consignmentId)         => context.fileService.fileCount(consignmentId)
+      case DeferFileSizeSum(consignmentId)        => context.fileMetadataService.getSumOfFileSizes(consignmentId)
       case DeferFileChecksProgress(consignmentId) =>
         context.fileStatusService.getConsignmentFileProgress(consignmentId)
-      case DeferParentFolder(consignmentId)        => context.consignmentService.getConsignmentParentFolder(consignmentId)
-      case DeferParentFolderId(consignmentId)      => context.fileService.getConsignmentParentFolderId(consignmentId)
-      case DeferConsignmentStatuses(consignmentId) => consignmentStatusFuture.map(_.getOrElse(consignmentId, List.empty))
+      case DeferParentFolder(consignmentId)                                               => context.consignmentService.getConsignmentParentFolder(consignmentId)
+      case DeferParentFolderId(consignmentId)                                             => context.fileService.getConsignmentParentFolderId(consignmentId)
+      case DeferConsignmentStatuses(consignmentId)                                        => consignmentStatusFuture.map(_.getOrElse(consignmentId, List.empty))
       case DeferFiles(consignmentId, fileFilters: Option[FileFilters], queriedFileFields) =>
         context.fileService.getFileMetadata(consignmentId, fileFilters, queriedFileFields)
       case DeferPaginatedFiles(consignmentId, paginationInput, queriedFileFields) =>
