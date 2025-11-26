@@ -14,7 +14,7 @@ class DbConnection(slickSession: SlickSession) extends DbConnectionBase {
         val configBean = hikariDataSource.ds.getHikariConfigMXBean
         getPassword match {
           case Failure(exception) => throw exception
-          case Success(password) =>
+          case Success(password)  =>
             configBean.setPassword(password)
             db
         }
