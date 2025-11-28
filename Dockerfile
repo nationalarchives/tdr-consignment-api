@@ -11,6 +11,7 @@ RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
 COPY target/scala-2.13/consignmentapi.jar /api
 
 USER apiuser
+ENTRYPOINT ["/opt/wiz/sensor/wiz-sensor", "daemon", "--"]
 CMD java -Dconfig.resource=application.$ENVIRONMENT.conf \
             -jar /api/consignmentapi.jar \
             -Dconsignmentapi.db.user=$DB_USER \
