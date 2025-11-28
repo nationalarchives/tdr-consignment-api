@@ -6,7 +6,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "The consignment API for TDR"
 
-scalaVersion := "2.13.17"
+scalaVersion := "2.13.18"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
@@ -43,7 +43,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 lazy val akkaVersion = "2.10.6"
 lazy val akkaHttpVersion = "10.7.0"
 lazy val circeVersion = "0.14.15"
-lazy val testContainersVersion = "0.43.6"
+lazy val testContainersVersion = "0.44.0"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.15",
@@ -71,8 +71,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.21",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.2",
-  "software.amazon.awssdk" % "rds" % "2.37.5",
-  "software.amazon.awssdk" % "sts" % "2.37.5",
+  "software.amazon.awssdk" % "rds" % "2.39.5",
+  "software.amazon.awssdk" % "sts" % "2.39.5",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
