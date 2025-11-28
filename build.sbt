@@ -6,7 +6,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "The consignment API for TDR"
 
-scalaVersion := "2.13.17"
+scalaVersion := "2.13.18"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
