@@ -6,7 +6,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "The consignment API for TDR"
 
-scalaVersion := "2.13.17"
+scalaVersion := "2.13.18"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 (Compile / run / mainClass) := Some("uk.gov.nationalarchives.tdr.api.http.ApiServer")
@@ -41,7 +41,7 @@ graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.sc
 lazy val pekkoVersion = "1.2.1"
 lazy val pekkoHttpVersion = "1.3.0"
 lazy val circeVersion = "0.14.15"
-lazy val testContainersVersion = "0.43.6"
+lazy val testContainersVersion = "0.44.0"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.15",
@@ -70,26 +70,26 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
   "ch.qos.logback" % "logback-classic" % "1.5.21",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
-  "software.amazon.awssdk" % "rds" % "2.37.2",
-  "software.amazon.awssdk" % "sts" % "2.37.2",
+  "software.amazon.awssdk" % "rds" % "2.39.6",
+  "software.amazon.awssdk" % "sts" % "2.39.6",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
   "org.mockito" %% "mockito-scala" % "2.0.0" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.0.0" % Test,
-  "com.tngtech.keycloakmock" % "mock" % "0.16.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.259",
-  "io.github.hakky54" % "logcaptor" % "2.9.0" % Test,
+  "com.tngtech.keycloakmock" % "mock" % "0.19.0" % Test,
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.262",
+  "io.github.hakky54" % "logcaptor" % "2.12.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.99"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.102"
 )
 
 dependencyOverrides ++= Seq(
-  "com.typesafe.slick" %% "slick" % "3.5.2",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.5.2",
-  "org.sangria-graphql" %% "sangria" % "4.0.2"
+  "com.typesafe.slick" %% "slick" % "3.6.1",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
+  "org.sangria-graphql" %% "sangria" % "4.2.15"
 )
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
