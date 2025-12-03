@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.stream.alpakka.slick.scaladsl.SlickSession
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import com.dimafeng.testcontainers.scalatest.TestContainerForEach
 import com.dimafeng.testcontainers.{ContainerDef, PostgreSQLContainer}
 import com.typesafe.config.ConfigFactory

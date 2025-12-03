@@ -67,7 +67,7 @@ The generated schema file will be placed in the following location: `target/sbt-
 After this file is merged into master, it will only be used by the generated-graphql project when that project is next deployed.
 In order to manually deploy the generated-graphql, follow [these instructions](https://github.com/nationalarchives/tdr-generated-graphql).
 
-### Akka Licence
+### Akka Licence  TODO REMOVE once moved to Pekko
 
 The consignment-api makes use of a commercial Akka licence.
 

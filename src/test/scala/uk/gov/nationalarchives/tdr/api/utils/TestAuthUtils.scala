@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
-import com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import com.tngtech.keycloakmock.api.{KeycloakMock, ServerConfig}
+import com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig
 
 import java.util.UUID
 
