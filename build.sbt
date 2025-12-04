@@ -71,7 +71,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.21",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
   "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.2",
-  "software.amazon.awssdk" % "rds" % "2.39.6",
+  "software.amazon.awssdk" % "rds" % "2.40.1",
   "software.amazon.awssdk" % "sts" % "2.39.6",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
