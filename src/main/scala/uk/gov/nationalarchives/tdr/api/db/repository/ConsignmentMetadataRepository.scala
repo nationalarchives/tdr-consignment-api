@@ -16,12 +16,13 @@ class ConsignmentMetadataRepository(db: JdbcBackend#Database)(implicit val execu
 
   private val batchSizeForConsignmentMetadataDatabaseWrites = ConfigFactory.load().getInt("consignmentMetadata.batchSize")
 
-
   def addConsignmentMetadata(rows: Seq[ConsignmentmetadataRow]): Future[Seq[ConsignmentmetadataRow]] = {
     val batchedRows = rows.grouped(batchSizeForConsignmentMetadataDatabaseWrites).toIndexedSeq
-    Future.traverse(batchedRows) { br =>
-      db.run(insertQuery ++= br)
-    }.map(_.flatten)
+    Future
+      .traverse(batchedRows) { br =>
+        db.run(insertQuery ++= br)
+      }
+      .map(_.flatten)
   }
 
   def deleteConsignmentMetadata(consignmentId: UUID, propertyNames: Set[String]): Future[Int] = {

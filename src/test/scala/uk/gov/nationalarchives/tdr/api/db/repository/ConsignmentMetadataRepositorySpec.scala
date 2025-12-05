@@ -47,7 +47,8 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
     val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
     val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
     utils.createConsignment(consignmentId, userId)
-    val inputs = (1 to 10000).map(_ => ConsignmentmetadataRow(UUID.randomUUID(), consignmentId, consignmentMetadataProperty1, "value", Timestamp.from(Instant.now()), UUID.randomUUID()))
+    val inputs =
+      (1 to 10000).map(_ => ConsignmentmetadataRow(UUID.randomUUID(), consignmentId, consignmentMetadataProperty1, "value", Timestamp.from(Instant.now()), UUID.randomUUID()))
     val result = consignmentMetadataRepository.addConsignmentMetadata(inputs).futureValue.head
     result.propertyname should equal(consignmentMetadataProperty1)
     result.value should equal("value")
