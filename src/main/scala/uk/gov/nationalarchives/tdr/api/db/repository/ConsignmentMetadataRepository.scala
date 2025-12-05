@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import com.typesafe.config.ConfigFactory
 import slick.jdbc.JdbcBackend
 
 import java.util.UUID
@@ -13,8 +14,14 @@ class ConsignmentMetadataRepository(db: JdbcBackend#Database)(implicit val execu
   private val insertQuery = Consignmentmetadata returning Consignmentmetadata.map(_.metadataid) into
     ((consignmentMetadata, metadataid) => consignmentMetadata.copy(metadataid = metadataid))
 
+  private val batchSizeForConsignmentMetadataDatabaseWrites = ConfigFactory.load().getInt("consignmentMetadata.batchSize")
+
+
   def addConsignmentMetadata(rows: Seq[ConsignmentmetadataRow]): Future[Seq[ConsignmentmetadataRow]] = {
-    db.run(insertQuery ++= rows)
+    val batchedRows = rows.grouped(batchSizeForConsignmentMetadataDatabaseWrites).toIndexedSeq
+    Future.traverse(batchedRows) { br =>
+      db.run(insertQuery ++= br)
+    }.map(_.flatten)
   }
 
   def deleteConsignmentMetadata(consignmentId: UUID, propertyNames: Set[String]): Future[Int] = {
