@@ -6,7 +6,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepositor
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
-import uk.gov.nationalarchives.tdr.api.utils.Statuses.{ClientChecksType, ClosureMetadataType, CompletedValue, CompletedWithIssuesValue, ConfirmTransferType, DescriptiveMetadataType, DraftMetadataType, ExportType, FailedValue, InProgressValue, MetadataReviewType, SeriesType, ServerAntivirusType, ServerChecksumType, ServerFFIDType, ServerRedactionType, TransferAgreementType, UploadType}
+import uk.gov.nationalarchives.tdr.api.utils.Statuses._
 import uk.gov.nationalarchives.tdr.api.utils.{Approval, Rejection, Submission}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
