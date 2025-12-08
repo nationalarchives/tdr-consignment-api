@@ -6,7 +6,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepositor
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
-import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue, MetadataReviewType}
+import uk.gov.nationalarchives.tdr.api.utils.Statuses._
 import uk.gov.nationalarchives.tdr.api.utils.{Approval, Rejection, Submission}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
@@ -120,17 +120,17 @@ class ConsignmentStatusService(
 object ConsignmentStatusService {
   private val validConsignmentTypes: List[String] =
     List(
-      "Series",
-      "TransferAgreement",
-      "Upload",
-      "ClientChecks",
-      "DraftMetadata",
-      "ClosureMetadata",
-      "DescriptiveMetadata",
-      "ConfirmTransfer",
-      "Export",
-      "MetadataReview"
+      SeriesType.id,
+      TransferAgreementType.id,
+      UploadType.id,
+      ClientChecksType.id,
+      DraftMetadataType.id,
+      ClosureMetadataType.id,
+      DescriptiveMetadataType.id,
+      ConfirmTransferType.id,
+      ExportType.id,
+      MetadataReviewType.id
     )
-  val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set("ServerFFID", "ServerChecksum", "ServerAntivirus")
+  val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set(ServerFFIDType.id, ServerChecksumType.id, ServerAntivirusType.id, ServerRedactionType.id)
   val validStatusValues: Set[String] = Set(InProgressValue.value, CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value)
 }

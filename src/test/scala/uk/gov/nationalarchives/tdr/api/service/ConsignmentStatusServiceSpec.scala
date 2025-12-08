@@ -41,7 +41,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     "ClientChecks",
     "ServerAntivirus",
     "ServerChecksum",
-    "ServerFFID"
+    "ServerFFID",
+    "ServerRedaction"
   )
 
   val statusValues: TableFor1[String] = Table(
@@ -415,6 +416,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       "ServerAntivirus",
       "ServerChecksum",
       "ServerFFID",
+      "ServerRedaction",
       "TransferAgreement",
       "Upload"
     )

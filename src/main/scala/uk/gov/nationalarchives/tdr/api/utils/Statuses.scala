@@ -44,6 +44,11 @@ object Statuses {
     val nonJudgmentStatus: Boolean = false
   }
 
+  case object ServerRedactionType extends StatusType {
+    val id: String = "ServerRedaction"
+    val nonJudgmentStatus: Boolean = false
+  }
+
   case object ConfirmTransferType extends StatusType {
     val id: String = "ConfirmTransfer"
     val nonJudgmentStatus: Boolean = true
@@ -61,6 +66,16 @@ object Statuses {
 
   case object MetadataReviewType extends StatusType {
     val id: String = "MetadataReview"
+    val nonJudgmentStatus: Boolean = true
+  }
+
+  case object ClosureMetadataType extends StatusType {
+    val id: String = "ClosureMetadata"
+    val nonJudgmentStatus: Boolean = true
+  }
+
+  case object DescriptiveMetadataType extends StatusType {
+    val id: String = "DescriptiveMetadata"
     val nonJudgmentStatus: Boolean = true
   }
 
