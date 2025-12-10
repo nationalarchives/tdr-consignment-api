@@ -5,11 +5,10 @@ import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentReference => ConsignmentReferenceOrderField}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentReference => ConsignmentReferenceOrderField, _}
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.utils.Statuses._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -36,13 +35,13 @@ class ConsignmentService(
     consignmentStatusRepository
       .getConsignmentStatus(startUploadInput.consignmentId)
       .flatMap(status => {
-        val uploadStatus = status.find(s => s.statustype == Upload)
+        val uploadStatus = status.find(s => s.statustype == UploadType.id)
         if (uploadStatus.isDefined) {
           throw ConsignmentStateException(s"Existing consignment upload status is '${uploadStatus.get.value}', so cannot start new upload")
         }
         val now = Timestamp.from(timeSource.now)
-        val consignmentStatusUploadRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, Upload, InProgress, now)
-        val consignmentStatusClientChecksRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, ClientChecks, InProgress, now)
+        val consignmentStatusUploadRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, UploadType.id, InProgressValue.value, now)
+        val consignmentStatusClientChecksRow = ConsignmentstatusRow(uuidSource.uuid, startUploadInput.consignmentId, ClientChecksType.id, InProgressValue.value, now)
         consignmentRepository.addUploadDetails(
           startUploadInput,
           List(consignmentStatusUploadRow, consignmentStatusClientChecksRow)
@@ -57,7 +56,7 @@ class ConsignmentService(
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
     for {
       updateTransferInitiatedStatus <- consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))
-      consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "Export", InProgress, Timestamp.from(timeSource.now))
+      consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "Export", InProgressValue.value, Timestamp.from(timeSource.now))
       _ <- consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
     } yield updateTransferInitiatedStatus
   }
@@ -134,7 +133,7 @@ class ConsignmentService(
     for {
       seriesName <- getSeriesName(Some(updateConsignmentSeriesIdInput.seriesId))
       result <- consignmentRepository.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, seriesName)
-      seriesStatus = if (result == 1) Completed else Failed
+      seriesStatus = if (result == 1) CompletedValue.value else FailedValue.value
       _ <- consignmentStatusRepository.updateConsignmentStatus(updateConsignmentSeriesIdInput.consignmentId, "Series", seriesStatus, Timestamp.from(timeSource.now))
     } yield result
   }
