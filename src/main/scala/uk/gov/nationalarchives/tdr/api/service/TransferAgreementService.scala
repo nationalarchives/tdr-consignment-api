@@ -9,6 +9,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{
   TransferAgreementPrivateBeta
 }
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, TransferAgreementType}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -40,12 +41,12 @@ class TransferAgreementService(
   }
 
   def addTransferAgreementStatus(consignmentId: UUID): Future[ConsignmentstatusRow] = {
-    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "TransferAgreement", "InProgress", Timestamp.from(timeSource.now))
+    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, TransferAgreementType.id, InProgressValue.value, Timestamp.from(timeSource.now))
     consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 
   def updateExistingTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[Int] = {
-    consignmentStatusRepository.updateConsignmentStatus(consignmentId, "TransferAgreement", statusValue, Timestamp.from(timeSource.now))
+    consignmentStatusRepository.updateConsignmentStatus(consignmentId, TransferAgreementType.id, statusValue, Timestamp.from(timeSource.now))
   }
 
   private def convertTAPrivateBetaInputToPropertyRows(input: AddTransferAgreementPrivateBetaInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
