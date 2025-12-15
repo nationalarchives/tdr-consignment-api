@@ -79,6 +79,26 @@ object Statuses {
     val nonJudgmentStatus: Boolean = true
   }
 
+  case object ChecksumMatchType extends StatusType {
+    val id: String = "ChecksumMatch"
+    val nonJudgmentStatus: Boolean = false
+  }
+
+  case object AntivirusType extends StatusType {
+    val id: String = "Antivirus"
+    val nonJudgmentStatus: Boolean = false
+  }
+
+  case object FFIDType extends StatusType {
+    val id: String = "FFID"
+    val nonJudgmentStatus: Boolean = false
+  }
+
+  case object RedactionType extends StatusType {
+    val id: String = "Redaction"
+    val nonJudgmentStatus: Boolean = false
+  }
+
   case object InProgressValue extends StatusValue { val value: String = "InProgress" }
 
   case object CompletedValue extends StatusValue { val value: String = "Completed" }
@@ -86,4 +106,18 @@ object Statuses {
   case object CompletedWithIssuesValue extends StatusValue { val value: String = "CompletedWithIssues" }
 
   case object FailedValue extends StatusValue { val value: String = "Failed" }
+
+  case object SuccessValue extends StatusValue { val value: String = "Success" }
+
+  case object MismatchValue extends StatusValue { val value: String = "Mismatch" }
+
+  case object VirusDetectedValue extends StatusValue { val value: String = "VirusDetected" }
+
+  case object PasswordProtectedValue extends StatusValue { val value: String = "PasswordProtected" }
+
+  case object ZipValue extends StatusValue { val value: String = "Zip" }
+
+  case object NonJudgmentFormatValue extends StatusValue { val value: String = "NonJudgmentFormat" }
+
+  case object ZeroByteFileValue extends StatusValue { val value: String = "ZeroByteFile" }
 }

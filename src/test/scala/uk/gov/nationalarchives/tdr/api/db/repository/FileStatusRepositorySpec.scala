@@ -3,14 +3,12 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.Tables.FilestatusRow
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.AddFileStatusInput
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{ChecksumMatch, FFID}
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{ChecksumMatchType, FFIDType}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
-import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 
-import java.sql.Timestamp
 import java.util.UUID
 
 class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
@@ -32,13 +30,13 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
     utils.createFile(fileOneId, consignmentId)
     utils.createFile(fileTwoId, consignmentId)
 
-    val fileRow1 = AddFileStatusInput(fileOneId, FFID, "someFFIDStatus")
-    val fileRow2 = AddFileStatusInput(fileTwoId, ChecksumMatch, "someChecksumMatch")
+    val fileRow1 = AddFileStatusInput(fileOneId, FFIDType.id, "someFFIDStatus")
+    val fileRow2 = AddFileStatusInput(fileTwoId, ChecksumMatchType.id, "someChecksumMatch")
     val response = fileStatusRepository.addFileStatuses(List(fileRow1, fileRow2)).futureValue
 
     response.size shouldBe 2
-    checkFileStatusExists(fileOneId, FFID, "someFFIDStatus", utils)
-    checkFileStatusExists(fileTwoId, ChecksumMatch, "someChecksumMatch", utils)
+    checkFileStatusExists(fileOneId, FFIDType.id, "someFFIDStatus", utils)
+    checkFileStatusExists(fileTwoId, ChecksumMatchType.id, "someChecksumMatch", utils)
   }
 
   "getFileStatus" should "return all the fileStatus rows for the consignment where no selected file ids provided" in withContainers { case container: PostgreSQLContainer =>

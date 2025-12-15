@@ -15,7 +15,7 @@ import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow, Ser
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, FailedValue}
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -278,11 +278,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "updateSeriesOfConsignment" should "update the seriesId, seriesName and status for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     val statusType = "Series"
-    val expectedSeriesStatus = Completed
+    val expectedSeriesStatus = CompletedValue.value
     val expectedResult = 1
     when(consignmentRepoMock.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
       .thenReturn(Future.successful(1))
-    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Completed, Timestamp.from(fixedTimeSource)))
+    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, CompletedValue.value, Timestamp.from(fixedTimeSource)))
       .thenReturn(Future.successful(1))
     when(seriesRepositoryMock.getSeries(updateConsignmentSeriesIdInput.seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
 
@@ -298,11 +298,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "updateSeriesOfConsignment" should "update the status with 'Failed' if seriesId update fails for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     val statusType = "Series"
-    val expectedSeriesStatus = Failed
+    val expectedSeriesStatus = FailedValue.value
     val expectedResult = 0
     when(consignmentRepoMock.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
       .thenReturn(Future.successful(0))
-    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Failed, Timestamp.from(fixedTimeSource)))
+    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, FailedValue.value, Timestamp.from(fixedTimeSource)))
       .thenReturn(Future.successful(1))
     when(seriesRepositoryMock.getSeries(updateConsignmentSeriesIdInput.seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
 
