@@ -1,9 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import akka.http.scaladsl.model.HttpMethods.{GET, OPTIONS, POST}
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.stream.alpakka.slick.javadsl.SlickSession
+import org.apache.pekko.http.scaladsl.model.HttpMethods.{GET, OPTIONS, POST}
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
