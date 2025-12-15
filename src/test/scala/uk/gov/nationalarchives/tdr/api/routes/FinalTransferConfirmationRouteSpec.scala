@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.routes
 
 import java.sql.{PreparedStatement, ResultSet, Types}
 import java.util.UUID
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
