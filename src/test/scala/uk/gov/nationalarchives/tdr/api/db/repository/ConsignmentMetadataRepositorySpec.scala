@@ -48,11 +48,11 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
     val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
     utils.createConsignment(consignmentId, userId)
     val inputs =
-      (1 to 10000).map(_ => ConsignmentmetadataRow(UUID.randomUUID(), consignmentId, consignmentMetadataProperty1, "value", Timestamp.from(Instant.now()), UUID.randomUUID()))
+      (1 to 50000).map(_ => ConsignmentmetadataRow(UUID.randomUUID(), consignmentId, consignmentMetadataProperty1, "value", Timestamp.from(Instant.now()), UUID.randomUUID()))
     val result = consignmentMetadataRepository.addConsignmentMetadata(inputs).futureValue.head
     result.propertyname should equal(consignmentMetadataProperty1)
     result.value should equal("value")
-    checkMetadataAddedExists(consignmentId, db.source.createConnection(), expectedResultSetSize = 10000)
+    checkMetadataAddedExists(consignmentId, db.source.createConnection(), expectedResultSetSize = 50000)
   }
 
   "deleteConsignmentMetadata" should "delete consignment metadata rows for the given consignment id that have the specified property names" in withContainers {
