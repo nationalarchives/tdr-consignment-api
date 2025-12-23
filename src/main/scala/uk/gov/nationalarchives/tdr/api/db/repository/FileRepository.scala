@@ -67,25 +67,26 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       startDateTime: Option[ZonedDateTime],
       endDateTime: Option[ZonedDateTime]
   ): Future[Seq[((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]] = {
-    val query =
-      File
-        .join(Consignment)
-        .on(_.consignmentid === _.consignmentid)
-        .join(Filestatus)
-        .on(_._1.fileid === _.fileid)
-        .joinLeft(Avmetadata)
-        .on(_._1._1.fileid === _.fileid)
-        .joinLeft(Ffidmetadata)
-        .on(_._1._1._1.fileid === _.fileid)
-        .joinLeft(Ffidmetadatamatches)
-        .on(_._2.map(_.ffidmetadataid) === _.ffidmetadataid)
-        .joinLeft(Filemetadata.filter(_.propertyname === SHA256ClientSideChecksum))
-        .on(_._1._1._1._1._1.fileid === _.fileid)
-        .filter(_._1._1._1._1._2.statustype inSetBind Set(Antivirus, FFID, ChecksumMatch, ClientFilePath, Redaction))
-        .filter(_._1._1._1._1._2.value =!= FileCheckSuccess)
-        .filterOpt(startDateTime.map(_.toTimestamp))(_._1._1._1._1._2.createddatetime > _)
-        .filterOpt(endDateTime.map(_.toTimestamp))(_._1._1._1._1._2.createddatetime < _)
-        .filterOpt(consignmentId)(_._1._1._1._1._1._1.consignmentid === _)
+    val failureStatuses = Filestatus
+      .filter(_.statustype inSetBind Set(Antivirus, FFID, ChecksumMatch, ClientFilePath, Redaction))
+      .filter(_.value =!= FileCheckSuccess)
+      .filterOpt(startDateTime.map(_.toTimestamp))(_.createddatetime > _)
+      .filterOpt(endDateTime.map(_.toTimestamp))(_.createddatetime < _)
+
+    val query = File
+      .join(Consignment)
+      .on(_.consignmentid === _.consignmentid)
+      .filterOpt(consignmentId)(_._2.consignmentid === _)
+      .join(failureStatuses)
+      .on(_._1.fileid === _.fileid)f
+      .joinLeft(Avmetadata)
+      .on(_._1._1.fileid === _.fileid)
+      .joinLeft(Ffidmetadata)
+      .on(_._1._1._1.fileid === _.fileid)
+      .joinLeft(Ffidmetadatamatches)
+      .on(_._2.map(_.ffidmetadataid) === _.ffidmetadataid)
+      .joinLeft(Filemetadata.filter(_.propertyname === SHA256ClientSideChecksum))
+      .on(_._1._1._1._1._1.fileid === _.fileid)
     db.run(query.result)
   }
 
