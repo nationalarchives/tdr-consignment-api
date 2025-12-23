@@ -1,10 +1,9 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import java.time.{Instant, ZonedDateTime}
+import java.time.Instant
 import java.util.UUID
 import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
-import com.typesafe.sslconfig.ssl.ClientAuth.None
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
@@ -112,6 +111,7 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     utils.createFileStatusValues(UUID.randomUUID(), fileId, "Antivirus", "Failure")
     utils.addAntivirusMetadata(fileId.toString, "virus")
     utils.addFFIDMetadata(fileId.toString)
+    utils.addFileProperty(SHA256ClientSideChecksum)
     utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ClientSideChecksum, "checksum")
 
     val response: GraphqlQueryData = runTestQuery("query_no_filters", validReportingToken("reporting"))
