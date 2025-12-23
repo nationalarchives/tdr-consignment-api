@@ -1269,9 +1269,9 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val file3 = FileRow(fileId3, consignmentId, userId, timestamp, Some(true), Some("File"), Some("file.docx"))
 
     val mockData = Seq(
-      ((((((file1, consignmentRow), fileStatusRow), None), None), None), None),
-      ((((((file2, consignmentRow), fileStatusRow), None), None), None), None),
-      ((((((file3, consignmentRow), fileStatusRow), None), None), None), None)
+      ((((((fileStatusRow, file1), consignmentRow), None), None), None), None),
+      ((((((fileStatusRow, file2), consignmentRow), None), None), None), None),
+      ((((((fileStatusRow, file3), consignmentRow), None), None), None), None)
     )
 
     when(fileRepositoryMock.getFilesWithFileCheckFailures(None, None, None)).thenReturn(Future.successful(mockData))
