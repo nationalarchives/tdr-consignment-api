@@ -87,11 +87,11 @@ class TestUtils(db: JdbcBackend#Database) {
   }
 
   def createFileStatusValues(
-    fileStatusId: UUID,
-    FileId: UUID,
-    statusType: String,
-    value: String,
-    timestamp: Timestamp = Timestamp.from(Instant.now())
+      fileStatusId: UUID,
+      FileId: UUID,
+      statusType: String,
+      value: String,
+      timestamp: Timestamp = Timestamp.from(Instant.now())
   ): Unit = {
     val sql = s"""INSERT INTO "FileStatus" ("FileStatusId", "FileId", "StatusType", "Value", "CreatedDatetime") VALUES (?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)

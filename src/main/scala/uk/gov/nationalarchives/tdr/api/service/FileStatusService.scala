@@ -61,7 +61,7 @@ object FileStatusService {
   val ServerChecksum = "ServerChecksum"
   val ClientChecks = "ClientChecks"
   val ClientFilePath = "ClientFilePath"
-  
+
   val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks)
 
   // Values

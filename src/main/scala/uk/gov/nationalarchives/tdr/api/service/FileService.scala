@@ -139,40 +139,42 @@ class FileService(
   def fileCount(consignmentId: UUID): Future[Int] = {
     fileRepository.countFilesInConsignment(consignmentId)
   }
-  
+
   def getFileCheckFailures(input: Option[GetFileCheckFailuresInput]): Future[Seq[FileFields.FileCheckFailure]] = {
-    fileRepository.getFilesWithFileCheckFailures(
-      consignmentId = input.flatMap(_.consignmentId),
-      startDateTime = input.flatMap(_.startDateTime),
-      endDateTime = input.flatMap(_.endDateTime)
-    ).map { result =>
-      fileCheckFailureResultsWithRankOverFileName(result)
-        .map { case (rank, ((((((file, consignment), fileStatus), avMetadata), ffidMetadata), ffidMatches), checksumMetadata)) =>
-          FileCheckFailure(
-            fileId = file.fileid,
-            consignmentId = consignment.consignmentid,
-            consignmentType = consignment.consignmenttype,
-            rankOverFilePath = rank,
-            PUID = ffidMatches.flatMap(_.puid),
-            userId = consignment.userid,
-            statusType = fileStatus.statustype,
-            statusValue = fileStatus.value,
-            seriesName = consignment.seriesname,
-            transferringBodyName = consignment.transferringbodyname,
-            antivirusResult = avMetadata.map(_.result),
-            extension = ffidMatches.flatMap(_.extension),
-            identificationBasis = ffidMatches.map(_.identificationbasis),
-            extensionMismatch = ffidMatches.flatMap(_.extensionmismatch).contains(true),
-            formatName = ffidMatches.flatMap(_.formatname),
-            checksum = checksumMetadata.map(_.value),
-            createdDateTime = fileStatus.createddatetime.toZonedDateTime
-          )
-        }
-    }
+    fileRepository
+      .getFilesWithFileCheckFailures(
+        consignmentId = input.flatMap(_.consignmentId),
+        startDateTime = input.flatMap(_.startDateTime),
+        endDateTime = input.flatMap(_.endDateTime)
+      )
+      .map { result =>
+        fileCheckFailureResultsWithRankOverFileName(result)
+          .map { case (rank, ((((((file, consignment), fileStatus), avMetadata), ffidMetadata), ffidMatches), checksumMetadata)) =>
+            FileCheckFailure(
+              fileId = file.fileid,
+              consignmentId = consignment.consignmentid,
+              consignmentType = consignment.consignmenttype,
+              rankOverFilePath = rank,
+              PUID = ffidMatches.flatMap(_.puid),
+              userId = consignment.userid,
+              statusType = fileStatus.statustype,
+              statusValue = fileStatus.value,
+              seriesName = consignment.seriesname,
+              transferringBodyName = consignment.transferringbodyname,
+              antivirusResult = avMetadata.map(_.result),
+              extension = ffidMatches.flatMap(_.extension),
+              identificationBasis = ffidMatches.map(_.identificationbasis),
+              extensionMismatch = ffidMatches.flatMap(_.extensionmismatch).contains(true),
+              formatName = ffidMatches.flatMap(_.formatname),
+              checksum = checksumMetadata.map(_.value),
+              createdDateTime = fileStatus.createddatetime.toZonedDateTime
+            )
+          }
+      }
   }
 
   private def fileCheckFailureResultsWithRankOverFileName(
-    result: Seq[((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]
+      result: Seq[((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]
   ): Seq[(Int, ((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow]))] = {
     val grouped = result.groupBy { case ((((((file, _), _), _), _), _), _) => file.filename }
     grouped.values.zipWithIndex.flatMap { case (group, rank) =>

@@ -5,7 +5,24 @@ import slick.jdbc.{GetResult, JdbcBackend}
 import uk.gov
 import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{Avmetadata, AvmetadataRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, Ffidmetadata, FfidmetadataRow, Ffidmetadatamatches, FfidmetadatamatchesRow, File, FileRow, Filemetadata, FilemetadataRow, Filestatus, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{
+  Avmetadata,
+  AvmetadataRow,
+  Consignment,
+  ConsignmentRow,
+  Consignmentstatus,
+  ConsignmentstatusRow,
+  Ffidmetadata,
+  FfidmetadataRow,
+  Ffidmetadatamatches,
+  FfidmetadatamatchesRow,
+  File,
+  FileRow,
+  Filemetadata,
+  FilemetadataRow,
+  Filestatus,
+  FilestatusRow
+}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.SHA256ClientSideChecksum
@@ -44,11 +61,11 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       .map(_._2)
     db.run(query.result)
   }
-  
+
   def getFilesWithFileCheckFailures(
-    consignmentId: Option[UUID],
-    startDateTime: Option[ZonedDateTime],
-    endDateTime: Option[ZonedDateTime]
+      consignmentId: Option[UUID],
+      startDateTime: Option[ZonedDateTime],
+      endDateTime: Option[ZonedDateTime]
   ): Future[Seq[((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]] = {
     val query =
       File
@@ -71,7 +88,7 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
         .filterOpt(consignmentId)(_._1._1._1._1._1._1.consignmentid === _)
     db.run(query.result)
   }
-  
+
   def getConsignmentForFile(fileId: UUID): Future[Seq[Tables.ConsignmentRow]] = {
     val query = File
       .join(Consignment)

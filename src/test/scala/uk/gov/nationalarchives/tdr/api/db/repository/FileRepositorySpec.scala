@@ -571,7 +571,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
     utils.createConsignment(consignmentOneId, userId)
     utils.createConsignment(consignmentTwoId, userId)
-    
+
     utils.createFile(fileOneId, consignmentOneId)
     utils.createFile(fileTwoId, consignmentOneId)
     utils.createFile(fileThreeId, consignmentTwoId)
@@ -579,7 +579,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
     utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure")
     utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, "Antivirus", "Failure")
-    
+
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "")
     utils.addAntivirusMetadata(fileThreeId.toString, "virus")
@@ -593,7 +593,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val fileIds = files.map(_._1._1._1._1._1._1.fileid)
     fileIds should contain(fileOneId)
     fileIds should contain(fileTwoId)
-    fileIds should not contain(fileThreeId)
+    fileIds should not contain (fileThreeId)
 
     files.foreach { file =>
       file._1._1._1._1._1._1.consignmentid shouldBe consignmentOneId

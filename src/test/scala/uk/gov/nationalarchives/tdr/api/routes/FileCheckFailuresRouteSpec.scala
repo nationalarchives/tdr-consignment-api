@@ -39,9 +39,9 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
     utils.createFileStatusValues(UUID.randomUUID(), fileId, "Antivirus", "Success")
-    
+
     val response: GraphqlQueryData = runTestQuery("query_no_filters", validReportingToken("reporting"))
-    
+
     response.data.get.getFileCheckFailures shouldBe List.empty
     response.errors shouldBe empty
   }
@@ -65,7 +65,7 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     utils.addFFIDMetadata(fileTwoId.toString)
 
     val response: GraphqlQueryData = runTestQuery("query_no_filters", validReportingToken("reporting"))
-    
+
     response.data.get.getFileCheckFailures.size shouldBe 2
     response.data.get.getFileCheckFailures.map(_.fileId).toSet shouldBe Set(fileOneId, fileTwoId)
   }
@@ -92,8 +92,8 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
 
     val response: GraphqlQueryData = runTestQuery("query_filtered_by_consignment", validReportingToken("reporting"))
     response.data.get.getFileCheckFailures.size shouldBe 1
-    response.data.get.getFileCheckFailures.map(c => (c.fileId, c.consignmentId)).head should be (fileOneId, consignmentOneId)
-    
+    response.data.get.getFileCheckFailures.map(c => (c.fileId, c.consignmentId)).head should be(fileOneId, consignmentOneId)
+
   }
 
   "The api" should "return an error if user does not have reporting access" in withContainers { case _: PostgreSQLContainer =>
@@ -115,7 +115,7 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     utils.addFileMetadata(UUID.randomUUID().toString, fileId.toString, SHA256ClientSideChecksum, "checksum")
 
     val response: GraphqlQueryData = runTestQuery("query_no_filters", validReportingToken("reporting"))
-    
+
     val failure = response.data.get.getFileCheckFailures.head
     failure.fileId shouldBe fileId
     failure.consignmentId shouldBe consignmentId

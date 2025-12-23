@@ -17,23 +17,23 @@ object FileFields {
 
   case class FileMatches(fileId: UUID, matchId: String)
   case class FileCheckFailure(
-    fileId: UUID,
-    consignmentId: UUID,
-    consignmentType: String,
-    rankOverFilePath: Int,
-    PUID: Option[String],
-    userId: UUID,
-    statusType: String,
-    statusValue: String,
-    seriesName: Option[String],
-    transferringBodyName: Option[String],
-    antivirusResult: Option[String],
-    extension: Option[String],
-    identificationBasis: Option[String],
-    extensionMismatch: Boolean,
-    formatName: Option[String],
-    checksum: Option[String],
-    createdDateTime: ZonedDateTime
+      fileId: UUID,
+      consignmentId: UUID,
+      consignmentType: String,
+      rankOverFilePath: Int,
+      PUID: Option[String],
+      userId: UUID,
+      statusType: String,
+      statusValue: String,
+      seriesName: Option[String],
+      transferringBodyName: Option[String],
+      antivirusResult: Option[String],
+      extension: Option[String],
+      identificationBasis: Option[String],
+      extensionMismatch: Boolean,
+      formatName: Option[String],
+      checksum: Option[String],
+      createdDateTime: ZonedDateTime
   )
 
   case class ClientSideMetadataInput(originalPath: String, checksum: String, lastModified: Long, fileSize: Long, matchId: String)
@@ -41,11 +41,11 @@ object FileFields {
       extends UserOwnsConsignment
       with ServiceTransfer
   case class GetFileCheckFailuresInput(
-    consignmentId: Option[UUID] = None,
-    startDateTime: Option[ZonedDateTime] = None,
-    endDateTime: Option[ZonedDateTime] = None
+      consignmentId: Option[UUID] = None,
+      startDateTime: Option[ZonedDateTime] = None,
+      endDateTime: Option[ZonedDateTime] = None
   )
-  
+
   implicit val MetadataInputType: InputObjectType[ClientSideMetadataInput] = deriveInputObjectType[ClientSideMetadataInput]()
   implicit val AddFileAndMetadataInputType: InputObjectType[AddFileAndMetadataInput] = deriveInputObjectType[AddFileAndMetadataInput]()
   implicit val FileSequenceType: ObjectType[Unit, FileMatches] = deriveObjectType[Unit, FileMatches]()
