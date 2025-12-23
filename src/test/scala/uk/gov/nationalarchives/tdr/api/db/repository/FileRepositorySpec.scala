@@ -12,7 +12,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
@@ -446,5 +446,157 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val rs = utils.getConsignmentStatus(consignmentId, "Upload")
     rs.getString("ConsignmentId") should equal(consignmentId.toString)
     rs.next() should equal(false)
+  }
+
+  "getFilesWithFileCheckFailures" should "return files with failed file checks" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId = fileOneId, consignmentId = consignmentId)
+    utils.createFile(fileId = fileTwoId, consignmentId = consignmentId)
+
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Success")
+
+    utils.addAntivirusMetadata(fileOneId.toString, "virus")
+    utils.addAntivirusMetadata(fileTwoId.toString, "")
+    utils.addFFIDMetadata(fileOneId.toString)
+    utils.addFFIDMetadata(fileTwoId.toString)
+
+    val files = fileRepository.getFilesWithFileCheckFailures(None, None, None).futureValue
+
+    files.size shouldBe 1
+    files.head._1._1._1._1._1._1.fileid shouldBe fileOneId
+    files.head._1._1._1._1._2.statustype shouldBe "Antivirus"
+    files.head._1._1._1._1._2.value shouldBe "Failure"
+  }
+
+  "getFilesWithFileCheckFailures" should "filter by start and end datetime" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+
+    val now = Instant.now()
+    val yesterday = now.minusSeconds(86400)
+    val tomorrow = now.plusSeconds(86400)
+
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure", Timestamp.from(now))
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure", Timestamp.from(yesterday))
+
+    utils.addAntivirusMetadata(fileOneId.toString, "virus")
+    utils.addAntivirusMetadata(fileTwoId.toString, "virus")
+    utils.addFFIDMetadata(fileOneId.toString)
+    utils.addFFIDMetadata(fileTwoId.toString)
+
+    val startDateTime = ZonedDateTime.ofInstant(yesterday.plusSeconds(3600), ZoneOffset.UTC)
+    val endDateTime = ZonedDateTime.ofInstant(tomorrow, ZoneOffset.UTC)
+
+    val files = fileRepository.getFilesWithFileCheckFailures(None, Some(startDateTime), Some(endDateTime)).futureValue
+
+    files.size shouldBe 1
+    files.head._1._1._1._1._1._1.fileid shouldBe fileOneId
+  }
+
+  "getFilesWithFileCheckFailures" should "return empty result when no failures exist" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Success")
+
+    utils.addAntivirusMetadata(fileOneId.toString, "")
+    utils.addFFIDMetadata(fileOneId.toString)
+
+    val files = fileRepository.getFilesWithFileCheckFailures(None, None, None).futureValue
+
+    files.size shouldBe 0
+  }
+
+  "getFilesWithFileCheckFailures" should "work without consignment filter" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentOneId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val consignmentTwoId = UUID.fromString("cba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
+
+    utils.createConsignment(consignmentOneId, userId)
+    utils.createConsignment(consignmentTwoId, userId)
+    utils.createFile(fileOneId, consignmentOneId)
+    utils.createFile(fileTwoId, consignmentTwoId)
+
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure")
+
+    utils.addAntivirusMetadata(fileOneId.toString, "virus")
+    utils.addAntivirusMetadata(fileTwoId.toString, "virus")
+    utils.addFFIDMetadata(fileOneId.toString)
+    utils.addFFIDMetadata(fileTwoId.toString)
+
+    val files = fileRepository.getFilesWithFileCheckFailures(None, None, None).futureValue
+
+    files.size shouldBe 2
+    val fileIds = files.map(_._1._1._1._1._1._1.fileid)
+    fileIds should contain(fileOneId)
+    fileIds should contain(fileTwoId)
+  }
+
+  "getFilesWithFileCheckFailures" should "filter by consignment id correctly" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentOneId = UUID.fromString("dba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val consignmentTwoId = UUID.fromString("cba4515f-474c-4a5a-a297-260b6ba1ffa3")
+    val fileOneId = UUID.fromString("92756098-b394-4f46-8b4d-bbd1953660c9")
+    val fileTwoId = UUID.fromString("53d2927e-89dd-48a8-bb19-d33b7baa4e44")
+    val fileThreeId = UUID.fromString("43d2927e-89dd-48a8-bb19-d33b7baa4e44")
+
+    utils.createConsignment(consignmentOneId, userId)
+    utils.createConsignment(consignmentTwoId, userId)
+    
+    utils.createFile(fileOneId, consignmentOneId)
+    utils.createFile(fileTwoId, consignmentOneId)
+    utils.createFile(fileThreeId, consignmentTwoId)
+
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, "Antivirus", "Failure")
+    
+    utils.addAntivirusMetadata(fileOneId.toString, "virus")
+    utils.addAntivirusMetadata(fileTwoId.toString, "")
+    utils.addAntivirusMetadata(fileThreeId.toString, "virus")
+    utils.addFFIDMetadata(fileOneId.toString)
+    utils.addFFIDMetadata(fileTwoId.toString)
+    utils.addFFIDMetadata(fileThreeId.toString)
+
+    val files = fileRepository.getFilesWithFileCheckFailures(Some(consignmentOneId), None, None).futureValue
+
+    files.size shouldBe 2
+    val fileIds = files.map(_._1._1._1._1._1._1.fileid)
+    fileIds should contain(fileOneId)
+    fileIds should contain(fileTwoId)
+    fileIds should not contain(fileThreeId)
+
+    files.foreach { file =>
+      file._1._1._1._1._1._1.consignmentid shouldBe consignmentOneId
+    }
   }
 }

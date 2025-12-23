@@ -2,10 +2,17 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{GetResult, JdbcBackend}
+import uk.gov
+import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{Avmetadata, Consignment, Consignmentstatus, ConsignmentstatusRow, File, FileRow, Filemetadata, FilemetadataRow}
+import uk.gov.nationalarchives.Tables.{Avmetadata, AvmetadataRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, Ffidmetadata, FfidmetadataRow, Ffidmetadatamatches, FfidmetadatamatchesRow, File, FileRow, Filemetadata, FilemetadataRow, Filestatus, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.SHA256ClientSideChecksum
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, ClientFilePath, FFID, Redaction, Success => FileCheckSuccess}
+
+import java.time.ZonedDateTime
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +44,34 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       .map(_._2)
     db.run(query.result)
   }
-
+  
+  def getFilesWithFileCheckFailures(
+    consignmentId: Option[UUID],
+    startDateTime: Option[ZonedDateTime],
+    endDateTime: Option[ZonedDateTime]
+  ): Future[Seq[((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]] = {
+    val query =
+      File
+        .join(Consignment)
+        .on(_.consignmentid === _.consignmentid)
+        .join(Filestatus)
+        .on(_._1.fileid === _.fileid)
+        .joinLeft(Avmetadata)
+        .on(_._1._1.fileid === _.fileid)
+        .joinLeft(Ffidmetadata)
+        .on(_._1._1._1.fileid === _.fileid)
+        .joinLeft(Ffidmetadatamatches)
+        .on(_._2.map(_.ffidmetadataid) === _.ffidmetadataid)
+        .joinLeft(Filemetadata.filter(_.propertyname === SHA256ClientSideChecksum))
+        .on(_._1._1._1._1._1.fileid === _.fileid)
+        .filter(_._1._1._1._1._2.statustype inSetBind Set(Antivirus, FFID, ChecksumMatch, ClientFilePath, Redaction))
+        .filter(_._1._1._1._1._2.value =!= FileCheckSuccess)
+        .filterOpt(startDateTime.map(_.toTimestamp))(_._1._1._1._1._2.createddatetime > _)
+        .filterOpt(endDateTime.map(_.toTimestamp))(_._1._1._1._1._2.createddatetime < _)
+        .filterOpt(consignmentId)(_._1._1._1._1._1._1.consignmentid === _)
+    db.run(query.result)
+  }
+  
   def getConsignmentForFile(fileId: UUID): Future[Seq[Tables.ConsignmentRow]] = {
     val query = File
       .join(Consignment)

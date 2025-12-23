@@ -8,14 +8,14 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import uk.gov.nationalarchives.Tables.{AvmetadataRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileFields
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.PaginationInput
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.{FFIDMetadata, FFIDMetadataMatches}
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, ClientSideMetadataInput, GetFileCheckFailuresInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddFileStatusInput, AddMultipleFileStatusesInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -1243,6 +1243,51 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileService = setupFileService(fileRepositoryMock)
     val parentFolderIdResult: Option[UUID] = fileService.getConsignmentParentFolderId(consignmentId).futureValue
     parentFolderIdResult shouldBe None
+  }
+
+  "getFileCheckFailures" should "assign the same rank to files with the same filename" in {
+    val fileRepositoryMock = mock[FileRepository]
+    val consignmentId = UUID.randomUUID()
+    val fileId1 = UUID.randomUUID()
+    val fileId2 = UUID.randomUUID()
+    val fileId3 = UUID.randomUUID()
+
+    val timestamp = Timestamp.from(FixedTimeSource.now)
+    val consignmentRow = ConsignmentRow(
+      consignmentid = consignmentId,
+      userid = userId,
+      datetime = timestamp,
+      consignmentsequence = 400L,
+      consignmenttype = "standard",
+      consignmentreference = "TDR-2025-ABCD",
+      bodyid = UUID.randomUUID()
+    )
+    val fileStatusRow = FilestatusRow(UUID.randomUUID(), fileId1, "Antivirus", "Failure", timestamp)
+
+    val file1 = FileRow(fileId1, consignmentId, userId, timestamp, Some(true), Some("File"), Some("file.pdf"))
+    val file2 = FileRow(fileId2, consignmentId, userId, timestamp, Some(true), Some("File"), Some("file.pdf"))
+    val file3 = FileRow(fileId3, consignmentId, userId, timestamp, Some(true), Some("File"), Some("file.docx"))
+
+    val mockData = Seq(
+      ((((((file1, consignmentRow), fileStatusRow), None), None), None), None),
+      ((((((file2, consignmentRow), fileStatusRow), None), None), None), None),
+      ((((((file3, consignmentRow), fileStatusRow), None), None), None), None)
+    )
+
+    when(fileRepositoryMock.getFilesWithFileCheckFailures(None, None, None)).thenReturn(Future.successful(mockData))
+
+    val fileService = setupFileService(fileRepositoryMock)
+
+    val result = fileService.getFileCheckFailures(None).futureValue
+
+    result.size shouldBe 3
+
+    val file1Result = result.find(_.fileId == fileId1).get
+    val file2Result = result.find(_.fileId == fileId2).get
+    val file3Result = result.find(_.fileId == fileId3).get
+
+    file1Result.rankOverFilePath shouldBe file2Result.rankOverFilePath
+    file1Result.rankOverFilePath should not equal file3Result.rankOverFilePath
   }
 
   private def setupFileService(fileRepositoryMock: FileRepository): FileService = {
