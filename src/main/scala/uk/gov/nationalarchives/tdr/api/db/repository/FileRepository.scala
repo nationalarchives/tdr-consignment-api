@@ -78,7 +78,7 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       .on(_.consignmentid === _.consignmentid)
       .filterOpt(consignmentId)(_._2.consignmentid === _)
       .join(failureStatuses)
-      .on(_._1.fileid === _.fileid)f
+      .on(_._1.fileid === _.fileid)
       .joinLeft(Avmetadata)
       .on(_._1._1.fileid === _.fileid)
       .joinLeft(Ffidmetadata)
