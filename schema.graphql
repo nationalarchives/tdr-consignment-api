@@ -294,9 +294,9 @@ type FileCheckFailure {
     statusValue: String!
     seriesName: String
     transferringBodyName: String
-    antivirusResult: String!
+    antivirusResult: String
     extension: String
-    identificationBasis: String!
+    identificationBasis: String
     extensionMismatch: Boolean!
     formatName: String
     checksum: String
