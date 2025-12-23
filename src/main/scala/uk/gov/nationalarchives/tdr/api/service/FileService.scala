@@ -149,7 +149,7 @@ class FileService(
       )
       .map { result =>
         fileCheckFailureResultsWithRankOverFileName(result)
-          .map { case (rank, ((((((file, consignment), fileStatus), avMetadata), ffidMetadata), ffidMatches), checksumMetadata)) =>
+          .map { case (rank, ((((((fileStatus, file), consignment), avMetadata), ffidMetadata), ffidMatches), checksumMetadata)) =>
             FileCheckFailure(
               fileId = file.fileid,
               consignmentId = consignment.consignmentid,
@@ -174,9 +174,9 @@ class FileService(
   }
 
   private def fileCheckFailureResultsWithRankOverFileName(
-      result: Seq[((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]
-  ): Seq[(Int, ((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow]))] = {
-    val grouped = result.groupBy { case ((((((file, _), _), _), _), _), _) => file.filename }
+      result: Seq[((((((FilestatusRow, FileRow), ConsignmentRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]
+  ): Seq[(Int, ((((((FilestatusRow, FileRow), ConsignmentRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow]))] = {
+    val grouped = result.groupBy { case ((((((_, file), _), _), _), _), _) => file.filename }
     grouped.values.zipWithIndex.flatMap { case (group, rank) =>
       group.map(row => (rank + 1, row))
     }.toSeq

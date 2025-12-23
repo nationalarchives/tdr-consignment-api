@@ -66,27 +66,32 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       consignmentId: Option[UUID],
       startDateTime: Option[ZonedDateTime],
       endDateTime: Option[ZonedDateTime]
-  ): Future[Seq[((((((FileRow, ConsignmentRow), FilestatusRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]] = {
+  ): Future[Seq[((((((FilestatusRow, FileRow), ConsignmentRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]] = {
     val failureStatuses = Filestatus
       .filter(_.statustype inSetBind Set(Antivirus, FFID, ChecksumMatch, ClientFilePath, Redaction))
       .filter(_.value =!= FileCheckSuccess)
       .filterOpt(startDateTime.map(_.toTimestamp))(_.createddatetime > _)
       .filterOpt(endDateTime.map(_.toTimestamp))(_.createddatetime < _)
 
-    val query = File
-      .join(Consignment)
-      .on(_.consignmentid === _.consignmentid)
-      .filterOpt(consignmentId)(_._2.consignmentid === _)
-      .join(failureStatuses)
-      .on(_._1.fileid === _.fileid)
+    val relevantConsignments = consignmentId match {
+      case Some(id) => Consignment.filter(_.consignmentid === id)
+      case None     => Consignment
+    }
+
+    val query = failureStatuses
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .join(relevantConsignments)
+      .on(_._2.consignmentid === _.consignmentid)
       .joinLeft(Avmetadata)
-      .on(_._1._1.fileid === _.fileid)
+      .on(_._1._2.fileid === _.fileid)
       .joinLeft(Ffidmetadata)
-      .on(_._1._1._1.fileid === _.fileid)
+      .on(_._1._1._2.fileid === _.fileid)
       .joinLeft(Ffidmetadatamatches)
       .on(_._2.map(_.ffidmetadataid) === _.ffidmetadataid)
       .joinLeft(Filemetadata.filter(_.propertyname === SHA256ClientSideChecksum))
       .on(_._1._1._1._1._1.fileid === _.fileid)
+
     db.run(query.result)
   }
 

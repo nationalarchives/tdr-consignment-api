@@ -472,8 +472,8 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
     files.size shouldBe 1
     files.head._1._1._1._1._1._1.fileid shouldBe fileOneId
-    files.head._1._1._1._1._2.statustype shouldBe "Antivirus"
-    files.head._1._1._1._1._2.value shouldBe "Failure"
+    files.head._1._1._1._1._1._1.statustype shouldBe "Antivirus"
+    files.head._1._1._1._1._1._1.value shouldBe "Failure"
   }
 
   "getFilesWithFileCheckFailures" should "filter by start and end datetime" in withContainers { case container: PostgreSQLContainer =>
@@ -596,7 +596,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     fileIds should not contain (fileThreeId)
 
     files.foreach { file =>
-      file._1._1._1._1._1._1.consignmentid shouldBe consignmentOneId
+      file._1._1._1._1._1._2.consignmentid shouldBe consignmentOneId
     }
   }
 }
