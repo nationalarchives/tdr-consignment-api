@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
 import sangria.relay.{Connection, Edge, PageInfo}
-import uk.gov.nationalarchives.Tables.{FileRow, FilemetadataRow}
+import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -10,14 +10,15 @@ import uk.gov.nationalarchives.tdr.api.graphql.QueriedFileFields
 import uk.gov.nationalarchives.tdr.api.graphql.fields.AntivirusMetadataFields.AntivirusMetadata
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{FileEdge, PaginationInput}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FFIDMetadataFields.FFIDMetadata
-import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileMatches}
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FileFields.{AddFileAndMetadataInput, FileCheckFailure, GetFileCheckFailuresInput, FileMatches}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatus
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes}
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
-import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.LongUtils
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.{LongUtils, TimestampUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
 import uk.gov.nationalarchives.tdr.schemautils.ConfigUtils
@@ -137,6 +138,48 @@ class FileService(
 
   def fileCount(consignmentId: UUID): Future[Int] = {
     fileRepository.countFilesInConsignment(consignmentId)
+  }
+
+  def getFileCheckFailures(input: Option[GetFileCheckFailuresInput]): Future[Seq[FileFields.FileCheckFailure]] = {
+    fileRepository
+      .getFilesWithFileCheckFailures(
+        consignmentId = input.flatMap(_.consignmentId),
+        startDateTime = input.flatMap(_.startDateTime),
+        endDateTime = input.flatMap(_.endDateTime)
+      )
+      .map { result =>
+        fileCheckFailureResultsWithRankOverFileName(result)
+          .map { case (rank, ((((((fileStatus, file), consignment), avMetadata), ffidMetadata), ffidMatches), checksumMetadata)) =>
+            FileCheckFailure(
+              fileId = file.fileid,
+              consignmentId = consignment.consignmentid,
+              consignmentType = consignment.consignmenttype,
+              rankOverFilePath = rank,
+              PUID = ffidMatches.flatMap(_.puid),
+              userId = consignment.userid,
+              statusType = fileStatus.statustype,
+              statusValue = fileStatus.value,
+              seriesName = consignment.seriesname,
+              transferringBodyName = consignment.transferringbodyname,
+              antivirusResult = avMetadata.map(_.result),
+              extension = ffidMatches.flatMap(_.extension),
+              identificationBasis = ffidMatches.map(_.identificationbasis),
+              extensionMismatch = ffidMatches.flatMap(_.extensionmismatch).contains(true),
+              formatName = ffidMatches.flatMap(_.formatname),
+              checksum = checksumMetadata.map(_.value),
+              createdDateTime = fileStatus.createddatetime.toZonedDateTime
+            )
+          }
+      }
+  }
+
+  private def fileCheckFailureResultsWithRankOverFileName(
+      result: Seq[((((((FilestatusRow, FileRow), ConsignmentRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]
+  ): Seq[(Int, ((((((FilestatusRow, FileRow), ConsignmentRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow]))] = {
+    val grouped = result.groupBy { case ((((((_, file), _), _), _), _), _) => file.filename }
+    grouped.values.zipWithIndex.flatMap { case (group, rank) =>
+      group.map(row => (rank + 1, row))
+    }.toSeq
   }
 
   @deprecated("Use getPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: Option[QueriedFileFields] = None)")
