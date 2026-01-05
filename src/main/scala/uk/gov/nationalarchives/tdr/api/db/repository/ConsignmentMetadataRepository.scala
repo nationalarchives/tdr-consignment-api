@@ -1,5 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
+import cats.effect.IO
+import cats.effect.std.Semaphore
+import cats.effect.unsafe.implicits.global
+import cats.implicits.catsSyntaxParallelTraverse1
+import com.typesafe.config.ConfigFactory
 import slick.jdbc.JdbcBackend
 
 import java.util.UUID
@@ -13,8 +18,22 @@ class ConsignmentMetadataRepository(db: JdbcBackend#Database)(implicit val execu
   private val insertQuery = Consignmentmetadata returning Consignmentmetadata.map(_.metadataid) into
     ((consignmentMetadata, metadataid) => consignmentMetadata.copy(metadataid = metadataid))
 
+  private val batchSizeForConsignmentMetadataDatabaseWrites = ConfigFactory.load().getInt("consignmentMetadata.batchSize")
+  private val maxConcurrencyForConsignmentMetadataDatabaseWrites = ConfigFactory.load().getInt("consignmentMetadata.maxConcurrency")
+
   def addConsignmentMetadata(rows: Seq[ConsignmentmetadataRow]): Future[Seq[ConsignmentmetadataRow]] = {
-    db.run(insertQuery ++= rows)
+    val resultIO = Semaphore[IO](maxConcurrencyForConsignmentMetadataDatabaseWrites).flatMap { semaphore =>
+      rows
+        .grouped(batchSizeForConsignmentMetadataDatabaseWrites)
+        .toList
+        .parTraverse { br =>
+          semaphore.permit.use { _ =>
+            IO.fromFuture(IO(db.run(insertQuery ++= br)))
+          }
+        }
+        .map(_.flatten)
+    }
+    resultIO.unsafeToFuture()
   }
 
   def deleteConsignmentMetadata(consignmentId: UUID, propertyNames: Set[String]): Future[Int] = {

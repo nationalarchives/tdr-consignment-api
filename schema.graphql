@@ -277,6 +277,32 @@ type FileChecks {
   ffidProgress: FFIDProgress!
 }
 
+input GetFileCheckFailuresInput {
+    consignmentId: UUID
+    startDateTime: ZonedDateTime
+    endDateTime: ZonedDateTime
+}
+
+type FileCheckFailure {
+    fileId: UUID!
+    consignmentId: UUID!
+    consignmentType: String!
+    rankOverFilePath: Int!
+    PUID: String
+    userId: UUID!
+    statusType: String!
+    statusValue: String!
+    seriesName: String
+    transferringBodyName: String
+    antivirusResult: String
+    extension: String
+    identificationBasis: String
+    extensionMismatch: Boolean!
+    formatName: String
+    checksum: String
+    createdDateTime: ZonedDateTime!
+}
+
 "A connection to a list of items."
 type FileConnection {
   "Information to aid in pagination."
@@ -407,6 +433,7 @@ type Query {
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
   consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
   getConsignmentsForMetadataReview: [Consignment!]!
+  getFileCheckFailures(getFileCheckFailuresInput: GetFileCheckFailuresInput): [FileCheckFailure!]!
 }
 
 type Series {

@@ -1,0 +1,3 @@
+{
+  "query": "{ getFileCheckFailures { fileId consignmentId consignmentType rankOverFilePath PUID userId statusType statusValue seriesName transferringBodyName antivirusResult extension identificationBasis extensionMismatch formatName checksum createdDateTime } }"
+}

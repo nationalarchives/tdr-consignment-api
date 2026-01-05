@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
-import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshaller}
+import org.apache.pekko.stream.Materializer
 import io.circe.Decoder
 import io.circe.parser.decode
 import slick.jdbc.JdbcBackend
@@ -86,14 +86,20 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.getInt("num")
   }
 
-  def createFileStatusValues(fileStatusId: UUID, FileId: UUID, statusType: String, value: String): Unit = {
+  def createFileStatusValues(
+      fileStatusId: UUID,
+      FileId: UUID,
+      statusType: String,
+      value: String,
+      timestamp: Timestamp = Timestamp.from(Instant.now())
+  ): Unit = {
     val sql = s"""INSERT INTO "FileStatus" ("FileStatusId", "FileId", "StatusType", "Value", "CreatedDatetime") VALUES (?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileStatusId, Types.OTHER)
     ps.setObject(2, FileId, Types.OTHER)
     ps.setString(3, statusType)
     ps.setString(4, value)
-    ps.setTimestamp(5, Timestamp.from(Instant.now()))
+    ps.setTimestamp(5, timestamp)
     ps.executeUpdate()
   }
 

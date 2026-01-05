@@ -40,6 +40,21 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
     checkMetadataAddedExists(consignmentId, db.source.createConnection())
   }
 
+  "addConsignmentMetadata" should "batch and then add consignment metadata with the correct values" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    utils.addConsignmentProperty(consignmentMetadataProperty1)
+    val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
+    val consignmentId = UUID.fromString("d4c053c5-f83a-4547-aefe-878d496bc5d2")
+    utils.createConsignment(consignmentId, userId)
+    val inputs =
+      (1 to 50000).map(_ => ConsignmentmetadataRow(UUID.randomUUID(), consignmentId, consignmentMetadataProperty1, "value", Timestamp.from(Instant.now()), UUID.randomUUID()))
+    val result = consignmentMetadataRepository.addConsignmentMetadata(inputs).futureValue.head
+    result.propertyname should equal(consignmentMetadataProperty1)
+    result.value should equal("value")
+    checkMetadataAddedExists(consignmentId, db.source.createConnection(), expectedResultSetSize = 50000)
+  }
+
   "deleteConsignmentMetadata" should "delete consignment metadata rows for the given consignment id that have the specified property names" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
@@ -75,15 +90,16 @@ class ConsignmentMetadataRepositorySpec extends TestContainerUtils with ScalaFut
     response.consignmentid should equal(consignmentId)
   }
 
-  def checkMetadataAddedExists(consignmentId: UUID, connection: Connection): Unit = {
+  def checkMetadataAddedExists(consignmentId: UUID, connection: Connection, expectedResultSetSize: Int = 1): Unit = {
     val sql = """SELECT * FROM "ConsignmentMetadata" WHERE "ConsignmentId" = ?"""
-    val ps: PreparedStatement = connection.prepareStatement(sql)
+    val ps: PreparedStatement = connection.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
     ps.setObject(1, consignmentId, Types.OTHER)
     val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getString("ConsignmentId") should equal(consignmentId.toString)
     rs.getString("PropertyName") should equal(consignmentMetadataProperty1)
     rs.getString("Value") should equal("value")
-    rs.next() should equal(false)
+    rs.last()
+    rs.getRow should equal(expectedResultSetSize)
   }
 }
