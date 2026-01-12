@@ -38,10 +38,10 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val pekkoVersion = "1.2.1"
+lazy val pekkoVersion = "1.4.0"
 lazy val pekkoHttpVersion = "1.3.0"
 lazy val circeVersion = "0.14.15"
-lazy val testContainersVersion = "0.44.0"
+lazy val testContainersVersion = "0.44.1"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.15",
@@ -68,22 +68,22 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.7.8",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "ch.qos.logback" % "logback-classic" % "1.5.21",
+  "ch.qos.logback" % "logback-classic" % "1.5.24",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
-  "software.amazon.awssdk" % "rds" % "2.40.3",
-  "software.amazon.awssdk" % "sts" % "2.40.3",
+  "software.amazon.awssdk" % "rds" % "2.41.5",
+  "software.amazon.awssdk" % "sts" % "2.41.5",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
   "org.mockito" %% "mockito-scala" % "2.0.0" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.0.0" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.19.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.263",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.265",
   "io.github.hakky54" % "logcaptor" % "2.12.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.103"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.105"
 )
 
 dependencyOverrides ++= Seq(
