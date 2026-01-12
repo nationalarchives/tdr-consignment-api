@@ -15,7 +15,6 @@ jobs:
     secrets:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
-      AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
       WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
       WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
       WIZ_PROJECT_ID: ${{ secrets.WIZ_PROJECT_TDR }}
