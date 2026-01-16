@@ -65,7 +65,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.56",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.186",
-  "org.postgresql" % "postgresql" % "42.7.8",
+  "org.postgresql" % "postgresql" % "42.7.9",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
   "ch.qos.logback" % "logback-classic" % "1.5.24",
