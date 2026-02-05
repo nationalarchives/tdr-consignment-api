@@ -158,6 +158,13 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       .filter(_.parentid.isEmpty)
     db.run(query.result)
   }
+
+  def getFileIds(consignmentId: UUID): Future[Seq[UUID]] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
+      .map(_.fileid)
+    db.run(query.result)
+  }
 }
 
 case class FileMetadataFilters(properties: Option[List[String]] = None)

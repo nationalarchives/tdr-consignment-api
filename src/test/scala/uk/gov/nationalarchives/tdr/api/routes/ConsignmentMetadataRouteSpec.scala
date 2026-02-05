@@ -1,11 +1,12 @@
 package uk.gov.nationalarchives.tdr.api.routes
 
-import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
+import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentMetadataFields.ConsignmentMetadataWithConsignmentId
+import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.LegalStatus
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.{userId, validUserToken}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils.{GraphqlError, getDataFromFile}
@@ -22,7 +23,7 @@ class ConsignmentMetadataRouteSpec extends TestContainerUtils with Matchers with
 
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
-  val consignmentProperties: Seq[String] = List("JudgmentType", "PublicRecordsConfirmed")
+  val consignmentProperties: Seq[String] = List("JudgmentType", "PublicRecordsConfirmed", "LegalStatus")
 
   case class AddAddOrUpdateConsignmentMetadata(addOrUpdateConsignmentMetadata: List[ConsignmentMetadataWithConsignmentId]) extends TestRequest
   case class GraphqlAddOrUpdateConsignmentMetadataMutationData(data: Option[AddAddOrUpdateConsignmentMetadata], errors: List[GraphqlError] = Nil)
@@ -40,13 +41,33 @@ class ConsignmentMetadataRouteSpec extends TestContainerUtils with Matchers with
     val consignmentId: UUID = fixedUUIDSource.uuid
     utils.createConsignment(consignmentId, userId)
     utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, "JudgmentType", "press_summary")
-    consignmentProperties.foreach(utils.addConsignmentProperty)
 
     val expectedResponse: GraphqlAddOrUpdateConsignmentMetadataMutationData = expectedAddOrUpdateConsignmentMetadataMutationResponse("data_all")
     val response: GraphqlAddOrUpdateConsignmentMetadataMutationData = runAddOrUpdateConsignmentMetadataTestMutation("mutation_alldata", validUserToken())
 
     response.data.get.addOrUpdateConsignmentMetadata should equal(expectedResponse.data.get.addOrUpdateConsignmentMetadata)
-    checkConsignmentMetadataExists(consignmentId, utils, Seq("Judgment", "true"))
+    checkConsignmentMetadataExists(consignmentId, utils, Seq("JudgmentType", "PublicRecordsConfirmed"), Seq("Judgment", "true"))
+  }
+
+  "addOrUpdateConsignmentMetadata" should "add or update consignment metadata and file metadata in the DB when input contains 'LegalStatus' metadata and files are present" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      utils.seedDatabaseWithDefaultEntries()
+      consignmentProperties.foreach(utils.addConsignmentProperty)
+      List(LegalStatus).foreach(utils.addFileProperty)
+
+      val fixedUUIDSource = new FixedUUIDSource()
+      val consignmentId: UUID = fixedUUIDSource.uuid
+      utils.createConsignment(consignmentId, userId)
+      utils.addConsignmentMetadata(UUID.randomUUID(), consignmentId, "JudgmentType", "press_summary")
+      utils.createFile(UUID.randomUUID(), consignmentId)
+
+      val expectedResponse: GraphqlAddOrUpdateConsignmentMetadataMutationData = expectedAddOrUpdateConsignmentMetadataMutationResponse("data_legal_status")
+      val response: GraphqlAddOrUpdateConsignmentMetadataMutationData = runAddOrUpdateConsignmentMetadataTestMutation("mutation_legal_status", validUserToken())
+
+      response.data.get.addOrUpdateConsignmentMetadata should equal(expectedResponse.data.get.addOrUpdateConsignmentMetadata)
+      checkConsignmentMetadataExists(consignmentId, utils, Seq("LegalStatus", "PublicRecordsConfirmed"), Seq("Welsh Public Record(s)", "true"))
+      checkFileMetadataExists(consignmentId, utils, Seq("LegalStatus"), Seq("Welsh Public Record(s)"))
   }
 
   "addOrUpdateConsignmentMetadata" should "throw an error if the consignment id field is not provided" in withContainers { case _: PostgreSQLContainer =>
@@ -68,20 +89,40 @@ class ConsignmentMetadataRouteSpec extends TestContainerUtils with Matchers with
     response.errors.head.extensions.get.code should equal(expectedResponse.errors.head.extensions.get.code)
   }
 
-  private def checkConsignmentMetadataExists(consignmentId: UUID, utils: TestUtils, expectedPropertyValues: Seq[String]): Unit = {
-    val placeholders = List.fill(consignmentProperties.size)("?").mkString(",")
+  private def checkConsignmentMetadataExists(consignmentId: UUID, utils: TestUtils, expectedProperties: Seq[String], expectedPropertyValues: Seq[String]): Unit = {
+    val placeholders = List.fill(expectedProperties.size)("?").mkString(",")
     val sql = s"""SELECT * FROM "ConsignmentMetadata" cm JOIN "ConsignmentProperty" cp ON cp."Name" = cm."PropertyName" """ +
       s"""WHERE "ConsignmentId" = ? AND cp."Name" IN ($placeholders);"""
 
     val ps: PreparedStatement = utils.connection.prepareStatement(sql)
     ps.setObject(1, consignmentId, Types.OTHER)
-    consignmentProperties.zipWithIndex.foreach { case (a, b) =>
+    expectedProperties.zipWithIndex.foreach { case (a, b) =>
       ps.setString(b + 2, a)
     }
     val rs: ResultSet = ps.executeQuery()
     rs.next()
     rs.getString("ConsignmentId") should equal(consignmentId.toString)
-    consignmentProperties.zipWithIndex.foreach({ case (a, b) =>
+    expectedProperties.zipWithIndex.foreach({ case (a, b) =>
+      rs.getString("PropertyName") should equal(a)
+      rs.getString("Value") should equal(expectedPropertyValues(b))
+      rs.next()
+    })
+  }
+
+  private def checkFileMetadataExists(consignmentId: UUID, utils: TestUtils, expectedProperties: Seq[String], expectedPropertyValues: Seq[String]): Unit = {
+    val placeholders = List.fill(expectedProperties.size)("?").mkString(",")
+    val sql = s"""SELECT fm.* FROM "FileMetadata" fm join public."File" F on fm."FileId" = F."FileId"
+                 |join public."Consignment" C on C."ConsignmentId" = F."ConsignmentId"
+                 |WHERE C."ConsignmentId" = ? AND fm."PropertyName" in ($placeholders);""".stripMargin
+
+    val ps: PreparedStatement = utils.connection.prepareStatement(sql)
+    ps.setObject(1, consignmentId, Types.OTHER)
+    expectedProperties.zipWithIndex.foreach { case (a, b) =>
+      ps.setString(b + 2, a)
+    }
+    val rs: ResultSet = ps.executeQuery()
+    rs.next()
+    expectedProperties.zipWithIndex.foreach({ case (a, b) =>
       rs.getString("PropertyName") should equal(a)
       rs.getString("Value") should equal(expectedPropertyValues(b))
       rs.next()
