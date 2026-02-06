@@ -3,7 +3,24 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{GetResult, JdbcBackend}
 import uk.gov.nationalarchives.Tables
-import uk.gov.nationalarchives.Tables.{Avmetadata, AvmetadataRow, Consignment, ConsignmentRow, Consignmentstatus, ConsignmentstatusRow, Ffidmetadata, FfidmetadataRow, Ffidmetadatamatches, FfidmetadatamatchesRow, File, FileRow, Filemetadata, FilemetadataRow, Filestatus, FilestatusRow}
+import uk.gov.nationalarchives.Tables.{
+  Avmetadata,
+  AvmetadataRow,
+  Consignment,
+  ConsignmentRow,
+  Consignmentstatus,
+  ConsignmentstatusRow,
+  Ffidmetadata,
+  FfidmetadataRow,
+  Ffidmetadatamatches,
+  FfidmetadatamatchesRow,
+  File,
+  FileRow,
+  Filemetadata,
+  FilemetadataRow,
+  Filestatus,
+  FilestatusRow
+}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.SHA256ClientSideChecksum
