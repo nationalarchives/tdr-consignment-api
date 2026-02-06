@@ -49,7 +49,7 @@ class ConsignmentMetadataRouteSpec extends TestContainerUtils with Matchers with
     checkConsignmentMetadataExists(consignmentId, utils, Seq("JudgmentType", "PublicRecordsConfirmed"), Seq("Judgment", "true"))
   }
 
-  "addOrUpdateConsignmentMetadata" should "add or update consignment metadata and file metadata in the DB when input contains 'LegalStatus' metadata and files are present" in withContainers {
+  "addOrUpdateConsignmentMetadata" should "add or update consignment metadata and set 'LegalStatus' for files when present" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.seedDatabaseWithDefaultEntries()

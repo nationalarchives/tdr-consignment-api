@@ -91,7 +91,7 @@ class ConsignmentMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with 
     }
   }
 
-  "addOrUpdateConsignmentMetadata" should "add LegalStatus consignment metadata, but don't add file metadata when files are not present" in {
+  "addOrUpdateConsignmentMetadata" should "add LegalStatus consignment metadata, but not add file metadata when files are not present" in {
 
     val consignmentId = UUID.randomUUID()
     val userId = UUID.randomUUID()
