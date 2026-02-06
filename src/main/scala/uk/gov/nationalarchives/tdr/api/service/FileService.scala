@@ -22,6 +22,7 @@ import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natu
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.{LongUtils, TimestampUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils
 import uk.gov.nationalarchives.tdr.api.utils.TreeNodesUtils._
+import uk.gov.nationalarchives.tdr.schema.generated.BaseSchema
 import uk.gov.nationalarchives.tdr.schemautils.ConfigUtils
 
 import java.sql.Timestamp
@@ -70,7 +71,7 @@ class FileService(
         val parentFileReference = parentNode.flatMap(_.reference)
         val fileId = treeNode.id
         val fileRow = createFileRow(userId, now, consignmentId, treeNode, parentId, parentFileReference, fileId)
-        val legalStatusMetadata = metadata.find(_.propertyname == LegalStatus).map(value => row(fileId, value.value, LegalStatus)).toList
+        val legalStatusMetadata = metadata.find(_.propertyname == LegalStatus).map(metadata => LegalStatus -> metadata.value).toMap
 
         createFileRows(addFileAndMetadataInput, row, defaultPropertyValues, path, treeNode, parentFileReference, fileId, fileRow, legalStatusMetadata)
       }).toList)
@@ -224,8 +225,15 @@ class FileService(
       parentFileReference: Option[Reference],
       fileId: UUID,
       fileRow: FileRow,
-      legalStatusMetadata: List[FilemetadataRow]
+      legalStatusMetadata: Map[String, String]
   ): Rows = {
+
+    // Replace the default LegalStatus property value with the value from consignment metadata if it exists, otherwise keep the default values
+    val updatedDefaultPropertyValues = if (legalStatusMetadata.nonEmpty) {
+      defaultPropertyValues.filterNot(property => property._1 == BaseSchema.legal_status) ++ legalStatusMetadata
+    } else {
+      defaultPropertyValues
+    }
     val commonMetadataRows = List(
       row(fileId, fileId.toString, FileUUID),
       row(fileId, path, ClientSideOriginalFilepath),
@@ -233,7 +241,7 @@ class FileService(
       row(fileId, treeNode.name, Filename),
       row(fileId, treeNode.reference.getOrElse(""), FileReference),
       row(fileId, parentFileReference.getOrElse(""), ParentReference)
-    ) ++ legalStatusMetadata ++ defaultPropertyValues
+    ) ++ updatedDefaultPropertyValues
       .map(fileProperty => {
         row(fileId, fileProperty._2, tdrDataLoadHeaderToPropertyMapper(fileProperty._1))
       })

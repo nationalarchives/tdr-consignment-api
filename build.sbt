@@ -66,7 +66,7 @@ libraryDependencies ++= Seq(
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.56",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.188",
   "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.268",
-  "uk.gov.nationalarchives" %% "da-metadata-schema" % "0.0.111-SNAPSHOT",
+  "uk.gov.nationalarchives" %% "da-metadata-schema" % "0.0.111",
   "uk.gov.nationalarchives.oci" %% "oci-tools-scala" % "0.4.0",
   "org.postgresql" % "postgresql" % "42.7.9",
   "com.typesafe.slick" %% "slick" % "3.6.1",

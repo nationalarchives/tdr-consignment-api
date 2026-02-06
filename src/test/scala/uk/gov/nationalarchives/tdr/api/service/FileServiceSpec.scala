@@ -587,7 +587,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
-  "addFile" should "add all files, directories, client and static metadata when total number of files and folders are less than batch size" in {
+  "addFile" should "add all files, directories, client and static metadata when total number of files and folders are less than batch size, add 'LegalStatus' from the consignment metadata if it exists" in {
     val consignmentId = UUID.randomUUID()
     val ffidMetadataService = mock[FFIDMetadataService]
     val antivirusMetadataService = mock[AntivirusMetadataService]
@@ -613,7 +613,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
 
     when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3"))
 
-    val consignmentMetadataRow = ConsignmentmetadataRow(UUID.randomUUID(), consignmentId1, LegalStatus, "Public Records(s)", Timestamp.from(Instant.now), userId)
+    val consignmentMetadataRow = ConsignmentmetadataRow(UUID.randomUUID(), consignmentId1, LegalStatus, "Welsh Public Record(s)", Timestamp.from(Instant.now), userId)
     when(consignmentMetadataRepositoryMock.getConsignmentMetadata(any[UUID], any[Option[ConsignmentMetadataFilter]])).thenReturn(Future.successful(Seq(consignmentMetadataRow)))
 
     val service = new FileService(
@@ -653,7 +653,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(3)
     })
-
+    metadataRows.filter(_.propertyname == LegalStatus).foreach(row => row.value should equal("Welsh Public Record(s)"))
     clientSideProperties.foreach(prop => {
       val count = metadataRows.count(r => r.propertyname == prop)
       prop match {
@@ -664,7 +664,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
   }
 
-  "addFile" should "set user id to override id where present on input for metadata entries, and don't add 'LegalStatus' file metadata if it is not present in the consignment metadata" in {
+  "addFile" should "set user id to override id where present on input for metadata entries, and add 'LegalStatus' with default value if it is not present in the consignment metadata" in {
     val ffidMetadataService = mock[FFIDMetadataService]
     val antivirusMetadataService = mock[AntivirusMetadataService]
     val fileRepositoryMock = mock[FileRepository]
@@ -719,7 +719,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       row.consignmentid should equal(consignmentId)
       row.userid should equal(overrideUserId)
     })
-    val expectedSize = 66
+    val expectedSize = 71
     metadataRows.size should equal(expectedSize)
     defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(5)
