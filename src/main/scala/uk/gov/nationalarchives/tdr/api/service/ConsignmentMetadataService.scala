@@ -30,7 +30,7 @@ class ConsignmentMetadataService(
     for {
       _ <- consignmentMetadataRepository.deleteConsignmentMetadata(input.consignmentId, input.consignmentMetadata.map(_.propertyName).toSet)
       rows <- consignmentMetadataRepository.addConsignmentMetadata(convertToConsignmentMetadataRows(input, userId))
-      _ = addLegalStatusFileMetadata(input.consignmentId, input.consignmentMetadata.find(_.propertyName == tdrDataLoadHeaderToPropertyMapper(legal_status)), userId)
+      _ <- addLegalStatusFileMetadata(input.consignmentId, input.consignmentMetadata.find(_.propertyName == tdrDataLoadHeaderToPropertyMapper(legal_status)), userId)
     } yield {
       rows.map(row => ConsignmentMetadataWithConsignmentId(row.consignmentid, row.propertyname, row.value)).toList
     }
