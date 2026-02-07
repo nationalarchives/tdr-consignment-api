@@ -68,10 +68,10 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.7.9",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "ch.qos.logback" % "logback-classic" % "1.5.27",
+  "ch.qos.logback" % "logback-classic" % "1.5.28",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
-  "software.amazon.awssdk" % "rds" % "2.41.21",
-  "software.amazon.awssdk" % "sts" % "2.41.21",
+  "software.amazon.awssdk" % "rds" % "2.41.24",
+  "software.amazon.awssdk" % "sts" % "2.41.24",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
@@ -83,7 +83,7 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.109"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.112"
 )
 
 dependencyOverrides ++= Seq(
