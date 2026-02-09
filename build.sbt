@@ -65,9 +65,6 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.56",
   "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.190",
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.271",
-  "uk.gov.nationalarchives" %% "da-metadata-schema" % "0.0.112",
-  "uk.gov.nationalarchives.oci" %% "oci-tools-scala" % "0.4.0",
   "org.postgresql" % "postgresql" % "42.7.9",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
@@ -76,14 +73,17 @@ libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "rds" % "2.41.24",
   "software.amazon.awssdk" % "sts" % "2.41.24",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
+  "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
   "org.mockito" %% "mockito-scala" % "2.0.0" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.0.0" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.20.0" % Test,
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.271",
   "io.github.hakky54" % "logcaptor" % "2.12.2" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
-  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test
+  "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.112"
 )
 
 dependencyOverrides ++= Seq(
