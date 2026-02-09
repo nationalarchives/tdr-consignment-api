@@ -428,6 +428,30 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     parentFolder.size shouldBe 0
   }
 
+  "getFileIds" should "return all the file ids for the consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
+    utils.createFile(fileOneId, consignmentId, fileName = "FileName1", parentId = Some(folderOneId), uploadMatchId = Some("1"))
+
+    val fileIds = fileRepository.getFileIds(consignmentId).futureValue
+    fileIds.size shouldBe 2
+  }
+
+  "getFileIds" should "return zero fileIds if no files are present for the consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("c6f78fef-704a-46a8-82c0-afa465199e66")
+    utils.createConsignment(consignmentId, userId)
+
+    val fileIds = fileRepository.getFileIds(consignmentId).futureValue
+    fileIds.size shouldBe 0
+  }
+
   private def setUpFilesAndDirectories(consignmentId: UUID, utils: TestUtils): UUID = {
     utils.createConsignment(consignmentId, userId)
     utils.createFile(folderOneId, consignmentId, NodeType.directoryTypeIdentifier, "folderName")
