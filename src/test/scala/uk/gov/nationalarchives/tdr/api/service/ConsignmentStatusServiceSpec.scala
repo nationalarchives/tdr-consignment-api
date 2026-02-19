@@ -410,6 +410,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
       "ConfirmTransfer",
       "DescriptiveMetadata",
       "DraftMetadata",
+      "DraftMetadataUpload",
       "Export",
       "MetadataReview",
       "Series",
