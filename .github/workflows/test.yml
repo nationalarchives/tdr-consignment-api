@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb # v1.1.18
+      - uses: sbt/setup-sbt@6bec67c98f542b9e17369bfca0ec822ac1363194 # v1.1.19
       - run: sbt scalafmtCheckAll 'graphqlValidateSchema "build" "consignmentApi"'
   setup-tests:
     runs-on: ubuntu-latest
@@ -21,7 +21,7 @@ jobs:
       files: ${{ steps.generate-files.outputs.files }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb # v1.1.18
+      - uses: sbt/setup-sbt@6bec67c98f542b9e17369bfca0ec822ac1363194 # v1.1.19
       - id: generate-files
         run: |
           FILES=$(find src/test/* -name "*Spec.scala" -type f -printf "%f\n" | sed 's/\.[^.]*$//' | jq -R -s -c 'split("\n")[:-1]')
@@ -34,7 +34,7 @@ jobs:
         file: ${{ fromJSON(needs.setup-tests.outputs.files) }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb # v1.1.18
+      - uses: sbt/setup-sbt@6bec67c98f542b9e17369bfca0ec822ac1363194 # v1.1.19
       - run: |
           docker build -f Dockerfile-tests -t tests .
           sbt 'testOnly *${{ matrix.file }}*'
