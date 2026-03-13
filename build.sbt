@@ -64,14 +64,14 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.56",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.202",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.203",
   "org.postgresql" % "postgresql" % "42.7.10",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
   "ch.qos.logback" % "logback-classic" % "1.5.32",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
-  "software.amazon.awssdk" % "rds" % "2.42.9",
-  "software.amazon.awssdk" % "sts" % "2.42.9",
+  "software.amazon.awssdk" % "rds" % "2.42.12",
+  "software.amazon.awssdk" % "sts" % "2.42.12",
   "com.github.cb372" %% "scalacache-caffeine" % "0.28.0",
   "uk.gov.nationalarchives.oci" % "oci-tools-scala_2.13" % "0.4.0",
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
@@ -83,7 +83,7 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.121"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.122"
 )
 
 dependencyOverrides ++= Seq(
