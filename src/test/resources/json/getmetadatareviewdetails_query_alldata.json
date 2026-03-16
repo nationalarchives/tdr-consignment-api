@@ -1,0 +1,4 @@
+{
+  "query": "{getMetadataReviewDetails(consignmentid: \"3d6c2bfd-6d73-4c20-b45e-58e0685e6ea9\"){metadataReviewLogId consignmentId userId action eventTime}}"
+}
+

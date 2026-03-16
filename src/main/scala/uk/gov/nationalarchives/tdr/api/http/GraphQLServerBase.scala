@@ -88,6 +88,7 @@ trait GraphQLServerBase {
       config
     )
     val consignmentMetadataService = new ConsignmentMetadataService(consignmentMetadataRepository, fileService, fileMetadataService, uuidSource, timeSource)
+    val metadataReviewService = new MetadataReviewService(metadataReviewLogRepository)
 
     ConsignmentApiContext(
       accessToken,
@@ -102,7 +103,8 @@ trait GraphQLServerBase {
       transferringBodyService,
       consignmentStatusService,
       fileStatusService,
-      consignmentMetadataService
+      consignmentMetadataService,
+      metadataReviewService
     )
 
   }

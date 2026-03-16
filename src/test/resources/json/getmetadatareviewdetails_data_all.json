@@ -1,0 +1,14 @@
+{
+  "data": {
+    "getMetadataReviewDetails": [
+      {
+        "metadataReviewLogId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "consignmentId": "3d6c2bfd-6d73-4c20-b45e-58e0685e6ea9",
+        "userId": "4ab14990-ed63-4615-8336-56fbb9960300",
+        "action": "Approve",
+        "eventTime": "2020-01-01T09:00Z"
+      }
+    ]
+  }
+}
+

@@ -9,7 +9,8 @@ object GraphQlTypes {
     "Query",
     SeriesFields.queryFields ++
       ConsignmentFields.queryFields ++
-      FileFields.queryFields
+      FileFields.queryFields ++
+      MetadataReviewFields.queryFields
   )
   private val MutationType = ObjectType(
     "Mutation",
