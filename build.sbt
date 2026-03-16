@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
   "org.sangria-graphql" %% "sangria-relay" % "4.0.1",
   "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
-  "org.apache.pekko" %% "pekko-connectors-slick" % "1.2.0",
+  "org.apache.pekko" %% "pekko-connectors-slick" % "1.3.0",
   "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
   "org.apache.pekko" %% "pekko-http-spray-json" % pekkoHttpVersion,
   "org.apache.pekko" %% "pekko-http-xml" % pekkoHttpVersion,
