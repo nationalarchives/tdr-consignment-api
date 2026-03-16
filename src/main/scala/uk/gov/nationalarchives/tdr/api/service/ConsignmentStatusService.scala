@@ -125,6 +125,7 @@ object ConsignmentStatusService {
       UploadType.id,
       ClientChecksType.id,
       DraftMetadataType.id,
+      DraftMetadataUploadType.id,
       ClosureMetadataType.id,
       DescriptiveMetadataType.id,
       ConfirmTransferType.id,
