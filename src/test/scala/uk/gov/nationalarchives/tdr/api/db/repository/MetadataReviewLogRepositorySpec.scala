@@ -7,7 +7,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import uk.gov.nationalarchives.Tables.MetadatareviewlogRow
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
-import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
+import uk.gov.nationalarchives.tdr.api.utils._
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -27,7 +27,7 @@ class MetadataReviewLogRepositorySpec extends TestContainerUtils with ScalaFutur
     utils.createConsignment(consignmentId, userId)
 
     val logId = UUID.randomUUID()
-    val action = "MetadataReview"
+    val action = Submission.value
     val eventTime = Timestamp.from(FixedTimeSource.now)
     val logRow = MetadatareviewlogRow(logId, consignmentId, userId, action, eventTime)
 
@@ -53,9 +53,9 @@ class MetadataReviewLogRepositorySpec extends TestContainerUtils with ScalaFutur
     val logId2 = UUID.randomUUID()
     val logId3 = UUID.randomUUID()
 
-    utils.addMetadataReviewLog(logId1, consignmentId, userId, "Approve")
-    utils.addMetadataReviewLog(logId2, consignmentId, userId, "Reject")
-    utils.addMetadataReviewLog(logId3, otherConsignmentId, userId, "Approve")
+    utils.addMetadataReviewLog(logId1, consignmentId, userId, Approval.value)
+    utils.addMetadataReviewLog(logId2, consignmentId, userId, Rejection.value)
+    utils.addMetadataReviewLog(logId3, otherConsignmentId, userId, Approval.value)
 
     val repository = new MetadataReviewLogRepository(db)
     val results = repository.getEntriesByConsignmentId(consignmentId).futureValue
@@ -63,7 +63,7 @@ class MetadataReviewLogRepositorySpec extends TestContainerUtils with ScalaFutur
     results.size should equal(2)
     results.map(_.metadatareviewlogid) should contain allOf (logId1, logId2)
     results.map(_.consignmentid).distinct should equal(Seq(consignmentId))
-    results.map(_.action) should contain allOf ("Approve", "Reject")
+    results.map(_.action) should contain allOf (Approval.value, Rejection.value)
   }
 
   "getEntriesByConsignmentId" should "return an empty sequence if no entries exist for the consignment" in withContainers { case container: PostgreSQLContainer =>

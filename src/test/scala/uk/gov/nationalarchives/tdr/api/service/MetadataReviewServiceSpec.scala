@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.MetadatareviewlogRow
 import uk.gov.nationalarchives.tdr.api.db.repository.MetadataReviewLogRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataReviewFields.MetadataReviewLog
+import uk.gov.nationalarchives.tdr.api.utils.{Approval, Rejection}
 
 import java.sql.Timestamp
 import java.time.ZonedDateTime
@@ -27,8 +28,8 @@ class MetadataReviewServiceSpec extends AnyFlatSpec with MockitoSugar with Match
     val eventTime = Timestamp.valueOf("2024-06-01 12:00:00")
 
     val rows = Seq(
-      MetadatareviewlogRow(logId1, consignmentId, userId, "Approve", eventTime),
-      MetadatareviewlogRow(logId2, consignmentId, userId, "Reject", eventTime)
+      MetadatareviewlogRow(logId1, consignmentId, userId, Approval.value, eventTime),
+      MetadatareviewlogRow(logId2, consignmentId, userId, Rejection.value, eventTime)
     )
 
     when(metadataReviewLogRepositoryMock.getEntriesByConsignmentId(consignmentId)).thenReturn(Future.successful(rows))
@@ -40,9 +41,9 @@ class MetadataReviewServiceSpec extends AnyFlatSpec with MockitoSugar with Match
     result.head.metadataReviewLogId shouldBe logId1
     result.head.consignmentId shouldBe consignmentId
     result.head.userId shouldBe userId
-    result.head.action shouldBe "Approve"
+    result.head.action shouldBe Approval.value
     result(1).metadataReviewLogId shouldBe logId2
-    result(1).action shouldBe "Reject"
+    result(1).action shouldBe Rejection.value
   }
 
   "getMetadataReviewDetails" should "return an empty list if no log entries exist for the consignment" in {
@@ -62,7 +63,7 @@ class MetadataReviewServiceSpec extends AnyFlatSpec with MockitoSugar with Match
     val logId = UUID.randomUUID()
     val eventTime = Timestamp.valueOf("2024-06-01 12:00:00")
 
-    val rows = Seq(MetadatareviewlogRow(logId, consignmentId, userId, "Approve", eventTime))
+    val rows = Seq(MetadatareviewlogRow(logId, consignmentId, userId, Approval.value, eventTime))
 
     when(metadataReviewLogRepositoryMock.getEntriesByConsignmentId(consignmentId)).thenReturn(Future.successful(rows))
 
