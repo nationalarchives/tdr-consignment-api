@@ -463,6 +463,17 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.next()
   }
 
+  def addMetadataReviewLog(logId: UUID, consignmentId: UUID, userId: UUID, action: String, eventTime: Timestamp = Timestamp.from(FixedTimeSource.now)): Unit = {
+    val sql = s"""INSERT INTO "MetadataReviewLog" ("MetadataReviewLogId", "ConsignmentId", "UserId", "Action", "EventTime") VALUES (?, ?, ?, ?, ?)"""
+    val ps: PreparedStatement = connection.prepareStatement(sql)
+    ps.setObject(1, logId, Types.OTHER)
+    ps.setObject(2, consignmentId, Types.OTHER)
+    ps.setObject(3, userId, Types.OTHER)
+    ps.setString(4, action)
+    ps.setTimestamp(5, eventTime)
+    ps.executeUpdate()
+  }
+
   def addConsignmentMetadata(metadataId: UUID, consignmentId: UUID, propertyName: String, value: String = "Result of ConsignmentMetadata processing"): Unit = {
     val sql = s"""insert into "ConsignmentMetadata" ("MetadataId", "ConsignmentId", "PropertyName", "Value", "Datetime", "UserId") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
