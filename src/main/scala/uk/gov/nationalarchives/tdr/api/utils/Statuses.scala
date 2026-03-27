@@ -64,6 +64,11 @@ object Statuses {
     val nonJudgmentStatus: Boolean = true
   }
 
+  case object DraftMetadataUploadType extends StatusType {
+    val id: String = "DraftMetadataUpload"
+    val nonJudgmentStatus: Boolean = true
+  }
+
   case object MetadataReviewType extends StatusType {
     val id: String = "MetadataReview"
     val nonJudgmentStatus: Boolean = true

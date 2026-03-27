@@ -2,8 +2,6 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{GetResult, JdbcBackend}
-import uk.gov
-import uk.gov.nationalarchives
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{
   Avmetadata,
@@ -27,10 +25,9 @@ import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields,
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.SHA256ClientSideChecksum
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, ClientFilePath, FFID, Redaction, Success => FileCheckSuccess}
-
-import java.time.ZonedDateTime
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
+import java.time.ZonedDateTime
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -156,6 +153,13 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
     val query = File
       .filter(_.consignmentid === consignmentId)
       .filter(_.parentid.isEmpty)
+    db.run(query.result)
+  }
+
+  def getFileIds(consignmentId: UUID): Future[Seq[UUID]] = {
+    val query = File
+      .filter(_.consignmentid === consignmentId)
+      .map(_.fileid)
     db.run(query.result)
   }
 }
