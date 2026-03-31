@@ -6,7 +6,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.ConsignmentMetadata
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{ConsignmentMetadata, MetadataReviewLog}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileMetadataFields.SHA256ServerSideChecksum
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
@@ -89,7 +89,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       transferringBodyTdrCode: Option[String],
       metadataSchemaLibraryVersion: Option[String] = None,
       clientSideDraftMetadataFileName: Option[String] = None,
-      consignmentMetadata: List[ConsignmentMetadata] = Nil
+      consignmentMetadata: List[ConsignmentMetadata] = Nil,
+      metadataReviewLogs: List[MetadataReviewLog] = Nil
   )
 
   case class ConsignmentStatus(
@@ -369,6 +370,18 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val response: GraphqlQueryData = runTestQuery("query_consignment_metadata", validUserToken())
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_consignment_metadata")
     response should equal(expectedResponse)
+  }
+
+  "getConsignment" should "return metadata review logs as a nested field" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val logId = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+    utils.createConsignment(consignmentId, userId)
+    utils.addMetadataReviewLog(logId, consignmentId, userId, "Approval")
+
+    val response: GraphqlQueryData = runTestQuery("query_metadata_review_logs", validUserToken())
+    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_metadata_review_logs")
+    response.data should equal(expectedResponse.data)
   }
 
   "getConsignment" should "return empty ffid metadata if the ffid metadata is missing" in withContainers { case container: PostgreSQLContainer =>

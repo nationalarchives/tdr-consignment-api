@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import uk.gov.nationalarchives.Tables.MetadatareviewlogRow
 import uk.gov.nationalarchives.tdr.api.db.repository.MetadataReviewLogRepository
-import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataReviewFields.MetadataReviewLog
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.MetadataReviewLog
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
 
 import java.util.UUID
