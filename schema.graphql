@@ -137,6 +137,7 @@ type Consignment {
     consignmentReference: String!
     consignmentStatuses: [ConsignmentStatus!]!
     consignmentMetadata(consignmentMetadataFiltersInput: ConsignmentMetadataFilter): [ConsignmentMetadata!]!
+    metadataReviewLogs: [MetadataReviewLog!]!
 }
 
 "A connection to a list of items."
@@ -442,7 +443,6 @@ type Query {
     consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
     getConsignmentsForMetadataReview: [Consignment!]!
     getFileCheckFailures(getFileCheckFailuresInput: GetFileCheckFailuresInput): [FileCheckFailure!]!
-    getMetadataReviewDetails(consignmentid: UUID!): [MetadataReviewLog!]!
 }
 
 type Series {

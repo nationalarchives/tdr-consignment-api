@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.MetadatareviewlogRow
 import uk.gov.nationalarchives.tdr.api.db.repository.MetadataReviewLogRepository
-import uk.gov.nationalarchives.tdr.api.graphql.fields.MetadataReviewFields.MetadataReviewLog
+import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.MetadataReviewLog
 import uk.gov.nationalarchives.tdr.api.utils.{Approval, Rejection}
 
 import java.sql.Timestamp
