@@ -443,7 +443,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val utils = TestUtils(container.database)
     val notifyExportDetailsToken = validNotifyExportDetailsToken("notify_export_details")
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    utils.createConsignment(consignmentId, exportUser)
+    utils.createConsignment(consignmentId, userId)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
     val response: GraphqlQueryData = runTestQuery("query_somedata", notifyExportDetailsToken)
