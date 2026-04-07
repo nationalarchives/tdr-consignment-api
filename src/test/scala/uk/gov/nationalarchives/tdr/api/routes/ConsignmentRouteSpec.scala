@@ -439,7 +439,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.data should equal(expectedResponse.data)
   }
 
-  "getConsignment" should "allow a user with export access to return data" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignment" should "allow a user with notify export details access to return data" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val notifyExportDetailsToken = validNotifyExportDetailsToken("notify_export_details")
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
