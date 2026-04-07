@@ -20,6 +20,7 @@ trait AuthorisationTag extends ValidationTag {
   val dataLoadAccessRole = "data_load_access"
   val fileFormatRole = "file_format"
   val exportRole = "export"
+  val notifyExportDetails = "notify_export_details"
   val reportingRole = "reporting"
   val updateMetadataRole = "update_metadata"
 }
@@ -79,7 +80,7 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateCo
     val token = ctx.ctx.accessToken
     val arg: T = ctx.arg[T](argument.name)
     val hasAccess = token.backendChecksRoles.contains(exportRole) || token.draftMetadataRoles.contains(updateMetadataRole) ||
-      token.transferServiceRoles.contains(dataLoadAccessRole)
+      token.transferServiceRoles.contains(dataLoadAccessRole) || token.exportRoles.contains(notifyExportDetails)
     lazy val hasUserIdOverrideAccess: Boolean = token.transferServiceRoles.contains(dataLoadRole)
 
     val userId: UUID = arg match {

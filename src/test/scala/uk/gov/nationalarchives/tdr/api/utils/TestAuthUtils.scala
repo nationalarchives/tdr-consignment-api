@@ -13,7 +13,8 @@ object TestAuthUtils {
   val reportingUser: UUID = UUID.fromString("a863292b-888b-4d88-b5f3-2bb9a11b336a")
   val draftMetadataUser: UUID = UUID.fromString("9b4024e0-61e7-482b-932b-5ea1e0c9d94d")
   val transferServiceUser: UUID = UUID.fromString("5be4be46-cbd3-4073-8500-3be04522145d")
-
+  val exportUser: UUID = UUID.fromString("29bed8f1-f328-4bf8-b1c0-44af60404f2d")
+  
   private val tdrPort: Int = 8000
   private val testPort: Int = 8001
   private val tdrMock: KeycloakMock = createServer("tdr", tdrPort)
@@ -68,6 +69,15 @@ object TestAuthUtils {
     tdrMock.getAccessToken(
       aTokenConfig()
         .withResourceRole("tdr-backend-checks", role)
+        .withClaim("user_id", backendChecksUser)
+        .build
+    )
+  )
+
+  def validNotifyExportDetailsToken(role: String): OAuth2BearerToken = OAuth2BearerToken(
+    tdrMock.getAccessToken(
+      aTokenConfig()
+        .withResourceRole("tdr-export", role)
         .withClaim("user_id", backendChecksUser)
         .build
     )
