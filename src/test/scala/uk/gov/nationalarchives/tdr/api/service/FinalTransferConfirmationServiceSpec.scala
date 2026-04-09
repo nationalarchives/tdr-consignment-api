@@ -48,7 +48,8 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
 
     when(consignmentMetadataRepoMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
 
-    val service = new FinalTransferConfirmationService(consignmentMetadataRepoMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, FixedTimeSource)
+    val service =
+      new FinalTransferConfirmationService(consignmentMetadataRepoMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, FixedTimeSource)
     val result: FinalTransferConfirmation = service
       .addFinalTransferConfirmation(AddFinalTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId)
       .futureValue
@@ -81,7 +82,8 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
 
     when(consignmentMetadataRepoMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
 
-    val service = new FinalTransferConfirmationService(consignmentMetadataRepoMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, FixedTimeSource)
+    val service =
+      new FinalTransferConfirmationService(consignmentMetadataRepoMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, FixedTimeSource)
     val result: FinalTransferConfirmation = service
       .addFinalTransferConfirmation(AddFinalTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId)
       .futureValue
@@ -105,7 +107,8 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
     val mockResponse = Future.successful(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp))
     when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockResponse)
 
-    val service = new FinalTransferConfirmationService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, fixedTimeSource)
+    val service =
+      new FinalTransferConfirmationService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, fixedTimeSource)
     val result: ConsignmentstatusRow = service.addConfirmTransferStatus(consignmentId).futureValue
 
     result.consignmentstatusid shouldBe consignmentStatusId
@@ -133,7 +136,8 @@ class FinalTransferConfirmationServiceSpec extends AnyFlatSpec with MockitoSugar
     when(metadataReviewLogRepositoryMock.addLogEntry(any[MetadatareviewlogRow]))
       .thenReturn(Future.successful(MetadatareviewlogRow(metadataId, consignmentId, userId, Confirmation.value, Timestamp.from(FixedTimeSource.now))))
 
-    val service = new FinalTransferConfirmationService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, FixedTimeSource)
+    val service =
+      new FinalTransferConfirmationService(consignmentMetadataRepositoryMock, consignmentStatusRepositoryMock, metadataReviewLogRepositoryMock, fixedUuidSource, FixedTimeSource)
     service.addFinalTransferConfirmation(AddFinalTransferConfirmationInput(consignmentId, legalCustodyTransferConfirmed = true), userId).futureValue
 
     verify(metadataReviewLogRepositoryMock, times(1)).addLogEntry(
