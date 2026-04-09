@@ -8,6 +8,9 @@ permissions:
 jobs:
   pre-deploy:
     uses: nationalarchives/tdr-github-actions/.github/workflows/ecs_build.yml@27efbc03aaaa9696eea85ab7a9363d6f92733471 # v0.0.34
+    permissions:
+      contents: write
+      id-token: write
     with:
       repo-name: tdr-consignment-api
       image-name: consignment-api
