@@ -20,12 +20,10 @@ class FinalTransferConfirmationService(
 
   def addFinalTransferConfirmation(consignmentMetadataInputs: AddFinalTransferConfirmationInput, userId: UUID): Future[FinalTransferConfirmation] = {
     for {
-      consignmentMetadata <- consignmentMetadataRepository
-        .addConsignmentMetadata(convertInputToPropertyRows(consignmentMetadataInputs, userId))
-        .map(rows => convertDbRowsToFinalTransferConfirmation(consignmentMetadataInputs.consignmentId, rows))
+      rows <- consignmentMetadataRepository.addConsignmentMetadata(convertInputToPropertyRows(consignmentMetadataInputs, userId))
       _ <- addMetadataReviewCompletedLog(consignmentMetadataInputs.consignmentId, userId)
       _ <- addConfirmTransferStatus(consignmentMetadataInputs.consignmentId)
-    } yield consignmentMetadata
+    } yield convertDbRowsToFinalTransferConfirmation(consignmentMetadataInputs.consignmentId, rows)
   }
 
   def addConfirmTransferStatus(consignmentId: UUID): Future[ConsignmentstatusRow] = {
@@ -33,7 +31,7 @@ class FinalTransferConfirmationService(
     consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 
-  def addMetadataReviewCompletedLog(consignmentId: UUID, userId: UUID): Future[MetadatareviewlogRow] = {
+  private def addMetadataReviewCompletedLog(consignmentId: UUID, userId: UUID): Future[MetadatareviewlogRow] = {
     val metadataReviewLogRow = MetadatareviewlogRow(uuidSource.uuid, consignmentId, userId, Confirmation.value, Timestamp.from(timeSource.now))
     metadataReviewLogRepository.addLogEntry(metadataReviewLogRow)
   }
