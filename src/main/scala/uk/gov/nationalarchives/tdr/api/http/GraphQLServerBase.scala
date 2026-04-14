@@ -67,7 +67,8 @@ trait GraphQLServerBase {
     val seriesService = new SeriesService(seriesRepository, uuidSource)
     val consignmentMetadataRepository = new ConsignmentMetadataRepository(db)
     val transferAgreementService = new TransferAgreementService(consignmentMetadataRepository, consignmentStatusRepository, uuidSource, timeSource)
-    val finalTransferConfirmationService = new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, uuidSource, timeSource)
+    val finalTransferConfirmationService =
+      new FinalTransferConfirmationService(new ConsignmentMetadataRepository(db), consignmentStatusRepository, metadataReviewLogRepository, uuidSource, timeSource)
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepository, uuidSource, timeSource)
     val consignmentStatusService = new ConsignmentStatusService(consignmentStatusRepository, metadataReviewLogRepository, uuidSource, timeSource)
     val fileStatusService = new FileStatusService(fileStatusRepository)
@@ -88,6 +89,7 @@ trait GraphQLServerBase {
       config
     )
     val consignmentMetadataService = new ConsignmentMetadataService(consignmentMetadataRepository, fileService, fileMetadataService, uuidSource, timeSource)
+    val metadataReviewService = new MetadataReviewService(metadataReviewLogRepository)
 
     ConsignmentApiContext(
       accessToken,
@@ -102,7 +104,8 @@ trait GraphQLServerBase {
       transferringBodyService,
       consignmentStatusService,
       fileStatusService,
-      consignmentMetadataService
+      consignmentMetadataService,
+      metadataReviewService
     )
 
   }
