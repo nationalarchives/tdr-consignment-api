@@ -391,6 +391,7 @@ object ConsignmentFields {
     Field(
       "getConsignmentsForMetadataReview",
       ListType(ConsignmentType),
+      arguments = Nil,
       deprecationReason = Some("Use getConsignmentReviewDetails instead"),
       resolve = ctx => ctx.ctx.consignmentService.getConsignmentsForMetadataReview,
       tags = List(ValidateIsTnaUser)
