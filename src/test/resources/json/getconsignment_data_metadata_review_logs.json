@@ -1,0 +1,15 @@
+{
+  "data": {
+    "getConsignment": {
+      "metadataReviewLogs": [
+        {
+          "metadataReviewLogId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "consignmentId": "6e3b76c4-1745-4467-8ac5-b4dd736e1b3e",
+          "userId": "4ab14990-ed63-4615-8336-56fbb9960300",
+          "action": "Approval",
+          "eventTime": "2020-01-01T09:00Z"
+        }
+      ]
+    }
+  }
+}

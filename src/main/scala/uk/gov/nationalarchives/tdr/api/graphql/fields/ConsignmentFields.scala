@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.graphql.fields
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
+import io.circe.{Decoder, Encoder}
 import sangria.macros.derive._
 import sangria.marshalling.circe._
 import sangria.relay._
@@ -29,6 +29,7 @@ import uk.gov.nationalarchives.tdr.api.db.repository.{FileFilters, FileMetadataF
 import uk.gov.nationalarchives.tdr.api.graphql._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.ConsignmentStatus
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes._
+import uk.gov.nationalarchives.tdr.api.graphql.fields.FieldTypes.ZonedDateTimeType
 import uk.gov.nationalarchives.tdr.api.graphql.validation.{ServiceTransfer, UserOwnsConsignment}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{File, FileMetadataValue, FileMetadataValues}
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
@@ -94,6 +95,14 @@ object ConsignmentFields {
 
   case class UpdateParentFolderInput(consignmentId: UUID, parentFolder: String, userIdOverride: Option[UUID] = None) extends UserOwnsConsignment with ServiceTransfer
 
+  case class MetadataReviewLog(
+      metadataReviewLogId: UUID,
+      consignmentId: UUID,
+      userId: UUID,
+      action: String,
+      eventTime: ZonedDateTime
+  )
+
   sealed trait ConsignmentOrderField {
     val cursorFn: ConsignmentRow => String
   }
@@ -151,6 +160,8 @@ object ConsignmentFields {
 
   implicit val ConsignmentMetadataType: ObjectType[Unit, ConsignmentMetadata] =
     deriveObjectType[Unit, ConsignmentMetadata]()
+
+  implicit val MetadataReviewLogType: ObjectType[Unit, MetadataReviewLog] = deriveObjectType[Unit, MetadataReviewLog]()
 
   implicit val ConsignmentOrderFieldType: EnumType[ConsignmentOrderField] = deriveEnumType[ConsignmentOrderField]()
   implicit val DirectionType: EnumType[Direction] = deriveEnumType[Direction]()
@@ -281,6 +292,11 @@ object ConsignmentFields {
         ListType(ConsignmentMetadataType),
         arguments = ConsignmentMetadataFilterInputArg :: Nil,
         resolve = context => DeferConsignmentMetadata(context.value.consignmentid, context.args.arg(ConsignmentMetadataFilterInputArg))
+      ),
+      Field(
+        "metadataReviewLogs",
+        ListType(MetadataReviewLogType),
+        resolve = ctx => ctx.ctx.metadataReviewService.getMetadataReviewDetails(ctx.value.consignmentid)
       )
     )
   )
