@@ -189,6 +189,14 @@ enum ConsignmentOrderField {
     CreatedAtTimestamp
 }
 
+type ConsignmentReviewDetails {
+    consignmentReference: String!
+    reviewStatus: String!
+    transferringBodyName: String
+    seriesName: String
+    lastUpdated: ZonedDateTime!
+}
+
 type ConsignmentStatus {
     consignmentStatusId: UUID!
     consignmentId: UUID!
@@ -441,7 +449,8 @@ type Query {
     getSeries(body: String!): [Series!]!
     getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
     consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
-    getConsignmentsForMetadataReview: [Consignment!]!
+    getConsignmentsForMetadataReview: [Consignment!]! @deprecated(reason: "Use getConsignmentReviewDetails instead")
+    getConsignmentReviewDetails(statusFilter: String!): [ConsignmentReviewDetails!]!
     getFileCheckFailures(getFileCheckFailuresInput: GetFileCheckFailuresInput): [FileCheckFailure!]!
 }
 

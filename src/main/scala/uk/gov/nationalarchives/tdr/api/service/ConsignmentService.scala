@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
-import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow}
+import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow, MetadatareviewlogRow}
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateException
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.DataExceptions.InputDataException
@@ -25,12 +25,21 @@ class ConsignmentService(
     seriesRepository: SeriesRepository,
     fileMetadataRepository: FileMetadataRepository,
     transferringBodyService: TransferringBodyService,
+    metadataReviewLogRepository: MetadataReviewLogRepository,
     timeSource: TimeSource,
     uuidSource: UUIDSource,
     config: Config
 )(implicit val executionContext: ExecutionContext) {
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
+
+  // Review status sort ordering: Submission (Requested) > Rejection (Rejected) > Approval (Approved) > Confirmation (Completed)
+  private val reviewStatusOrder: Map[String, Int] = Map(
+    "Submission" -> 0,
+    "Rejection" -> 1,
+    "Approval" -> 2,
+    "Confirmation" -> 3
+  )
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
     consignmentStatusRepository
@@ -121,8 +130,40 @@ class ConsignmentService(
   }
 
   def getConsignmentsForMetadataReview: Future[Seq[Consignment]] = {
-    val consignments = consignmentRepository.getConsignmentsForMetadataReview
-    consignments.map(rows => rows.map(row => convertRowToConsignment(row)))
+    consignmentRepository.getConsignmentsForMetadataReview.map(rows => rows.map(row => convertRowToConsignment(row)))
+  }
+
+  def getConsignmentReviewDetails(statusFilter: String): Future[Seq[ConsignmentReviewDetails]] = {
+    for {
+      consignmentRows <- consignmentRepository.getConsignmentsWithMetadataReviewStatus
+      consignmentIds = consignmentRows.map(_.consignmentid)
+      logEntries <- metadataReviewLogRepository.getEntriesByConsignmentIds(consignmentIds)
+    } yield {
+      val latestLogByConsignment: Map[UUID, MetadatareviewlogRow] = logEntries
+        .groupBy(_.consignmentid)
+        .view
+        .mapValues(_.maxBy(_.eventtime.getTime))
+        .toMap
+
+      val details = consignmentRows.flatMap { row =>
+        latestLogByConsignment.get(row.consignmentid).map { latestLog =>
+          ConsignmentReviewDetails(
+            consignmentReference = row.consignmentreference,
+            reviewStatus = latestLog.action,
+            transferringBodyName = row.transferringbodyname,
+            seriesName = row.seriesname,
+            lastUpdated = latestLog.eventtime.toZonedDateTime
+          )
+        }
+      }
+
+      val filtered = statusFilter match {
+        case "all" => details
+        case _     => details.filter(_.reviewStatus == statusFilter)
+      }
+
+      filtered.sortBy(d => (reviewStatusOrder.getOrElse(d.reviewStatus, Int.MaxValue), -d.lastUpdated.toInstant.toEpochMilli))
+    }
   }
 
   def getConsignmentForMetadataReview(consignmentId: UUID): Future[Option[Consignment]] = {
