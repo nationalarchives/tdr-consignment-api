@@ -135,7 +135,7 @@ class ConsignmentService(
     consignmentRepository.getConsignmentsForMetadataReview.map(rows => rows.map(row => convertRowToConsignment(row)))
   }
 
-  def getConsignmentReviewDetails(statusFilter: String): Future[Seq[ConsignmentReviewDetails]] = {
+  def getConsignmentReviewDetails(statusFilter: Option[String]): Future[Seq[ConsignmentReviewDetails]] = {
     for {
       consignmentRows <- consignmentRepository.getConsignmentsWithMetadataReviewStatus
       consignmentIds = consignmentRows.map(_.consignmentid)
@@ -160,8 +160,8 @@ class ConsignmentService(
       }
 
       val filtered = statusFilter match {
-        case "all" => details
-        case _     => details.filter(_.reviewStatus == statusFilter)
+        case None         => details
+        case Some(status) => details.filter(_.reviewStatus == status)
       }
 
       filtered.sortBy(d => (reviewStatusOrder.getOrElse(d.reviewStatus, Int.MaxValue), -d.lastUpdated.toInstant.toEpochMilli))

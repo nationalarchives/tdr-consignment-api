@@ -945,7 +945,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "getConsignmentReviewDetails" should "return all consignments when statusFilter is 'all'" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignmentReviewDetails" should "return all consignments when statusFilter is omitted" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2024-AFK")
     val consignmentId2 = UUID.fromString("e169c625-ba5f-4d7c-bbdf-af71ff4cc179")

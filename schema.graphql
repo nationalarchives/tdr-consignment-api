@@ -450,7 +450,7 @@ type Query {
     getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
     consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
     getConsignmentsForMetadataReview: [Consignment!]! @deprecated(reason: "Use getConsignmentReviewDetails instead")
-    getConsignmentReviewDetails(statusFilter: String!): [ConsignmentReviewDetails!]!
+    getConsignmentReviewDetails(statusFilter: String): [ConsignmentReviewDetails!]!
     getFileCheckFailures(getFileCheckFailuresInput: GetFileCheckFailuresInput): [FileCheckFailure!]!
 }
 

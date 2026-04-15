@@ -577,7 +577,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
   }
 
-  "getConsignmentReviewDetails" should "return a sorted list of all ConsignmentReviewDetails when statusFilter is 'all'" in {
+  "getConsignmentReviewDetails" should "return a sorted list of all ConsignmentReviewDetails when statusFilter is None" in {
     val consignmentId1 = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val consignmentId2 = UUID.fromString("7e3b76c4-1745-4467-8ac5-b4dd736e1b3f")
 
@@ -616,7 +616,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId1, consignmentId2)))
       .thenReturn(Future.successful(Seq(logEntry1, logEntry2)))
 
-    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails("all").futureValue
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(None).futureValue
 
     verify(consignmentRepoMock, times(1)).getConsignmentsWithMetadataReviewStatus
     response should have size 2
@@ -629,7 +629,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response(1).transferringBodyName should equal(Some("department1"))
   }
 
-  "getConsignmentReviewDetails" should "return only Requested status when statusFilter is 'Requested'" in {
+  "getConsignmentReviewDetails" should "return only Requested status when statusFilter is Some('Requested')" in {
     val consignmentId1 = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val consignmentId2 = UUID.fromString("7e3b76c4-1745-4467-8ac5-b4dd736e1b3f")
 
@@ -668,7 +668,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId1, consignmentId2)))
       .thenReturn(Future.successful(Seq(logEntry1, logEntry2)))
 
-    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(MetadataReviewStatus.Requested.value).futureValue
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(Some(MetadataReviewStatus.Requested.value)).futureValue
 
     response should have size 1
     response.head.reviewStatus should equal(MetadataReviewStatus.Requested.value)
@@ -695,7 +695,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId)))
       .thenReturn(Future.successful(Seq.empty))
 
-    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails("all").futureValue
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(None).futureValue
 
     response shouldBe empty
   }
@@ -723,7 +723,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId)))
       .thenReturn(Future.successful(Seq(earlierLog, laterLog)))
 
-    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails("all").futureValue
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(None).futureValue
 
     response should have size 1
     response.head.reviewStatus should equal(MetadataReviewStatus.Approved.value)

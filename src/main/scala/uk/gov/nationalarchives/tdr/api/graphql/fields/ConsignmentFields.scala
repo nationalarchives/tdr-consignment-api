@@ -336,7 +336,7 @@ object ConsignmentFields {
   val UpdateClientSideDraftMetadataFileNameInputArg: Argument[UpdateClientSideDraftMetadataFileNameInput] =
     Argument("updateClientSideDraftMetadataFileName", UpdateClientSideDraftMetadataFileNameType)
   val UpdateParentFolderInputArg: Argument[UpdateParentFolderInput] = Argument("updateParentFolderInput", UpdateParentFolderInputType)
-  val StatusFilterArg: Argument[String] = Argument("statusFilter", StringType)
+  val StatusFilterArg: Argument[Option[String]] = Argument("statusFilter", OptionInputType(StringType))
 
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[ConsignmentApiContext, Connection, Consignment](
