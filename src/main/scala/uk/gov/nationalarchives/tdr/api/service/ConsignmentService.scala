@@ -11,7 +11,7 @@ import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
-import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Confirmation, Rejection, Submission}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.MetadataReviewLogAction
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewStatus
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
@@ -43,13 +43,6 @@ class ConsignmentService(
     MetadataReviewStatus.Completed.value -> 3
   )
 
-  // Maps log action values to their corresponding review status values
-  private val logActionToReviewStatus: Map[String, String] = Map(
-    Submission.value    -> MetadataReviewStatus.Requested.value,
-    Rejection.value     -> MetadataReviewStatus.Rejected.value,
-    Approval.value      -> MetadataReviewStatus.Approved.value,
-    Confirmation.value  -> MetadataReviewStatus.Completed.value
-  )
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
     consignmentStatusRepository
@@ -159,7 +152,7 @@ class ConsignmentService(
         latestLogByConsignment.get(row.consignmentid).map { latestLog =>
           ConsignmentReviewDetails(
             consignmentReference = row.consignmentreference,
-            reviewStatus = logActionToReviewStatus.getOrElse(latestLog.action, latestLog.action),
+            reviewStatus = MetadataReviewLogAction(latestLog.action).reviewStatus.value,
             transferringBodyName = row.transferringbodyname,
             seriesName = row.seriesname,
             lastUpdated = latestLog.eventtime.toZonedDateTime
