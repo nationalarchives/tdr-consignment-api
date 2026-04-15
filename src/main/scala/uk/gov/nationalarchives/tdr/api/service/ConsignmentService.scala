@@ -38,11 +38,10 @@ class ConsignmentService(
   // Review status sort ordering: Requested > Rejected > Approved > Completed
   private val reviewStatusOrder: Map[String, Int] = Map(
     MetadataReviewStatus.Requested.value -> 0,
-    MetadataReviewStatus.Rejected.value  -> 1,
-    MetadataReviewStatus.Approved.value  -> 2,
+    MetadataReviewStatus.Rejected.value -> 1,
+    MetadataReviewStatus.Approved.value -> 2,
     MetadataReviewStatus.Completed.value -> 3
   )
-
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
     consignmentStatusRepository

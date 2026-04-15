@@ -13,4 +13,3 @@ class LoggingUtils(logger: Logger) {
 object LoggingUtils {
   def apply(logger: Logger): LoggingUtils = new LoggingUtils(logger)
 }
-
