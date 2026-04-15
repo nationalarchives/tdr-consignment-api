@@ -141,30 +141,10 @@ class ConsignmentService(
       consignmentIds = consignmentRows.map(_.consignmentid)
       logEntries <- metadataReviewLogRepository.getEntriesByConsignmentIds(consignmentIds)
     } yield {
-      val latestLogByConsignment: Map[UUID, MetadatareviewlogRow] = logEntries
-        .groupBy(_.consignmentid)
-        .view
-        .mapValues(_.maxBy(_.eventtime.getTime))
-        .toMap
-
-      val details = consignmentRows.flatMap { row =>
-        latestLogByConsignment.get(row.consignmentid).map { latestLog =>
-          ConsignmentReviewDetails(
-            consignmentReference = row.consignmentreference,
-            reviewStatus = MetadataReviewLogAction(latestLog.action).reviewStatus.value,
-            transferringBodyName = row.transferringbodyname,
-            seriesName = row.seriesname,
-            lastUpdated = latestLog.eventtime.toZonedDateTime
-          )
-        }
-      }
-
-      val filtered = statusFilter match {
-        case None         => details
-        case Some(status) => details.filter(_.reviewStatus == status)
-      }
-
-      filtered.sortBy(d => (reviewStatusOrder.getOrElse(d.reviewStatus, Int.MaxValue), -d.lastUpdated.toInstant.toEpochMilli))
+      val latestLogByConsignment = latestLogPerConsignment(logEntries)
+      val details = buildReviewDetails(consignmentRows, latestLogByConsignment)
+      val filtered = filterByStatus(details, statusFilter)
+      sortByReviewStatus(filtered)
     }
   }
 
@@ -205,6 +185,39 @@ class ConsignmentService(
 
   def updateParentFolder(input: UpdateParentFolderInput): Future[Int] = {
     consignmentRepository.updateParentFolder(input.consignmentId, input.parentFolder)
+  }
+
+  private def latestLogPerConsignment(logEntries: Seq[MetadatareviewlogRow]): Map[UUID, MetadatareviewlogRow] = {
+    logEntries
+      .groupBy(_.consignmentid)
+      .view
+      .mapValues(_.maxBy(_.eventtime.getTime))
+      .toMap
+  }
+
+  private def buildReviewDetails(consignmentRows: Seq[ConsignmentRow], latestLogByConsignment: Map[UUID, MetadatareviewlogRow]): Seq[ConsignmentReviewDetails] = {
+    consignmentRows.flatMap { row =>
+      latestLogByConsignment.get(row.consignmentid).map { latestLog =>
+        ConsignmentReviewDetails(
+          consignmentReference = row.consignmentreference,
+          reviewStatus = MetadataReviewLogAction(latestLog.action).reviewStatus.value,
+          transferringBodyName = row.transferringbodyname,
+          seriesName = row.seriesname,
+          lastUpdated = latestLog.eventtime.toZonedDateTime
+        )
+      }
+    }
+  }
+
+  private def filterByStatus(details: Seq[ConsignmentReviewDetails], statusFilter: Option[String]): Seq[ConsignmentReviewDetails] = {
+    statusFilter match {
+      case None         => details
+      case Some(status) => details.filter(_.reviewStatus == status)
+    }
+  }
+
+  private def sortByReviewStatus(details: Seq[ConsignmentReviewDetails]): Seq[ConsignmentReviewDetails] = {
+    details.sortBy(d => (reviewStatusOrder.getOrElse(d.reviewStatus, Int.MaxValue), -d.lastUpdated.toInstant.toEpochMilli))
   }
 
   private def convertRowToConsignment(row: ConsignmentRow): Consignment = {
