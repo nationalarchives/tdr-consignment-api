@@ -12,6 +12,7 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, InProgressValue, MetadataReviewType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Submission}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -394,7 +395,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val logId = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
     utils.createConsignment(consignmentId, userId)
-    utils.addMetadataReviewLog(logId, consignmentId, userId, "Approval")
+    utils.addMetadataReviewLog(logId, consignmentId, userId, Approval.value)
 
     val response: GraphqlQueryData = runTestQuery("query_metadata_review_logs", validUserToken())
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_metadata_review_logs")
@@ -953,8 +954,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createConsignmentStatus(defaultConsignmentId, MetadataReviewType.id, InProgressValue.value, statusId = UUID.fromString("21f3a11d-05f4-4565-b668-8586644fd441"))
     utils.createConsignmentStatus(consignmentId2, MetadataReviewType.id, CompletedValue.value, statusId = UUID.fromString("f19b1fe5-5763-4f59-896a-6f16f55a4063"))
 
-    utils.addMetadataReviewLog(UUID.randomUUID(), defaultConsignmentId, userId, "Submission")
-    utils.addMetadataReviewLog(UUID.randomUUID(), consignmentId2, userId, "Approval")
+    utils.addMetadataReviewLog(UUID.randomUUID(), defaultConsignmentId, userId, Submission.value)
+    utils.addMetadataReviewLog(UUID.randomUUID(), consignmentId2, userId, Approval.value)
 
     val expectedResponse: ConsignmentReviewDetailsResultData = expectedGetConsignmentReviewDetailsResponse("data_all")
     val response: ConsignmentReviewDetailsResultData = runGetConsignmentReviewDetails("query_alldata", validTNAUserToken(body = defaultBodyCode))
@@ -962,7 +963,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response should equal(expectedResponse)
   }
 
-  "getConsignmentReviewDetails" should "return only Submission consignments when statusFilter is 'Submission'" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignmentReviewDetails" should "return only Requested consignments when statusFilter is 'Requested'" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2024-AFK")
     val consignmentId2 = UUID.fromString("e169c625-ba5f-4d7c-bbdf-af71ff4cc179")
@@ -971,8 +972,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createConsignmentStatus(defaultConsignmentId, MetadataReviewType.id, InProgressValue.value, statusId = UUID.fromString("21f3a11d-05f4-4565-b668-8586644fd441"))
     utils.createConsignmentStatus(consignmentId2, MetadataReviewType.id, CompletedValue.value, statusId = UUID.fromString("f19b1fe5-5763-4f59-896a-6f16f55a4063"))
 
-    utils.addMetadataReviewLog(UUID.randomUUID(), defaultConsignmentId, userId, "Submission")
-    utils.addMetadataReviewLog(UUID.randomUUID(), consignmentId2, userId, "Approval")
+    utils.addMetadataReviewLog(UUID.randomUUID(), defaultConsignmentId, userId, Submission.value)
+    utils.addMetadataReviewLog(UUID.randomUUID(), consignmentId2, userId, Approval.value)
 
     val expectedResponse: ConsignmentReviewDetailsResultData = expectedGetConsignmentReviewDetailsResponse("data_default")
     val response: ConsignmentReviewDetailsResultData = runGetConsignmentReviewDetails("query_default", validTNAUserToken(body = defaultBodyCode))

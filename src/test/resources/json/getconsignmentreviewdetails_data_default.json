@@ -3,7 +3,7 @@
     "getConsignmentReviewDetails": [
       {
         "consignmentReference": "TEST-TDR-2024-AFK",
-        "reviewStatus": "Submission",
+        "reviewStatus": "Requested",
         "transferringBodyName": "transferringBodyName",
         "seriesName": "seriesName",
         "lastUpdated": "2020-01-01T09:00Z"

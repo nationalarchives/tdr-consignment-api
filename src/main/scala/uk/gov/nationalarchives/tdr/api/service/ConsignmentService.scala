@@ -11,6 +11,8 @@ import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentReference
 import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.ConsignmentTypeHelper
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.TimestampUtils
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Confirmation, Rejection, Submission}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewStatus
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import java.sql.Timestamp
@@ -33,12 +35,20 @@ class ConsignmentService(
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
 
-  // Review status sort ordering: Submission (Requested) > Rejection (Rejected) > Approval (Approved) > Confirmation (Completed)
+  // Review status sort ordering: Requested > Rejected > Approved > Completed
   private val reviewStatusOrder: Map[String, Int] = Map(
-    "Submission" -> 0,
-    "Rejection" -> 1,
-    "Approval" -> 2,
-    "Confirmation" -> 3
+    MetadataReviewStatus.Requested.value -> 0,
+    MetadataReviewStatus.Rejected.value  -> 1,
+    MetadataReviewStatus.Approved.value  -> 2,
+    MetadataReviewStatus.Completed.value -> 3
+  )
+
+  // Maps log action values to their corresponding review status values
+  private val logActionToReviewStatus: Map[String, String] = Map(
+    Submission.value    -> MetadataReviewStatus.Requested.value,
+    Rejection.value     -> MetadataReviewStatus.Rejected.value,
+    Approval.value      -> MetadataReviewStatus.Approved.value,
+    Confirmation.value  -> MetadataReviewStatus.Completed.value
   )
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
@@ -149,7 +159,7 @@ class ConsignmentService(
         latestLogByConsignment.get(row.consignmentid).map { latestLog =>
           ConsignmentReviewDetails(
             consignmentReference = row.consignmentreference,
-            reviewStatus = latestLog.action,
+            reviewStatus = logActionToReviewStatus.getOrElse(latestLog.action, latestLog.action),
             transferringBodyName = row.transferringbodyname,
             seriesName = row.seriesname,
             lastUpdated = latestLog.eventtime.toZonedDateTime

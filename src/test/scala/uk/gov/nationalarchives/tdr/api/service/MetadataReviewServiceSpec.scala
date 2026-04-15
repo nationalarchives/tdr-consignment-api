@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.MetadatareviewlogRow
 import uk.gov.nationalarchives.tdr.api.db.repository.MetadataReviewLogRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.MetadataReviewLog
-import uk.gov.nationalarchives.tdr.api.utils.{Approval, Rejection}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Rejection}
 
 import java.sql.Timestamp
 import java.time.ZonedDateTime

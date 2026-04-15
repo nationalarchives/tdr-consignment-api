@@ -17,6 +17,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Submission}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewStatus
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import java.sql.Timestamp
@@ -606,8 +608,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringbodytdrcode = Some("code2")
     )
 
-    val logEntry1 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId1, userId, "Approval", Timestamp.from(FixedTimeSource.now))
-    val logEntry2 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId2, userId, "Submission", Timestamp.from(FixedTimeSource.now))
+    val logEntry1 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId1, userId, Approval.value, Timestamp.from(FixedTimeSource.now))
+    val logEntry2 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId2, userId, Submission.value, Timestamp.from(FixedTimeSource.now))
 
     when(consignmentRepoMock.getConsignmentsWithMetadataReviewStatus)
       .thenReturn(Future.successful(Seq(consignmentRow1, consignmentRow2)))
@@ -618,16 +620,16 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     verify(consignmentRepoMock, times(1)).getConsignmentsWithMetadataReviewStatus
     response should have size 2
-    // Submission (Requested) sorts before Approval (Approved)
-    response.head.reviewStatus should equal("Submission")
+    // Requested sorts before Approved
+    response.head.reviewStatus should equal(MetadataReviewStatus.Requested.value)
     response.head.consignmentReference should equal("TDR-2020-B")
     response.head.transferringBodyName should equal(Some("department2"))
-    response(1).reviewStatus should equal("Approval")
+    response(1).reviewStatus should equal(MetadataReviewStatus.Approved.value)
     response(1).consignmentReference should equal("TDR-2020-A")
     response(1).transferringBodyName should equal(Some("department1"))
   }
 
-  "getConsignmentReviewDetails" should "return only Submission status when statusFilter is 'Submission'" in {
+  "getConsignmentReviewDetails" should "return only Requested status when statusFilter is 'Requested'" in {
     val consignmentId1 = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val consignmentId2 = UUID.fromString("7e3b76c4-1745-4467-8ac5-b4dd736e1b3f")
 
@@ -658,18 +660,18 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringbodytdrcode = Some("code2")
     )
 
-    val logEntry1 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId1, userId, "Approval", Timestamp.from(FixedTimeSource.now))
-    val logEntry2 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId2, userId, "Submission", Timestamp.from(FixedTimeSource.now))
+    val logEntry1 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId1, userId, Approval.value, Timestamp.from(FixedTimeSource.now))
+    val logEntry2 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId2, userId, Submission.value, Timestamp.from(FixedTimeSource.now))
 
     when(consignmentRepoMock.getConsignmentsWithMetadataReviewStatus)
       .thenReturn(Future.successful(Seq(consignmentRow1, consignmentRow2)))
     when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId1, consignmentId2)))
       .thenReturn(Future.successful(Seq(logEntry1, logEntry2)))
 
-    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails("Submission").futureValue
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(MetadataReviewStatus.Requested.value).futureValue
 
     response should have size 1
-    response.head.reviewStatus should equal("Submission")
+    response.head.reviewStatus should equal(MetadataReviewStatus.Requested.value)
     response.head.consignmentReference should equal("TDR-2020-B")
   }
 
@@ -713,8 +715,8 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringbodytdrcode = Some("transferringBodyTdrCode")
     )
 
-    val earlierLog = MetadatareviewlogRow(UUID.randomUUID(), consignmentId, userId, "Submission", Timestamp.valueOf("2020-01-01 09:00:00"))
-    val laterLog = MetadatareviewlogRow(UUID.randomUUID(), consignmentId, userId, "Approval", Timestamp.valueOf("2020-01-02 09:00:00"))
+    val earlierLog = MetadatareviewlogRow(UUID.randomUUID(), consignmentId, userId, Submission.value, Timestamp.valueOf("2020-01-01 09:00:00"))
+    val laterLog = MetadatareviewlogRow(UUID.randomUUID(), consignmentId, userId, Approval.value, Timestamp.valueOf("2020-01-02 09:00:00"))
 
     when(consignmentRepoMock.getConsignmentsWithMetadataReviewStatus)
       .thenReturn(Future.successful(Seq(consignmentRow)))
@@ -724,7 +726,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails("all").futureValue
 
     response should have size 1
-    response.head.reviewStatus should equal("Approval")
+    response.head.reviewStatus should equal(MetadataReviewStatus.Approved.value)
   }
 
   "getConsignmentForMetadataReview" should "return a given consignment" in {

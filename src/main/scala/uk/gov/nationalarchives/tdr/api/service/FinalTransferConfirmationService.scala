@@ -4,7 +4,7 @@ import uk.gov.nationalarchives.Tables.{ConsignmentmetadataRow, Consignmentstatus
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FinalTransferConfirmationFields._
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.LegalCustodyTransferConfirmed
-import uk.gov.nationalarchives.tdr.api.utils.Confirmation
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.Confirmation
 
 import java.sql.Timestamp
 import java.util.UUID

@@ -8,6 +8,7 @@ import uk.gov.nationalarchives.Tables.MetadatareviewlogRow
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Rejection, Submission}
 
 import java.sql.Timestamp
 import java.util.UUID
