@@ -9,7 +9,8 @@ import org.scalatest.matchers.should.Matchers
 import uk.gov.nationalarchives.Tables.{ConsignmentmetadataRow, ConsignmentstatusRow, MetadatareviewlogRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentMetadataRepository, ConsignmentStatusRepository, MetadataReviewLogRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FinalTransferConfirmationFields._
-import uk.gov.nationalarchives.tdr.api.utils.{Confirmation, FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.Confirmation
 
 import java.sql.Timestamp
 import java.time.Instant.now

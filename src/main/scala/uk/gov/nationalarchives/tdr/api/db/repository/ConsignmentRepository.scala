@@ -82,6 +82,15 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
+  def getConsignmentsWithMetadataReviewStatus: Future[Seq[ConsignmentRow]] = {
+    val query = Consignment
+      .join(Consignmentstatus)
+      .on(_.consignmentid === _.consignmentid)
+      .filter(_._2.statustype === MetadataReviewType.id)
+      .map(_._1)
+    db.run(query.result)
+  }
+
   def getConsignmentForMetadataReview(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
     val query = Consignment
       .join(Consignmentstatus)

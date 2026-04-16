@@ -1,0 +1,3 @@
+{
+  "query": "query getConsignmentReviewDetails {getConsignmentReviewDetails {consignmentReference,reviewStatus,transferringBodyName,seriesName,lastUpdated}}"
+}

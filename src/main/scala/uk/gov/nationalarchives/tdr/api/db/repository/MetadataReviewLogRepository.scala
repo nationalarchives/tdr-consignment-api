@@ -18,4 +18,9 @@ class MetadataReviewLogRepository(db: JdbcBackend#Database)(implicit val executi
     val query = Metadatareviewlog.filter(_.consignmentid === consignmentId)
     db.run(query.result)
   }
+
+  def getEntriesByConsignmentIds(consignmentIds: Seq[UUID]): Future[Seq[MetadatareviewlogRow]] = {
+    val query = Metadatareviewlog.filter(_.consignmentid inSet consignmentIds)
+    db.run(query.result)
+  }
 }

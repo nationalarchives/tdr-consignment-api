@@ -13,6 +13,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{C
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Rejection, Submission}
 
 import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
@@ -486,7 +487,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val capturedLogRow = metadataReviewLogRowCaptor.getValue
     capturedLogRow.consignmentid should equal(expectedConsignmentId)
     capturedLogRow.userid should equal(dummyUserId)
-    capturedLogRow.action should equal("Submission")
+    capturedLogRow.action should equal(Submission.value)
   }
 
   "updateConsignmentStatus" should "not call metadata review log repository for non-MetadataReview status types" in {
@@ -525,7 +526,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val capturedLogRow = metadataReviewLogRowCaptor.getValue
     capturedLogRow.consignmentid should equal(expectedConsignmentId)
     capturedLogRow.userid should equal(dummyUserId)
-    capturedLogRow.action should equal("Approval")
+    capturedLogRow.action should equal(Approval.value)
   }
 
   "updateConsignmentStatus" should "write metadata review log entry with 'Rejection' action when MetadataReview status is CompletedWithIssues" in {
@@ -549,6 +550,6 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val capturedLogRow = metadataReviewLogRowCaptor.getValue
     capturedLogRow.consignmentid should equal(expectedConsignmentId)
     capturedLogRow.userid should equal(dummyUserId)
-    capturedLogRow.action should equal("Rejection")
+    capturedLogRow.action should equal(Rejection.value)
   }
 }

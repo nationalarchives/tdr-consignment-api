@@ -11,12 +11,14 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
-import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow, SeriesRow}
+import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow, MetadatareviewlogRow, SeriesRow}
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Submission}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewStatus
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import java.sql.Timestamp
@@ -67,6 +69,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   val ffidMetadataRepositoryMock: FFIDMetadataRepository = mock[FFIDMetadataRepository]
   val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
   val seriesRepositoryMock: SeriesRepository = mock[SeriesRepository]
+  val metadataReviewLogRepoMock: MetadataReviewLogRepository = mock[MetadataReviewLogRepository]
   val mockResponse: Future[ConsignmentRow] = Future.successful(mockConsignment)
   val consignmentService = new ConsignmentService(
     consignmentRepoMock,
@@ -74,6 +77,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     seriesRepositoryMock,
     fileMetadataRepositoryMock,
     transferringBodyServiceMock,
+    metadataReviewLogRepoMock,
     FixedTimeSource,
     fixedUuidSource,
     ConfigFactory.load()
@@ -218,6 +222,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val seriesRepositoryMock = mock[SeriesRepository]
     val consignmentStatusRepoMock: ConsignmentStatusRepository = mock[ConsignmentStatusRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
+    val metadataReviewLogRepoMock: MetadataReviewLogRepository = mock[MetadataReviewLogRepository]
     val fixedUuidSource = new FixedUUIDSource()
 
     val service: ConsignmentService = new ConsignmentService(
@@ -226,6 +231,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       seriesRepositoryMock,
       fileMetadataRepositoryMock,
       transferringBodyServiceMock,
+      metadataReviewLogRepoMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -245,6 +251,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val consignmentRepoMock = mock[ConsignmentRepository]
     val seriesRepositoryMock = mock[SeriesRepository]
     val transferringBodyServiceMock: TransferringBodyService = mock[TransferringBodyService]
+    val metadataReviewLogRepoMock: MetadataReviewLogRepository = mock[MetadataReviewLogRepository]
     val fixedUuidSource = new FixedUUIDSource()
     val consignmentStatusCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
 
@@ -254,6 +261,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       seriesRepositoryMock,
       fileMetadataRepositoryMock,
       transferringBodyServiceMock,
+      metadataReviewLogRepoMock,
       FixedTimeSource,
       fixedUuidSource,
       ConfigFactory.load()
@@ -537,7 +545,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     }
   }
 
-  "getConsignmentsForMetadataReview" should "return a list of consignments" in {
+  "getConsignmentsForMetadataReview" should "return InProgress consignments as Consignment objects" in {
     val consignmentRow: ConsignmentRow = ConsignmentRow(
       consignmentId,
       Some(seriesId),
@@ -559,6 +567,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val response: Seq[Consignment] = consignmentService.getConsignmentsForMetadataReview.futureValue
 
     verify(consignmentRepoMock, times(1)).getConsignmentsForMetadataReview
+    response should have size 1
     val consignment: Consignment = response.head
     consignment.consignmentid should equal(consignmentId)
     consignment.seriesid should equal(Some(seriesId))
@@ -566,6 +575,88 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.seriesName should equal(consignmentRow.seriesname)
     consignment.transferringBodyName should equal(consignmentRow.transferringbodyname)
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
+  }
+
+  "getConsignmentReviewDetails" should "return a sorted list of all ConsignmentReviewDetails when statusFilter is None" in {
+    val consignmentId1 = UUID.randomUUID()
+    val consignmentId2 = UUID.randomUUID()
+
+    val consignmentRow1 = createReviewConsignmentRow(consignmentId1, reference = "TDR-2020-A", bodyName = "department1", bodyCode = "code1")
+    val consignmentRow2 =
+      createReviewConsignmentRow(consignmentId2, sequence = 401L, reference = "TDR-2020-B", seriesName = "seriesName2", bodyName = "department2", bodyCode = "code2")
+
+    val logEntry1 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId1, userId, Approval.value, Timestamp.from(FixedTimeSource.now))
+    val logEntry2 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId2, userId, Submission.value, Timestamp.from(FixedTimeSource.now))
+
+    when(consignmentRepoMock.getConsignmentsWithMetadataReviewStatus)
+      .thenReturn(Future.successful(Seq(consignmentRow1, consignmentRow2)))
+    when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId1, consignmentId2)))
+      .thenReturn(Future.successful(Seq(logEntry1, logEntry2)))
+
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(None).futureValue
+
+    verify(consignmentRepoMock, times(1)).getConsignmentsWithMetadataReviewStatus
+    response should have size 2
+    // Requested sorts before Approved
+    response.head.reviewStatus should equal(MetadataReviewStatus.Requested.value)
+    response.head.consignmentReference should equal("TDR-2020-B")
+    response.head.transferringBodyName should equal(Some("department2"))
+    response(1).reviewStatus should equal(MetadataReviewStatus.Approved.value)
+    response(1).consignmentReference should equal("TDR-2020-A")
+    response(1).transferringBodyName should equal(Some("department1"))
+  }
+
+  "getConsignmentReviewDetails" should "return only Requested status when statusFilter is Some('Requested')" in {
+    val consignmentId1 = UUID.randomUUID()
+    val consignmentId2 = UUID.randomUUID()
+
+    val consignmentRow1 = createReviewConsignmentRow(consignmentId1, reference = "TDR-2020-A", bodyName = "department1", bodyCode = "code1")
+    val consignmentRow2 =
+      createReviewConsignmentRow(consignmentId2, sequence = 401L, reference = "TDR-2020-B", seriesName = "seriesName2", bodyName = "department2", bodyCode = "code2")
+
+    val logEntry1 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId1, userId, Approval.value, Timestamp.from(FixedTimeSource.now))
+    val logEntry2 = MetadatareviewlogRow(UUID.randomUUID(), consignmentId2, userId, Submission.value, Timestamp.from(FixedTimeSource.now))
+
+    when(consignmentRepoMock.getConsignmentsWithMetadataReviewStatus)
+      .thenReturn(Future.successful(Seq(consignmentRow1, consignmentRow2)))
+    when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId1, consignmentId2)))
+      .thenReturn(Future.successful(Seq(logEntry1, logEntry2)))
+
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(Some(MetadataReviewStatus.Requested.value)).futureValue
+
+    response should have size 1
+    response.head.reviewStatus should equal(MetadataReviewStatus.Requested.value)
+    response.head.consignmentReference should equal("TDR-2020-B")
+  }
+
+  "getConsignmentReviewDetails" should "exclude consignments with no metadata review log entries" in {
+    val consignmentRow = createReviewConsignmentRow(consignmentId)
+
+    when(consignmentRepoMock.getConsignmentsWithMetadataReviewStatus)
+      .thenReturn(Future.successful(Seq(consignmentRow)))
+    when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId)))
+      .thenReturn(Future.successful(Seq.empty))
+
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(None).futureValue
+
+    response shouldBe empty
+  }
+
+  "getConsignmentReviewDetails" should "use the latest log entry when multiple exist" in {
+    val consignmentRow = createReviewConsignmentRow(consignmentId)
+
+    val earlierLog = MetadatareviewlogRow(UUID.randomUUID(), consignmentId, userId, Submission.value, Timestamp.valueOf("2020-01-01 09:00:00"))
+    val laterLog = MetadatareviewlogRow(UUID.randomUUID(), consignmentId, userId, Approval.value, Timestamp.valueOf("2020-01-02 09:00:00"))
+
+    when(consignmentRepoMock.getConsignmentsWithMetadataReviewStatus)
+      .thenReturn(Future.successful(Seq(consignmentRow)))
+    when(metadataReviewLogRepoMock.getEntriesByConsignmentIds(Seq(consignmentId)))
+      .thenReturn(Future.successful(Seq(earlierLog, laterLog)))
+
+    val response: Seq[ConsignmentReviewDetails] = consignmentService.getConsignmentReviewDetails(None).futureValue
+
+    response should have size 1
+    response.head.reviewStatus should equal(MetadataReviewStatus.Approved.value)
   }
 
   "getConsignmentForMetadataReview" should "return a given consignment" in {
@@ -783,6 +874,29 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       consignmentRef,
       "standard",
       bodyId
+    )
+  }
+
+  private def createReviewConsignmentRow(
+      id: UUID,
+      sequence: Long = consignmentSequence,
+      reference: String = consignmentReference,
+      seriesName: String = "seriesName",
+      bodyName: String = "transferringBodyName",
+      bodyCode: String = "transferringBodyTdrCode"
+  ): ConsignmentRow = {
+    ConsignmentRow(
+      id,
+      Some(seriesId),
+      userId,
+      Timestamp.from(FixedTimeSource.now),
+      consignmentsequence = sequence,
+      consignmentreference = reference,
+      consignmenttype = "standard",
+      bodyid = bodyId,
+      seriesname = Some(seriesName),
+      transferringbodyname = Some(bodyName),
+      transferringbodytdrcode = Some(bodyCode)
     )
   }
 }

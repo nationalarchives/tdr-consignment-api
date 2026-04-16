@@ -60,6 +60,7 @@ trait GraphQLServerBase {
       seriesRepository,
       fileMetadataRepository,
       transferringBodyService,
+      metadataReviewLogRepository,
       timeSource,
       uuidSource,
       config

@@ -1,0 +1,3 @@
+{
+  "query": "query getConsignmentReviewDetails {getConsignmentReviewDetails(statusFilter: \"Requested\") {consignmentReference,reviewStatus,transferringBodyName,seriesName,lastUpdated}}"
+}

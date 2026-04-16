@@ -103,6 +103,14 @@ object ConsignmentFields {
       eventTime: ZonedDateTime
   )
 
+  case class ConsignmentReviewDetails(
+      consignmentReference: String,
+      reviewStatus: String,
+      transferringBodyName: Option[String],
+      seriesName: Option[String],
+      lastUpdated: ZonedDateTime
+  )
+
   sealed trait ConsignmentOrderField {
     val cursorFn: ConsignmentRow => String
   }
@@ -162,6 +170,8 @@ object ConsignmentFields {
     deriveObjectType[Unit, ConsignmentMetadata]()
 
   implicit val MetadataReviewLogType: ObjectType[Unit, MetadataReviewLog] = deriveObjectType[Unit, MetadataReviewLog]()
+
+  implicit val ConsignmentReviewDetailsType: ObjectType[Unit, ConsignmentReviewDetails] = deriveObjectType[Unit, ConsignmentReviewDetails]()
 
   implicit val ConsignmentOrderFieldType: EnumType[ConsignmentOrderField] = deriveEnumType[ConsignmentOrderField]()
   implicit val DirectionType: EnumType[Direction] = deriveEnumType[Direction]()
@@ -326,6 +336,7 @@ object ConsignmentFields {
   val UpdateClientSideDraftMetadataFileNameInputArg: Argument[UpdateClientSideDraftMetadataFileNameInput] =
     Argument("updateClientSideDraftMetadataFileName", UpdateClientSideDraftMetadataFileNameType)
   val UpdateParentFolderInputArg: Argument[UpdateParentFolderInput] = Argument("updateParentFolderInput", UpdateParentFolderInputType)
+  val StatusFilterArg: Argument[Option[String]] = Argument("statusFilter", OptionInputType(StringType))
 
   implicit val ConnectionDefinition(_, consignmentConnections) =
     Connection.definition[ConsignmentApiContext, Connection, Consignment](
@@ -381,7 +392,15 @@ object ConsignmentFields {
       "getConsignmentsForMetadataReview",
       ListType(ConsignmentType),
       arguments = Nil,
+      deprecationReason = Some("Use getConsignmentReviewDetails instead"),
       resolve = ctx => ctx.ctx.consignmentService.getConsignmentsForMetadataReview,
+      tags = List(ValidateIsTnaUser)
+    ),
+    Field(
+      "getConsignmentReviewDetails",
+      ListType(ConsignmentReviewDetailsType),
+      arguments = StatusFilterArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.getConsignmentReviewDetails(ctx.arg(StatusFilterArg)),
       tags = List(ValidateIsTnaUser)
     )
   )
