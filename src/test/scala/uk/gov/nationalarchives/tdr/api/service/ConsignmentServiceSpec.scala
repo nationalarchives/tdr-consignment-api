@@ -598,9 +598,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     verify(consignmentRepoMock, times(1)).getConsignmentsWithMetadataReviewStatus
     response should have size 2
     // Requested sorts before Approved
+    response.head.consignmentId should equal(consignmentId2)
     response.head.reviewStatus should equal(MetadataReviewStatus.Requested.value)
     response.head.consignmentReference should equal("TDR-2020-B")
     response.head.transferringBodyName should equal(Some("department2"))
+    response(1).consignmentId should equal(consignmentId1)
     response(1).reviewStatus should equal(MetadataReviewStatus.Approved.value)
     response(1).consignmentReference should equal("TDR-2020-A")
     response(1).transferringBodyName should equal(Some("department1"))
