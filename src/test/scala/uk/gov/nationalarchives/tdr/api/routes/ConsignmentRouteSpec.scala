@@ -47,6 +47,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
 
+  case class LegacyConsignmentReviewDetailsResponse(
+      consignmentReference: String,
+      reviewStatus: Option[String] = None,
+      transferringBodyName: Option[String] = None,
+      seriesName: Option[String] = None
+  )
+
   case class ConsignmentReviewDetailsResponse(
       consignmentId: UUID,
       consignmentReference: String,
@@ -56,7 +63,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       lastUpdated: Option[ZonedDateTime] = None
   )
 
-  case class ConsignmentsForMetadataReview(getConsignmentsForMetadataReview: List[ConsignmentReviewDetailsResponse])
+  case class ConsignmentsForMetadataReview(getConsignmentsForMetadataReview: List[LegacyConsignmentReviewDetailsResponse])
 
   case class ConsignmentsForMetadataReviewData(data: Option[ConsignmentsForMetadataReview], errors: List[GraphqlError] = Nil)
 
