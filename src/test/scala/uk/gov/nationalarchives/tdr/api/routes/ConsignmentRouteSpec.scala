@@ -48,6 +48,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
 
   case class ConsignmentReviewDetailsResponse(
+      consignmentId: Option[UUID] = None,
       consignmentReference: String,
       reviewStatus: Option[String] = None,
       transferringBodyName: Option[String] = None,

@@ -2,6 +2,7 @@
   "data": {
     "getConsignmentReviewDetails": [
       {
+        "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
         "consignmentReference": "TEST-TDR-2024-AFK",
         "reviewStatus": "Requested",
         "transferringBodyName": "transferringBodyName",

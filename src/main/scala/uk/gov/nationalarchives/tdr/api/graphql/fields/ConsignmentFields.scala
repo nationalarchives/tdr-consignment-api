@@ -104,6 +104,7 @@ object ConsignmentFields {
   )
 
   case class ConsignmentReviewDetails(
+      consignmentId: UUID,
       consignmentReference: String,
       reviewStatus: String,
       transferringBodyName: Option[String],

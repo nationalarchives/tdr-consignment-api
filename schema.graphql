@@ -190,6 +190,7 @@ enum ConsignmentOrderField {
 }
 
 type ConsignmentReviewDetails {
+  consignmentId: UUID!
   consignmentReference: String!
   reviewStatus: String!
   transferringBodyName: String

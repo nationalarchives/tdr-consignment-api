@@ -199,6 +199,7 @@ class ConsignmentService(
     consignmentRows.flatMap { row =>
       latestLogByConsignment.get(row.consignmentid).map { latestLog =>
         ConsignmentReviewDetails(
+          consignmentId = row.consignmentid,
           consignmentReference = row.consignmentreference,
           reviewStatus = MetadataReviewLogAction(latestLog.action).reviewStatus.value,
           transferringBodyName = row.transferringbodyname,
