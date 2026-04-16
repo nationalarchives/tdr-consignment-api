@@ -44,7 +44,7 @@ lazy val circeVersion = "0.14.15"
 lazy val testContainersVersion = "0.44.1"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.2.17",
+  "org.sangria-graphql" %% "sangria" % "4.2.18",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
@@ -89,7 +89,7 @@ libraryDependencies ++= Seq(
 dependencyOverrides ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "org.sangria-graphql" %% "sangria" % "4.2.17"
+  "org.sangria-graphql" %% "sangria" % "4.2.18"
 )
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
