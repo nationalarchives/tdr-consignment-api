@@ -47,6 +47,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
 
+  // TODO: Remove LegacyConsignmentReviewDetailsResponse, ConsignmentsForMetadataReview and ConsignmentsForMetadataReviewData
+  //  when the deprecated getConsignmentsForMetadataReview query is removed from ConsignmentFields
   case class LegacyConsignmentReviewDetailsResponse(
       consignmentReference: String,
       reviewStatus: Option[String] = None,
@@ -212,6 +214,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     runTestRequest[GraphqlMutationStartUpload](startUploadJsonFilePrefix)
   val runUpdateConsignmentSeriesIdMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateSeriesIdOfConsignment =
     runTestRequest[GraphqlMutationUpdateSeriesIdOfConsignment](updateConsignmentSeriesIdJsonFilePrefix)
+  // TODO: Remove when the deprecated getConsignmentsForMetadataReview query is removed from ConsignmentFields
   val runGetConsignmentsForMetadataReview: (String, OAuth2BearerToken) => ConsignmentsForMetadataReviewData =
     runTestRequest[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
   val runUpdateConsignmentMetadataSchemaLibraryVersionMutation: (String, OAuth2BearerToken) => GraphqlMutationUpdateMetadataSchemaLibraryVersion =
@@ -229,6 +232,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     getDataFromFile[GraphqlMutationUpdateMetadataSchemaLibraryVersion](updateConsignmentMetadataSchemaLibraryVersionPrefix)
   val expectedUpdateClientSideDraftMetadataFileNameResponse: String => GraphqlMutationUpdateDraftMetadataFileName =
     getDataFromFile[GraphqlMutationUpdateDraftMetadataFileName](updateClientSideDraftMetadataFileNamePrefix)
+  // TODO: Remove when the deprecated getConsignmentsForMetadataReview query is removed from ConsignmentFields
   val expectedGetConsignmentForMetadataResponse: String => ConsignmentsForMetadataReviewData =
     getDataFromFile[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
   val runGetConsignmentReviewDetails: (String, OAuth2BearerToken) => ConsignmentReviewDetailsResultData =
@@ -931,6 +935,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response2.data.get.consignments.edges.map(_.node.consignmentid.get) should equal(List(consignment1, consignment2))
   }
 
+  // TODO: Remove these two tests when the deprecated getConsignmentsForMetadataReview query is removed from ConsignmentFields
   "getConsignmentsForMetadataReview" should "return InProgress consignments as Consignment type for TNA user" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId, fixedSeriesId, "TEST-TDR-2024-AFK")
