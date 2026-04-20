@@ -47,16 +47,16 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
   case class GraphqlQueryData(data: Option[GetConsignment], errors: List[GraphqlError] = Nil)
 
-  // TODO: Remove LegacyConsignmentReviewDetailsResponse, ConsignmentsForMetadataReview and ConsignmentsForMetadataReviewData
+  // TODO: Remove LegacyMetadataReviewDetailsResponse, ConsignmentsForMetadataReview and ConsignmentsForMetadataReviewData
   //  when the deprecated getConsignmentsForMetadataReview query is removed from ConsignmentFields
-  case class LegacyConsignmentReviewDetailsResponse(
+  case class LegacyMetadataReviewDetailsResponse(
       consignmentReference: String,
       reviewStatus: Option[String] = None,
       transferringBodyName: Option[String] = None,
       seriesName: Option[String] = None
   )
 
-  case class ConsignmentReviewDetailsResponse(
+  case class MetadataReviewDetailsResponse(
       consignmentId: UUID,
       consignmentReference: String,
       reviewStatus: Option[String] = None,
@@ -65,13 +65,13 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       lastUpdated: Option[ZonedDateTime] = None
   )
 
-  case class ConsignmentsForMetadataReview(getConsignmentsForMetadataReview: List[LegacyConsignmentReviewDetailsResponse])
+  case class ConsignmentsForMetadataReview(getConsignmentsForMetadataReview: List[LegacyMetadataReviewDetailsResponse])
 
   case class ConsignmentsForMetadataReviewData(data: Option[ConsignmentsForMetadataReview], errors: List[GraphqlError] = Nil)
 
-  case class ConsignmentReviewDetailsResult(getConsignmentReviewDetails: List[ConsignmentReviewDetailsResponse])
+  case class MetadataReviewDetailsResult(getConsignmentReviewDetails: List[MetadataReviewDetailsResponse])
 
-  case class ConsignmentReviewDetailsResultData(data: Option[ConsignmentReviewDetailsResult], errors: List[GraphqlError] = Nil)
+  case class MetadataReviewDetailsResultData(data: Option[MetadataReviewDetailsResult], errors: List[GraphqlError] = Nil)
 
   case class GraphqlConsignmentsQueryData(data: Option[ConsignmentConnections], errors: List[GraphqlError] = Nil)
 
@@ -235,10 +235,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   // TODO: Remove when the deprecated getConsignmentsForMetadataReview query is removed from ConsignmentFields
   val expectedGetConsignmentForMetadataResponse: String => ConsignmentsForMetadataReviewData =
     getDataFromFile[ConsignmentsForMetadataReviewData](getConsignmentForMetadataReviewJsonFilePrefix)
-  val runGetConsignmentReviewDetails: (String, OAuth2BearerToken) => ConsignmentReviewDetailsResultData =
-    runTestRequest[ConsignmentReviewDetailsResultData](getConsignmentReviewDetailsJsonFilePrefix)
-  val expectedGetConsignmentReviewDetailsResponse: String => ConsignmentReviewDetailsResultData =
-    getDataFromFile[ConsignmentReviewDetailsResultData](getConsignmentReviewDetailsJsonFilePrefix)
+  val runGetConsignmentReviewDetails: (String, OAuth2BearerToken) => MetadataReviewDetailsResultData =
+    runTestRequest[MetadataReviewDetailsResultData](getConsignmentReviewDetailsJsonFilePrefix)
+  val expectedGetConsignmentReviewDetailsResponse: String => MetadataReviewDetailsResultData =
+    getDataFromFile[MetadataReviewDetailsResultData](getConsignmentReviewDetailsJsonFilePrefix)
   val expectedUpdateParentFolderResponse: String => GraphqlMutationUpdateParentFolder =
     getDataFromFile[GraphqlMutationUpdateParentFolder](updateParentFolderJsonFilePrefix)
 
@@ -970,8 +970,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.addMetadataReviewLog(UUID.randomUUID(), defaultConsignmentId, userId, Submission.value)
     utils.addMetadataReviewLog(UUID.randomUUID(), consignmentId2, userId, Approval.value)
 
-    val expectedResponse: ConsignmentReviewDetailsResultData = expectedGetConsignmentReviewDetailsResponse("data_all")
-    val response: ConsignmentReviewDetailsResultData = runGetConsignmentReviewDetails("query_alldata", validTNAUserToken(body = defaultBodyCode))
+    val expectedResponse: MetadataReviewDetailsResultData = expectedGetConsignmentReviewDetailsResponse("data_all")
+    val response: MetadataReviewDetailsResultData = runGetConsignmentReviewDetails("query_alldata", validTNAUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
@@ -988,14 +988,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.addMetadataReviewLog(UUID.randomUUID(), defaultConsignmentId, userId, Submission.value)
     utils.addMetadataReviewLog(UUID.randomUUID(), consignmentId2, userId, Approval.value)
 
-    val expectedResponse: ConsignmentReviewDetailsResultData = expectedGetConsignmentReviewDetailsResponse("data_default")
-    val response: ConsignmentReviewDetailsResultData = runGetConsignmentReviewDetails("query_default", validTNAUserToken(body = defaultBodyCode))
+    val expectedResponse: MetadataReviewDetailsResultData = expectedGetConsignmentReviewDetailsResponse("data_default")
+    val response: MetadataReviewDetailsResultData = runGetConsignmentReviewDetails("query_default", validTNAUserToken(body = defaultBodyCode))
 
     response should equal(expectedResponse)
   }
 
   "getConsignmentReviewDetails" should "throw an error if user is not a TNAUser" in withContainers { case _: PostgreSQLContainer =>
-    val response: ConsignmentReviewDetailsResultData = runGetConsignmentReviewDetails("query_alldata", validUserToken(body = defaultBodyCode))
+    val response: MetadataReviewDetailsResultData = runGetConsignmentReviewDetails("query_alldata", validUserToken(body = defaultBodyCode))
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
