@@ -35,12 +35,12 @@ class ConsignmentService(
 
   val maxLimit: Int = config.getInt("pagination.consignmentsMaxLimit")
 
-  // Review status sort ordering: Requested > Rejected > Approved > Completed
+  // Review status sort ordering: Requested > Rejected > Approved > Transferred
   private val reviewStatusOrder: Map[String, Int] = Map(
     MetadataReviewStatus.Requested.value -> 0,
     MetadataReviewStatus.Rejected.value -> 1,
     MetadataReviewStatus.Approved.value -> 2,
-    MetadataReviewStatus.Completed.value -> 3
+    MetadataReviewStatus.Transferred.value -> 3
   )
 
   def startUpload(startUploadInput: StartUploadInput): Future[String] = {
@@ -199,6 +199,7 @@ class ConsignmentService(
     consignmentRows.flatMap { row =>
       latestLogByConsignment.get(row.consignmentid).map { latestLog =>
         ConsignmentReviewDetails(
+          consignmentId = row.consignmentid,
           consignmentReference = row.consignmentreference,
           reviewStatus = MetadataReviewLogAction(latestLog.action).reviewStatus.value,
           transferringBodyName = row.transferringbodyname,

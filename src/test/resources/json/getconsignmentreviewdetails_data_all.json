@@ -2,6 +2,7 @@
   "data": {
     "getConsignmentReviewDetails": [
       {
+        "consignmentId": "b130e097-2edc-4e67-a7e9-5364a09ae9cb",
         "consignmentReference": "TEST-TDR-2024-AFK",
         "reviewStatus": "Requested",
         "transferringBodyName": "transferringBodyName",
@@ -9,6 +10,7 @@
         "lastUpdated": "2020-01-01T09:00Z"
       },
       {
+        "consignmentId": "e169c625-ba5f-4d7c-bbdf-af71ff4cc179",
         "consignmentReference": "TEST-TDR-2024-BRB",
         "reviewStatus": "Approved",
         "transferringBodyName": "transferringBodyName",
