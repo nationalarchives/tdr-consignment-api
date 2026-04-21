@@ -100,7 +100,8 @@ object ConsignmentFields {
       consignmentId: UUID,
       userId: UUID,
       action: String,
-      eventTime: ZonedDateTime
+      eventTime: ZonedDateTime,
+      metadataReviewNotes: Option[String]
   )
 
   case class ConsignmentReviewDetails(

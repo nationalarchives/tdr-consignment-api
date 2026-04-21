@@ -23,8 +23,13 @@ object ConsignmentStatusFields {
       modifiedDatetime: Option[ZonedDateTime]
   )
 
-  case class ConsignmentStatusInput(consignmentId: UUID, statusType: String, statusValue: Option[String], userIdOverride: Option[UUID] = None)
-      extends UserOwnsConsignment
+  case class ConsignmentStatusInput(
+      consignmentId: UUID,
+      statusType: String,
+      statusValue: Option[String],
+      userIdOverride: Option[UUID] = None,
+      metadataReviewNotes: Option[String] = None
+  ) extends UserOwnsConsignment
       with ServiceTransfer
 
   val ConsignmentStatusInputType: InputObjectType[ConsignmentStatusInput] =
