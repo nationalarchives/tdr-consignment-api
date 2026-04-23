@@ -14,6 +14,8 @@ import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validSt
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Rejection, Submission}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedWithIssuesValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
@@ -556,8 +558,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "pass metadataReviewNotes to the metadata review log entry" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "MetadataReview"
-    val expectedStatusValue = "InProgress"
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = InProgressValue.value
     val expectedNotes = "Some review notes"
 
     val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
@@ -583,8 +585,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "updateConsignmentStatus" should "pass metadataReviewNotes to the metadata review log entry" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "MetadataReview"
-    val expectedStatusValue = "CompletedWithIssues"
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = CompletedWithIssuesValue.value
     val expectedNotes = "Rejection reason notes"
 
     val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
@@ -606,8 +608,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "set metadataReviewNotes to None when no notes provided for MetadataReview status" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "MetadataReview"
-    val expectedStatusValue = "InProgress"
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = InProgressValue.value
 
     val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
 
