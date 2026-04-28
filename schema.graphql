@@ -212,6 +212,7 @@ input ConsignmentStatusInput {
   statusType: String!
   statusValue: String
   userIdOverride: UUID
+  metadataReviewNotes: String
 }
 
 enum Direction {
@@ -399,6 +400,7 @@ type MetadataReviewLog {
   userId: UUID!
   action: String!
   eventTime: ZonedDateTime!
+  metadataReviewNotes: String
 }
 
 type Mutation {

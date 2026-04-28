@@ -431,14 +431,26 @@ class TestUtils(db: JdbcBackend#Database) {
     rs.next()
   }
 
-  def addMetadataReviewLog(logId: UUID, consignmentId: UUID, userId: UUID, action: String, eventTime: Timestamp = Timestamp.from(FixedTimeSource.now)): Unit = {
-    val sql = s"""INSERT INTO "MetadataReviewLog" ("MetadataReviewLogId", "ConsignmentId", "UserId", "Action", "EventTime") VALUES (?, ?, ?, ?, ?)"""
+  def addMetadataReviewLog(
+      logId: UUID,
+      consignmentId: UUID,
+      userId: UUID,
+      action: String,
+      eventTime: Timestamp = Timestamp.from(FixedTimeSource.now),
+      metadataReviewNotes: Option[String] = None
+  ): Unit = {
+    val sql =
+      s"""INSERT INTO "MetadataReviewLog" ("MetadataReviewLogId", "ConsignmentId", "UserId", "Action", "EventTime", "MetadataReviewNotes") VALUES (?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, logId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
     ps.setObject(3, userId, Types.OTHER)
     ps.setString(4, action)
     ps.setTimestamp(5, eventTime)
+    metadataReviewNotes match {
+      case Some(notes) => ps.setString(6, notes)
+      case None        => ps.setNull(6, Types.VARCHAR)
+    }
     ps.executeUpdate()
   }
 
