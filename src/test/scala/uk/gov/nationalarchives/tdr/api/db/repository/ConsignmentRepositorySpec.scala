@@ -20,7 +20,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
 }
 import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
-import uk.gov.nationalarchives.tdr.api.utils.Statuses.{CompletedValue, CompletedWithIssuesValue, InProgressValue, MetadataReviewType}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
