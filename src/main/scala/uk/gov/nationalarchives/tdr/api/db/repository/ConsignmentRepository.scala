@@ -97,7 +97,6 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
       .on(_.consignmentid === _.consignmentid)
       .filter(_._1.consignmentid === consignmentId)
       .filter(_._2.statustype === MetadataReviewType.id)
-      .filter(_._2.value === InProgressValue.value)
       .map(_._1)
     db.run(query.result)
   }
