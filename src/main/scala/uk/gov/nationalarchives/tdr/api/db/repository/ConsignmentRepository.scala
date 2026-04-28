@@ -17,7 +17,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
   UpdateMetadataSchemaLibraryVersionInput
 }
 import uk.gov.nationalarchives.tdr.api.service.TimeSource
-import uk.gov.nationalarchives.tdr.api.utils.Statuses.{InProgressValue, MetadataReviewType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.InProgressValue
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
 import java.sql.Timestamp

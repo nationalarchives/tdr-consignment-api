@@ -25,6 +25,8 @@ import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{ClientChecksType, ExportType, SeriesType, UploadType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{InProgressValue}
 
 class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -271,7 +273,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     val userId = UUID.randomUUID()
     val now = Timestamp.from(FixedTimeSource.now)
     val consignmentStatusId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    val expectedConsignmentStatusRow: ConsignmentstatusRow = ConsignmentstatusRow(consignmentStatusId, consignmentId, "Export", "InProgress", now)
+    val expectedConsignmentStatusRow: ConsignmentstatusRow = ConsignmentstatusRow(consignmentStatusId, consignmentId, ExportType.id, InProgressValue.value, now)
 
     when(consignmentRepoMock.updateTransferInitiated(consignmentId, userId, now)).thenReturn(Future(1))
     when(consignmentStatusRepoMock.addConsignmentStatus(consignmentStatusCaptor.capture())).thenReturn(Future(expectedConsignmentStatusRow))
@@ -285,7 +287,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateSeriesOfConsignment" should "update the seriesId, seriesName and status for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
-    val statusType = "Series"
+    val statusType = SeriesType.id
     val expectedSeriesStatus = Completed
     val expectedResult = 1
     when(consignmentRepoMock.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
@@ -305,7 +307,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
   "updateSeriesOfConsignment" should "update the status with 'Failed' if seriesId update fails for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
-    val statusType = "Series"
+    val statusType = SeriesType.id
     val expectedSeriesStatus = Failed
     val expectedResult = 0
     when(consignmentRepoMock.updateSeriesOfConsignment(updateConsignmentSeriesIdInput, Some(seriesName)))
@@ -712,10 +714,10 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     startUploadInputCaptor.getValue should be(startUploadInput)
 
-    val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == "Upload").get
+    val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == UploadType.id).get
     statusRow.consignmentid should be(consignmentId)
-    statusRow.statustype should be("Upload")
-    statusRow.value should be("InProgress")
+    statusRow.statustype should be(UploadType.id)
+    statusRow.value should be(InProgressValue.value)
   }
 
   "startUpload" should "create a ClientChecks in progress status" in {
@@ -731,14 +733,14 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
 
     startUploadInputCaptor.getValue should be(startUploadInput)
 
-    val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == "ClientChecks").get
+    val statusRow = consignmentStatusCaptor.getValue.find(_.statustype == ClientChecksType.id).get
     statusRow.consignmentid should be(consignmentId)
-    statusRow.statustype should be("ClientChecks")
-    statusRow.value should be("InProgress")
+    statusRow.statustype should be(ClientChecksType.id)
+    statusRow.value should be(InProgressValue.value)
   }
 
   "startUpload" should "return an error if there is an existing consignment status" in {
-    val statusRows = Seq(ConsignmentstatusRow(UUID.randomUUID(), consignmentId, "Upload", "InProgress", Timestamp.from(FixedTimeSource.now), Option.empty))
+    val statusRows = Seq(ConsignmentstatusRow(UUID.randomUUID(), consignmentId, UploadType.id, InProgressValue.value, Timestamp.from(FixedTimeSource.now), Option.empty))
     when(consignmentStatusRepoMock.getConsignmentStatus(any[UUID])).thenReturn(Future(statusRows))
     val exception = consignmentService.startUpload(StartUploadInput(consignmentId, "parentFolder", false)).failed.futureValue
     exception.getMessage should equal("Existing consignment upload status is 'InProgress', so cannot start new upload")

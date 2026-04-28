@@ -19,6 +19,8 @@ import java.sql.Timestamp
 import java.time.Instant.now
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{TransferAgreementType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, InProgressValue}
 
 class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -42,8 +44,8 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
         row("PublicRecordsConfirmed", "true")
       )
     )
-    val statusType = "TransferAgreement"
-    val statusValue = "InProgress"
+    val statusType = TransferAgreementType.id
+    val statusValue = InProgressValue.value
 
     val mockTaConsignmentStatus = ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, dateTime, None)
 
@@ -81,7 +83,7 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
 
     val metadataCaptor: ArgumentCaptor[Seq[ConsignmentmetadataRow]] = ArgumentCaptor.forClass(classOf[Seq[ConsignmentmetadataRow]])
 
-    val mockTaConsignmentStatus = ConsignmentstatusRow(consignmentStatusId, consignmentId, "TransferAgreement", "InProgress", dateTime, None)
+    val mockTaConsignmentStatus = ConsignmentstatusRow(consignmentStatusId, consignmentId, TransferAgreementType.id, InProgressValue.value, dateTime, None)
 
     when(consignmentMetadataRepositoryMock.addConsignmentMetadata(metadataCaptor.capture())).thenReturn(mockResponse)
     when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(Future.successful(mockTaConsignmentStatus))
@@ -142,7 +144,7 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val consignmentId = UUID.randomUUID()
     val userId = UUID.randomUUID()
     val dateTime = Timestamp.from(FixedTimeSource.now)
-    val statusType = "TransferAgreement"
+    val statusType = TransferAgreementType.id
     def row(name: String, value: String): ConsignmentmetadataRow =
       ConsignmentmetadataRow(metadataId, consignmentId, name, value, dateTime, userId)
     val mockResponse = Future.successful(
@@ -154,7 +156,7 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     )
     val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     val transferAgreementStatusValueCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
-    val statusValue = "Completed"
+    val statusValue = CompletedValue.value
 
     when(consignmentMetadataRepositoryMock.addConsignmentMetadata(any[Seq[ConsignmentmetadataRow]])).thenReturn(mockResponse)
     when(
@@ -187,8 +189,8 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
     val consignmentId = UUID.randomUUID()
     val consignmentStatusId = UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa")
-    val statusType = "TransferAgreement"
-    val statusValue = "InProgress"
+    val statusType = TransferAgreementType.id
+    val statusValue = InProgressValue.value
     val createdTimestamp = Timestamp.from(now)
 
     val mockResponse = Future.successful(ConsignmentstatusRow(consignmentStatusId, consignmentId, statusType, statusValue, createdTimestamp))
@@ -208,7 +210,7 @@ class TransferAgreementServiceSpec extends AnyFlatSpec with MockitoSugar with Ma
     val consignmentMetadataRepositoryMock = mock[ConsignmentMetadataRepository]
     val consignmentStatusRepositoryMock = mock[ConsignmentStatusRepository]
     val consignmentId = UUID.randomUUID()
-    val statusType = "TransferAgreement"
+    val statusType = TransferAgreementType.id
     val statusValue = "Complete"
 
     val transferAgreementStatusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])

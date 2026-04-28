@@ -17,6 +17,8 @@ import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{ClientChecksType, ServerChecksumType, UploadType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, InProgressValue}
 
 class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures with BeforeAndAfterEach {
 
@@ -40,8 +42,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
     val fileStatusCaptor: ArgumentCaptor[List[AddFileStatusInput]] = ArgumentCaptor.forClass(classOf[List[AddFileStatusInput]])
 
-    val addFileStatusInput = AddFileStatusInput(UUID.randomUUID(), "Upload", "Success")
-    val repositoryReturnValue = Future(Seq(FilestatusRow(UUID.randomUUID(), addFileStatusInput.fileId, "Upload", "Success", Timestamp.from(Instant.now()))))
+    val addFileStatusInput = AddFileStatusInput(UUID.randomUUID(), UploadType.id, "Success")
+    val repositoryReturnValue = Future(Seq(FilestatusRow(UUID.randomUUID(), addFileStatusInput.fileId, UploadType.id, "Success", Timestamp.from(Instant.now()))))
     when(fileStatusRepositoryMock.addFileStatuses(fileStatusCaptor.capture())).thenReturn(repositoryReturnValue)
 
     val response = createFileStatusService().addFileStatuses(AddMultipleFileStatusesInput(addFileStatusInput :: Nil)).futureValue.head
@@ -272,9 +274,9 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.ChecksumMatch should equal("ChecksumMatch")
     FileStatusService.FFID should equal("FFID")
     FileStatusService.Redaction should equal("Redaction")
-    FileStatusService.Upload should equal("Upload")
-    FileStatusService.ServerChecksum should equal("ServerChecksum")
-    FileStatusService.ClientChecks should equal("ClientChecks")
+    FileStatusService.Upload should equal(UploadType.id)
+    FileStatusService.ServerChecksum should equal(ServerChecksumType.id)
+    FileStatusService.ClientChecks should equal(ClientChecksType.id)
   }
 
   "'status values'" should "have the correct values assigned" in {
@@ -285,8 +287,8 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     FileStatusService.Zip should equal("Zip")
     FileStatusService.NonJudgmentFormat should equal("NonJudgmentFormat")
     FileStatusService.ZeroByteFile should equal("ZeroByteFile")
-    FileStatusService.InProgress should equal("InProgress")
-    FileStatusService.Completed should equal("Completed")
+    FileStatusService.InProgress should equal(InProgressValue.value)
+    FileStatusService.Completed should equal(CompletedValue.value)
   }
 
   "getConsignmentFileProgress" should "return total processed files if all checks are successful" in {

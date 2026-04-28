@@ -15,6 +15,8 @@ import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{UploadType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{InProgressValue}
 
 class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -39,8 +41,8 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val consignmentStatusRow = ConsignmentstatusRow(
       UUID.fromString("ad5ac54c-6a67-4892-b8ac-120362df7917"),
       consignmentId,
-      "Upload",
-      "InProgress",
+      UploadType.id,
+      InProgressValue.value,
       Timestamp.from(Instant.now)
     )
 
@@ -467,7 +469,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
   }
 
   private def checkConsignmentStatusExists(consignmentId: UUID, utils: TestUtils): Unit = {
-    val rs = utils.getConsignmentStatus(consignmentId, "Upload")
+    val rs = utils.getConsignmentStatus(consignmentId, UploadType.id)
     rs.getString("ConsignmentId") should equal(consignmentId.toString)
     rs.next() should equal(false)
   }

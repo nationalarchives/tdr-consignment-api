@@ -21,6 +21,8 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{ClientChecksType, ConfirmTransferType, DraftMetadataType, DraftMetadataUploadType, ExportType, MetadataReviewType, SeriesType, ServerAntivirusType, ServerChecksumType, ServerFFIDType, ServerRedactionType, TransferAgreementType, UploadType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue}
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -34,24 +36,24 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
   val statusTypes: TableFor1[String] = Table(
     "Types",
-    "Series",
-    "TransferAgreement",
-    "Upload",
-    "ConfirmTransfer",
-    "Export",
-    "ClientChecks",
-    "ServerAntivirus",
-    "ServerChecksum",
-    "ServerFFID",
-    "ServerRedaction"
+    SeriesType.id,
+    TransferAgreementType.id,
+    UploadType.id,
+    ConfirmTransferType.id,
+    ExportType.id,
+    ClientChecksType.id,
+    ServerAntivirusType.id,
+    ServerChecksumType.id,
+    ServerFFIDType.id,
+    ServerRedactionType.id
   )
 
   val statusValues: TableFor1[String] = Table(
     "Value",
-    "Completed",
-    "CompletedWithIssues",
-    "InProgress",
-    "Failed"
+    CompletedValue.value,
+    CompletedWithIssuesValue.value,
+    InProgressValue.value,
+    FailedValue.value
   )
 
   val dummyUserId: UUID = UUID.randomUUID()
@@ -59,8 +61,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "pass the correct consignment status and value to the repository method" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
-    val expectedStatusValue = "Completed"
+    val expectedStatusType = UploadType.id
+    val expectedStatusValue = CompletedValue.value
 
     val consignmentStatusRowCaptor: ArgumentCaptor[ConsignmentstatusRow] = ArgumentCaptor.forClass(classOf[ConsignmentstatusRow])
     val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
@@ -88,8 +90,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "return the consignment status row if a row with same statusType doesn't already exist" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
-    val expectedStatusValue = "Completed"
+    val expectedStatusType = UploadType.id
+    val expectedStatusValue = CompletedValue.value
     val consignmentStatusRow = generateConsignmentStatusRow(
       expectedConsignmentId,
       expectedStatusType,
@@ -116,9 +118,9 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "throw an exception if row with same statusType already exists" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
-    val initialStatusValue = "InProgress"
-    val expectedStatusValue = "Completed"
+    val expectedStatusType = UploadType.id
+    val initialStatusValue = InProgressValue.value
+    val expectedStatusValue = CompletedValue.value
     val initialConsignmentStatusRow = generateConsignmentStatusRow(
       expectedConsignmentId,
       expectedStatusType,
@@ -156,7 +158,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "InvalidStatusType"
-    val expectedStatusValue = "Completed"
+    val expectedStatusValue = CompletedValue.value
 
     val updateConsignmentStatusInput =
       ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue))
@@ -171,7 +173,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "throw an exception if an incorrect statusValue has been passed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
+    val expectedStatusType = UploadType.id
     val expectedStatusValue = "InvalidStatusValue"
 
     val updateConsignmentStatusInput =
@@ -204,9 +206,9 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val fixedUUIDSource = new FixedUUIDSource()
     val consignmentId = fixedUUIDSource.uuid
     val zoneId = ZoneId.of("UTC")
-    val consignmentStatusRow1 = generateConsignmentStatusRow(consignmentId, "Series", "Completed")
-    val consignmentStatusRow2 = generateConsignmentStatusRow(consignmentId, "TransferAgreement", "Completed")
-    val consignmentStatusRow3 = generateConsignmentStatusRow(consignmentId, "Upload", "Completed")
+    val consignmentStatusRow1 = generateConsignmentStatusRow(consignmentId, SeriesType.id, CompletedValue.value)
+    val consignmentStatusRow2 = generateConsignmentStatusRow(consignmentId, TransferAgreementType.id, CompletedValue.value)
+    val consignmentStatusRow3 = generateConsignmentStatusRow(consignmentId, UploadType.id, CompletedValue.value)
 
     val mockRepoResponse: Future[Seq[ConsignmentstatusRow]] =
       Future.successful(
@@ -220,22 +222,22 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
 
     val response: List[ConsignmentStatus] = consignmentService.getConsignmentStatuses(consignmentId).futureValue
     response.size shouldBe 3
-    val seriesStatus = response.find(_.statusType == "Series").get
-    seriesStatus.value shouldBe "Completed"
+    val seriesStatus = response.find(_.statusType == SeriesType.id).get
+    seriesStatus.value shouldBe CompletedValue.value
     seriesStatus.consignmentId should equal(consignmentId)
     seriesStatus.consignmentStatusId should equal(consignmentStatusRow1.consignmentstatusid)
     seriesStatus.createdDatetime should equal(ZonedDateTime.ofInstant(consignmentStatusRow1.createddatetime.toInstant, zoneId))
     seriesStatus.modifiedDatetime.get should equal(ZonedDateTime.ofInstant(consignmentStatusRow1.modifieddatetime.get.toInstant, zoneId))
 
-    val taStatus = response.find(_.statusType == "TransferAgreement").get
-    taStatus.value shouldBe "Completed"
+    val taStatus = response.find(_.statusType == TransferAgreementType.id).get
+    taStatus.value shouldBe CompletedValue.value
     taStatus.consignmentId should equal(consignmentId)
     taStatus.consignmentStatusId should equal(consignmentStatusRow2.consignmentstatusid)
     taStatus.createdDatetime should equal(ZonedDateTime.ofInstant(consignmentStatusRow2.createddatetime.toInstant, zoneId))
     taStatus.modifiedDatetime.get should equal(ZonedDateTime.ofInstant(consignmentStatusRow2.modifieddatetime.get.toInstant, zoneId))
 
-    val uploadStatus = response.find(_.statusType == "Upload").get
-    uploadStatus.value shouldBe "Completed"
+    val uploadStatus = response.find(_.statusType == UploadType.id).get
+    uploadStatus.value shouldBe CompletedValue.value
     uploadStatus.consignmentId should equal(consignmentId)
     uploadStatus.consignmentStatusId should equal(consignmentStatusRow3.consignmentstatusid)
     uploadStatus.createdDatetime should equal(ZonedDateTime.ofInstant(consignmentStatusRow3.createddatetime.toInstant, zoneId))
@@ -260,7 +262,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     "updateConsignmentStatus" should s"pass the correct consignment status and value '$statusValue' to the repository method" in {
       val fixedUUIDSource = new FixedUUIDSource()
       val expectedConsignmentId = fixedUUIDSource.uuid
-      val expectedStatusType = "TransferAgreement"
+      val expectedStatusType = TransferAgreementType.id
       val expectedStatusValue = statusValue
       val modifiedTime = Timestamp.from(FixedTimeSource.now)
       val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
@@ -296,7 +298,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
     val expectedStatusType = "InvalidStatusType"
-    val expectedStatusValue = "Completed"
+    val expectedStatusValue = CompletedValue.value
 
     val updateConsignmentStatusInput =
       ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue))
@@ -313,7 +315,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "updateConsignmentStatus" should "throw an exception if an incorrect statusValue has been passed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Series"
+    val expectedStatusType = SeriesType.id
     val expectedStatusValue = "InvalidStatusValue"
 
     val updateConsignmentStatusInput =
@@ -346,11 +348,11 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     )
   }
 
-  forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
+  forAll(statusTypes.filter(_ != UploadType.id)) { nonUploadStatusType =>
     "updateConsignmentStatus" should s"not call fileStatus repo if a non-'Upload' statusType of $nonUploadStatusType has been passed in" in {
       val fixedUUIDSource = new FixedUUIDSource()
       val expectedConsignmentId = fixedUUIDSource.uuid
-      val expectedStatusValue = "Completed"
+      val expectedStatusValue = CompletedValue.value
       val modifiedTime = Timestamp.from(FixedTimeSource.now)
       val consignmentIdCaptor: ArgumentCaptor[UUID] = ArgumentCaptor.forClass(classOf[UUID])
       val statusTypeCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
@@ -381,7 +383,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     }
   }
 
-  forAll(statusTypes.filter(_ != "Upload")) { nonUploadStatusType =>
+  forAll(statusTypes.filter(_ != UploadType.id)) { nonUploadStatusType =>
     "updateConsignmentStatus" should s"throw an InputDataException when a consignmentId and a non-'Upload' statusType of $nonUploadStatusType has been passed in" in {
       val fixedUUIDSource = new FixedUUIDSource()
       val expectedConsignmentId = fixedUUIDSource.uuid
@@ -400,27 +402,27 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   }
 
   "validStatusValues" should "contain the correct values" in {
-    val expectedValues = List("Completed", "CompletedWithIssues", "Failed", "InProgress")
+    val expectedValues = List(CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value, InProgressValue.value)
     validStatusValues.toList.sorted should equal(expectedValues)
   }
 
   "validStatusTypes" should "contain the correct values" in {
     val expectedValues = List(
-      "ClientChecks",
+      ClientChecksType.id,
       "ClosureMetadata",
-      "ConfirmTransfer",
+      ConfirmTransferType.id,
       "DescriptiveMetadata",
-      "DraftMetadata",
-      "DraftMetadataUpload",
-      "Export",
-      "MetadataReview",
-      "Series",
-      "ServerAntivirus",
-      "ServerChecksum",
-      "ServerFFID",
-      "ServerRedaction",
-      "TransferAgreement",
-      "Upload"
+      DraftMetadataType.id,
+      DraftMetadataUploadType.id,
+      ExportType.id,
+      MetadataReviewType.id,
+      SeriesType.id,
+      ServerAntivirusType.id,
+      ServerChecksumType.id,
+      ServerFFIDType.id,
+      ServerRedactionType.id,
+      TransferAgreementType.id,
+      UploadType.id
     )
     validStatusTypes.toList.sorted should equal(expectedValues)
   }
@@ -444,8 +446,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "not call metadata review log repository for non-MetadataReview status types" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
-    val expectedStatusValue = "Completed"
+    val expectedStatusType = UploadType.id
+    val expectedStatusValue = CompletedValue.value
 
     val mockGetConsignmentStatusRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future(Seq())
     val mockAddConsignmentStatusRepoResponse = Future(
@@ -464,8 +466,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "addConsignmentStatus" should "write metadata review log entry with 'Submission' action when MetadataReview status is InProgress" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "MetadataReview"
-    val expectedStatusValue = "InProgress"
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = InProgressValue.value
 
     val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
 
@@ -493,8 +495,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "updateConsignmentStatus" should "not call metadata review log repository for non-MetadataReview status types" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "Upload"
-    val expectedStatusValue = "Completed"
+    val expectedStatusType = UploadType.id
+    val expectedStatusValue = CompletedValue.value
 
     when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp]))
       .thenReturn(Future.successful(1))
@@ -508,8 +510,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "updateConsignmentStatus" should "write metadata review log entry with 'Approval' action when MetadataReview status is Completed" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "MetadataReview"
-    val expectedStatusValue = "Completed"
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = CompletedValue.value
 
     val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
 
@@ -532,8 +534,8 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "updateConsignmentStatus" should "write metadata review log entry with 'Rejection' action when MetadataReview status is CompletedWithIssues" in {
     val fixedUUIDSource = new FixedUUIDSource()
     val expectedConsignmentId = fixedUUIDSource.uuid
-    val expectedStatusType = "MetadataReview"
-    val expectedStatusValue = "CompletedWithIssues"
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = CompletedWithIssuesValue.value
 
     val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
 

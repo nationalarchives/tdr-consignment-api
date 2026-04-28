@@ -1,94 +1,10 @@
 package uk.gov.nationalarchives.tdr.api.utils
 
+// Legacy status types not yet in tdr-common-utils.
+// These may have been removed with the transition to the CSV metadata upload route.
+// TODO: Investigate whether ClosureMetadataType and DescriptiveMetadataType are still used;
+//  if not, remove this file. If still needed, add them to common-utils instead.
 object Statuses {
-
-  sealed trait StatusType {
-    val id: String
-    val nonJudgmentStatus: Boolean
-  }
-
-  sealed trait StatusValue { val value: String }
-
-  case object SeriesType extends StatusType {
-    val id: String = "Series"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object UploadType extends StatusType {
-    val id: String = "Upload"
-    val nonJudgmentStatus: Boolean = false
-  }
-
-  case object TransferAgreementType extends StatusType {
-    val id: String = "TransferAgreement"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object ClientChecksType extends StatusType {
-    val id: String = "ClientChecks"
-    val nonJudgmentStatus: Boolean = false
-  }
-
-  case object ServerAntivirusType extends StatusType {
-    val id: String = "ServerAntivirus"
-    val nonJudgmentStatus: Boolean = false
-  }
-
-  case object ServerChecksumType extends StatusType {
-    val id: String = "ServerChecksum"
-    val nonJudgmentStatus: Boolean = false
-  }
-
-  case object ServerFFIDType extends StatusType {
-    val id: String = "ServerFFID"
-    val nonJudgmentStatus: Boolean = false
-  }
-
-  case object ServerRedactionType extends StatusType {
-    val id: String = "ServerRedaction"
-    val nonJudgmentStatus: Boolean = false
-  }
-
-  case object ConfirmTransferType extends StatusType {
-    val id: String = "ConfirmTransfer"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object ExportType extends StatusType {
-    val id: String = "Export"
-    val nonJudgmentStatus: Boolean = false
-  }
-
-  case object DraftMetadataType extends StatusType {
-    val id: String = "DraftMetadata"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object DraftMetadataUploadType extends StatusType {
-    val id: String = "DraftMetadataUpload"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object MetadataReviewType extends StatusType {
-    val id: String = "MetadataReview"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object ClosureMetadataType extends StatusType {
-    val id: String = "ClosureMetadata"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object DescriptiveMetadataType extends StatusType {
-    val id: String = "DescriptiveMetadata"
-    val nonJudgmentStatus: Boolean = true
-  }
-
-  case object InProgressValue extends StatusValue { val value: String = "InProgress" }
-
-  case object CompletedValue extends StatusValue { val value: String = "Completed" }
-
-  case object CompletedWithIssuesValue extends StatusValue { val value: String = "CompletedWithIssues" }
-
-  case object FailedValue extends StatusValue { val value: String = "Failed" }
+  case object ClosureMetadataType { val id: String = "ClosureMetadata" }
+  case object DescriptiveMetadataType { val id: String = "DescriptiveMetadata" }
 }

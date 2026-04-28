@@ -12,6 +12,8 @@ import java.text.SimpleDateFormat
 import java.time.Instant.now
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{ExportType, TransferAgreementType, UploadType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, InProgressValue}
 
 class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -45,8 +47,8 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
     val userId = UUID.fromString("aee2d1a9-e1db-43a0-9fd6-a6c342bb187b")
-    val statusType = "Upload"
-    val statusValue = "InProgress"
+    val statusType = UploadType.id
+    val statusValue = InProgressValue.value
     val createdTimestamp = Timestamp.from(now)
 
     TestUtils(db).createConsignment(consignmentId, userId)
@@ -80,12 +82,12 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("b8271ba9-9ef4-4584-b074-5a48b2a34cec")
     val userId = UUID.fromString("aee2d1a9-e1db-43a0-9fd6-a6c342bb187b")
-    val statusTypeOne = "TransferAgreement"
+    val statusTypeOne = TransferAgreementType.id
     val statusValueOne = "Complete"
-    val statusTypeTwo = "Upload"
+    val statusTypeTwo = UploadType.id
     val statusValueTwo = "Complete"
-    val statusTypeThree = "Export"
-    val statusValueThree = "InProgress"
+    val statusTypeThree = ExportType.id
+    val statusValueThree = InProgressValue.value
 
     TestUtils(db).createConsignment(consignmentId, userId)
     TestUtils(db).createConsignmentStatus(consignmentId, statusTypeOne, statusValueOne)
@@ -108,8 +110,8 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val consignmentIdTwo = UUID.fromString("1b0fd1d8-9213-448f-baf3-44c87fe1828b")
     val consignmentIdThree = UUID.fromString("77ce2eaa-6f16-4b3c-8ec5-b47c46bf8d63")
     val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
-    val statusType = "Upload"
-    val statusValue = "Completed"
+    val statusType = UploadType.id
+    val statusValue = CompletedValue.value
 
     TestUtils(db).createConsignment(consignmentId, userId)
     TestUtils(db).createConsignment(consignmentIdTwo, userId)
@@ -130,13 +132,13 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
     val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
-    val statusType = "Upload"
-    val statusValue = "Completed"
+    val statusType = UploadType.id
+    val statusValue = CompletedValue.value
     val createdTimestamp = Timestamp.from(now)
     val modifiedTimestamp = Timestamp.from(now)
 
     TestUtils(db).createConsignment(consignmentId, userId)
-    TestUtils(db).createConsignmentStatus(consignmentId, "Upload", "InProgress", createdTimestamp)
+    TestUtils(db).createConsignmentStatus(consignmentId, UploadType.id, InProgressValue.value, createdTimestamp)
     val response: Int =
       consignmentStatusRepository.updateConsignmentStatus(consignmentId, statusType, statusValue, modifiedTimestamp).futureValue
 
@@ -153,13 +155,13 @@ class ConsignmentStatusRepositorySpec extends TestContainerUtils with ScalaFutur
     val consignmentStatusRepository = new ConsignmentStatusRepository(db)
     val consignmentId = UUID.fromString("2e998acd-6e87-4437-92a4-e4267194fe38")
     val userId = UUID.fromString("7f7be445-9879-4514-8a3e-523cb9d9a188")
-    val statusTypeOne = "TransferAgreement"
-    val statusTypeTwo = "Upload"
-    val statusTypeThree = "Export"
-    val statusValueOne = "InProgress"
-    val statusValueTwo = "InProgress"
-    val statusValueThree = "InProgress"
-    val newStatusValueOne = "Completed"
+    val statusTypeOne = TransferAgreementType.id
+    val statusTypeTwo = UploadType.id
+    val statusTypeThree = ExportType.id
+    val statusValueOne = InProgressValue.value
+    val statusValueTwo = InProgressValue.value
+    val statusValueThree = InProgressValue.value
+    val newStatusValueOne = CompletedValue.value
     val createdTimestamp = Timestamp.from(now)
     val modifiedTimestamp = Timestamp.from(now)
 
