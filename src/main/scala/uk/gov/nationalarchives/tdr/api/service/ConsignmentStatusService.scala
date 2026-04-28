@@ -115,7 +115,9 @@ class ConsignmentStatusService(
         }
       }
       .flatten
-    action.map(a => MetadatareviewlogRow(uuidSource.uuid, consignmentStatusInput.consignmentId, userId, a, Timestamp.from(timeSource.now)))
+    action.map(a =>
+      MetadatareviewlogRow(uuidSource.uuid, consignmentStatusInput.consignmentId, userId, a, Timestamp.from(timeSource.now), consignmentStatusInput.metadataReviewNotes)
+    )
   }
 }
 

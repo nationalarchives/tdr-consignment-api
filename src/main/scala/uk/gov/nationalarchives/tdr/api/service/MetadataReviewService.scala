@@ -18,7 +18,8 @@ class MetadataReviewService(
       row.consignmentid,
       row.userid,
       row.action,
-      row.eventtime.toZonedDateTime
+      row.eventtime.toZonedDateTime,
+      row.metadatareviewnotes
     )
   }
 

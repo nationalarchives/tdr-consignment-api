@@ -14,6 +14,8 @@ import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validSt
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Rejection, Submission}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedWithIssuesValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
@@ -567,5 +569,80 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
     capturedLogRow.consignmentid should equal(expectedConsignmentId)
     capturedLogRow.userid should equal(dummyUserId)
     capturedLogRow.action should equal(Rejection.value)
+  }
+
+  "addConsignmentStatus" should "pass metadataReviewNotes to the metadata review log entry" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = InProgressValue.value
+    val expectedNotes = "Some review notes"
+
+    val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
+
+    val mockGetConsignmentStatusRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future(Seq())
+    val mockAddConsignmentStatusRepoResponse = Future(
+      generateConsignmentStatusRow(expectedConsignmentId, expectedStatusType, expectedStatusValue, None)
+    )
+
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(any[UUID])).thenReturn(mockGetConsignmentStatusRepoResponse)
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockAddConsignmentStatusRepoResponse)
+    when(metadataReviewLogRepositoryMock.addLogEntry(metadataReviewLogRowCaptor.capture()))
+      .thenReturn(Future.successful(mock[MetadatareviewlogRow]))
+
+    val addConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue), metadataReviewNotes = Some(expectedNotes))
+    consignmentService.addConsignmentStatus(addConsignmentStatusInput, dummyUserId).futureValue
+
+    val capturedLogRow = metadataReviewLogRowCaptor.getValue
+    capturedLogRow.metadatareviewnotes should equal(Some(expectedNotes))
+  }
+
+  "updateConsignmentStatus" should "pass metadataReviewNotes to the metadata review log entry" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = CompletedWithIssuesValue.value
+    val expectedNotes = "Rejection reason notes"
+
+    val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
+
+    when(consignmentStatusRepositoryMock.updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp]))
+      .thenReturn(Future.successful(1))
+    when(metadataReviewLogRepositoryMock.addLogEntry(metadataReviewLogRowCaptor.capture()))
+      .thenReturn(Future.successful(mock[MetadatareviewlogRow]))
+
+    val updateConsignmentStatusInput =
+      ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue), metadataReviewNotes = Some(expectedNotes))
+    consignmentService.updateConsignmentStatus(updateConsignmentStatusInput, dummyUserId).futureValue
+
+    val capturedLogRow = metadataReviewLogRowCaptor.getValue
+    capturedLogRow.metadatareviewnotes should equal(Some(expectedNotes))
+    capturedLogRow.action should equal(Rejection.value)
+  }
+
+  "addConsignmentStatus" should "set metadataReviewNotes to None when no notes provided for MetadataReview status" in {
+    val fixedUUIDSource = new FixedUUIDSource()
+    val expectedConsignmentId = fixedUUIDSource.uuid
+    val expectedStatusType = MetadataReviewType.id
+    val expectedStatusValue = InProgressValue.value
+
+    val metadataReviewLogRowCaptor: ArgumentCaptor[MetadatareviewlogRow] = ArgumentCaptor.forClass(classOf[MetadatareviewlogRow])
+
+    val mockGetConsignmentStatusRepoResponse: Future[Seq[ConsignmentstatusRow]] = Future(Seq())
+    val mockAddConsignmentStatusRepoResponse = Future(
+      generateConsignmentStatusRow(expectedConsignmentId, expectedStatusType, expectedStatusValue, None)
+    )
+
+    when(consignmentStatusRepositoryMock.getConsignmentStatus(any[UUID])).thenReturn(mockGetConsignmentStatusRepoResponse)
+    when(consignmentStatusRepositoryMock.addConsignmentStatus(any[ConsignmentstatusRow])).thenReturn(mockAddConsignmentStatusRepoResponse)
+    when(metadataReviewLogRepositoryMock.addLogEntry(metadataReviewLogRowCaptor.capture()))
+      .thenReturn(Future.successful(mock[MetadatareviewlogRow]))
+
+    val addConsignmentStatusInput = ConsignmentStatusInput(expectedConsignmentId, expectedStatusType, Some(expectedStatusValue))
+    consignmentService.addConsignmentStatus(addConsignmentStatusInput, dummyUserId).futureValue
+
+    val capturedLogRow = metadataReviewLogRowCaptor.getValue
+    capturedLogRow.metadatareviewnotes should equal(None)
   }
 }
