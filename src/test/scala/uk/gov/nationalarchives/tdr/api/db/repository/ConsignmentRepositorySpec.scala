@@ -24,7 +24,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
