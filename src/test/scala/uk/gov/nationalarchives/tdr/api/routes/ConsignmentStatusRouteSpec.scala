@@ -12,6 +12,8 @@ import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestRequest, T
 
 import java.time.ZonedDateTime
 import java.util.UUID
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{MetadataReviewType, SeriesType, UploadType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedWithIssuesValue, InProgressValue}
 
 class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
@@ -61,8 +63,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val statusType = "Upload"
-    val statusValue = "InProgress"
+    val statusType = UploadType.id
+    val statusValue = InProgressValue.value
     val token = validUserToken(userId)
 
     utils.createConsignment(consignmentId, userId)
@@ -149,8 +151,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val statusType = "Series"
-    val statusValue = "InProgress"
+    val statusType = SeriesType.id
+    val statusValue = InProgressValue.value
     val token = validUserToken(userId)
 
     utils.createConsignment(consignmentId, userId)
@@ -166,8 +168,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val statusType = "Series"
-    val statusValue = "InProgress"
+    val statusType = SeriesType.id
+    val statusValue = InProgressValue.value
     val token = validTransferServiceToken("data-load")
 
     utils.createConsignment(consignmentId, userId)
@@ -183,8 +185,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val statusType = "Series"
-    val statusValue = "InProgress"
+    val statusType = SeriesType.id
+    val statusValue = InProgressValue.value
     val token = validTransferServiceToken("data-load")
 
     utils.createConsignment(consignmentId, userId)
@@ -200,8 +202,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val statusType = "Series"
-    val statusValue = "InProgress"
+    val statusType = SeriesType.id
+    val statusValue = InProgressValue.value
     val token = validTransferServiceToken("some-random-role")
 
     utils.createConsignment(consignmentId, userId)
@@ -217,8 +219,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val statusType = "MetadataReview"
-    val statusValue = "InProgress"
+    val statusType = MetadataReviewType.id
+    val statusValue = InProgressValue.value
     val tnaUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
     val token = validTNAUserToken(userId = tnaUserId, tnaUserType = "transfer_adviser")
 
@@ -236,8 +238,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val statusType = "MetadataReview"
-      val statusValue = "CompletedWithIssues"
+      val statusType = MetadataReviewType.id
+      val statusValue = CompletedWithIssuesValue.value
       val tnaUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
       val token = validTNAUserToken(tnaUserId)
 
@@ -254,8 +256,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
     val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-    val statusType = "MetadataReview"
-    val statusValue = "InProgress"
+    val statusType = MetadataReviewType.id
+    val statusValue = InProgressValue.value
     val tnaUserId = UUID.fromString("29f65c4e-0eb8-4719-afdb-ace1bcbae4b6")
     val token = validTNAUserToken(tnaUserId)
 
@@ -273,8 +275,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
       val utils = TestUtils(container.database)
       val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
       val userId = UUID.fromString("49762121-4425-4dc4-9194-98f72e04d52e")
-      val statusType = "Upload"
-      val statusValue = "InProgress"
+      val statusType = UploadType.id
+      val statusValue = InProgressValue.value
 
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, statusType, statusValue)
@@ -304,8 +306,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val token = validUserToken(userId)
 
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-    val statusType = "Upload"
-    val statusValue = "InProgress"
+    val statusType = UploadType.id
+    val statusValue = InProgressValue.value
 
     utils.createConsignment(consignmentId, userId)
     utils.createConsignmentStatus(consignmentId, statusType, statusValue)
@@ -322,8 +324,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
     val token = validUserToken(userId)
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-    val statusType = "Upload"
-    val statusValue = "InProgress"
+    val statusType = UploadType.id
+    val statusValue = InProgressValue.value
     utils.createConsignment(consignmentId, userId)
     utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
@@ -339,8 +341,8 @@ class ConsignmentStatusRouteSpec extends TestContainerUtils with Matchers with T
     val userId = UUID.fromString("dfee3d4f-3bb1-492e-9c85-7db1685ab12f")
     val token = validUserToken(userId)
     val consignmentId = UUID.fromString("a8dc972d-58f9-4733-8bb2-4254b89a35f2")
-    val statusType = "Upload"
-    val statusValue = "InProgress"
+    val statusType = UploadType.id
+    val statusValue = InProgressValue.value
     utils.createConsignment(consignmentId, userId)
     utils.createConsignmentStatus(consignmentId, statusType, statusValue)
 
