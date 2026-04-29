@@ -425,9 +425,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   "validStatusTypes" should "contain the correct values" in {
     val expectedValues = List(
       ClientChecksType.id,
-      "ClosureMetadata",
       ConfirmTransferType.id,
-      "DescriptiveMetadata",
       DraftMetadataType.id,
       DraftMetadataUploadType.id,
       ExportType.id,
