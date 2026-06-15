@@ -134,5 +134,5 @@ object ConsignmentStatusService {
       MetadataReviewType.id
     )
   val validStatusTypes: Set[String] = validConsignmentTypes.toSet ++ Set(ServerFFIDType.id, ServerChecksumType.id, ServerAntivirusType.id, ServerRedactionType.id)
-  val validStatusValues: Set[String] = Set(InProgressValue.value, CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value)
+  val validStatusValues: Set[String] = Set(InProgressValue.value, CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value, SkippedValue.value)
 }

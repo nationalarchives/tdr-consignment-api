@@ -15,7 +15,7 @@ import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Rejection, Submission}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedWithIssuesValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue, SkippedValue}
 
 import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
@@ -23,22 +23,7 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{
-  ClientChecksType,
-  ConfirmTransferType,
-  DraftMetadataType,
-  DraftMetadataUploadType,
-  ExportType,
-  MetadataReviewType,
-  SeriesType,
-  ServerAntivirusType,
-  ServerChecksumType,
-  ServerFFIDType,
-  ServerRedactionType,
-  TransferAgreementType,
-  UploadType
-}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{ClientChecksType, ConfirmTransferType, DraftMetadataType, DraftMetadataUploadType, ExportType, MetadataReviewType, SeriesType, ServerAntivirusType, ServerChecksumType, ServerFFIDType, ServerRedactionType, TransferAgreementType, UploadType}
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -418,7 +403,7 @@ class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Re
   }
 
   "validStatusValues" should "contain the correct values" in {
-    val expectedValues = List(CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value, InProgressValue.value)
+    val expectedValues = List(CompletedValue.value, CompletedWithIssuesValue.value, FailedValue.value, InProgressValue.value, SkippedValue.value)
     validStatusValues.toList.sorted should equal(expectedValues)
   }
 
