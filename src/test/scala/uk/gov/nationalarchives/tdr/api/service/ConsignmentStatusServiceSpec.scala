@@ -23,7 +23,21 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{ClientChecksType, ConfirmTransferType, DraftMetadataType, DraftMetadataUploadType, ExportType, MetadataReviewType, SeriesType, ServerAntivirusType, ServerChecksumType, ServerFFIDType, ServerRedactionType, TransferAgreementType, UploadType}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{
+  ClientChecksType,
+  ConfirmTransferType,
+  DraftMetadataType,
+  DraftMetadataUploadType,
+  ExportType,
+  MetadataReviewType,
+  SeriesType,
+  ServerAntivirusType,
+  ServerChecksumType,
+  ServerFFIDType,
+  ServerRedactionType,
+  TransferAgreementType,
+  UploadType
+}
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
