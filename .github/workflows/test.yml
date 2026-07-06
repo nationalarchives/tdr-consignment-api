@@ -12,20 +12,20 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
+      - uses: sbt/setup-sbt@66fb4376e81982c7d92a4074170846fff88e2e30 # v1.5.0
       - run: sbt scalafmtCheckAll 'graphqlValidateSchema "build" "consignmentApi"'
   setup-tests:
     runs-on: ubuntu-latest
     outputs:
       files: ${{ steps.generate-files.outputs.files }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
+      - uses: sbt/setup-sbt@66fb4376e81982c7d92a4074170846fff88e2e30 # v1.5.0
       - id: generate-files
         run: |
           FILES=$(find src/test/* -name "*Spec.scala" -type f -printf "%f\n" | sed 's/\.[^.]*$//' | jq -R -s -c 'split("\n")[:-1]')
@@ -37,10 +37,10 @@ jobs:
       matrix:
         file: ${{ fromJSON(needs.setup-tests.outputs.files) }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
+      - uses: sbt/setup-sbt@66fb4376e81982c7d92a4074170846fff88e2e30 # v1.5.0
       - run: |
           docker build -f Dockerfile-tests -t tests .
           sbt "testOnly *${FILE}*"
