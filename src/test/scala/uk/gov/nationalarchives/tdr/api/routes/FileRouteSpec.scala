@@ -28,9 +28,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
   case class GraphqlMutationDataFilesMetadata(data: Option[AddFilesAndMetadata], errors: List[GraphqlError] = Nil)
 
-  case class FileMatches(fileId: UUID, matchId: Long)
-
-  case class File(fileId: UUID, fileType: Option[String], fileName: Option[String], parentId: Option[UUID])
+  case class FileMatches(fileId: UUID, matchId: String)
 
   case class AddFilesAndMetadata(addFilesAndMetadata: List[FileMatches])
 
@@ -44,14 +42,14 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "add files and metadata entries for files and directories" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
     val referenceMockServer = getReferencesMockServer(4)
     val res = runTestMutationFileMetadata("mutation_alldata_2", validUserToken())
     val distinctDirectoryCount = 3
     val fileCount = 5
-    val expectedCount = ((FileUUID :: Filename :: FileType :: FileReference :: ParentReference :: defaultMetadataProperties).size * distinctDirectoryCount) +
+    val expectedCount = ((FileUUID :: Filename :: FileType :: FileReference :: ParentReference :: AssetId :: defaultMetadataProperties).size * distinctDirectoryCount) +
       (defaultMetadataProperties.size * fileCount) +
       (clientSideProperties.size * fileCount) +
       (serverSideProperties.size * fileCount) +
@@ -76,7 +74,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
     val overrideUserId = userId
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, overrideUserId)
 
     val referenceMockServer = getReferencesMockServer(4)
@@ -95,7 +93,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
       val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
       val differentUserId = UUID.randomUUID()
       val utils = TestUtils(container.database)
-      (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
+      (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
       utils.createConsignment(consignmentId, differentUserId)
 
       val referenceMockServer = getReferencesMockServer(4)
@@ -109,7 +107,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
     val consignmentId = UUID.fromString("c44f1b9b-1275-4bc3-831c-808c50a0222d")
     val overrideUserId = userId
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, overrideUserId)
 
     val referenceMockServer = getReferencesMockServer(4)
@@ -122,7 +120,7 @@ class FileRouteSpec extends TestContainerUtils with Matchers with TestRequest {
   "The api" should "return file ids matched with sequence ids for addFilesAndMetadata" in withContainers { case container: PostgreSQLContainer =>
     val consignmentId = UUID.fromString("1cd5e07a-34c8-4751-8e81-98edd17d1729")
     val utils = TestUtils(container.database)
-    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty(_))
+    (clientSideProperties ++ serverSideProperties ++ defaultMetadataProperties).foreach(utils.addFileProperty)
     utils.createConsignment(consignmentId, userId)
 
     val referenceMockServer = getReferencesMockServer(4)

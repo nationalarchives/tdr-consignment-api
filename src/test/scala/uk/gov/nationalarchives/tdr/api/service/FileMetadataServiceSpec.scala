@@ -214,6 +214,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     val consignmentId = UUID.randomUUID()
     val fileIdOne = UUID.randomUUID()
     val fileIdTwo = UUID.randomUUID()
+    val fileTwoAssetId = UUID.randomUUID()
     val closureStartDate = Timestamp.from(Instant.parse("2020-01-01T09:00:00Z"))
     val foiExemptionAsserted = Timestamp.from(Instant.parse("2020-01-01T09:00:00Z"))
     val mockResponse = Future(
@@ -224,7 +225,8 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
         FilemetadataRow(UUID.randomUUID(), fileIdTwo, foiExemptionAsserted.toString, Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), FoiExemptionAsserted),
         FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), TitleClosed),
         FilemetadataRow(UUID.randomUUID(), fileIdTwo, "true", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), DescriptionClosed),
-        FilemetadataRow(UUID.randomUUID(), fileIdTwo, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosurePeriod)
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, "1", Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), ClosurePeriod),
+        FilemetadataRow(UUID.randomUUID(), fileIdTwo, fileTwoAssetId.toString, Timestamp.from(FixedTimeSource.now), UUID.randomUUID(), AssetId)
       )
     )
 
@@ -244,6 +246,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     response(fileIdTwo).titleClosed.get should equal(true)
     response(fileIdTwo).descriptionClosed.get should equal(true)
     response(fileIdTwo).foiExemptionAsserted.get should equal(foiExemptionAsserted.toLocalDateTime)
+    response(fileIdTwo).assetId.get should equal(fileTwoAssetId)
   }
 
   "getSumOfFileSizes" should "return the sum of the file sizes" in {
@@ -286,6 +289,7 @@ class FileMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
     FileMetadataService.Language shouldEqual "Language"
     FileMetadataService.FoiExemptionCode shouldEqual "FoiExemptionCode"
     FileMetadataService.FileUUID shouldEqual "UUID"
+    FileMetadataService.AssetId shouldEqual "AssetId"
   }
 
   private class AddOrUpdateBulkMetadataTestSetUp() {

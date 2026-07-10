@@ -177,24 +177,24 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val parentFolder = files.find(_.fileId == parentFolderId).get
     parentFolder.fileName.get shouldBe "folderName"
     parentFolder.uploadMatchId shouldBe None
-    parentFolder.metadata shouldBe FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+    parentFolder.metadata shouldBe FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
     val fileOne = files.find(_.fileId == fileId1).get
     fileOne.fileName.get shouldBe "fileOneName"
     fileOne.uploadMatchId.get shouldBe "1"
-    fileOne.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
+    fileOne.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None, None)
     fileOne.originalFilePath.isDefined should be(false)
 
     val fileTwo = files.find(_.fileId == fileId2).get
     fileTwo.fileName.get shouldBe "fileTwoName"
     fileTwo.uploadMatchId.get shouldBe "2"
-    fileTwo.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
+    fileTwo.metadata shouldBe FileMetadataValues(Some("checksum"), None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None, None)
     fileTwo.originalFilePath.isDefined should be(false)
 
     val fileThree = files.find(_.fileId == fileIdThree).get
     fileThree.fileName.get shouldBe "fileThreeName"
     fileThree.uploadMatchId.get shouldBe "3"
-    fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None)
+    fileThree.metadata shouldBe FileMetadataValues(None, None, Some(timestamp.toLocalDateTime), None, None, None, None, None, None, None, None, None, None, None, None)
     fileThree.originalFilePath.isDefined should be(false)
   }
 
@@ -248,6 +248,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
   "getFileMetadata" should "return the correct metadata with file statuses" in {
     val userId = UUID.randomUUID()
     val fileId = UUID.randomUUID()
+    val assetId = UUID.randomUUID()
     val fileRef = "FILEREF"
     val parentId = UUID.randomUUID()
     val parentRef = "REF1"
@@ -275,7 +276,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         Some(parentId),
         Some(fileRef),
         Some(parentRef),
-        uploadmatchid = Some("1")
+        uploadmatchid = Some("1"),
+        assetid = Some(assetId)
       )
 
     val fileAndMetadataRows = Seq(
@@ -292,7 +294,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (fileRow, Some(fileMetadataRow(fileId, "ClosureStartDate", closureStartDate.toString))),
       (fileRow, Some(fileMetadataRow(fileId, "FoiExemptionAsserted", foiExemptionAsserted.toString))),
       (fileRow, Some(fileMetadataRow(fileId, "TitleClosed", "true"))),
-      (fileRow, Some(fileMetadataRow(fileId, DescriptionClosed, "true")))
+      (fileRow, Some(fileMetadataRow(fileId, DescriptionClosed, "true"))),
+      (fileRow, Some(fileMetadataRow(fileId, AssetId, assetId.toString)))
     )
 
     val mockAvMetadataResponse = Future(
@@ -344,7 +347,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         Some(closureStartDate.toLocalDateTime),
         Some(foiExemptionAsserted.toLocalDateTime),
         Some(true),
-        Some(true)
+        Some(true),
+        Some(assetId)
       ),
       Some("Success"),
       Some(
@@ -362,7 +366,8 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       Option(AntivirusMetadata(fileId, "software", "softwareVersion", "databaseVersion", "result", timestamp.getTime)),
       None,
       fileMetadata,
-      mockFileStatuses.map(p => FileStatus(p.fileid, p.statustype, p.value)).toList
+      mockFileStatuses.map(p => FileStatus(p.fileid, p.statustype, p.value)).toList,
+      assetId = Some(assetId)
     )
 
     actualFileMetadata should equal(expectedFileMetadata)
@@ -409,7 +414,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       None,
       None,
       None,
-      FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None),
+      FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None),
       Some("Success"),
       Some(
         FFIDMetadata(
@@ -494,7 +499,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       row.userid should equal(userId)
     })
 
-    val expectedSize = 71
+    val expectedSize = 76
     metadataRows.size should equal(expectedSize)
 
     defaultMetadataProperties.foreach(prop => {
@@ -571,7 +576,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     })
     val file = fileRows.find(_.filereference.contains("ref4"))
     file.get.parentreference should equal(Some("ref2"))
-    val expectedSize = 71
+    val expectedSize = 76
     metadataRows.size should equal(expectedSize)
     defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(5)
@@ -648,7 +653,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       row.consignmentid should equal(consignmentId)
       row.userid should equal(userId)
     })
-    val expectedSize = 45
+    val expectedSize = 48
     metadataRows.size should equal(expectedSize)
     defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(3)
@@ -719,7 +724,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       row.consignmentid should equal(consignmentId)
       row.userid should equal(overrideUserId)
     })
-    val expectedSize = 71
+    val expectedSize = 76
     metadataRows.size should equal(expectedSize)
     defaultMetadataProperties.foreach(prop => {
       metadataRows.count(_.propertyname == prop) should equal(5)

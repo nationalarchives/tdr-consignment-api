@@ -280,6 +280,7 @@ type File {
   originalFilePath: String
   fileMetadata: [FileMetadataValue!]!
   fileStatuses: [FileStatus!]!
+  assetId: UUID
 }
 
 type FileCheckFailure {
@@ -364,6 +365,7 @@ type FileMetadataValues {
   foiExemptionAsserted: LocalDateTime
   titleClosed: Boolean
   descriptionClosed: Boolean
+  assetId: UUID
 }
 
 type FileMetadataWithFileId {

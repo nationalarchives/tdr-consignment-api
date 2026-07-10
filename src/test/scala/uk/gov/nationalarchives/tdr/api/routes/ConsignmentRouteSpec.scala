@@ -1043,7 +1043,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createConsignment(new FixedUUIDSource().uuid, userId)
 
     val seriesId = "4252c920-b1ac-4b0a-9711-33409b8fae6e"
-    utils.addSeries(UUID.fromString(seriesId), fixedBodyId, "MOCK1")
+    val seriesCode = UUID.randomUUID().toString
+    utils.addSeries(UUID.fromString(seriesId), fixedBodyId, code = seriesCode)
 
     val expectedResponse: GraphqlMutationUpdateSeriesIdOfConsignment = expectedUpdateConsignmentSeriesIdMutationResponse("data_all")
     val response: GraphqlMutationUpdateSeriesIdOfConsignment =
@@ -1059,7 +1060,8 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createConsignment(new FixedUUIDSource().uuid, userId)
 
     val seriesId = "4252c920-b1ac-4b0a-9711-33409b8fae6b"
-    utils.addSeries(UUID.fromString(seriesId), fixedBodyId, "MOCK1")
+    val seriesCode = UUID.randomUUID().toString
+    utils.addSeries(UUID.fromString(seriesId), fixedBodyId, code = seriesCode)
 
     val expectedResponse: GraphqlMutationUpdateSeriesIdOfConsignment = expectedUpdateConsignmentSeriesIdMutationResponse("data_incorrect_body")
     val response: GraphqlMutationUpdateSeriesIdOfConsignment =

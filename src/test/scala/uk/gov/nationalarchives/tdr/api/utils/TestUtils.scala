@@ -234,10 +234,11 @@ class TestUtils(db: JdbcBackend#Database) {
       userId: UUID = userId,
       fileRef: Option[String] = None,
       parentRef: Option[String] = None,
-      uploadMatchId: Option[String] = None
+      uploadMatchId: Option[String] = None,
+      assetId: Option[UUID] = None
   ): Unit = {
     val sql =
-      s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId", "FileReference", "ParentReference", "UploadMatchId") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+      s"""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType", "FileName", "ParentId", "FileReference", "ParentReference", "UploadMatchId", "AssetId") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val ps: PreparedStatement = connection.prepareStatement(sql)
     ps.setObject(1, fileId, Types.OTHER)
     ps.setObject(2, consignmentId, Types.OTHER)
@@ -249,6 +250,7 @@ class TestUtils(db: JdbcBackend#Database) {
     ps.setString(8, fileRef.orNull)
     ps.setString(9, parentRef.orNull)
     ps.setString(10, uploadMatchId.orNull)
+    ps.setObject(11, assetId.orNull, Types.OTHER)
     ps.executeUpdate()
   }
 
@@ -541,7 +543,7 @@ object TestUtils {
   case class Locations(column: Int, line: Int)
 
   val defaultFileId: UUID = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")
-  val serverSideProperties: List[String] = List(FileUUID, FileReference, ParentReference)
+  val serverSideProperties: List[String] = List(FileUUID, FileReference, ParentReference, AssetId)
   val defaultMetadataProperties: List[String] = List(RightsCopyright, LegalStatus, HeldBy, Language, ClosureType, DescriptionClosed, TitleClosed)
   val defaultCopyright: String = "Crown Copyright"
   val defaultLegalStatus: String = "Public Record"

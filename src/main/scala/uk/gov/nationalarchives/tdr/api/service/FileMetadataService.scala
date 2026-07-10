@@ -107,6 +107,7 @@ object FileMetadataService {
   val HeldBy = "HeldBy"
   val Language = "Language"
   val FoiExemptionCode = "FoiExemptionCode"
+  val AssetId = "AssetId"
   val clientSideProperties: List[String] =
     List(SHA256ClientSideChecksum, ClientSideOriginalFilepath, ClientSideFileLastModifiedDate, ClientSideFileSize, Filename, FileType)
 
@@ -128,7 +129,8 @@ object FileMetadataService {
       propertyNameMap.get(ClosureStartDate).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(FoiExemptionAsserted).map(d => Timestamp.valueOf(d).toLocalDateTime),
       propertyNameMap.get(TitleClosed).map(_.toBoolean),
-      propertyNameMap.get(DescriptionClosed).map(_.toBoolean)
+      propertyNameMap.get(DescriptionClosed).map(_.toBoolean),
+      propertyNameMap.get(AssetId).map(UUID.fromString)
     )
   }
 
@@ -151,7 +153,8 @@ object FileMetadataService {
       antivirusMetadata: Option[AntivirusMetadata],
       originalFilePath: Option[String] = None,
       fileMetadata: List[FileMetadataValue] = Nil,
-      fileStatuses: List[FileStatus] = Nil
+      fileStatuses: List[FileStatus] = Nil,
+      assetId: Option[UUID] = None
   )
 
   case class FileMetadataValues(
@@ -168,7 +171,8 @@ object FileMetadataService {
       closureStartDate: Option[LocalDateTime],
       foiExemptionAsserted: Option[LocalDateTime],
       titleClosed: Option[Boolean],
-      descriptionClosed: Option[Boolean]
+      descriptionClosed: Option[Boolean],
+      assetId: Option[UUID]
   )
 
   val config: ConfigUtils.MetadataConfiguration = ConfigUtils.loadConfiguration

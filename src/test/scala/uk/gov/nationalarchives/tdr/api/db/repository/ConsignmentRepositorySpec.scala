@@ -30,6 +30,7 @@ import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import scala.util.Random
 
 class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -92,11 +93,11 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val consignmentId = UUID.fromString("b59a8bfd-5709-46c7-a5e9-71bae146e2f1")
     val seriesId = UUID.fromString("9e2e2a51-c2d0-4b99-8bef-2ca322528861")
     val bodyId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
-    val seriesCode = "MOCK1"
+    val seriesCode = UUID.randomUUID().toString
     val utils = TestUtils(db)
     utils.addTransferringBody(bodyId, "Test", "Test")
     utils.addSeries(seriesId, bodyId, seriesCode)
-    utils.createConsignment(consignmentId, userId)
+    utils.createConsignment(consignmentId, userId, seriesId = seriesId)
 
     val consignmentSeries = consignmentRepository.getSeriesOfConsignment(consignmentId).futureValue.head
 
