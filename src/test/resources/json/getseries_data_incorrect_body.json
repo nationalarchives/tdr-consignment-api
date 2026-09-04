@@ -2,7 +2,7 @@
   "data": null,
   "errors": [
     {
-      "message": "Body for user 4ab14990-ed63-4615-8336-56fbb9960300 was Code2 in the query and Code in the token",
+      "message": "Bodies for user 4ab14990-ed63-4615-8336-56fbb9960300 were Code2 in the query and Code in the token",
       "path": [
         "getSeries"
       ],

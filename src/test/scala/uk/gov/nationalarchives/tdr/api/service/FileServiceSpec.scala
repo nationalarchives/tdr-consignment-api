@@ -1075,7 +1075,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       consignmentsequence = 400L,
       consignmenttype = "standard",
       consignmentreference = "TDR-2025-ABCD",
-      bodyid = UUID.randomUUID()
+      bodyid = UUID.randomUUID().some
     )
     val fileStatusRow = FilestatusRow(UUID.randomUUID(), fileId1, "Antivirus", "Failure", timestamp)
 

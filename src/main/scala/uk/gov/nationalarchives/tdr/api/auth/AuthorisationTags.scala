@@ -37,11 +37,11 @@ object ValidateBody extends SyncAuthorisationTag {
   override def validateSync(ctx: Context[ConsignmentApiContext, _]): BeforeFieldResult[ConsignmentApiContext, Unit] = {
     val token = ctx.ctx.accessToken
 
-    val bodyArg: String = ctx.arg("body")
-    val bodyFromToken: String = token.transferringBody.getOrElse("")
+    val bodiesArgs: Seq[String] = ctx.arg[Seq[String]]("bodies")
+    val bodiesFromToken = token.transferringBodies.getOrElse(List())
 
-    if (bodyFromToken != bodyArg) {
-      val msg = s"Body for user ${token.userId} was $bodyArg in the query and $bodyFromToken in the token"
+    if (!bodiesArgs.exists(bodiesFromToken.contains)) {
+      val msg = s"Bodies for user ${token.userId} were ${bodiesArgs.mkString(", ")} in the query and ${bodiesFromToken.mkString(", ")} in the token"
       throw AuthorisationException(msg)
     }
     continue
@@ -53,7 +53,7 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
   override def validateAsync(ctx: Context[ConsignmentApiContext, _])(implicit executionContext: ExecutionContext): Future[BeforeFieldResult[ConsignmentApiContext, Unit]] = {
     val token = ctx.ctx.accessToken
     val userId = token.userId
-    val userBody = token.transferringBody.getOrElse(throw AuthorisationException(s"No transferring body in user token for user '$userId'"))
+    val userBodies = token.transferringBodies.getOrElse(throw AuthorisationException(s"No transferring bodies in user token for user '$userId'"))
     val consignmentSeriesInput = ctx.arg[UpdateConsignmentSeriesIdInput]("updateConsignmentSeriesId")
     val seriesId: UUID = consignmentSeriesInput.seriesId
     val consignmentId: UUID = consignmentSeriesInput.consignmentId
@@ -65,9 +65,9 @@ object ValidateUpdateConsignmentSeriesId extends AuthorisationTag {
     val bodyResult = ctx.ctx.transferringBodyService.getBody(seriesId)
     bodyResult.map(body => {
       body.tdrCode match {
-        case code if code == userBody => continue
-        case code                     =>
-          val message = s"User '$userId' is from transferring body '$userBody' and does not have permission " +
+        case code if userBodies.contains(code) => continue
+        case code                              =>
+          val message = s"User '$userId' is from transferring bodies '${userBodies.mkString(", ")}' and does not have permission " +
             s"to update a consignment '$consignmentId' under series '$seriesId' owned by body '$code'"
           throw AuthorisationException(message)
       }

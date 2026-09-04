@@ -16,10 +16,10 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
   UpdateClientSideDraftMetadataFileNameInput,
   UpdateMetadataSchemaLibraryVersionInput
 }
-import uk.gov.nationalarchives.tdr.api.service.TimeSource
+import uk.gov.nationalarchives.tdr.api.service.{TimeSource, UpdateConsignmentBodyInput, UpdateConsignmentSeriesInput}
+import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
 import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.InProgressValue
-import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -151,11 +151,17 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def updateSeriesOfConsignment(updateConsignmentSeriesIdInput: ConsignmentFields.UpdateConsignmentSeriesIdInput, seriesName: Option[String]): Future[Int] = {
+  def updateConsignment(consignmentId: UUID, updateSeriesInput: UpdateConsignmentSeriesInput, updateBodyInput: UpdateConsignmentBodyInput): Future[Int] = {
     val update = Consignment
-      .filter(_.consignmentid === updateConsignmentSeriesIdInput.consignmentId)
-      .map(t => (t.seriesid, t.seriesname))
-      .update(Some(updateConsignmentSeriesIdInput.seriesId), seriesName)
+      .filter(_.consignmentid === consignmentId)
+      .map(t => (t.seriesid, t.seriesname, t.bodyid, t.transferringbodyname, t.transferringbodytdrcode))
+      .update(
+        Some(updateSeriesInput.seriesId),
+        updateSeriesInput.seriesName,
+        Some(updateBodyInput.bodyId),
+        Some(updateBodyInput.bodyName),
+        Some(updateBodyInput.bodyTdrCode)
+      )
     db.run(update)
   }
 
