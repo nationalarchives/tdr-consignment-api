@@ -25,7 +25,7 @@ object TestAuthUtils {
       tdrMock.getAccessToken(
         aTokenConfig()
           .withResourceRole("tdr", "tdr_user")
-          .withClaim("body", body)
+          .withClaim("bodies", java.util.Arrays.asList(body))
           .withClaim("user_id", userId)
           .withClaim("standard_user", standardUser)
           .build
@@ -37,7 +37,7 @@ object TestAuthUtils {
       tdrMock.getAccessToken(
         aTokenConfig()
           .withResourceRole("tdr", "tdr_user")
-          .withClaim("body", body)
+          .withClaim("bodies", java.util.Arrays.asList(body))
           .withClaim("user_id", userId)
           .withClaim("judgment_user", judgmentUser)
           .build
@@ -49,7 +49,7 @@ object TestAuthUtils {
       tdrMock.getAccessToken(
         aTokenConfig()
           .withResourceRole("tdr", "tdr_user")
-          .withClaim("body", body)
+          .withClaim("bodies", java.util.Arrays.asList(body))
           .withClaim("user_id", userId)
           .withClaim(tnaUserType, tnaUser)
           .build

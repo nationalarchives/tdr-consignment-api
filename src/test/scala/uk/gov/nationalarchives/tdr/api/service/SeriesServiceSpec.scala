@@ -22,9 +22,9 @@ class SeriesServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with
     val repoMock = setupSeriesResponses
 
     val seriesService: SeriesService = new SeriesService(repoMock, fixedUuidSource)
-    val seriesResponse: Seq[SeriesFields.Series] = seriesService.getSeries("1").futureValue
+    val seriesResponse: Seq[SeriesFields.Series] = seriesService.getSeries(Seq("1")).futureValue
 
-    verify(repoMock, times(1)).getSeries(anyString())
+    verify(repoMock, times(1)).getSeries(any[Seq[String]]())
     seriesResponse.length should equal(1)
     checkFields(seriesResponse.head, SeriesCheck(fixedUuidSource.uuid, fixedUuidSource.uuid, "name1", "code1", "description1"))
   }
@@ -46,7 +46,7 @@ class SeriesServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with
     val mockResponseOne: Future[Seq[SeriesRow]] = Future.successful(Seq(seriesOne))
 
     val repoMock = mock[SeriesRepository]
-    when(repoMock.getSeries(anyString())).thenReturn(mockResponseOne)
+    when(repoMock.getSeries(any[Seq[String]]())).thenReturn(mockResponseOne)
     repoMock
   }
 }
