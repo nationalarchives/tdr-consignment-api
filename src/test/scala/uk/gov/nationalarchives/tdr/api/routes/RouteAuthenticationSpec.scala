@@ -40,7 +40,7 @@ class RouteAuthenticationSpec extends TestContainerUtils with Matchers with Scal
 
   "The api" should "return a valid response with a valid token" in withContainers { case container: PostgreSQLContainer =>
     val route: Route = new Routes(ConfigFactory.load(), container.session).route
-    val query: String = """{"query":"{getSeries(body:\"Body\"){seriesid}}"}"""
+    val query: String = """{"query":"{getSeries(bodies:[\"Body\"]){seriesid}}"}"""
     Post("/graphql").withEntity(ContentTypes.`application/json`, query) ~> addCredentials(validUserToken()) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }

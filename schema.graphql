@@ -451,7 +451,7 @@ input PaginationInput {
 }
 
 type Query {
-  getSeries(body: String!): [Series!]!
+  getSeries(bodies: [String!]!): [Series!]!
   getConsignment(consignmentid: UUID!, paginationInput: PaginationInput): Consignment
   consignments(limit: Int!, currentCursor: String, currentPage: Int, consignmentFiltersInput: ConsignmentFilters, orderBy: ConsignmentOrderBy): ConsignmentConnection!
   getConsignmentsForMetadataReview: [Consignment!]! @deprecated(reason: "Use getConsignmentReviewDetails instead")

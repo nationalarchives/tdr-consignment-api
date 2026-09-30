@@ -36,7 +36,7 @@ class SeriesRouteSpec extends TestContainerUtils with Matchers with TestRequest 
 
   case class AddSeries(addSeries: Series)
 
-  private val bodyCode = "body-code-abcde"
+  private val bodyCode = "TDR-ABC"
 
   val runTestQuery: (String, OAuth2BearerToken) => GraphqlQueryData = runTestRequest[GraphqlQueryData](getSeriesJsonFilePrefix)
   val runTestMutation: (String, OAuth2BearerToken) => GraphqlMutationData = runTestRequest[GraphqlMutationData](addSeriesJsonFilePrefix)
@@ -55,13 +55,16 @@ class SeriesRouteSpec extends TestContainerUtils with Matchers with TestRequest 
 
   "The api" should "return all series belonging to the user's transferring body" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
-    val bodyId = UUID.fromString("260f90b1-9648-46c0-b8c5-e5a725fbc667")
-    val otherBodyId = UUID.fromString("534845ee-dd2a-4566-a348-d91e4a74a998")
+    val bodyId1 = UUID.randomUUID()
+    val bodyId2 = UUID.randomUUID()
+    val otherBodyId = UUID.randomUUID()
 
-    utils.addTransferringBody(bodyId, "Some body name", bodyCode)
-    utils.addTransferringBody(otherBodyId, "Some body name", "other-body-code")
-    utils.addSeries(UUID.fromString("d737dc4a-cd9b-4ac3-8b33-ab30ee8d3241"), bodyId, "series-code-1")
-    utils.addSeries(UUID.fromString("769d319f-4faa-4ab2-ab52-46bc7e6e1e3d"), bodyId, "series-code-2")
+    utils.addTransferringBody(bodyId1, "body name1", "TDR-ABC")
+    utils.addTransferringBody(bodyId2, "body name1", "TDR-XYZ")
+    utils.addTransferringBody(otherBodyId, "TDR-DEF", "other-body-code")
+    utils.addSeries(UUID.fromString("d737dc4a-cd9b-4ac3-8b33-ab30ee8d3241"), bodyId1, "series-code-1")
+    utils.addSeries(UUID.fromString("769d319f-4faa-4ab2-ab52-46bc7e6e1e3d"), bodyId1, "series-code-2")
+    utils.addSeries(UUID.fromString("d2f2c8d8-2e1d-4996-8ad2-b26ed547d1aa"), bodyId2, "series-code-11")
     utils.addSeries(UUID.fromString("01d2eb57-9d35-43e8-9eff-63e539ada1f9"), otherBodyId, "series-code-3")
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")

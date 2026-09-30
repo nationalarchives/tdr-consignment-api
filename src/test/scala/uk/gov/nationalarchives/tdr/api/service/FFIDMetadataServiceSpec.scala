@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.service
 
+import cats.implicits.catsSyntaxOptionId
 import org.mockito.ArgumentMatchers.any
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.Assertion
@@ -259,7 +260,7 @@ class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matcher
       consignmentsequence = 1L,
       consignmentreference = "consignmentRef",
       consignmenttype = consignmentType,
-      bodyid = bodyId
+      bodyid = bodyId.some
     )
   }
 }

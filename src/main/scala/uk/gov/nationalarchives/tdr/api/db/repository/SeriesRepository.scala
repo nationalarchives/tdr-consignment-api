@@ -9,9 +9,9 @@ import scala.concurrent.Future
 
 class SeriesRepository(db: JdbcBackend#Database) {
 
-  def getSeries(tdrBodyCode: String): Future[Seq[SeriesRow]] = {
+  def getSeries(tdrBodyCodes: Seq[String]): Future[Seq[SeriesRow]] = {
     val query = for {
-      (series, _) <- Series.join(Body).on(_.bodyid === _.bodyid).filter(_._2.tdrcode === tdrBodyCode)
+      (series, _) <- Series.join(Body).on(_.bodyid === _.bodyid).filter(_._2.tdrcode inSet tdrBodyCodes)
     } yield series
     db.run(query.result)
   }

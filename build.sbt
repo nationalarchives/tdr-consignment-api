@@ -57,19 +57,19 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-http-xml" % pekkoHttpVersion,
   "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % Test,
   "org.apache.pekko" %% "pekko-stream-testkit" % pekkoVersion % Test,
-  "com.softwaremill.sttp.shared" %% "pekko" % "1.5.2",
+  "com.softwaremill.sttp.shared" %% "pekko" % "1.5.3",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.15.1",
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
-  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.58",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.237",
+  "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.59",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.244",
   "org.postgresql" % "postgresql" % "42.7.13",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "ch.qos.logback" % "logback-classic" % "1.6.1",
+  "ch.qos.logback" % "logback-classic" % "1.6.3",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
   "software.amazon.awssdk" % "rds" % awsSdkVersion,
   "software.amazon.awssdk" % "sts" % awsSdkVersion,
@@ -79,19 +79,19 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "2.2.3" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.2.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.21.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.296",
-  "io.github.hakky54" % "logcaptor" % "2.12.6" % Test,
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.303",
+  "io.github.hakky54" % "logcaptor" % "2.12.7" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.139",
-  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.45"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.143",
+  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.52"
 )
 
 dependencyOverrides ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "org.sangria-graphql" %% "sangria" % "4.2.18"
+  "org.sangria-graphql" %% "sangria" % "4.2.19"
 )
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"

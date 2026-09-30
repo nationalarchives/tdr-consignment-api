@@ -18,7 +18,7 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
   UpdateExportDataInput,
   UpdateMetadataSchemaLibraryVersionInput
 }
-import uk.gov.nationalarchives.tdr.api.service.CurrentTimeSource
+import uk.gov.nationalarchives.tdr.api.service.{CurrentTimeSource, UpdateConsignmentBodyInput, UpdateConsignmentSeriesInput}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
@@ -30,7 +30,6 @@ import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
-import scala.util.Random
 
 class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -406,19 +405,26 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val seriesId: UUID = UUID.fromString("20e88b3c-d063-4a6e-8b61-187d8c51d11d")
     val seriesName: String = "Mock1"
     val bodyId: UUID = UUID.fromString("8a72cc59-7f2f-4e55-a263-4a4cb9f677f5")
+    val bodyName = "MOCK Department"
+    val bodyCode = "Code123"
 
     utils.createConsignment(consignmentIdOne, userId, consignmentRef = "TDR-2021-A")
-    utils.addTransferringBody(bodyId, "MOCK Department", "Code123")
+    utils.addTransferringBody(bodyId, bodyName, bodyCode)
     utils.addSeries(seriesId, bodyId, "TDR-2020-XYZ", seriesName)
 
     val input = ConsignmentFields.UpdateConsignmentSeriesIdInput(consignmentId = consignmentIdOne, seriesId = seriesId)
 
-    val response = consignmentRepository.updateSeriesOfConsignment(input, seriesName.some).futureValue
+    val seriesInput = UpdateConsignmentSeriesInput(seriesId, seriesName.some)
+    val bodyInput = UpdateConsignmentBodyInput(bodyId, bodyName, bodyCode)
+    val response = consignmentRepository.updateConsignment(consignmentIdOne, seriesInput, bodyInput).futureValue
 
     response should be(1)
     val consignment = consignmentRepository.getConsignment(consignmentIdOne).futureValue.head
     consignment.seriesid should be(seriesId.some)
     consignment.seriesname should be(seriesName.some)
+    consignment.bodyid should be(Some(bodyId))
+    consignment.transferringbodyname should be(Some(bodyName))
+    consignment.transferringbodytdrcode should be(Some(bodyCode))
   }
 
   "updateMetadataSchemaLibraryVersionOfConsignment" should "update the validation schema library version of the consignment" in withContainers {
@@ -507,14 +513,14 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val utils = TestUtils(db)
     createConsignments(utils)
 
-    val startUploadInput = StartUploadInput(consignmentIdOne, "parentFolder", true)
+    val startUploadInput = StartUploadInput(consignmentIdOne, "parentFolder", includeTopLevelFolder = true)
 
     val consignmentStatusUploadRow = ConsignmentstatusRow(consignmentIdOne, startUploadInput.consignmentId, Upload, InProgress, Timestamp.from(Instant.now()))
     val response = consignmentRepository.addUploadDetails(startUploadInput, List(consignmentStatusUploadRow)).futureValue
 
     response should be(startUploadInput.parentFolder)
     val consignment = consignmentRepository.getConsignment(consignmentIdOne).futureValue
-    consignment.isEmpty should not be (true)
+    consignment.isEmpty should not be true
     consignment.head.parentfolder.get should be(startUploadInput.parentFolder)
     consignment.head.includetoplevelfolder.get should be(startUploadInput.includeTopLevelFolder)
 
