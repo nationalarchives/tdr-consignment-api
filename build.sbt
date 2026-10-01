@@ -38,11 +38,11 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val pekkoVersion = "1.6.0"
+lazy val pekkoVersion = "1.7.0"
 lazy val pekkoHttpVersion = "1.4.0"
 lazy val circeVersion = "0.14.16"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.51.3"
+lazy val awsSdkVersion = "2.51.4"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.19",
@@ -69,7 +69,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.7.13",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "ch.qos.logback" % "logback-classic" % "1.6.3",
+  "ch.qos.logback" % "logback-classic" % "1.6.5",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
   "software.amazon.awssdk" % "rds" % awsSdkVersion,
   "software.amazon.awssdk" % "sts" % awsSdkVersion,
