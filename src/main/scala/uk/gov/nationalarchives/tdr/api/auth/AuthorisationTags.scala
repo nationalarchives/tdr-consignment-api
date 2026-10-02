@@ -177,20 +177,23 @@ case class ValidateUserOwnsFiles[T](argument: Argument[T]) extends Authorisation
     if (fileIds.isEmpty) {
       throw InputDataException(s"'fileIds' is empty. Please provide at least one fileId.")
     }
-    for {
-      fileOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
-      invalidFileIds: Seq[UUID] = fileOwner.collect {
-        case FileOwnership(fileId, ownerId) if ownerId != userId => fileId
-      } ++ fileIds.filterNot(fileId => fileOwner.exists(_.fileId == fileId))
+    if (exportAccess) {
+      Future.successful(continue)
+    } else {
+      for {
+        fileOwner: Seq[FileOwnership] <- ctx.ctx.fileService.getOwnersOfFiles(fileIds)
+        ownerByFileId: Map[UUID, UUID] = fileOwner.map(f => f.fileId -> f.userId).toMap
+        invalidFileIds: Seq[UUID] = fileIds.distinct.filterNot(fileId => ownerByFileId.get(fileId).contains(userId))
 
-      result =
-        if (invalidFileIds.isEmpty || exportAccess) {
-          continue
-        } else {
-          val message = s"User '$userId' does not own the files they are trying to access:\n${invalidFileIds.mkString("\n")} or does not have export access"
-          throw AuthorisationException(message)
-        }
-    } yield result
+        result =
+          if (invalidFileIds.isEmpty) {
+            continue
+          } else {
+            val message = s"User '$userId' does not own the files they are trying to access:\n${invalidFileIds.mkString("\n")} or does not have export access"
+            throw AuthorisationException(message)
+          }
+      } yield result
+    }
   }
 }
 

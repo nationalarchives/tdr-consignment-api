@@ -120,7 +120,7 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
 
   def getFileFields(ids: Set[UUID]): Future[Seq[FileFields]] = {
     val query = File
-      .filter(_.fileid inSet ids)
+      .filter(_.fileid inSetBind ids)
       .map(res => (res.fileid, res.filetype, res.userid, res.consignmentid, res.uploadmatchid))
 
     db.run(query.result)
