@@ -79,7 +79,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "2.2.3" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.2.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.21.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.303",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.305",
   "io.github.hakky54" % "logcaptor" % "2.12.7" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
