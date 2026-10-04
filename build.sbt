@@ -38,17 +38,17 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val pekkoVersion = "1.7.0"
+lazy val pekkoVersion = "1.7.1"
 lazy val pekkoHttpVersion = "1.4.0"
 lazy val circeVersion = "0.14.16"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.51.4"
+lazy val awsSdkVersion = "2.55.11"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.19",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
-  "org.sangria-graphql" %% "sangria-spray-json" % "1.0.3",
+  "org.sangria-graphql" %% "sangria-spray-json" % "1.0.4",
   "org.sangria-graphql" %% "sangria-relay" % "4.0.1",
   "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
   "org.apache.pekko" %% "pekko-connectors-slick" % "1.3.0",
@@ -65,7 +65,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.59",
-  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.244",
+  "uk.gov.nationalarchives" %% "tdr-metadata-validation" % "0.0.245",
   "org.postgresql" % "postgresql" % "42.7.13",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
@@ -79,12 +79,12 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "2.2.3" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.2.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.21.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.303",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.305",
   "io.github.hakky54" % "logcaptor" % "2.12.7" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.143",
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.144",
   "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.52"
 )
 
