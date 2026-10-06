@@ -16,7 +16,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.FileStatu
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType.{FileTypeHelper, directoryTypeIdentifier, fileTypeIdentifier}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService._
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{FFID, allFileStatusTypes}
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.allFileStatusTypes
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.FFIDType
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 import uk.gov.nationalarchives.tdr.api.utils.NaturalSorting.{ArrayOrdering, natural}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.{LongUtils, TimestampUtils}
@@ -155,7 +156,7 @@ class FileService(
       ffidMetadataList <- if (queriedFileFields.ffidMetadata) ffidMetadataService.getFFIDMetadata(consignmentId) else Future.successful(Nil)
       avList <- if (queriedFileFields.antivirusMetadata) avMetadataService.getAntivirusMetadata(consignmentId) else Future.successful(Nil)
       propertyNames <- getPropertyNames(filters.metadataFilters)
-      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future.successful(Nil)
+      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFIDType.id), fileIds) else Future.successful(Nil)
       fileStatuses <-
         if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future.successful(Nil)
     } yield {
@@ -179,7 +180,7 @@ class FileService(
       fileMetadata <- fileMetadataService.getFileMetadata(None, fileIds)
       ffidMetadataList <- ffidMetadataService.getFFIDMetadata(consignmentId, fileIds)
       avList <- avMetadataService.getAntivirusMetadata(consignmentId, fileIds)
-      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFID), fileIds) else Future(Nil)
+      ffidStatuses <- if (queriedFileFields.fileStatus) fileStatusService.getFileStatuses(consignmentId, Set(FFIDType.id), fileIds) else Future(Nil)
       fileStatuses <- if (queriedFileFields.fileStatuses) fileStatusService.getFileStatuses(consignmentId, allFileStatusTypes, fileIds) else Future(Nil)
     } yield {
       val lastCursor: Option[String] = response.lastOption.map(_.fileid.toString)

@@ -15,11 +15,12 @@ import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 class FFIDMetadataServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
-  val successStatusValue = "Success"
+  val successStatusValue = SuccessValue.value
 
   "addFFIDMetadata" should "call the repositories with the correct values" in {
     val fixedFileUuid = UUID.fromString("07a3a4bd-0281-4a6d-a4c1-8fa3239e1313")

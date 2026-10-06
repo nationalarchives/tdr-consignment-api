@@ -12,8 +12,8 @@ import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Submission}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{MetadataReviewType, UploadType}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, FailedValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -302,14 +302,14 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       uploadMatchId = Some("3")
     )
 
-    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileOneId), "FFID", "Success")
-    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "FFID", "Success")
-    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileThreeId), "FFID", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileOneId), FFIDType.id, SuccessValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), FFIDType.id, SuccessValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileThreeId), FFIDType.id, SuccessValue.value)
 
-    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileOneId), "ChecksumMatch", FailedValue.value)
-    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "ChecksumMatch", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileOneId), ChecksumMatchType.id, FailedValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), ChecksumMatchType.id, SuccessValue.value)
 
-    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), "Antivirus", FailedValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), UUID.fromString(fileTwoId), AntivirusType.id, FailedValue.value)
 
     utils.addAntivirusMetadata(fileOneId)
 
@@ -751,16 +751,16 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.addFileMetadata(UUID.randomUUID().toString, file2Id.toString, FoiExemptionCode, "open")
     utils.addFileMetadata(UUID.randomUUID().toString, file3Id.toString, FoiExemptionCode, "open")
 
-    utils.createFileStatusValues(UUID.randomUUID(), file2Id, UploadType.id, "Success")
-    utils.createFileStatusValues(UUID.randomUUID(), file3Id, UploadType.id, "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, UploadType.id, SuccessValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), file3Id, UploadType.id, SuccessValue.value)
 
-    utils.createFileStatusValues(UUID.randomUUID(), file1Id, "FFID", "Success")
-    utils.createFileStatusValues(UUID.randomUUID(), file1Id, "ChecksumMatch", "Success")
-    utils.createFileStatusValues(UUID.randomUUID(), file1Id, "Antivirus", FailedValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), file1Id, FFIDType.id, SuccessValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), file1Id, ChecksumMatchType.id, SuccessValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), file1Id, AntivirusType.id, FailedValue.value)
 
-    utils.createFileStatusValues(UUID.randomUUID(), file2Id, "FFID", "Success")
-    utils.createFileStatusValues(UUID.randomUUID(), file2Id, "ChecksumMatch", FailedValue.value)
-    utils.createFileStatusValues(UUID.randomUUID(), file2Id, "Antivirus", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, FFIDType.id, SuccessValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, ChecksumMatchType.id, FailedValue.value)
+    utils.createFileStatusValues(UUID.randomUUID(), file2Id, AntivirusType.id, SuccessValue.value)
 
     val reportingAccessToken = validReportingToken("reporting")
 
