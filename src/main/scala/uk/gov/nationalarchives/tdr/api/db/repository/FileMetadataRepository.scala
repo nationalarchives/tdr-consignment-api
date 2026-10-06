@@ -264,12 +264,20 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
   }
 
   def totalClosedRecords(consignmentId: UUID): Future[Int] = {
+    totalRecordsByClosureType(consignmentId, "closed")
+  }
+
+  def totalRetainedRecords(consignmentId: UUID): Future[Int] = {
+    totalRecordsByClosureType(consignmentId, "retained for security")
+  }
+
+  private def totalRecordsByClosureType(consignmentId: UUID, closureValue: String): Future[Int] = {
     val query = Filemetadata
       .join(File)
       .on(_.fileid === _.fileid)
       .filter(_._2.consignmentid === consignmentId)
       .filter(_._1.propertyname === ClosureType)
-      .filter(_._1.value.toLowerCase === "closed")
+      .filter(_._1.value.toLowerCase === closureValue.toLowerCase)
       .length
     db.run(query.result)
   }

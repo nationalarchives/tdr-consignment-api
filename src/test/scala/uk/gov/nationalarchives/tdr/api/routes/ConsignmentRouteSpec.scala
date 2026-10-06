@@ -100,6 +100,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       transferInitiatedDatetime: Option[ZonedDateTime] = None,
       exportDatetime: Option[ZonedDateTime] = None,
       totalClosedRecords: Option[Int],
+      totalRetainedRecords: Option[Int],
       totalFiles: Option[Int],
       fileChecks: Option[FileChecks],
       parentFolder: Option[String],

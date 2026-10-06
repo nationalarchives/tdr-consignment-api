@@ -55,6 +55,7 @@ class DeferredResolver extends sangria.execution.deferred.DeferredResolver[Consi
         context.fileService.getPaginatedFiles(consignmentId, paginationInput, queriedFileFields)
       case DeferChecksSucceeded(consignmentId)             => context.fileStatusService.allChecksSucceeded(consignmentId)
       case DeferClosedRecords(consignmentId)               => context.consignmentService.totalClosedRecords(consignmentId)
+      case DeferRetainedRecords(consignmentId)             => context.consignmentService.totalRetainedRecords(consignmentId)
       case DeferConsignmentMetadata(consignmentId, filter) => context.consignmentMetadataService.getConsignmentMetadata(consignmentId, filter)
       case other                                           => throw UnsupportedDeferError(other)
     }
@@ -70,6 +71,7 @@ case class DeferParentFolderId(consignmentId: UUID) extends Deferred[Option[UUID
 case class DeferFiles(consignmentId: UUID, fileFilters: Option[FileFilters] = None, queriedFileFields: QueriedFileFields) extends Deferred[List[File]]
 case class DeferPaginatedFiles(consignmentId: UUID, paginationInput: Option[PaginationInput], queriedFileFields: QueriedFileFields) extends Deferred[TDRConnection[File]]
 case class DeferClosedRecords(consignmentId: UUID) extends Deferred[Int]
+case class DeferRetainedRecords(consignmentId: UUID) extends Deferred[Int]
 
 case class DeferChecksSucceeded(consignmentId: UUID) extends Deferred[Boolean]
 

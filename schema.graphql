@@ -127,6 +127,7 @@ type Consignment {
   clientSideDraftMetadataFileName: String
   allChecksSucceeded: Boolean!
   totalClosedRecords: Int!
+  totalRetainedRecords: Int!
   totalFiles: Int!
   totalFileSize: Long!
   fileChecks: FileChecks!
