@@ -965,6 +965,16 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     closedRecords should equal(5)
   }
 
+  "totalRetainedRecords" should "return total number of retained records" in {
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+
+    when(fileMetadataRepositoryMock.totalRetainedRecords(consignmentId))
+      .thenReturn(Future.successful(3))
+
+    val retainedRecords = consignmentService.totalRetainedRecords(consignmentId).futureValue
+    retainedRecords should equal(3)
+  }
+
   "updateParentFolder" should "update the parent folder for a given consignment" in {
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val parentFolder = "TestParentFolder"

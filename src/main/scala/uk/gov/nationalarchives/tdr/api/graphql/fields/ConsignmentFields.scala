@@ -245,6 +245,11 @@ object ConsignmentFields {
         resolve = context => DeferClosedRecords(context.value.consignmentid)
       ),
       Field(
+        "totalRetainedRecords",
+        IntType,
+        resolve = context => DeferRetainedRecords(context.value.consignmentid)
+      ),
+      Field(
         "totalFiles",
         IntType,
         resolve = context => DeferTotalFiles(context.value.consignmentid)

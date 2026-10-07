@@ -56,6 +56,10 @@ class ConsignmentService(
     fileMetadataRepository.totalClosedRecords(consignmentId)
   }
 
+  def totalRetainedRecords(consignmentId: UUID): Future[Int] = {
+    fileMetadataRepository.totalRetainedRecords(consignmentId)
+  }
+
   def updateTransferInitiated(consignmentId: UUID, userId: UUID): Future[Int] = {
     for {
       updateTransferInitiatedStatus <- consignmentRepository.updateTransferInitiated(consignmentId, userId, Timestamp.from(timeSource.now))

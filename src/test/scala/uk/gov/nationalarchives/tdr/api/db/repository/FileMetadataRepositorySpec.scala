@@ -348,6 +348,44 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     sum should equal(0)
   }
 
+  "totalRetainedRecords" should "return total number of retained records" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.randomUUID()
+    val utils = TestUtils(container.database)
+    utils.createConsignment(consignmentId, userId)
+    val fileIdOne = UUID.randomUUID()
+    val fileIdTwo = UUID.randomUUID()
+    val fileIdThree = UUID.randomUUID()
+    utils.createFile(fileIdOne, consignmentId)
+    utils.createFile(fileIdTwo, consignmentId)
+    utils.createFile(fileIdThree, consignmentId)
+    utils.addFileProperty("ClosureType")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "ClosureType", "Retained for security")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "ClosureType", "retained for security")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdThree.toString, "ClosureType", "Open")
+    val repository = new FileMetadataRepository(container.database)
+    val sum = repository.totalRetainedRecords(consignmentId).futureValue
+    sum should equal(2)
+  }
+
+  "totalRetainedRecords" should "return zero when there are no retained records" in withContainers { case container: PostgreSQLContainer =>
+    val consignmentId = UUID.randomUUID()
+    val utils = TestUtils(container.database)
+    utils.createConsignment(consignmentId, userId)
+    val fileIdOne = UUID.randomUUID()
+    val fileIdTwo = UUID.randomUUID()
+    val fileIdThree = UUID.randomUUID()
+    utils.createFile(fileIdOne, consignmentId)
+    utils.createFile(fileIdTwo, consignmentId)
+    utils.createFile(fileIdThree, consignmentId)
+    utils.addFileProperty("ClosureType")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdOne.toString, "ClosureType", "Closed")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdTwo.toString, "ClosureType", "Open")
+    utils.addFileMetadata(UUID.randomUUID().toString, fileIdThree.toString, "ClosureType", "Open")
+    val repository = new FileMetadataRepository(container.database)
+    val sum = repository.totalRetainedRecords(consignmentId).futureValue
+    sum should equal(0)
+  }
+
   "addOrUpdateFileMetadata" should "handle multiple files and properties using upsert to update existing values" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)
