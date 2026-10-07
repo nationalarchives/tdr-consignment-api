@@ -46,7 +46,7 @@ lazy val awsSdkVersion = "2.55.11"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.19",
-  "org.sangria-graphql" %% "sangria-slowlog" % "3.0.0",
+  "org.sangria-graphql" %% "sangria-slowlog" % "3.0.1",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.4",
   "org.sangria-graphql" %% "sangria-relay" % "4.0.1",
