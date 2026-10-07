@@ -20,7 +20,6 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddMulti
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.FileService.TDRConnection
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
@@ -31,6 +30,9 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import uk.gov.nationalarchives.tdr.api.service.FileStatusService.allFileStatusTypes
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -160,14 +162,14 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (parentFolderRow, None)
     )
     val mockFileStatusResponse = Future(
-      Seq(FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), "FFID", "Success", timestamp))
+      Seq(FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), FFIDType.id, SuccessValue.value, timestamp))
     )
 
     when(fileRepositoryMock.getFiles(consignmentId1, FileFilters(None)))
       .thenReturn(Future(fileAndMetadataRows))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(List()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID))).thenReturn(mockFileStatusResponse)
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id))).thenReturn(mockFileStatusResponse)
 
     val service = setupFileService()
 
@@ -223,7 +225,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
 
     val mockFileStatusResponse = Future(
-      Seq(FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), "FFID", "Success", timestamp))
+      Seq(FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), FFIDType.id, SuccessValue.value, timestamp))
     )
 
     val metadataFilters = FileMetadataFilters(properties = List("ClosureType", "unknownProperty").some)
@@ -234,7 +236,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       .thenReturn(Future(fileAndMetadataRows))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId)).thenReturn(Future(List()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId)).thenReturn(Future(List()))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID))).thenReturn(mockFileStatusResponse)
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id))).thenReturn(mockFileStatusResponse)
 
     val service = setupFileService()
 
@@ -303,17 +305,15 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     )
 
     val mockFileStatusResponse = Future(
-      Seq(FilestatusRow(UUID.randomUUID(), fileId, "FFID", "Success", timestamp))
+      Seq(FilestatusRow(UUID.randomUUID(), fileId, FFIDType.id, SuccessValue.value, timestamp))
     )
     val mockFileStatuses =
-      Seq(FilestatusRow(UUID.randomUUID(), fileId, "FFID", "Success", timestamp))
-
-    val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks)
+      Seq(FilestatusRow(UUID.randomUUID(), fileId, FFIDType.id, SuccessValue.value, timestamp))
 
     when(fileRepositoryMock.getFiles(consignmentId1, FileFilters()))
       .thenReturn(Future(fileAndMetadataRows))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1)).thenReturn(mockAvMetadataResponse)
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID), None)).thenReturn(mockFileStatusResponse)
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id), None)).thenReturn(mockFileStatusResponse)
     when(fileStatusRepositoryMock.getFileStatus(consignmentId1, allFileStatusTypes, None)).thenReturn(Future(mockFileStatuses))
 
     val service = setupFileService()
@@ -350,7 +350,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
         Some(true),
         Some(assetId)
       ),
-      Some("Success"),
+      Some(SuccessValue.value),
       Some(
         FFIDMetadata(
           fileId,
@@ -386,7 +386,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1)).thenReturn(Future(List()))
 
     val mockFileStatusResponse = Future(
-      Seq(FilestatusRow(UUID.randomUUID(), fileId, "FFID", "Success", datetime))
+      Seq(FilestatusRow(UUID.randomUUID(), fileId, FFIDType.id, SuccessValue.value, datetime))
     )
 
     val fileRow = FileRow(fileId, consignmentId1, userId, Timestamp.from(Instant.now))
@@ -395,7 +395,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       (fileRow, Some(fileMetadataRow(fileId, "customPropertyNameTwo", "customValueTwo")))
     )
     when(fileRepositoryMock.getFiles(consignmentId1, FileFilters(None))).thenReturn(Future(fileAndMetadataRows))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID))).thenReturn(mockFileStatusResponse)
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id))).thenReturn(mockFileStatusResponse)
 
     val service = setupFileService()
 
@@ -415,7 +415,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       None,
       None,
       FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None),
-      Some("Success"),
+      Some(SuccessValue.value),
       Some(
         FFIDMetadata(
           fileId,
@@ -450,7 +450,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     val fileAndMetadataRows = Seq((redactedFileRow, Option(redactedFileMetadataRow)))
 
     when(fileRepositoryMock.getFiles(consignmentId1, FileFilters(None))).thenReturn(Future(fileAndMetadataRows))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID))).thenReturn(Future(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id))).thenReturn(Future(Seq()))
 
     val service = setupFileService()
 
@@ -766,7 +766,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileMetadataRepositoryMock.getFileMetadata(None, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID), selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.countFilesInConsignment(consignmentId1, None, None)).thenReturn(Future.successful(2))
     when(fileRepositoryMock.getPaginatedFiles(consignmentId1, limit, page, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
@@ -823,7 +823,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileMetadataRepositoryMock.getFileMetadata(Some(consignmentId1), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID), selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.countFilesInConsignment(consignmentId1, None, None)).thenReturn(Future.successful(2))
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId1, expectedMaxLimit, offset, Some(fileId1), FileFilters())).thenReturn(mockResponse)
@@ -872,7 +872,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileMetadataRepositoryMock.getFileMetadata(Some(consignmentId1), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID), selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.countFilesInConsignment(consignmentId1, None, None)).thenReturn(Future.successful(2))
 
     when(fileRepositoryMock.getPaginatedFiles(consignmentId1, limit, offset, None, FileFilters())).thenReturn(mockResponse)
@@ -925,7 +925,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileMetadataRepositoryMock.getFileMetadata(Some(consignmentId1), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID), selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.countFilesInConsignment(consignmentId1, None, fileFilters.fileTypeIdentifier))
       .thenReturn(Future.successful(2))
 
@@ -965,7 +965,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(fileMetadataRepositoryMock.getFileMetadata(None, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1, selectedFileIds)).thenReturn(Future.successful(Seq()))
-    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID), selectedFileIds)).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFIDType.id), selectedFileIds)).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.countFilesInConsignment(consignmentId1, None, None)).thenReturn(Future.successful(0))
     when(fileRepositoryMock.getPaginatedFiles(consignmentId1, limit, offset, Some(fileId1), FileFilters())).thenReturn(mockResponse)
 
@@ -1027,7 +1027,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       .thenReturn(Future.successful(Seq()))
     when(ffidMetadataRepositoryMock.getFFIDMetadata(ArgumentMatchers.eq(consignmentId1), any[Option[Set[UUID]]]())).thenReturn(Future.successful(Seq()))
     when(antivirusMetadataRepositoryMock.getAntivirusMetadata(ArgumentMatchers.eq(consignmentId1), any())).thenReturn(Future.successful(Seq()))
-    when(fileStatusRepositoryMock.getFileStatus(ArgumentMatchers.eq(consignmentId1), ArgumentMatchers.eq(Set(FFID)), any())).thenReturn(Future.successful(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(ArgumentMatchers.eq(consignmentId1), ArgumentMatchers.eq(Set(FFIDType.id)), any())).thenReturn(Future.successful(Seq()))
     when(fileRepositoryMock.countFilesInConsignment(ArgumentMatchers.eq(consignmentId1), any(), any())).thenReturn(Future.successful(8))
     when(fileRepositoryMock.getPaginatedFiles(consignmentId1, 2, page, Some(parentId.toString), FileFilters())).thenReturn(mockResponse)
 
@@ -1077,7 +1077,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       consignmentreference = "TDR-2025-ABCD",
       bodyid = UUID.randomUUID().some
     )
-    val fileStatusRow = FilestatusRow(UUID.randomUUID(), fileId1, "Antivirus", "Failure", timestamp)
+    val fileStatusRow = FilestatusRow(UUID.randomUUID(), fileId1, AntivirusType.id, "Failure", timestamp)
 
     val file1 = FileRow(fileId1, consignmentId1, userId, timestamp, Some(true), Some("File"), Some("file.pdf"))
     val file2 = FileRow(fileId2, consignmentId1, userId, timestamp, Some(true), Some("File"), Some("file.pdf"))

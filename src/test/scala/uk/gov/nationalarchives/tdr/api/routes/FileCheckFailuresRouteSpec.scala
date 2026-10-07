@@ -15,6 +15,8 @@ import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 
 import java.sql.Timestamp
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with TestRequest {
 
@@ -38,7 +40,7 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
 
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
-    utils.createFileStatusValues(UUID.randomUUID(), fileId, "Antivirus", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), fileId, AntivirusType.id, SuccessValue.value)
 
     val response: GraphqlQueryData = runTestQuery("query_no_filters", validReportingToken("reporting"))
 
@@ -56,8 +58,8 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     utils.createFile(fileOneId, consignmentId)
     utils.createFile(fileTwoId, consignmentId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
-    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, FFIDType.id, "Failure")
 
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "")
@@ -82,8 +84,8 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     utils.createFile(fileOneId, consignmentOneId)
     utils.createFile(fileTwoId, consignmentTwoId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
-    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Antivirus", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, AntivirusType.id, "Failure")
 
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "virus")
@@ -108,7 +110,7 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
 
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileId, consignmentId)
-    utils.createFileStatusValues(UUID.randomUUID(), fileId, "Antivirus", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileId, AntivirusType.id, "Failure")
     utils.addAntivirusMetadata(fileId.toString, "virus")
     utils.addFFIDMetadata(fileId.toString)
     utils.addFileProperty(SHA256ClientSideChecksum)
@@ -123,7 +125,7 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     failure.rankOverFilePath shouldBe 1
     failure.PUID should not be defined
     failure.userId shouldBe userId
-    failure.statusType shouldBe "Antivirus"
+    failure.statusType shouldBe AntivirusType.id
     failure.statusValue shouldBe "Failure"
     failure.seriesName shouldBe Some("seriesName")
     failure.transferringBodyName shouldBe Some("transferringBodyName")
@@ -148,8 +150,8 @@ class FileCheckFailuresRouteSpec extends TestContainerUtils with Matchers with T
     val withinRange = Instant.parse("2026-01-01T12:00:00Z")
     val outsideRange = Instant.parse("2026-01-02T12:00:00Z")
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure", Timestamp.from(withinRange))
-    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Antivirus", "Failure", Timestamp.from(outsideRange))
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, "Failure", Timestamp.from(withinRange))
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, AntivirusType.id, "Failure", Timestamp.from(outsideRange))
 
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "virus")

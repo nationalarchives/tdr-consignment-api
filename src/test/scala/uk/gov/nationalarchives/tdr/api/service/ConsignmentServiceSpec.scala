@@ -15,18 +15,17 @@ import uk.gov.nationalarchives.Tables.{ConsignmentRow, ConsignmentstatusRow, Met
 import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.model.TransferringBody
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Submission}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewStatus
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{ClientChecksType, ExportType, SeriesType, UploadType}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.InProgressValue
 import uk.gov.nationalarchives.tdr.keycloak.Token
 
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -393,13 +392,13 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "updateSeriesOfConsignment" should "update the seriesId, seriesName and status for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     val statusType = SeriesType.id
-    val expectedSeriesStatus = Completed
+    val expectedSeriesStatus = CompletedValue.value
     val expectedResult = 1
 
     val seriesInput = UpdateConsignmentSeriesInput(seriesId, seriesName.some)
     val bodyInput = UpdateConsignmentBodyInput(mockBody.bodyId, mockBody.name, mockBody.tdrCode)
     when(consignmentRepoMock.updateConsignment(consignmentId, seriesInput, bodyInput)).thenReturn(Future.successful(1))
-    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Completed, Timestamp.from(fixedTimeSource)))
+    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, CompletedValue.value, Timestamp.from(fixedTimeSource)))
       .thenReturn(Future.successful(1))
     when(seriesRepositoryMock.getSeries(updateConsignmentSeriesIdInput.seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
     when(transferringBodyServiceMock.getBody(seriesId)).thenReturn(Future.successful(mockBody))
@@ -416,13 +415,13 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
   "updateSeriesOfConsignment" should "update the status with 'Failed' if seriesId update fails for a given consignment" in {
     val updateConsignmentSeriesIdInput = UpdateConsignmentSeriesIdInput(consignmentId, seriesId)
     val statusType = SeriesType.id
-    val expectedSeriesStatus = Failed
+    val expectedSeriesStatus = FailedValue.value
     val expectedResult = 0
 
     val seriesInput = UpdateConsignmentSeriesInput(seriesId, seriesName.some)
     val bodyInput = UpdateConsignmentBodyInput(mockBody.bodyId, mockBody.name, mockBody.tdrCode)
     when(consignmentRepoMock.updateConsignment(consignmentId, seriesInput, bodyInput)).thenReturn(Future.successful(0))
-    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, Failed, Timestamp.from(fixedTimeSource)))
+    when(consignmentStatusRepoMock.updateConsignmentStatus(consignmentId, statusType, FailedValue.value, Timestamp.from(fixedTimeSource)))
       .thenReturn(Future.successful(1))
     when(seriesRepositoryMock.getSeries(updateConsignmentSeriesIdInput.seriesId)).thenReturn(Future.successful(Seq(mockSeries)))
     when(transferringBodyServiceMock.getBody(seriesId)).thenReturn(Future.successful(mockBody))

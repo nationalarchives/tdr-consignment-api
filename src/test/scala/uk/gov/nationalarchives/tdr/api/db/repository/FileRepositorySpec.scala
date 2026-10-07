@@ -15,8 +15,8 @@ import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.UploadType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.InProgressValue
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -488,8 +488,8 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     utils.createFile(fileId = fileOneId, consignmentId = consignmentId)
     utils.createFile(fileId = fileTwoId, consignmentId = consignmentId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
-    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, FFIDType.id, SuccessValue.value)
 
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "")
@@ -500,7 +500,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
 
     files.size shouldBe 1
     files.head._1._1._1._1._1._1.fileid shouldBe fileOneId
-    files.head._1._1._1._1._1._1.statustype shouldBe "Antivirus"
+    files.head._1._1._1._1._1._1.statustype shouldBe AntivirusType.id
     files.head._1._1._1._1._1._1.value shouldBe "Failure"
   }
 
@@ -520,8 +520,8 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     val yesterday = now.minusSeconds(86400)
     val tomorrow = now.plusSeconds(86400)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure", Timestamp.from(now))
-    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure", Timestamp.from(yesterday))
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, "Failure", Timestamp.from(now))
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, FFIDType.id, "Failure", Timestamp.from(yesterday))
 
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "virus")
@@ -547,7 +547,7 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     utils.createConsignment(consignmentId, userId)
     utils.createFile(fileOneId, consignmentId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, SuccessValue.value)
 
     utils.addAntivirusMetadata(fileOneId.toString, "")
     utils.addFFIDMetadata(fileOneId.toString)
@@ -571,8 +571,8 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     utils.createFile(fileOneId, consignmentOneId)
     utils.createFile(fileTwoId, consignmentTwoId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
-    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, FFIDType.id, "Failure")
 
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "virus")
@@ -604,9 +604,9 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     utils.createFile(fileTwoId, consignmentOneId)
     utils.createFile(fileThreeId, consignmentTwoId)
 
-    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Antivirus", "Failure")
-    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "FFID", "Failure")
-    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, "Antivirus", "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, AntivirusType.id, "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, FFIDType.id, "Failure")
+    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, AntivirusType.id, "Failure")
 
     utils.addAntivirusMetadata(fileOneId.toString, "virus")
     utils.addAntivirusMetadata(fileTwoId.toString, "")

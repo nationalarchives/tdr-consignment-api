@@ -11,11 +11,8 @@ import uk.gov.nationalarchives.Tables.{ConsignmentstatusRow, FilestatusRow, Meta
 import uk.gov.nationalarchives.tdr.api.db.repository.{ConsignmentStatusRepository, FileStatusRepository, MetadataReviewLogRepository}
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentStatusFields.{ConsignmentStatus, ConsignmentStatusInput}
 import uk.gov.nationalarchives.tdr.api.service.ConsignmentStatusService.{validStatusTypes, validStatusValues}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, FixedUUIDSource}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Rejection, Submission}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue, SkippedValue}
 
 import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
@@ -23,21 +20,8 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{
-  ClientChecksType,
-  ConfirmTransferType,
-  DraftMetadataType,
-  DraftMetadataUploadType,
-  ExportType,
-  MetadataReviewType,
-  SeriesType,
-  ServerAntivirusType,
-  ServerChecksumType,
-  ServerFFIDType,
-  ServerRedactionType,
-  TransferAgreementType,
-  UploadType
-}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 class ConsignmentStatusServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMocksAfterEachTest with Matchers with ScalaFutures with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global

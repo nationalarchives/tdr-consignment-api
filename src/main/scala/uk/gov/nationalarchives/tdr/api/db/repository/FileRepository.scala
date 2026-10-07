@@ -24,7 +24,8 @@ import uk.gov.nationalarchives.Tables.{
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.{FileFields, FileRepositoryMetadata}
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.SHA256ClientSideChecksum
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{Antivirus, ChecksumMatch, ClientFilePath, FFID, Redaction, Success => FileCheckSuccess}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.SuccessValue
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
 
 import java.time.ZonedDateTime
@@ -65,8 +66,8 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
       endDateTime: Option[ZonedDateTime]
   ): Future[Seq[((((((FilestatusRow, FileRow), ConsignmentRow), Option[AvmetadataRow]), Option[FfidmetadataRow]), Option[FfidmetadatamatchesRow]), Option[FilemetadataRow])]] = {
     val failureStatuses = Filestatus
-      .filter(_.statustype inSetBind Set(Antivirus, FFID, ChecksumMatch, ClientFilePath, Redaction))
-      .filter(_.value =!= FileCheckSuccess)
+      .filter(_.statustype inSetBind Set(AntivirusType.id, FFIDType.id, ChecksumMatchType.id, ClientFilePathType.id, RedactionType.id))
+      .filter(_.value =!= SuccessValue.value)
       .filterOpt(startDateTime.map(_.toTimestamp))(_.createddatetime > _)
       .filterOpt(endDateTime.map(_.toTimestamp))(_.createddatetime < _)
 

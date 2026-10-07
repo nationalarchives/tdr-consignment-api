@@ -5,6 +5,8 @@ import uk.gov.nationalarchives.tdr.api.db.repository.FileStatusRepository
 import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FileStatusFields.{AddMultipleFileStatusesInput, FileStatus}
 import uk.gov.nationalarchives.tdr.api.service.FileStatusService._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,13 +25,13 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
 
   def getConsignmentFileProgress(consignmentId: UUID): Future[FileChecks] = {
     fileStatusRepository
-      .getFileStatus(consignmentId, Set(FFID, ChecksumMatch, Antivirus))
+      .getFileStatus(consignmentId, Set(FFIDType.id, ChecksumMatchType.id, AntivirusType.id))
       .map(rows => {
         val statusMap = rows.groupBy(_.statustype)
         FileChecks(
-          AntivirusProgress(statusMap.getOrElse(Antivirus, Nil).size),
-          ChecksumProgress(statusMap.getOrElse(ChecksumMatch, Nil).size),
-          FFIDProgress(statusMap.getOrElse(FFID, Nil).size)
+          AntivirusProgress(statusMap.getOrElse(AntivirusType.id, Nil).size),
+          ChecksumProgress(statusMap.getOrElse(ChecksumMatchType.id, Nil).size),
+          FFIDProgress(statusMap.getOrElse(FFIDType.id, Nil).size)
         )
       })
   }
@@ -41,38 +43,22 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
   }
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
-    val statusTypes = Set(ChecksumMatch, Antivirus, FFID, Redaction)
+    val statusTypes = Set(ChecksumMatchType.id, AntivirusType.id, FFIDType.id, RedactionType.id)
     fileStatusRepository
       .getFileStatus(consignmentId, statusTypes)
       .map(fileChecks => {
-        !fileChecks.map(_.value).exists(_ != Success) &&
-        Set(ChecksumMatch, Antivirus, FFID).forall(fileChecks.map(_.statustype).toSet.contains)
+        !fileChecks.map(_.value).exists(_ != SuccessValue.value) &&
+        Set(ChecksumMatchType.id, AntivirusType.id, FFIDType.id).forall(fileChecks.map(_.statustype).toSet.contains)
       })
   }
 }
 
 object FileStatusService {
-  // Status types
-  val ChecksumMatch = "ChecksumMatch"
-  val Antivirus = "Antivirus"
-  val FFID = "FFID"
-  val Redaction = "Redaction"
-  val Upload = "Upload"
-  val ServerChecksum = "ServerChecksum"
-  val ClientChecks = "ClientChecks"
-  val ClientFilePath = "ClientFilePath"
 
-  val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks)
-
-  // Values
-  val Success = "Success"
-  val Failed = "Failed"
-  val Mismatch = "Mismatch"
-  val VirusDetected = "VirusDetected"
-  val PasswordProtected = "PasswordProtected"
-  val Zip = "Zip"
-  val NonJudgmentFormat = "NonJudgmentFormat"
-  val ZeroByteFile = "ZeroByteFile"
-  val InProgress = "InProgress"
-  val Completed = "Completed"
+  /** The status types returned by the `fileStatuses` GraphQL field.
+    *
+    * Note: this deliberately excludes `ClientFilePathType`, which is written and queried for file check failure reporting but has never been exposed as a file status. See
+    * FileRepository.getFilesWithFileCheckFailures.
+    */
+  val allFileStatusTypes: Set[String] = fileStatusTypes.map(_.id)
 }

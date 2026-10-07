@@ -9,6 +9,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.TransferAgreementFields.{
   TransferAgreementPrivateBeta
 }
 import uk.gov.nationalarchives.tdr.api.service.TransferAgreementService._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.TransferAgreementType
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -35,17 +37,18 @@ class TransferAgreementService(
       transferAgreementCompliance <- consignmentMetadataRepository
         .addConsignmentMetadata(convertTAComplianceInputToPropertyRows(input, userId))
         .map(rows => convertDbRowsToTransferAgreementCompliance(input.consignmentId, rows))
-      _ <- updateExistingTransferAgreementStatus(input.consignmentId, "Completed")
+      _ <- updateExistingTransferAgreementStatus(input.consignmentId, CompletedValue.value)
     } yield transferAgreementCompliance
   }
 
   def addTransferAgreementStatus(consignmentId: UUID): Future[ConsignmentstatusRow] = {
-    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "TransferAgreement", "InProgress", Timestamp.from(timeSource.now))
+    val consignmentStatusRow =
+      ConsignmentstatusRow(uuidSource.uuid, consignmentId, TransferAgreementType.id, InProgressValue.value, Timestamp.from(timeSource.now))
     consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 
   def updateExistingTransferAgreementStatus(consignmentId: UUID, statusValue: String): Future[Int] = {
-    consignmentStatusRepository.updateConsignmentStatus(consignmentId, "TransferAgreement", statusValue, Timestamp.from(timeSource.now))
+    consignmentStatusRepository.updateConsignmentStatus(consignmentId, TransferAgreementType.id, statusValue, Timestamp.from(timeSource.now))
   }
 
   private def convertTAPrivateBetaInputToPropertyRows(input: AddTransferAgreementPrivateBetaInput, userId: UUID): Seq[ConsignmentmetadataRow] = {
