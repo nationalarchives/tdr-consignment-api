@@ -42,7 +42,7 @@ lazy val pekkoVersion = "1.7.1"
 lazy val pekkoHttpVersion = "1.4.1"
 lazy val circeVersion = "0.14.17"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.55.12"
+lazy val awsSdkVersion = "2.55.14"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.19",
@@ -65,7 +65,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic-extras" % "0.14.4",
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "uk.gov.nationalarchives" %% "consignment-api-db" % "0.1.59",
-  "org.postgresql" % "postgresql" % "42.7.13",
+  "org.postgresql" % "postgresql" % "42.7.14",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
   "org.typelevel" %% "cats-effect" % "3.7.1",
@@ -84,8 +84,8 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.145",
-  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.52"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.148",
+  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.54"
 )
 
 dependencyOverrides ++= Seq(
