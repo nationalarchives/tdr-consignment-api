@@ -434,7 +434,28 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     result.head.value should equal("new_value")
     result.head.fileid should equal(fileId)
     result.head.propertyname should equal("FileProperty")
-    checkFileMetadataExists(fileId, utils, 1)
+    checkFileMetadataExists(fileId, utils)
+  }
+
+  "addOrUpdateFileMetadata" should "store property names and values containing SQL metacharacters literally" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.randomUUID()
+    val fileId = UUID.randomUUID()
+    val maliciousProperty = """Prop'), ('00000000-0000-0000-0000-000000000000', 'x', 'y', 'z'); DROP TABLE "FileMetadata"; --"""
+    val maliciousValue = """value'); DELETE FROM "FileMetadata"; --"""
+    utils.addFileProperty(maliciousProperty)
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileId, consignmentId)
+
+    val input = Seq(AddFileMetadataInput(fileId, maliciousValue, userId, maliciousProperty))
+    val result = fileMetadataRepository.addOrUpdateFileMetadata(input).futureValue
+
+    result.length should equal(1)
+    result.head.value should equal(maliciousValue)
+    result.head.propertyname should equal(maliciousProperty)
+    checkFileMetadataExists(fileId, utils, 1, maliciousProperty)
   }
 
   "addOrUpdateFileMetadata" should "do nothing if input is empty" in withContainers { case container: PostgreSQLContainer =>
