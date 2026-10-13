@@ -3,13 +3,13 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import slick.jdbc.H2Profile.ProfileAction
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{JdbcBackend, SQLActionBuilder, SetParameter}
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataService.{AddFileMetadataInput, ClientSideFileSize, ClosureType}
 import uk.gov.nationalarchives.tdr.api.utils.RetryUtils._
 
-import java.sql.Timestamp
+import java.sql.{Timestamp, Types}
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
@@ -132,21 +132,30 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
 
       inserted <-
         if (toUpsert.nonEmpty) {
-          val valuesList = toUpsert.map(row => s"('${row.fileId}', '${row.value.replace("'", "''")}', '${row.userId}', '${row.filePropertyName}')").mkString(", ")
-
-          val upsertQuery =
-            s"""INSERT INTO "FileMetadata" ("FileId", "Value", "UserId", "PropertyName")
-             |VALUES $valuesList
-             |ON CONFLICT ("FileId", "PropertyName") DO UPDATE SET
-             |  "Value" = EXCLUDED."Value",
-             |  "UserId" = EXCLUDED."UserId",
-             |  "Datetime" = CURRENT_TIMESTAMP
-             |RETURNING "MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName";
-             |""".stripMargin
-
-          sql"""#$upsertQuery""".as[FilemetadataRow]
+          upsertQuery(toUpsert).as[FilemetadataRow]
         } else DBIO.successful(Seq.empty)
     } yield inserted
+  }
+
+  // Values are bound as four array parameters (avoiding the 65,535 bind parameter limit) to prevent SQL injection
+  private def upsertQuery(rows: Seq[AddFileMetadataInput]): SQLActionBuilder = {
+    val query =
+      """INSERT INTO "FileMetadata" ("FileId", "Value", "UserId", "PropertyName")
+        |SELECT * FROM unnest(CAST(? AS uuid[]), CAST(? AS text[]), CAST(? AS uuid[]), CAST(? AS text[]))
+        |ON CONFLICT ("FileId", "PropertyName") DO UPDATE SET
+        |  "Value" = EXCLUDED."Value",
+        |  "UserId" = EXCLUDED."UserId",
+        |  "Datetime" = CURRENT_TIMESTAMP
+        |RETURNING "MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName";
+        |""".stripMargin
+
+    val setParameters = SetParameter[Unit] { (_, pp) =>
+      pp.setObject(rows.map(_.fileId.toString).toArray, Types.ARRAY)
+      pp.setObject(rows.map(_.value).toArray, Types.ARRAY)
+      pp.setObject(rows.map(_.userId.toString).toArray, Types.ARRAY)
+      pp.setObject(rows.map(_.filePropertyName).toArray, Types.ARRAY)
+    }
+    SQLActionBuilder(query, setParameters)
   }
 
   private def executeAdvisoryLockFallback(batch: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
@@ -203,22 +212,7 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
         .delete
       deleteAction.map(_ => None)
     } else {
-      val fileIdStr = row.fileId.toString
-      val valueStr = row.value.replace("'", "''")
-      val userIdStr = row.userId.toString
-      val propertyStr = row.filePropertyName
-
-      val upsertQuery = s"""
-        INSERT INTO "FileMetadata" ("FileId", "Value", "UserId", "PropertyName")
-        VALUES ('$fileIdStr', '$valueStr', '$userIdStr', '$propertyStr')
-        ON CONFLICT ("FileId", "PropertyName") DO UPDATE SET
-          "Value" = EXCLUDED."Value",
-          "UserId" = EXCLUDED."UserId",
-          "Datetime" = CURRENT_TIMESTAMP
-        RETURNING "MetadataId", "FileId", "Value", "Datetime", "UserId", "PropertyName"
-      """
-
-      sql"#$upsertQuery".as[FilemetadataRow].map(_.headOption)
+      upsertQuery(Seq(row)).as[FilemetadataRow].map(_.headOption)
     }
   }
 
