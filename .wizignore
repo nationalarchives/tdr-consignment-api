@@ -4,4 +4,4 @@
 # vulnerabilities compiled into the scanner binary itself (e.g. CRITICAL CVEs in
 # golang.org/x/crypto embedded in wizcli) rather than issues in this project,
 # which causes the scan to fail by policy.
-/wizcli
+wizcli
