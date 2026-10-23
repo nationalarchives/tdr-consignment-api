@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatest.time.{Seconds, Span}
 import uk.gov.nationalarchives.Tables._
 import uk.gov.nationalarchives.tdr.api.model.file.NodeType
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
@@ -18,6 +19,7 @@ import scala.concurrent.ExecutionContext
 
 class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers with TableDrivenPropertyChecks {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(60, Seconds))
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
 
@@ -51,6 +53,24 @@ class FileRepositorySpec extends TestContainerUtils with ScalaFutures with Match
     savedFiles.map(_._1.fileid).toSet shouldBe Set(fileOneId, fileTwoId)
     savedFiles.flatMap(_._2).map(_.fileid).toSet shouldBe Set(fileOneId, fileTwoId)
     savedFiles.flatMap(_._2).map(_.value).toSet shouldBe Set("checksum-one", "checksum-two")
+  }
+
+  "addFiles" should "insert more file and metadata rows than fit in one statement" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileRepository = new FileRepository(db)
+    val consignmentId = UUID.fromString("90d763f8-7d8c-4f52-a2d9-2cfe8c9ba4bf")
+    val now = Timestamp.from(Instant.now)
+    val fileRows = (1 to 11000).map(_ => FileRow(UUID.randomUUID(), consignmentId, userId, now))
+    val fileMetadataRows = fileRows.flatMap(f => Seq("PropertyOne", "PropertyTwo").map(prop => FilemetadataRow(UUID.randomUUID(), f.fileid, "value", now, userId, prop)))
+    utils.addFileProperty("PropertyOne")
+    utils.addFileProperty("PropertyTwo")
+    utils.createConsignment(consignmentId, userId)
+
+    fileRepository.addFiles(fileRows, fileMetadataRows).futureValue
+
+    utils.countRows("File") shouldBe fileRows.size
+    utils.countRows("FileMetadata") shouldBe fileMetadataRows.size
   }
 
   "countFilesInConsignment" should "return 0 if a consignment has no files" in withContainers { case container: PostgreSQLContainer =>
