@@ -395,6 +395,59 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     actualFileMetadata should equal(expectedFileMetadata)
   }
 
+  "getFileMetadata" should "assign each file only its own statuses and metadata" in {
+    val userId = UUID.randomUUID()
+    val fileIdOne = UUID.randomUUID()
+    val fileIdTwo = UUID.randomUUID()
+    val timestamp = Timestamp.from(FixedTimeSource.now)
+
+    def row(fileId: UUID, name: String) =
+      FileRow(
+        fileId,
+        consignmentId1,
+        userId,
+        timestamp,
+        Some(true),
+        Some(NodeType.fileTypeIdentifier),
+        Some(name),
+        None,
+        Some("FILEREF"),
+        None,
+        uploadmatchid = Some("1")
+      )
+
+    val fileAndMetadataRows = Seq(
+      (row(fileIdOne, "one"), Some(fileMetadataRow(fileIdOne, "ClientSideOriginalFilepath", "pathOne"))),
+      (row(fileIdTwo, "two"), Some(fileMetadataRow(fileIdTwo, "ClientSideOriginalFilepath", "pathTwo")))
+    )
+
+    val allFileStatusTypes: Set[String] = Set(ChecksumMatch, Antivirus, FFID, Redaction, Upload, ServerChecksum, ClientChecks)
+    val statuses = Seq(
+      FilestatusRow(UUID.randomUUID(), fileIdOne, FFID, "Success", timestamp),
+      FilestatusRow(UUID.randomUUID(), fileIdOne, Antivirus, "Success", timestamp),
+      FilestatusRow(UUID.randomUUID(), fileIdTwo, FFID, "Failed", timestamp)
+    )
+
+    when(ffidMetadataRepositoryMock.getFFIDMetadata(consignmentId1)).thenReturn(Future(Seq()))
+    when(fileRepositoryMock.getFiles(consignmentId1, FileFilters())).thenReturn(Future(fileAndMetadataRows))
+    when(antivirusMetadataRepositoryMock.getAntivirusMetadata(consignmentId1)).thenReturn(Future(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, Set(FFID), None)).thenReturn(Future(Seq()))
+    when(fileStatusRepositoryMock.getFileStatus(consignmentId1, allFileStatusTypes, None)).thenReturn(Future(statuses))
+
+    val service = setupFileService()
+    val queriedFileFields = QueriedFileFields(fileStatuses = true)
+    val files = service.getFileMetadata(consignmentId1, queriedFileFields = queriedFileFields).futureValue
+
+    val fileOne = files.find(_.fileId == fileIdOne).get
+    val fileTwo = files.find(_.fileId == fileIdTwo).get
+
+    fileOne.fileStatuses should contain theSameElementsAs List(
+      FileStatus(fileIdOne, FFID, "Success"),
+      FileStatus(fileIdOne, Antivirus, "Success")
+    )
+    fileTwo.fileStatuses should equal(List(FileStatus(fileIdTwo, FFID, "Failed")))
+  }
+
   "getFileMetadata" should "return empty fields if the metadata has an unexpected property name and no file data" in {
     val fileId = UUID.randomUUID()
     val datetime = Timestamp.from(Instant.now())
