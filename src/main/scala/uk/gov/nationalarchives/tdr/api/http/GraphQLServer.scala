@@ -13,7 +13,6 @@ import sangria.parser.QueryParser
 import spray.json.{JsObject, JsString, JsValue}
 import uk.gov.nationalarchives.tdr.api.auth.ValidationAuthoriser
 import uk.gov.nationalarchives.tdr.api.consignmentstatevalidation.ConsignmentStateValidator
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.graphql.{DeferredResolver, GraphQlTypes}
 import uk.gov.nationalarchives.tdr.api.metadatainputvalidation.MetadataInputValidator
 import uk.gov.nationalarchives.tdr.keycloak.Token
@@ -47,7 +46,7 @@ class GraphQLServer(slickSession: SlickSession) extends GraphQLServerBase {
   private def executeGraphQLQuery(query: Document, operation: Option[String], vars: JsObject, accessToken: Token)(implicit
       ec: ExecutionContext
   ): Future[(StatusCode with Serializable, JsValue)] = {
-    val context = generateConsignmentApiContext(accessToken: Token, DbConnection(slickSession).db)
+    val context = generateConsignmentApiContext(accessToken: Token, slickSession.db)
 
     Executor
       .execute(

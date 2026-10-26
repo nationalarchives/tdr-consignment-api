@@ -1,28 +1,29 @@
 package uk.gov.nationalarchives.tdr.api.db
 
+import com.typesafe.config.{Config, ConfigFactory}
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
-import slick.jdbc.JdbcBackend
-import slick.jdbc.hikaricp.HikariCPJdbcDataSource
+import slick.jdbc.JdbcBackend.Database
+import slick.jdbc.PostgresProfile
 
-import scala.util.{Failure, Success}
+object DbConnection {
+  private val defaultNumberOfThreads = 20
 
-class DbConnection(slickSession: SlickSession) extends DbConnectionBase {
-  override def db: JdbcBackend#Database = {
-    val db = slickSession.db
-    db.source match {
-      case hikariDataSource: HikariCPJdbcDataSource =>
-        val configBean = hikariDataSource.ds.getHikariConfigMXBean
-        getPassword match {
-          case Failure(exception) => throw exception
-          case Success(password)  =>
-            configBean.setPassword(password)
-            db
-        }
-      case _ =>
-        db
+  def slickSession(config: Config = ConfigFactory.load): SlickSession = {
+    if (config.getBoolean("consignmentapi.useIamAuth")) {
+      val dbConfig = config.getConfig("consignmentapi.db")
+      val numThreads = if (dbConfig.hasPath("numThreads")) dbConfig.getInt("numThreads") else defaultNumberOfThreads
+      val dataSource = new IamAuthDataSource(dbConfig.getString("url"), dbConfig.getString("user"))
+
+      val hikariConfig = new HikariConfig()
+      hikariConfig.setPoolName("consignmentapi.db")
+      hikariConfig.setDataSource(dataSource)
+      hikariConfig.setMaximumPoolSize(numThreads)
+      hikariConfig.setMinimumIdle(numThreads)
+
+      SlickSession.forDbAndProfile(Database.forDataSource(new HikariDataSource(hikariConfig), Some(numThreads)), PostgresProfile)
+    } else {
+      SlickSession.forConfig("consignmentapi")
     }
   }
-}
-object DbConnection {
-  def apply(slickSession: SlickSession): DbConnection = new DbConnection(slickSession)
 }

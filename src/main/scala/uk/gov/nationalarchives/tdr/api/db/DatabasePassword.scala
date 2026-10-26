@@ -5,7 +5,6 @@ import scalacache.CacheConfig
 import scalacache.caffeine.CaffeineCache
 import scalacache.memoization._
 import scalacache.modes.try_._
-import slick.jdbc.JdbcBackend
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.rds.RdsUtilities
@@ -14,11 +13,10 @@ import software.amazon.awssdk.services.rds.model.GenerateAuthenticationTokenRequ
 import scala.concurrent.duration._
 import scala.util.Try
 
-trait DbConnectionBase {
+object DatabasePassword {
   implicit val passwordCache: CaffeineCache[String] = CaffeineCache[String](CacheConfig())
 
-  def db: JdbcBackend#Database
-
+  // IAM authentication tokens are only valid for 15 minutes so the cached token is refreshed well within that time
   def getPassword: Try[String] = memoize[Try, String](Some(5.minutes)) {
     val configFactory = ConfigFactory.load
     val useIamAuth = configFactory.getBoolean("consignmentapi.useIamAuth")

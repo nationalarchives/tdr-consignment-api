@@ -6,6 +6,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.connectors.slick.scaladsl.SlickSession
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
+import uk.gov.nationalarchives.tdr.api.db.DbConnection
 
 import scala.concurrent.Await
 import scala.language.postfixOps
@@ -21,7 +22,7 @@ class PekkoHttpServer {
 
   scala.sys.addShutdownHook(() -> shutdown())
 
-  val slickSession: SlickSession = SlickSession.forConfig("consignmentapi")
+  val slickSession: SlickSession = DbConnection.slickSession()
 
   val routes = new Routes(ConfigFactory.load(), slickSession)
 

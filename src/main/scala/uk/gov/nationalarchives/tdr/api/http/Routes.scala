@@ -18,7 +18,6 @@ import sangria.ast.{Field, OperationDefinition}
 import sangria.parser.QueryParser
 import spray.json.{JsObject, JsString, JsValue}
 import uk.gov.nationalarchives.tdr.api.auth.AuthorisationException
-import uk.gov.nationalarchives.tdr.api.db.DbConnection
 import uk.gov.nationalarchives.tdr.api.service.FullHealthCheckService
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment, Token}
 
@@ -85,7 +84,7 @@ class Routes(val config: Config, slickSession: SlickSession) extends Cors {
         complete(StatusCodes.OK)
       } ~ (get & path("healthcheck-full")) {
         val fullHealthCheck = new FullHealthCheckService()
-        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(DbConnection(slickSession).db)) {
+        onSuccess(fullHealthCheck.checkDbIsUpAndRunning(slickSession.db)) {
           complete(StatusCodes.OK)
         }
       }
