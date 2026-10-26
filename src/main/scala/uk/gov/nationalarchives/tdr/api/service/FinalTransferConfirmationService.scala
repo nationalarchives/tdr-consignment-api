@@ -5,6 +5,8 @@ import uk.gov.nationalarchives.tdr.api.db.repository._
 import uk.gov.nationalarchives.tdr.api.graphql.fields.FinalTransferConfirmationFields._
 import uk.gov.nationalarchives.tdr.api.service.FinalTransferConfirmationService.LegalCustodyTransferConfirmed
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.Confirmation
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.ConfirmTransferType
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.CompletedValue
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -27,7 +29,8 @@ class FinalTransferConfirmationService(
   }
 
   def addConfirmTransferStatus(consignmentId: UUID): Future[ConsignmentstatusRow] = {
-    val consignmentStatusRow = ConsignmentstatusRow(uuidSource.uuid, consignmentId, "ConfirmTransfer", "Completed", Timestamp.from(timeSource.now))
+    val consignmentStatusRow =
+      ConsignmentstatusRow(uuidSource.uuid, consignmentId, ConfirmTransferType.id, CompletedValue.value, Timestamp.from(timeSource.now))
     consignmentStatusRepository.addConsignmentStatus(consignmentStatusRow)
   }
 

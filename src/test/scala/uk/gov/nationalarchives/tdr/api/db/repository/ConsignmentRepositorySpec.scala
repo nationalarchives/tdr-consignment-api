@@ -19,17 +19,16 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
   UpdateMetadataSchemaLibraryVersionInput
 }
 import uk.gov.nationalarchives.tdr.api.service.{CurrentTimeSource, UpdateConsignmentBodyInput, UpdateConsignmentSeriesInput}
-import uk.gov.nationalarchives.tdr.api.service.FileStatusService.{InProgress, Upload}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes._
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues._
 
 class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
   implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
@@ -515,7 +514,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
 
     val startUploadInput = StartUploadInput(consignmentIdOne, "parentFolder", includeTopLevelFolder = true)
 
-    val consignmentStatusUploadRow = ConsignmentstatusRow(consignmentIdOne, startUploadInput.consignmentId, Upload, InProgress, Timestamp.from(Instant.now()))
+    val consignmentStatusUploadRow = ConsignmentstatusRow(consignmentIdOne, startUploadInput.consignmentId, UploadType.id, InProgressValue.value, Timestamp.from(Instant.now()))
     val response = consignmentRepository.addUploadDetails(startUploadInput, List(consignmentStatusUploadRow)).futureValue
 
     response should be(startUploadInput.parentFolder)
@@ -524,8 +523,8 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     consignment.head.parentfolder.get should be(startUploadInput.parentFolder)
     consignment.head.includetoplevelfolder.get should be(startUploadInput.includeTopLevelFolder)
 
-    val consignmentStatusFromDb = utils.getConsignmentStatus(consignmentIdOne, Upload)
-    consignmentStatusFromDb.getString("Value") should be(InProgress)
+    val consignmentStatusFromDb = utils.getConsignmentStatus(consignmentIdOne, UploadType.id)
+    consignmentStatusFromDb.getString("Value") should be(InProgressValue.value)
   }
 
   "getConsignments" should "return consignments ordered by consignmentReference ascending" in withContainers { case container: PostgreSQLContainer =>
