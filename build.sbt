@@ -39,10 +39,10 @@ enablePlugins(GraphQLSchemaPlugin)
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
 lazy val pekkoVersion = "1.7.1"
-lazy val pekkoHttpVersion = "1.4.1"
+lazy val pekkoHttpVersion = "1.4.2"
 lazy val circeVersion = "0.14.17"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.55.14"
+lazy val awsSdkVersion = "2.57.3"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.19",
@@ -57,7 +57,7 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-http-xml" % pekkoHttpVersion,
   "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % Test,
   "org.apache.pekko" %% "pekko-stream-testkit" % pekkoVersion % Test,
-  "com.softwaremill.sttp.shared" %% "pekko" % "1.5.3",
+  "com.softwaremill.sttp.shared" %% "pekko" % "1.6.0",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
   "io.circe" %% "circe-optics" % "0.15.1",
@@ -79,13 +79,13 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "2.2.3" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.2.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.21.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.305",
-  "io.github.hakky54" % "logcaptor" % "2.12.7" % Test,
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.307",
+  "io.github.hakky54" % "logcaptor" % "2.13.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
-  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.152",
-  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.52"
+  "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.153",
+  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.54"
 )
 
 dependencyOverrides ++= Seq(
