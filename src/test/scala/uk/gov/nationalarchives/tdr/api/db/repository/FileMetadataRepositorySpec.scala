@@ -65,6 +65,50 @@ class FileMetadataRepositorySpec extends TestContainerUtils with ScalaFutures wi
     result.length should equal(numberOfFileMetadataRows)
   }
 
+  "addFileMetadata" should "insert more rows than fit in one statement and return generated values in input order" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.fromString("306c526b-d099-470b-87c8-df7bd0aa225a")
+    val fileIds = (1 to 11000).map(_ => UUID.randomUUID())
+    utils.createConsignment(consignmentId, userId)
+    utils.createFiles(fileIds, consignmentId)
+    utils.addFileProperty("PropertyOne")
+    utils.addFileProperty("PropertyTwo")
+    val input = fileIds.flatMap(id => Seq("PropertyOne", "PropertyTwo").map(prop => AddFileMetadataInput(id, s"$id-$prop", userId, prop)))
+
+    val result = fileMetadataRepository.addFileMetadata(input).futureValue
+
+    result.map(r => (r.fileid, r.value, r.userid, r.propertyname)) should equal(input.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
+    result.map(_.metadataid).toSet.size should equal(input.size)
+    result.foreach(_.datetime should not be null)
+    utils.countRows("FileMetadata") should equal(input.size)
+  }
+
+  "addFileMetadata" should "not insert any rows if a row in a later batch fails" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileMetadataRepository = new FileMetadataRepository(db)
+    val consignmentId = UUID.fromString("306c526b-d099-470b-87c8-df7bd0aa225a")
+    val fileIds = (1 to 11000).map(_ => UUID.randomUUID())
+    utils.createConsignment(consignmentId, userId)
+    utils.createFiles(fileIds, consignmentId)
+    utils.addFileProperty("PropertyOne")
+    val input = fileIds.map(id => AddFileMetadataInput(id, "value", userId, "PropertyOne")) :+ AddFileMetadataInput(fileIds.head, "value", userId, "MissingProperty")
+
+    fileMetadataRepository.addFileMetadata(input).failed.futureValue
+
+    utils.countRows("FileMetadata") should equal(0)
+  }
+
+  "addFileMetadata" should "return no rows for empty input" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val fileMetadataRepository = new FileMetadataRepository(db)
+
+    fileMetadataRepository.addFileMetadata(Nil).futureValue should equal(Nil)
+    TestUtils(db).countRows("FileMetadata") should equal(0)
+  }
+
   "getFileMetadataByProperty" should "return the correct metadata" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)

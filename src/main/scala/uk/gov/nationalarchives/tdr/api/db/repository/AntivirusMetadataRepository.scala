@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{JdbcBackend, RowsPerStatement}
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Avmetadata, AvmetadataRow, File, Filestatus, FilestatusRow}
 
@@ -8,15 +8,13 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class AntivirusMetadataRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
-  private val insertAvMetadataQuery = Avmetadata returning Avmetadata.map(_.fileid) into
-    ((antivirusMetadata, fileid) => antivirusMetadata.copy(fileid = fileid))
-
   private val insertFileStatusQuery = Filestatus returning Filestatus.map(_.filestatusid) into
     ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
   def addAntivirusMetadata(antivirusMetadataRow: List[AvmetadataRow]): Future[List[AvmetadataRow]] = {
-    val update = insertAvMetadataQuery ++= antivirusMetadataRow
-    db.run(update).map(_ => antivirusMetadataRow)
+    // All values are supplied by the caller, so no generated values need to be returned
+    val inserts = BatchInsert.chunked(antivirusMetadataRow, Avmetadata.baseTableRow.create_*.size)(batch => Avmetadata.insertAll(batch, RowsPerStatement.All))
+    db.run(DBIO.seq(inserts: _*).transactionally).map(_ => antivirusMetadataRow)
   }
 
   def getAntivirusMetadata(consignmentId: UUID, selectedFileIds: Option[Set[UUID]] = None): Future[Seq[AvmetadataRow]] = {

@@ -3,7 +3,7 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import slick.jdbc.H2Profile.ProfileAction
-import slick.jdbc.{JdbcBackend, SQLActionBuilder, SetParameter}
+import slick.jdbc.{JdbcBackend, RowsPerStatement, SQLActionBuilder, SetParameter}
 import slick.jdbc.PostgresProfile.api._
 import uk.gov.nationalarchives.Tables.{Filemetadata, _}
 import uk.gov.nationalarchives.tdr.api.service.FileMetadataPropertyName.{closureType, fileSize}
@@ -20,6 +20,7 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
   private val logger = LoggerFactory.getLogger(getClass)
   private val DEADLOCK_SQL_STATE = "40P01" // PostgreSQL deadlock detected SQL state code https://www.postgresql.org/docs/current/errcodes-appendix.html
 
+  private val insertFileMetadataColumnsPerRow = 4
   private val insertFileMetadataQuery = Filemetadata.map(t => (t.fileid, t.value, t.userid, t.propertyname)) returning Filemetadata
     .map(r => (r.metadataid, r.datetime)) into ((fileMetadata, dbGeneratedValues) =>
     FilemetadataRow(dbGeneratedValues._1, fileMetadata._1, fileMetadata._2, dbGeneratedValues._2, fileMetadata._3, fileMetadata._4)
@@ -38,7 +39,10 @@ class FileMetadataRepository(db: JdbcBackend#Database)(implicit val executionCon
   }
 
   def addFileMetadata(rows: Seq[AddFileMetadataInput]): Future[Seq[FilemetadataRow]] = {
-    db.run(insertFileMetadataQuery ++= rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)))
+    val inserts = BatchInsert.chunked(rows.map(i => (i.fileId, i.value, i.userId, i.filePropertyName)), insertFileMetadataColumnsPerRow) { batch =>
+      insertFileMetadataQuery.insertAll(batch, RowsPerStatement.All)
+    }
+    db.run(DBIO.sequence(inserts).map(_.flatten).transactionally)
   }
 
   /** Adds or updates file metadata entries with multi-layer deadlock prevention. NOT PERFORMANT FOR LARGE BATCHES - use for small to medium sized batches only. The caller in draft

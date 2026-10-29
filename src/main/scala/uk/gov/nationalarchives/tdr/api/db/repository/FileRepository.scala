@@ -1,7 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.db.repository
 
 import slick.jdbc.PostgresProfile.api._
-import slick.jdbc.{GetResult, JdbcBackend}
+import slick.jdbc.{GetResult, JdbcBackend, RowsPerStatement}
 import uk.gov.nationalarchives.Tables
 import uk.gov.nationalarchives.Tables.{
   Avmetadata,
@@ -99,8 +99,11 @@ class FileRepository(db: JdbcBackend#Database)(implicit val executionContext: Ex
     db.run(query.result)
   }
 
-  def addFiles(fileRows: Seq[FileRow], fileMetadataRows: Seq[FilemetadataRow]): Future[Unit] =
-    db.run(DBIO.seq(File ++= fileRows, Filemetadata ++= fileMetadataRows).transactionally)
+  def addFiles(fileRows: Seq[FileRow], fileMetadataRows: Seq[FilemetadataRow]): Future[Unit] = {
+    val fileInserts = BatchInsert.chunked(fileRows, File.baseTableRow.create_*.size)(batch => File.insertAll(batch, RowsPerStatement.All))
+    val fileMetadataInserts = BatchInsert.chunked(fileMetadataRows, Filemetadata.baseTableRow.create_*.size)(batch => Filemetadata.insertAll(batch, RowsPerStatement.All))
+    db.run(DBIO.seq(fileInserts ++ fileMetadataInserts: _*).transactionally)
+  }
 
   def countFilesInConsignment(consignmentId: UUID, parentId: Option[UUID] = None, fileTypeIdentifier: Option[String] = Some(NodeType.fileTypeIdentifier)): Future[Int] = {
     val query = File
