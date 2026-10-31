@@ -42,7 +42,7 @@ lazy val pekkoVersion = "1.7.1"
 lazy val pekkoHttpVersion = "1.4.2"
 lazy val circeVersion = "0.14.17"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.57.5"
+lazy val awsSdkVersion = "2.57.8"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.20",
@@ -79,13 +79,13 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "2.2.3" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.2.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.21.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.307",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.308",
   "io.github.hakky54" % "logcaptor" % "2.13.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
   "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.153",
-  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.54"
+  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.55"
 )
 
 dependencyOverrides ++= Seq(
