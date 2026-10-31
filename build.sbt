@@ -42,7 +42,7 @@ lazy val pekkoVersion = "1.7.1"
 lazy val pekkoHttpVersion = "1.4.2"
 lazy val circeVersion = "0.14.17"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.57.5"
+lazy val awsSdkVersion = "2.57.8"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.20",
