@@ -323,13 +323,18 @@ object FileService {
         metadataPropertyNames: Seq[String],
         fileStatuses: List[FileStatus]
     ): Seq[File] = {
+      // Indexed once rather than scanned per file, which was quadratic in the size of the consignment.
+      val statusesByFileId = fileStatuses.groupBy(_.fileId)
+      val ffidMetadataByFileId = ffidMetadata.groupBy(_.fileId)
+      val avMetadataByFileId = avMetadata.groupBy(_.fileId)
+
       response
         .groupBy(_._1)
         .map { case (fr, fmr) =>
           val fileId = fr.fileid
           val metadataRows = fmr.flatMap(_._2)
           val metadataValues = convertMetadataRows(metadataRows)
-          val statuses = fileStatuses.filter(_.fileId == fileId)
+          val statuses = statusesByFileId.getOrElse(fileId, Nil)
           File(
             fileId,
             fr.uploadmatchid,
@@ -340,8 +345,8 @@ object FileService {
             fr.parentreference,
             metadataValues,
             ffidStatus.get(fileId),
-            ffidMetadata.find(_.fileId == fileId),
-            avMetadata.find(_.fileId == fileId),
+            ffidMetadataByFileId.get(fileId).flatMap(_.headOption),
+            avMetadataByFileId.get(fileId).flatMap(_.headOption),
             fmr.find(_._2.exists(_.propertyname == "OriginalFilepath")).flatMap(_._2.map(_.value)),
             filterMetadataRows(metadataRows, metadataPropertyNames).toList,
             statuses,
@@ -366,6 +371,11 @@ object FileService {
         ffidStatus: Map[UUID, String],
         fileStatuses: List[FileStatus] = Nil
     ): Seq[File] = {
+      // Indexed once rather than scanned per file, which was quadratic in the size of the consignment.
+      val statusesByFileId = fileStatuses.groupBy(_.fileId)
+      val ffidMetadataByFileId = ffidMetadata.groupBy(_.fileId)
+      val avMetadataByFileId = avMetadata.groupBy(_.fileId)
+
       fileRows.map(fr => {
         val id = fr.fileid
         val assetId = fr.assetid
@@ -373,7 +383,7 @@ object FileService {
           id,
           FileMetadataValues(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
         )
-        val statuses = fileStatuses.filter(_.fileId == id)
+        val statuses = statusesByFileId.getOrElse(id, Nil)
         File(
           id,
           fr.uploadmatchid,
@@ -384,8 +394,8 @@ object FileService {
           fr.parentreference,
           metadata,
           ffidStatus.get(id),
-          ffidMetadata.find(_.fileId == id),
-          avMetadata.find(_.fileId == id),
+          ffidMetadataByFileId.get(id).flatMap(_.headOption),
+          avMetadataByFileId.get(id).flatMap(_.headOption),
           fileStatuses = statuses,
           assetId = assetId
         )
