@@ -8,8 +8,8 @@ import slick.dbio.{DBIOAction, Effect, NoStream}
   * statements avoid this, but PostgreSQL limits a single statement to 65535 bind parameters, so rows must be chunked.
   */
 object BatchInsert {
-  val postgresMaxBindParameters: Int = 65535
-  val defaultMaxRowsPerStatement: Int = 5000
+  private val postgresMaxBindParameters: Int = 65535
+  private val defaultMaxRowsPerStatement: Int = 5000
 
   def maxRowsPerStatement(columnsPerRow: Int, preferredMaxRows: Int = defaultMaxRowsPerStatement): Int =
     math.max(1, math.min(preferredMaxRows, postgresMaxBindParameters / math.max(1, columnsPerRow)))

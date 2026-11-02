@@ -8,8 +8,6 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class AntivirusMetadataRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
-  private val insertFileStatusQuery = Filestatus returning Filestatus.map(_.filestatusid) into
-    ((filestatus, filestatusid) => filestatus.copy(filestatusid = filestatusid))
 
   def addAntivirusMetadata(antivirusMetadataRow: List[AvmetadataRow]): Future[List[AvmetadataRow]] = {
     // All values are supplied by the caller, so no generated values need to be returned
