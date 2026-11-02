@@ -42,10 +42,10 @@ lazy val pekkoVersion = "1.7.1"
 lazy val pekkoHttpVersion = "1.4.2"
 lazy val circeVersion = "0.14.17"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.57.3"
+lazy val awsSdkVersion = "2.57.8"
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "4.2.19",
+  "org.sangria-graphql" %% "sangria" % "4.2.20",
   "org.sangria-graphql" %% "sangria-slowlog" % "3.0.1",
   "org.sangria-graphql" %% "sangria-circe" % "1.3.2",
   "org.sangria-graphql" %% "sangria-spray-json" % "1.0.4",
@@ -69,7 +69,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
   "org.typelevel" %% "cats-effect" % "3.7.1",
-  "ch.qos.logback" % "logback-classic" % "1.6.5",
+  "ch.qos.logback" % "logback-classic" % "1.6.6",
   "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
   "software.amazon.awssdk" % "rds" % awsSdkVersion,
   "software.amazon.awssdk" % "sts" % awsSdkVersion,
@@ -79,19 +79,19 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "2.2.3" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.2.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.21.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.307",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.308",
   "io.github.hakky54" % "logcaptor" % "2.13.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "com.github.tomakehurst" % "wiremock-standalone" % "3.0.1" % Test,
   "uk.gov.nationalarchives" % "da-metadata-schema_2.13" % "0.0.153",
-  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.54"
+  "uk.gov.nationalarchives" %% "tdr-statuses" % "0.0.55"
 )
 
 dependencyOverrides ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
-  "org.sangria-graphql" %% "sangria" % "4.2.19"
+  "org.sangria-graphql" %% "sangria" % "4.2.20"
 )
 
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
