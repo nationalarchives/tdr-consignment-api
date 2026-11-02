@@ -3,16 +3,49 @@ package uk.gov.nationalarchives.tdr.api.db.repository
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Seconds, Span}
+import uk.gov.nationalarchives.Tables.{FfidmetadataRow, FfidmetadatamatchesRow}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils.userId
 import uk.gov.nationalarchives.tdr.api.utils.{TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
+
+import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 
 class FFIDMetadataRepositorySpec extends TestContainerUtils with ScalaFutures with Matchers {
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span(60, Seconds))
 
   override def afterContainersStart(containers: containerDef.Container): Unit = super.afterContainersStart(containers)
+
+  "addFFIDMetadata" should "insert more metadata and match rows than fit in one statement" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val ffidMetadataRepository = new FFIDMetadataRepository(db)
+    val matchesRepository = new FFIDMetadataMatchesRepository(db)
+    val consignmentId = UUID.fromString("21061d4d-ed73-485f-b433-c48b0868fffb")
+    val fileIds = (1 to 11000).map(_ => UUID.randomUUID())
+    utils.createConsignment(consignmentId, userId)
+    utils.createFiles(fileIds, consignmentId)
+    val now = Timestamp.from(Instant.now)
+    val metadataRows = fileIds.map(id => FfidmetadataRow(UUID.randomUUID(), id, "software", "1", now, "binary", "container", "method")).toList
+    val matchRows = metadataRows.map(r => FfidmetadatamatchesRow(r.ffidmetadataid, Some("txt"), "extension", Some("x-fmt/111"), Some(false), Some("Plain Text")))
+
+    ffidMetadataRepository.addFFIDMetadata(metadataRows).futureValue should equal(metadataRows)
+    matchesRepository.addFFIDMetadataMatches(matchRows).futureValue should equal(matchRows)
+
+    utils.countRows("FFIDMetadata") should equal(metadataRows.size)
+    utils.countRows("FFIDMetadataMatches") should equal(matchRows.size)
+  }
+
+  "addFFIDMetadata" should "return no rows for empty input" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+
+    new FFIDMetadataRepository(db).addFFIDMetadata(Nil).futureValue should equal(Nil)
+    new FFIDMetadataMatchesRepository(db).addFFIDMetadataMatches(Nil).futureValue should equal(Nil)
+  }
 
   "getFFIDMetadata" should "return the same number of ffidMetadata rows as the number of files added" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database

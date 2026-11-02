@@ -254,6 +254,25 @@ class TestUtils(db: JdbcBackend#Database) {
     ps.executeUpdate()
   }
 
+  def createFiles(fileIds: Seq[UUID], consignmentId: UUID): Unit = {
+    val ps = connection.prepareStatement("""INSERT INTO "File" ("FileId", "ConsignmentId", "UserId", "Datetime", "FileType") VALUES (?, ?, ?, ?, ?)""")
+    fileIds.foreach { fileId =>
+      ps.setObject(1, fileId, Types.OTHER)
+      ps.setObject(2, consignmentId, Types.OTHER)
+      ps.setObject(3, userId, Types.OTHER)
+      ps.setTimestamp(4, Timestamp.from(FixedTimeSource.now))
+      ps.setString(5, NodeType.fileTypeIdentifier)
+      ps.addBatch()
+    }
+    ps.executeBatch()
+  }
+
+  def countRows(tableName: String): Int = {
+    val rs = connection.prepareStatement(s"""SELECT COUNT(*) AS num FROM "$tableName";""").executeQuery()
+    rs.next()
+    rs.getInt("num")
+  }
+
   def getAntivirusMetadata(fileId: Option[UUID] = None): ResultSet = {
     val ps = fileId
       .map(id => {

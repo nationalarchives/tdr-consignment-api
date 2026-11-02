@@ -5,7 +5,7 @@ import cats.effect.std.Semaphore
 import cats.effect.unsafe.implicits.global
 import cats.implicits.catsSyntaxParallelTraverse1
 import com.typesafe.config.ConfigFactory
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{JdbcBackend, RowsPerStatement}
 
 import java.util.UUID
 import slick.jdbc.PostgresProfile.api._
@@ -15,10 +15,8 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.Consignm
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentMetadataRepository(db: JdbcBackend#Database)(implicit val executionContext: ExecutionContext) {
-  private val insertQuery = Consignmentmetadata returning Consignmentmetadata.map(_.metadataid) into
-    ((consignmentMetadata, metadataid) => consignmentMetadata.copy(metadataid = metadataid))
-
-  private val batchSizeForConsignmentMetadataDatabaseWrites = ConfigFactory.load().getInt("consignmentMetadata.batchSize")
+  private val batchSizeForConsignmentMetadataDatabaseWrites =
+    BatchInsert.maxRowsPerStatement(Consignmentmetadata.baseTableRow.create_*.size, ConfigFactory.load().getInt("consignmentMetadata.batchSize"))
   private val maxConcurrencyForConsignmentMetadataDatabaseWrites = ConfigFactory.load().getInt("consignmentMetadata.maxConcurrency")
 
   def addConsignmentMetadata(rows: Seq[ConsignmentmetadataRow]): Future[Seq[ConsignmentmetadataRow]] = {
@@ -28,7 +26,8 @@ class ConsignmentMetadataRepository(db: JdbcBackend#Database)(implicit val execu
         .toList
         .parTraverse { br =>
           semaphore.permit.use { _ =>
-            IO.fromFuture(IO(db.run(insertQuery ++= br)))
+            // metadataid is supplied by the caller, so the inserted rows are returned rather than using RETURNING
+            IO.fromFuture(IO(db.run(Consignmentmetadata.insertAll(br, RowsPerStatement.All)).map(_ => br)))
           }
         }
         .map(_.flatten)
