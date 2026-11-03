@@ -42,11 +42,12 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
 
   def allChecksSucceeded(consignmentId: UUID): Future[Boolean] = {
     val statusTypes = Set(ChecksumMatch, Antivirus, FFID, Redaction)
+    val requiredStatusTypes = Set(ChecksumMatch, Antivirus, FFID)
     fileStatusRepository
-      .getFileStatus(consignmentId, statusTypes)
-      .map(fileChecks => {
-        !fileChecks.map(_.value).exists(_ != Success) &&
-        Set(ChecksumMatch, Antivirus, FFID).forall(fileChecks.map(_.statustype).toSet.contains)
+      .getDistinctFileStatusValues(consignmentId, statusTypes)
+      .map(statuses => {
+        !statuses.exists { case (_, value) => value != Success } &&
+        requiredStatusTypes.subsetOf(statuses.map { case (statusType, _) => statusType }.toSet)
       })
   }
 }

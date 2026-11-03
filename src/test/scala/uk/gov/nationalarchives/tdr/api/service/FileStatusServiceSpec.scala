@@ -35,6 +35,9 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   def mockResponse(statusTypes: Set[String], rows: Seq[FilestatusRow]): ScalaOngoingStubbing[Future[Seq[FilestatusRow]]] =
     when(fileStatusRepositoryMock.getFileStatus(consignmentId, statusTypes)).thenReturn(Future(rows))
 
+  def mockDistinctResponse(statusTypes: Set[String], rows: Seq[FilestatusRow]): ScalaOngoingStubbing[Future[Seq[(String, String)]]] =
+    when(fileStatusRepositoryMock.getDistinctFileStatusValues(consignmentId, statusTypes)).thenReturn(Future(rows.map(r => (r.statustype, r.value)).distinct))
+
   def fileStatusRow(statusType: String, value: String): FilestatusRow =
     FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), statusType, value, Timestamp.from(Instant.now))
 
@@ -58,7 +61,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "allChecksSucceeded" should "return true if the checksum match, antivirus, ffid and redaction statuses are 'Success'" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(Antivirus, Success), fileStatusRow(FFID, Success), fileStatusRow(Redaction, Success))
     )
@@ -67,7 +70,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "allChecksSucceeded" should "return false if the checksum match status is 'Mismatch' and the antivirus, ffid and redaction statuses are 'Success'" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(fileStatusRow(ChecksumMatch, Mismatch), fileStatusRow(Antivirus, Success), fileStatusRow(FFID, Success), fileStatusRow(Redaction, Success))
     )
@@ -76,7 +79,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "allChecksSucceeded" should "return false if the antivirus status is 'VirusDetected' and the checksum, ffid and redaction statuses are 'Success'" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(fileStatusRow(Antivirus, VirusDetected), fileStatusRow(ChecksumMatch, Success), fileStatusRow(FFID, Success), fileStatusRow(Redaction, Success))
     )
@@ -85,7 +88,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "allChecksSucceeded" should "return false if there are no antivirus file status rows, the checksum match and ffid statuses are 'Success' and the redacted status is success" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(fileStatusRow(ChecksumMatch, Success), fileStatusRow(FFID, Success), fileStatusRow(Redaction, Success))
     )
@@ -94,7 +97,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "allChecksSucceeded" should "return false if there are no checksum match file status rows, the antivirus and ffid statuses are 'Success' and the redaction status is success" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(fileStatusRow(Antivirus, Success), fileStatusRow(FFID, Success))
     )
@@ -103,7 +106,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "allChecksSucceeded" should "return false if there are no ffid file status rows, the antivirus and checksum match statuses are 'Success' and the redaction status is success" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(fileStatusRow(Antivirus, Success), fileStatusRow(Antivirus, Success), fileStatusRow(Redaction, Success))
     )
@@ -113,7 +116,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "allChecksSucceeded" should "return false if there are multiple checksum match rows including a failure " +
     "and multiple successful antivirus, ffid and redaction rows" in {
-      mockResponse(
+      mockDistinctResponse(
         Set(ChecksumMatch, Antivirus, FFID, Redaction),
         Seq(
           fileStatusRow(ChecksumMatch, Mismatch),
@@ -132,7 +135,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "allChecksSucceeded" should "return false if there are multiple checksum match rows including a failure, " +
     "ffid success and multiple successful antivirus and redaction rows" in {
-      mockResponse(
+      mockDistinctResponse(
         Set(ChecksumMatch, Antivirus, FFID, Redaction),
         Seq(
           fileStatusRow(ChecksumMatch, Mismatch),
@@ -150,7 +153,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "allChecksSucceeded" should "return false if there are multiple antivirus rows including a failure " +
     "and multiple successful checksum match, ffid and redaction rows" in {
-      mockResponse(
+      mockDistinctResponse(
         Set(ChecksumMatch, Antivirus, FFID, Redaction),
         Seq(
           fileStatusRow(ChecksumMatch, Success),
@@ -167,7 +170,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   "allChecksSucceeded" should "return false if there are multiple antivirus rows including a failure, " +
     "ffid success and multiple successful checksum and redaction matches" in {
-      mockResponse(
+      mockDistinctResponse(
         Set(ChecksumMatch, Antivirus, FFID, Redaction),
         Seq(
           fileStatusRow(ChecksumMatch, Success),
@@ -184,7 +187,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     }
 
   "allChecksSucceeded" should "return true if there are multiple ffid success rows and multiple successful checksum match, antivirus and redaction rows" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(
         fileStatusRow(ChecksumMatch, Success),
@@ -200,7 +203,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "allChecksSucceeded" should "return false if there are missing original files with a redacted file" in {
-    mockResponse(
+    mockDistinctResponse(
       Set(ChecksumMatch, Antivirus, FFID, Redaction),
       Seq(
         fileStatusRow(ChecksumMatch, Success),
