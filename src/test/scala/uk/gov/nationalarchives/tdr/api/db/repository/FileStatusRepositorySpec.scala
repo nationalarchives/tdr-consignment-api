@@ -72,6 +72,23 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
     response.head.fileid shouldBe fileOneId
   }
 
+  "getDistinctFileStatusValues" should "return the distinct status type and value combinations for the consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileStatusRepository = new FileStatusRepository(db)
+    val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type1", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type1", "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, "Status Type1", "Failed")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, "Status Type2", "Success")
+
+    val response = fileStatusRepository.getDistinctFileStatusValues(consignmentId, Set("Status Type1", "Status Type2")).futureValue
+    response.toSet shouldBe Set(("Status Type1", "Success"), ("Status Type1", "Failed"), ("Status Type2", "Success"))
+  }
+
   "deleteFileStatus" should "delete the specified status type for the specified file" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)

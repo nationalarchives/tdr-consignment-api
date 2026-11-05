@@ -39,6 +39,17 @@ class FileStatusRepository(db: JdbcBackend#Database)(implicit val executionConte
     db.run(query.result)
   }
 
+  def getDistinctFileStatusValues(consignmentId: UUID, statusTypes: Set[String]): Future[Seq[(String, String)]] = {
+    val query = Filestatus
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .filter(_._2.consignmentid === consignmentId)
+      .filter(_._1.statustype inSetBind statusTypes)
+      .map(r => (r._1.statustype, r._1.value))
+      .distinct
+    db.run(query.result)
+  }
+
   def deleteFileStatus(selectedFileIds: Set[UUID], statusType: Set[String]): Future[Int] = {
     val query = Filestatus
       .filter(_.fileid inSetBind selectedFileIds)
