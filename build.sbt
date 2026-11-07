@@ -38,11 +38,11 @@ enablePlugins(GraphQLSchemaPlugin)
 
 graphqlSchemaSnippet := "uk.gov.nationalarchives.tdr.api.graphql.GraphQlTypes.schema"
 
-lazy val pekkoVersion = "1.7.1"
+lazy val pekkoVersion = "2.0.0"
 lazy val pekkoHttpVersion = "1.4.2"
 lazy val circeVersion = "0.14.17"
 lazy val testContainersVersion = "0.44.1"
-lazy val awsSdkVersion = "2.57.8"
+lazy val awsSdkVersion = "2.57.11"
 
 libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "4.2.20",
@@ -79,7 +79,7 @@ libraryDependencies ++= Seq(
   "org.mockito" %% "mockito-scala" % "2.2.3" % Test,
   "org.mockito" %% "mockito-scala-scalatest" % "2.2.3" % Test,
   "com.tngtech.keycloakmock" % "mock" % "0.21.0" % Test,
-  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.308",
+  "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.309",
   "io.github.hakky54" % "logcaptor" % "2.13.0" % Test,
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % Test,
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
