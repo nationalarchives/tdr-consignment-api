@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   pre-deploy:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/ecs_build.yml@fc52a93f9636579d7478f01a8a960007134ad30f # v0.0.51
+    uses: nationalarchives/tdr-github-actions/.github/workflows/ecs_build.yml@5a96b84cf82bce1371168cc31cb89f88cad86763 # v0.0.53
     permissions:
       contents: write
       id-token: write
