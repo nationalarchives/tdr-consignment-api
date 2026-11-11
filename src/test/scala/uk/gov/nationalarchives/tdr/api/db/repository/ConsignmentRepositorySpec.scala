@@ -150,6 +150,85 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     response.headOption.get.consignmentid should equal(consignmentId)
   }
 
+  "getConsignmentUploadFailures" should "return standard consignments for every upload check value other than Completed" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    val checkTypes = Seq("ServerChecksum", "ServerFFID", "ServerAntivirus", "ServerRedaction", "ClientChecks")
+    val incompleteValues = Seq("Failed", "InProgress", "CompletedWithIssues", "")
+    val expectedIds = for {
+      checkType <- checkTypes
+      value <- incompleteValues
+    } yield {
+      val id = UUID.randomUUID()
+      utils.createConsignment(id, userId)
+      utils.createConsignmentStatus(id, checkType, value)
+      id
+    }
+
+    checkTypes.foreach { checkType =>
+      val completedId = UUID.randomUUID()
+      utils.createConsignment(completedId, userId)
+      utils.createConsignmentStatus(completedId, checkType, "Completed")
+      val judgmentId = UUID.randomUUID()
+      utils.createConsignment(judgmentId, userId, consignmentType = "judgment")
+      utils.createConsignmentStatus(judgmentId, checkType, "Failed")
+    }
+    val unrelatedId = UUID.randomUUID()
+    utils.createConsignment(unrelatedId, userId)
+    utils.createConsignmentStatus(unrelatedId, "Upload", "Failed")
+    utils.createConsignment(UUID.randomUUID(), userId)
+
+    val response = consignmentRepository.getConsignmentUploadFailures(None).futureValue
+
+    response.map(_.consignmentid) should contain theSameElementsAs expectedIds
+  }
+
+  "getConsignmentUploadFailures" should "return a consignment only once when several checks are incomplete" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentIdOne, userId)
+    utils.createConsignmentStatus(consignmentIdOne, "ServerChecksum", "Failed")
+    utils.createConsignmentStatus(consignmentIdOne, "ServerFFID", "InProgress")
+    utils.createConsignmentStatus(consignmentIdOne, "ClientChecks", "Completed")
+
+    val response = consignmentRepository.getConsignmentUploadFailures(None).futureValue
+
+    response.map(_.consignmentid) should be(Seq(consignmentIdOne))
+  }
+
+  "getConsignmentUploadFailures" should "return an empty list when no consignments match" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentIdOne, userId)
+    utils.createConsignmentStatus(consignmentIdOne, "ClientChecks", "Completed")
+
+    consignmentRepository.getConsignmentUploadFailures(None).futureValue should be(empty)
+  }
+
+  "getConsignmentUploadFailures" should "filter by consignment ID without bypassing the upload failure conditions" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+    val utils = TestUtils(db)
+    utils.createConsignment(consignmentIdOne, userId)
+    utils.createConsignmentStatus(consignmentIdOne, "ServerChecksum", "Failed")
+    utils.createConsignment(consignmentIdTwo, userId)
+    utils.createConsignmentStatus(consignmentIdTwo, "ServerFFID", "InProgress")
+    utils.createConsignment(consignmentIdThree, userId)
+    utils.createConsignmentStatus(consignmentIdThree, "ClientChecks", "Completed")
+    utils.createConsignment(consignmentIdFour, userId, consignmentType = "judgment")
+    utils.createConsignmentStatus(consignmentIdFour, "ClientChecks", "Failed")
+    val noChecksId = UUID.randomUUID()
+    utils.createConsignment(noChecksId, userId)
+
+    consignmentRepository.getConsignmentUploadFailures(Some(consignmentIdOne)).futureValue.map(_.consignmentid) should be(Seq(consignmentIdOne))
+    Seq(consignmentIdThree, consignmentIdFour, noChecksId, UUID.randomUUID()).foreach { id =>
+      consignmentRepository.getConsignmentUploadFailures(Some(id)).futureValue should be(empty)
+    }
+  }
+
   "getConsignments" should "return all consignments after the cursor up to the limit value" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)

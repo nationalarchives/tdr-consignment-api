@@ -135,6 +135,10 @@ class ConsignmentService(
     consignmentRepository.getConsignmentsForMetadataReview.map(rows => rows.map(row => convertRowToConsignment(row)))
   }
 
+  def getConsignmentUploadFailures(consignmentId: Option[UUID]): Future[Seq[Consignment]] = {
+    consignmentRepository.getConsignmentUploadFailures(consignmentId).map(rows => rows.map(row => convertRowToConsignment(row)))
+  }
+
   def getConsignmentReviewDetails(statusFilter: Option[String]): Future[Seq[ConsignmentReviewDetails]] = {
     for {
       consignmentRows <- consignmentRepository.getConsignmentsWithMetadataReviewStatus

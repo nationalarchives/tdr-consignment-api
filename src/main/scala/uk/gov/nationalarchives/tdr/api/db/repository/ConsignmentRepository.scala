@@ -18,8 +18,16 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
 }
 import uk.gov.nationalarchives.tdr.api.service.{TimeSource, UpdateConsignmentBodyInput, UpdateConsignmentSeriesInput}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.InProgressValue
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.standard
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{
+  ClientChecksType,
+  MetadataReviewType,
+  ServerAntivirusType,
+  ServerChecksumType,
+  ServerFFIDType,
+  ServerRedactionType
+}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -89,6 +97,21 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
       .on(_.consignmentid === _.consignmentid)
       .filter(_._2.statustype === MetadataReviewType.id)
       .map(_._1)
+    db.run(query.result)
+  }
+
+  def getConsignmentUploadFailures(consignmentId: Option[UUID]): Future[Seq[ConsignmentRow]] = {
+    val uploadCheckTypes = Set(ServerChecksumType.id, ServerFFIDType.id, ServerAntivirusType.id, ServerRedactionType.id, ClientChecksType.id)
+    val query = Consignment
+      .filter(_.consignmenttype === standard)
+      .filterOpt(consignmentId)(_.consignmentid === _)
+      .filter(consignment =>
+        Consignmentstatus
+          .filter(_.consignmentid === consignment.consignmentid)
+          .filter(_.statustype.inSet(uploadCheckTypes))
+          .filter(_.value =!= CompletedValue.value)
+          .exists
+      )
     db.run(query.result)
   }
 

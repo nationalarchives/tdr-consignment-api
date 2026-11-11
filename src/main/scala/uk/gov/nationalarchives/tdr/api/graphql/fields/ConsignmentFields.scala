@@ -330,6 +330,7 @@ object ConsignmentFields {
 
   val ConsignmentInputArg: Argument[AddConsignmentInput] = Argument("addConsignmentInput", AddConsignmentInputType)
   val ConsignmentIdArg: Argument[UUID] = Argument("consignmentid", UuidType)
+  val OptionalConsignmentIdArg: Argument[Option[UUID]] = Argument("consignmentId", OptionInputType(UuidType))
   val ExportDataArg: Argument[UpdateExportDataInput] = Argument("exportData", UpdateExportDataInputType)
   val LimitArg: Argument[Int] = Argument("limit", IntType)
   val CurrentCursorArg: Argument[Option[String]] = Argument("currentCursor", OptionInputType(StringType))
@@ -408,6 +409,13 @@ object ConsignmentFields {
       ListType(ConsignmentReviewDetailsType),
       arguments = StatusFilterArg :: Nil,
       resolve = ctx => ctx.ctx.consignmentService.getConsignmentReviewDetails(ctx.arg(StatusFilterArg)),
+      tags = List(ValidateIsTnaUser)
+    ),
+    Field(
+      "getConsignmentUploadFailures",
+      ListType(ConsignmentType),
+      arguments = OptionalConsignmentIdArg :: Nil,
+      resolve = ctx => ctx.ctx.consignmentService.getConsignmentUploadFailures(ctx.arg(OptionalConsignmentIdArg)),
       tags = List(ValidateIsTnaUser)
     )
   )
