@@ -1,3 +1,0 @@
-{
-  "query": "query getConsignmentUploadFailures {getConsignmentUploadFailures {consignmentid,consignmentReference,consignmentType,seriesName,transferringBodyName,consignmentStatuses {consignmentStatusId,consignmentId,statusType,value,createdDatetime,modifiedDatetime}}}"
-}

@@ -94,10 +94,10 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     ConfigFactory.load()
   )
 
-  "getConsignmentUploadFailures" should "convert matching rows to consignments" in {
-    when(consignmentRepoMock.getConsignmentUploadFailures(None)).thenReturn(Future.successful(Seq(mockConsignment)))
+  "getConsignmentFileCheckFailures" should "convert matching rows to consignments" in {
+    when(consignmentRepoMock.getConsignmentFileCheckFailures(None)).thenReturn(Future.successful(Seq(mockConsignment)))
 
-    val response = consignmentService.getConsignmentUploadFailures(None).futureValue
+    val response = consignmentService.getConsignmentFileCheckFailures(None).futureValue
 
     response should have size 1
     response.head.consignmentid should be(consignmentId)
@@ -107,19 +107,19 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response.head.transferringBodyName should be(Some(bodyName))
   }
 
-  "getConsignmentUploadFailures" should "return an empty list when there are no matching consignments" in {
-    when(consignmentRepoMock.getConsignmentUploadFailures(None)).thenReturn(Future.successful(Seq.empty))
+  "getConsignmentFileCheckFailures" should "return an empty list when there are no matching consignments" in {
+    when(consignmentRepoMock.getConsignmentFileCheckFailures(None)).thenReturn(Future.successful(Seq.empty))
 
-    consignmentService.getConsignmentUploadFailures(None).futureValue should be(empty)
+    consignmentService.getConsignmentFileCheckFailures(None).futureValue should be(empty)
   }
 
-  "getConsignmentUploadFailures" should "pass the optional consignment ID to the repository" in {
-    when(consignmentRepoMock.getConsignmentUploadFailures(Some(consignmentId))).thenReturn(Future.successful(Seq(mockConsignment)))
+  "getConsignmentFileCheckFailures" should "pass the optional consignment ID to the repository" in {
+    when(consignmentRepoMock.getConsignmentFileCheckFailures(Some(consignmentId))).thenReturn(Future.successful(Seq(mockConsignment)))
 
-    val response = consignmentService.getConsignmentUploadFailures(Some(consignmentId)).futureValue
+    val response = consignmentService.getConsignmentFileCheckFailures(Some(consignmentId)).futureValue
 
     response.map(_.consignmentid) should be(Seq(consignmentId))
-    verify(consignmentRepoMock).getConsignmentUploadFailures(Some(consignmentId))
+    verify(consignmentRepoMock).getConsignmentFileCheckFailures(Some(consignmentId))
   }
 
   "addConsignment" should "create a standard consignment given correct arguments and assign body from the series" in {

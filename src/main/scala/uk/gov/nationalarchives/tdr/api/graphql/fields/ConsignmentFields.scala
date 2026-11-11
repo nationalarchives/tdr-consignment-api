@@ -412,10 +412,10 @@ object ConsignmentFields {
       tags = List(ValidateIsTnaUser)
     ),
     Field(
-      "getConsignmentUploadFailures",
+      "getConsignmentFileCheckFailures",
       ListType(ConsignmentType),
       arguments = OptionalConsignmentIdArg :: Nil,
-      resolve = ctx => ctx.ctx.consignmentService.getConsignmentUploadFailures(ctx.arg(OptionalConsignmentIdArg)),
+      resolve = ctx => ctx.ctx.consignmentService.getConsignmentFileCheckFailures(ctx.arg(OptionalConsignmentIdArg)),
       tags = List(ValidateIsTnaUser)
     )
   )

@@ -35,7 +35,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val updateClientSideDraftMetadataFileNamePrefix: String = "json/updateconsignment_draft_metadata_filename_"
   private val getConsignmentForMetadataReviewJsonFilePrefix: String = "json/getconsignmentsformetadatareview_"
   private val getConsignmentReviewDetailsJsonFilePrefix: String = "json/getconsignmentreviewdetails_"
-  private val getConsignmentUploadFailuresJsonFilePrefix: String = "json/getconsignmentuploadfailures_"
+  private val getConsignmentFileCheckFailuresJsonFilePrefix: String = "json/getconsignmentfilecheckfailures_"
   private val updateParentFolderJsonFilePrefix: String = "json/updateparentfolder_"
 
   val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
@@ -84,7 +84,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       consignmentStatuses: List[ConsignmentStatus]
   )
 
-  case class UploadFailuresResult(getConsignmentUploadFailures: List[UploadFailureResponse])
+  case class UploadFailuresResult(getConsignmentFileCheckFailures: List[UploadFailureResponse])
 
   case class UploadFailuresResultData(data: Option[UploadFailuresResult], errors: List[GraphqlError] = Nil)
 
@@ -1017,7 +1017,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "getConsignmentUploadFailures" should "return standard consignments with incomplete upload checks and their statuses for TNA users" in withContainers {
+  "getConsignmentFileCheckFailures" should "return standard consignments with Failed upload checks and their statuses for TNA users" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.createConsignment(defaultConsignmentId, userId, consignmentRef = "TEST-TDR-2024-AFK")
@@ -1033,11 +1033,16 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       val unrelatedId = UUID.randomUUID()
       utils.createConsignment(unrelatedId, userId)
       utils.createConsignmentStatus(unrelatedId, UploadType.id, FailedValue.value)
+      Seq("InProgress", "CompletedWithIssues", "").foreach { value =>
+        val nonFailedId = UUID.randomUUID()
+        utils.createConsignment(nonFailedId, userId)
+        utils.createConsignmentStatus(nonFailedId, "ClientChecks", value)
+      }
 
-      val response = runTestRequest[UploadFailuresResultData](getConsignmentUploadFailuresJsonFilePrefix)("query_alldata", validTNAUserToken(body = defaultBodyCode))
+      val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_alldata", validTNAUserToken(body = defaultBodyCode))
 
       response.errors should be(empty)
-      val consignments = response.data.get.getConsignmentUploadFailures
+      val consignments = response.data.get.getConsignmentFileCheckFailures
       consignments should have size 1
       val consignment = consignments.head
       consignment.consignmentid should be(defaultConsignmentId)
@@ -1052,7 +1057,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       )
   }
 
-  "getConsignmentUploadFailures" should "return only the requested consignment when an ID is supplied" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignmentFileCheckFailures" should "return only the requested consignment when an ID is supplied" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId)
     utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", FailedValue.value)
@@ -1060,43 +1065,54 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     utils.createConsignment(otherId, userId)
     utils.createConsignmentStatus(otherId, "ServerChecksum", FailedValue.value)
 
-    val response = runTestRequest[UploadFailuresResultData](getConsignmentUploadFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
 
     response.errors should be(empty)
-    response.data.get.getConsignmentUploadFailures.map(_.consignmentid) should be(List(defaultConsignmentId))
+    response.data.get.getConsignmentFileCheckFailures.map(_.consignmentid) should be(List(defaultConsignmentId))
 
-    val nullResponse = runTestRequest[UploadFailuresResultData](getConsignmentUploadFailuresJsonFilePrefix)("query_nullid", validTNAUserToken(body = defaultBodyCode))
+    val nullResponse = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_nullid", validTNAUserToken(body = defaultBodyCode))
 
     nullResponse.errors should be(empty)
-    nullResponse.data.get.getConsignmentUploadFailures.map(_.consignmentid) should contain theSameElementsAs List(defaultConsignmentId, otherId)
+    nullResponse.data.get.getConsignmentFileCheckFailures.map(_.consignmentid) should contain theSameElementsAs List(defaultConsignmentId, otherId)
   }
 
-  "getConsignmentUploadFailures" should "return an empty list when the requested ID does not match" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignmentFileCheckFailures" should "return an empty list when the requested ID does not match" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val otherId = UUID.randomUUID()
     utils.createConsignment(otherId, userId)
     utils.createConsignmentStatus(otherId, "ClientChecks", FailedValue.value)
 
-    val response = runTestRequest[UploadFailuresResultData](getConsignmentUploadFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
 
     response.errors should be(empty)
-    response.data.get.getConsignmentUploadFailures should be(empty)
+    response.data.get.getConsignmentFileCheckFailures should be(empty)
   }
 
-  "getConsignmentUploadFailures" should "return an empty list when there are no matching consignments" in withContainers { case _: PostgreSQLContainer =>
-    val response = runTestRequest[UploadFailuresResultData](getConsignmentUploadFailuresJsonFilePrefix)("query_alldata", validTNAUserToken(body = defaultBodyCode))
+  "getConsignmentFileCheckFailures" should "return an empty list when there are no matching consignments" in withContainers { case _: PostgreSQLContainer =>
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_alldata", validTNAUserToken(body = defaultBodyCode))
 
     response.errors should be(empty)
-    response.data.get.getConsignmentUploadFailures should be(empty)
+    response.data.get.getConsignmentFileCheckFailures should be(empty)
   }
 
-  "getConsignmentUploadFailures" should "reject users who are not TNA users" in withContainers { case _: PostgreSQLContainer =>
-    val response = runTestRequest[UploadFailuresResultData](getConsignmentUploadFailuresJsonFilePrefix)("query_alldata", validUserToken(body = defaultBodyCode))
+  "getConsignmentFileCheckFailures" should "exclude the requested consignment when its check is InProgress" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.createConsignment(defaultConsignmentId, userId)
+    utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", InProgressValue.value)
+
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
+
+    response.errors should be(empty)
+    response.data.get.getConsignmentFileCheckFailures should be(empty)
+  }
+
+  "getConsignmentFileCheckFailures" should "reject users who are not TNA users" in withContainers { case _: PostgreSQLContainer =>
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_alldata", validUserToken(body = defaultBodyCode))
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should be("NOT_AUTHORISED")
 
-    val filteredResponse = runTestRequest[UploadFailuresResultData](getConsignmentUploadFailuresJsonFilePrefix)("query_byid", validUserToken(body = defaultBodyCode))
+    val filteredResponse = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validUserToken(body = defaultBodyCode))
 
     filteredResponse.errors should have size 1
     filteredResponse.errors.head.extensions.get.code should be("NOT_AUTHORISED")

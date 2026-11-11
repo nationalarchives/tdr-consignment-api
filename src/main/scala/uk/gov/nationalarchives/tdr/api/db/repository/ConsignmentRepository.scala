@@ -27,7 +27,7 @@ import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{
   ServerFFIDType,
   ServerRedactionType
 }
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{FailedValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.util.UUID
@@ -100,7 +100,7 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignmentUploadFailures(consignmentId: Option[UUID]): Future[Seq[ConsignmentRow]] = {
+  def getConsignmentFileCheckFailures(consignmentId: Option[UUID]): Future[Seq[ConsignmentRow]] = {
     val uploadCheckTypes = Set(ServerChecksumType.id, ServerFFIDType.id, ServerAntivirusType.id, ServerRedactionType.id, ClientChecksType.id)
     val query = Consignment
       .filter(_.consignmenttype === standard)
@@ -109,7 +109,7 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
         Consignmentstatus
           .filter(_.consignmentid === consignment.consignmentid)
           .filter(_.statustype.inSet(uploadCheckTypes))
-          .filter(_.value =!= CompletedValue.value)
+          .filter(_.value === FailedValue.value)
           .exists
       )
     db.run(query.result)
