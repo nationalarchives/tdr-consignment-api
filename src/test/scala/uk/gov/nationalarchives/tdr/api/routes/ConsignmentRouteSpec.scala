@@ -13,7 +13,7 @@ import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Submission}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{MetadataReviewType, UploadType}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, FailedValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -511,12 +511,12 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.data should equal(expectedResponse.data)
   }
 
-  "getConsignment" should "allow TNA users to view standard consignments with failed file checks" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignment" should "allow TNA users to view standard consignments with file checks completed with issues" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
     val tnaUserId = UUID.fromString("c59cd886-6b12-4288-bf64-80c59f6a566a")
     utils.createConsignment(consignmentId, userId)
-    utils.createConsignmentStatus(consignmentId, "ServerChecksum", FailedValue.value)
+    utils.createConsignmentStatus(consignmentId, "ServerChecksum", CompletedWithIssuesValue.value)
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
     val response: GraphqlQueryData = runTestQuery("query_somedata", validTNAUserToken(userId = tnaUserId))
@@ -1030,11 +1030,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
   }
 
-  "getConsignmentFileCheckFailures" should "return standard consignments with Failed upload checks and their statuses for TNA users" in withContainers {
+  "getConsignmentFileCheckFailures" should "return standard consignments with CompletedWithIssues upload checks and their statuses for TNA users" in withContainers {
     case container: PostgreSQLContainer =>
       val utils = TestUtils(container.database)
       utils.createConsignment(defaultConsignmentId, userId, consignmentRef = "TEST-TDR-2024-AFK")
-      utils.createConsignmentStatus(defaultConsignmentId, "ServerChecksum", FailedValue.value)
+      utils.createConsignmentStatus(defaultConsignmentId, "ServerChecksum", CompletedWithIssuesValue.value)
       utils.createConsignmentStatus(defaultConsignmentId, "ServerFFID", InProgressValue.value)
       utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", CompletedValue.value)
       val completedId = UUID.randomUUID()
@@ -1042,11 +1042,11 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       utils.createConsignmentStatus(completedId, "ServerChecksum", CompletedValue.value)
       val judgmentId = UUID.randomUUID()
       utils.createConsignment(judgmentId, userId, consignmentType = "judgment")
-      utils.createConsignmentStatus(judgmentId, "ClientChecks", FailedValue.value)
+      utils.createConsignmentStatus(judgmentId, "ClientChecks", CompletedWithIssuesValue.value)
       val unrelatedId = UUID.randomUUID()
       utils.createConsignment(unrelatedId, userId)
-      utils.createConsignmentStatus(unrelatedId, UploadType.id, FailedValue.value)
-      Seq("InProgress", "CompletedWithIssues", "").foreach { value =>
+      utils.createConsignmentStatus(unrelatedId, UploadType.id, CompletedWithIssuesValue.value)
+      Seq("InProgress", FailedValue.value, "").foreach { value =>
         val nonFailedId = UUID.randomUUID()
         utils.createConsignment(nonFailedId, userId)
         utils.createConsignmentStatus(nonFailedId, "ClientChecks", value)
@@ -1064,7 +1064,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
       consignment.seriesName should be(Some("seriesName"))
       consignment.transferringBodyName should be(Some("transferringBodyName"))
       consignment.consignmentStatuses.map(status => (status.statusType, status.value)) should contain theSameElementsAs Seq(
-        ("ServerChecksum", FailedValue.value),
+        ("ServerChecksum", CompletedWithIssuesValue.value),
         ("ServerFFID", InProgressValue.value),
         ("ClientChecks", CompletedValue.value)
       )
@@ -1073,10 +1073,10 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   "getConsignmentFileCheckFailures" should "return only the requested consignment when an ID is supplied" in withContainers { case container: PostgreSQLContainer =>
     val utils = TestUtils(container.database)
     utils.createConsignment(defaultConsignmentId, userId)
-    utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", FailedValue.value)
+    utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", CompletedWithIssuesValue.value)
     val otherId = UUID.randomUUID()
     utils.createConsignment(otherId, userId)
-    utils.createConsignmentStatus(otherId, "ServerChecksum", FailedValue.value)
+    utils.createConsignmentStatus(otherId, "ServerChecksum", CompletedWithIssuesValue.value)
 
     val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
 
@@ -1093,7 +1093,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
     val utils = TestUtils(container.database)
     val otherId = UUID.randomUUID()
     utils.createConsignment(otherId, userId)
-    utils.createConsignmentStatus(otherId, "ClientChecks", FailedValue.value)
+    utils.createConsignmentStatus(otherId, "ClientChecks", CompletedWithIssuesValue.value)
 
     val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
 

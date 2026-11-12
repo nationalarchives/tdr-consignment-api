@@ -24,7 +24,7 @@ import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.{FixedTimeSource, TestContainerUtils, TestUtils}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
@@ -150,7 +150,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     response.headOption.get.consignmentid should equal(consignmentId)
   }
 
-  "getConsignmentFileCheckFailures" should "return only standard consignments with an explicitly Failed upload check" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignmentFileCheckFailures" should "return only standard consignments with a CompletedWithIssues upload check" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
@@ -158,23 +158,23 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val expectedIds = checkTypes.map { checkType =>
       val id = UUID.randomUUID()
       utils.createConsignment(id, userId)
-      utils.createConsignmentStatus(id, checkType, "Failed")
+      utils.createConsignmentStatus(id, checkType, CompletedWithIssuesValue.value)
       id
     }
 
     checkTypes.foreach { checkType =>
-      Seq("Completed", "InProgress", "CompletedWithIssues", "").foreach { value =>
+      Seq("Completed", "InProgress", FailedValue.value, "").foreach { value =>
         val nonFailedId = UUID.randomUUID()
         utils.createConsignment(nonFailedId, userId)
         utils.createConsignmentStatus(nonFailedId, checkType, value)
       }
       val judgmentId = UUID.randomUUID()
       utils.createConsignment(judgmentId, userId, consignmentType = "judgment")
-      utils.createConsignmentStatus(judgmentId, checkType, "Failed")
+      utils.createConsignmentStatus(judgmentId, checkType, CompletedWithIssuesValue.value)
     }
     val unrelatedId = UUID.randomUUID()
     utils.createConsignment(unrelatedId, userId)
-    utils.createConsignmentStatus(unrelatedId, "Upload", "Failed")
+    utils.createConsignmentStatus(unrelatedId, "Upload", CompletedWithIssuesValue.value)
     utils.createConsignment(UUID.randomUUID(), userId)
 
     val response = consignmentRepository.getConsignmentFileCheckFailures(None).futureValue
@@ -182,13 +182,13 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     response.map(_.consignmentid) should contain theSameElementsAs expectedIds
   }
 
-  "getConsignmentFileCheckFailures" should "return a consignment only once when several checks have failed" in withContainers { case container: PostgreSQLContainer =>
+  "getConsignmentFileCheckFailures" should "return a consignment only once when several checks have CompletedWithIssues" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
     utils.createConsignment(consignmentIdOne, userId)
-    utils.createConsignmentStatus(consignmentIdOne, "ServerChecksum", "Failed")
-    utils.createConsignmentStatus(consignmentIdOne, "ServerFFID", "Failed")
+    utils.createConsignmentStatus(consignmentIdOne, "ServerChecksum", CompletedWithIssuesValue.value)
+    utils.createConsignmentStatus(consignmentIdOne, "ServerFFID", CompletedWithIssuesValue.value)
     utils.createConsignmentStatus(consignmentIdOne, "ClientChecks", "Completed")
 
     val response = consignmentRepository.getConsignmentFileCheckFailures(None).futureValue
@@ -201,7 +201,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
     utils.createConsignment(consignmentIdOne, userId)
-    utils.createConsignmentStatus(consignmentIdOne, "ClientChecks", "Completed")
+    utils.createConsignmentStatus(consignmentIdOne, "ClientChecks", CompletedValue.value)
 
     consignmentRepository.getConsignmentFileCheckFailures(None).futureValue should be(empty)
   }
@@ -211,13 +211,13 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
     val utils = TestUtils(db)
     utils.createConsignment(consignmentIdOne, userId)
-    utils.createConsignmentStatus(consignmentIdOne, "ServerChecksum", "Failed")
+    utils.createConsignmentStatus(consignmentIdOne, "ServerChecksum", CompletedWithIssuesValue.value)
     utils.createConsignment(consignmentIdTwo, userId)
     utils.createConsignmentStatus(consignmentIdTwo, "ServerFFID", "InProgress")
     utils.createConsignment(consignmentIdThree, userId)
     utils.createConsignmentStatus(consignmentIdThree, "ClientChecks", "Completed")
     utils.createConsignment(consignmentIdFour, userId, consignmentType = "judgment")
-    utils.createConsignmentStatus(consignmentIdFour, "ClientChecks", "Failed")
+    utils.createConsignmentStatus(consignmentIdFour, "ClientChecks", CompletedWithIssuesValue.value)
     val noChecksId = UUID.randomUUID()
     utils.createConsignment(noChecksId, userId)
 
@@ -475,18 +475,21 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       response.headOption.get.consignmentid should equal(consignmentId)
   }
 
-  "getConsignmentForTnaAccess" should "return standard consignments with failed file checks but not in-progress, completed or judgment checks" in withContainers {
+  "getConsignmentForTnaAccess" should "return standard consignments with checks completed with issues but not failed, in-progress, completed or judgment checks" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
       val utils = TestUtils(db)
-      val failedCheckTypes = Seq("ServerChecksum", "ServerFFID", "ServerAntivirus", "ServerRedaction", "ClientChecks")
-      val failedConsignmentIds = failedCheckTypes.map { checkType =>
+      val checkTypes = Seq("ServerChecksum", "ServerFFID", "ServerAntivirus", "ServerRedaction", "ClientChecks")
+      val issueConsignmentIds = checkTypes.map { checkType =>
         val id = UUID.randomUUID()
         utils.createConsignment(id, userId)
-        utils.createConsignmentStatus(id, checkType, "Failed")
+        utils.createConsignmentStatus(id, checkType, CompletedWithIssuesValue.value)
         id
       }
+      val failedId = UUID.randomUUID()
+      utils.createConsignment(failedId, userId)
+      utils.createConsignmentStatus(failedId, "ClientChecks", FailedValue.value)
       val inProgressId = UUID.randomUUID()
       utils.createConsignment(inProgressId, userId)
       utils.createConsignmentStatus(inProgressId, "ClientChecks", InProgressValue.value)
@@ -495,12 +498,12 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       utils.createConsignmentStatus(completedId, "ClientChecks", CompletedValue.value)
       val judgmentId = UUID.randomUUID()
       utils.createConsignment(judgmentId, userId, consignmentType = "judgment")
-      utils.createConsignmentStatus(judgmentId, "ClientChecks", "Failed")
+      utils.createConsignmentStatus(judgmentId, "ClientChecks", CompletedWithIssuesValue.value)
 
-      val response = (failedConsignmentIds :+ inProgressId :+ completedId :+ judgmentId)
+      val response = (issueConsignmentIds :+ failedId :+ inProgressId :+ completedId :+ judgmentId)
         .flatMap(consignmentRepository.getConsignmentForTnaAccess(_).futureValue.map(_.consignmentid))
 
-      response should contain theSameElementsAs failedConsignmentIds
+      response should contain theSameElementsAs issueConsignmentIds
   }
 
   "updateSeriesOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>

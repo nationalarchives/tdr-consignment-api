@@ -27,13 +27,15 @@ import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{
   ServerFFIDType,
   ServerRedactionType
 }
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{FailedValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedWithIssuesValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
+
+  private val uploadCheckTypes = Set(ServerChecksumType.id, ServerFFIDType.id, ServerAntivirusType.id, ServerRedactionType.id, ClientChecksType.id)
 
   private val insertQuery = Consignment returning Consignment.map(_.consignmentid) into
     ((consignment, consignmentid) => consignment.copy(consignmentid = consignmentid))
@@ -101,7 +103,6 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
   }
 
   def getConsignmentFileCheckFailures(consignmentId: Option[UUID]): Future[Seq[ConsignmentRow]] = {
-    val uploadCheckTypes = Set(ServerChecksumType.id, ServerFFIDType.id, ServerAntivirusType.id, ServerRedactionType.id, ClientChecksType.id)
     val query = Consignment
       .filter(_.consignmenttype === standard)
       .filterOpt(consignmentId)(_.consignmentid === _)
@@ -109,21 +110,20 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
         Consignmentstatus
           .filter(_.consignmentid === consignment.consignmentid)
           .filter(_.statustype.inSet(uploadCheckTypes))
-          .filter(_.value === FailedValue.value)
+          .filter(_.value === CompletedWithIssuesValue.value)
           .exists
       )
     db.run(query.result)
   }
 
   def getConsignmentForTnaAccess(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
-    val uploadCheckTypes = Set(ServerChecksumType.id, ServerFFIDType.id, ServerAntivirusType.id, ServerRedactionType.id, ClientChecksType.id)
     val query = Consignment
       .join(Consignmentstatus)
       .on(_.consignmentid === _.consignmentid)
       .filter(_._1.consignmentid === consignmentId)
       .filter { case (consignment, status) =>
         (status.statustype === MetadataReviewType.id) ||
-        (consignment.consignmenttype === standard && status.statustype.inSet(uploadCheckTypes) && status.value === FailedValue.value)
+        (consignment.consignmenttype === standard && status.statustype.inSet(uploadCheckTypes) && status.value === CompletedWithIssuesValue.value)
       }
       .map(_._1)
       .distinct
