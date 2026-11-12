@@ -121,9 +121,9 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
       .join(Consignmentstatus)
       .on(_.consignmentid === _.consignmentid)
       .filter(_._1.consignmentid === consignmentId)
-      .filter { case (consignment, status) =>
+      .filter { case (_, status) =>
         (status.statustype === MetadataReviewType.id) ||
-        (consignment.consignmenttype === standard && status.statustype.inSet(uploadCheckTypes) && status.value === CompletedWithIssuesValue.value)
+        (status.statustype.inSet(uploadCheckTypes) && status.value === CompletedWithIssuesValue.value)
       }
       .map(_._1)
       .distinct

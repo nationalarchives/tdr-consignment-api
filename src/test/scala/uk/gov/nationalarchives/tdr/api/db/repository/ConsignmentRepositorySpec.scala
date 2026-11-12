@@ -475,7 +475,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       response.headOption.get.consignmentid should equal(consignmentId)
   }
 
-  "getConsignmentForTnaAccess" should "return standard consignments with checks completed with issues but not failed, in-progress, completed or judgment checks" in withContainers {
+  "getConsignmentForTnaAccess" should "return consignments with checks completed with issues but not failed, in-progress or completed checks" in withContainers {
     case container: PostgreSQLContainer =>
       val db = container.database
       val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
@@ -503,7 +503,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       val response = (issueConsignmentIds :+ failedId :+ inProgressId :+ completedId :+ judgmentId)
         .flatMap(consignmentRepository.getConsignmentForTnaAccess(_).futureValue.map(_.consignmentid))
 
-      response should contain theSameElementsAs issueConsignmentIds
+      response should contain theSameElementsAs (issueConsignmentIds :+ judgmentId)
   }
 
   "updateSeriesOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>
