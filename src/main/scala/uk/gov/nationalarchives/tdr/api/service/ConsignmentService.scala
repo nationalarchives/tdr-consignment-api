@@ -152,8 +152,8 @@ class ConsignmentService(
     }
   }
 
-  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Option[Consignment]] = {
-    val consignment = consignmentRepository.getConsignmentForMetadataReview(consignmentId)
+  def getConsignmentForTnaAccess(consignmentId: UUID): Future[Option[Consignment]] = {
+    val consignment = consignmentRepository.getConsignmentForTnaAccess(consignmentId)
     consignment.map(rows => rows.map(row => convertRowToConsignment(row)).headOption)
   }
 

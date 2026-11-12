@@ -115,13 +115,18 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
+  def getConsignmentForTnaAccess(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
+    val uploadCheckTypes = Set(ServerChecksumType.id, ServerFFIDType.id, ServerAntivirusType.id, ServerRedactionType.id, ClientChecksType.id)
     val query = Consignment
       .join(Consignmentstatus)
       .on(_.consignmentid === _.consignmentid)
       .filter(_._1.consignmentid === consignmentId)
-      .filter(_._2.statustype === MetadataReviewType.id)
+      .filter { case (consignment, status) =>
+        (status.statustype === MetadataReviewType.id) ||
+        (consignment.consignmenttype === standard && status.statustype.inSet(uploadCheckTypes) && status.value === FailedValue.value)
+      }
       .map(_._1)
+      .distinct
     db.run(query.result)
   }
 

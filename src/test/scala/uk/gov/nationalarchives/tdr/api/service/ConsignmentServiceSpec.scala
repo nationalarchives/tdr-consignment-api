@@ -822,7 +822,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response.head.reviewStatus should equal(MetadataReviewStatus.Approved.value)
   }
 
-  "getConsignmentForMetadataReview" should "return a given consignment" in {
+  "getConsignmentForTnaAccess" should "return a given consignment" in {
     val consignmentRow: ConsignmentRow = ConsignmentRow(
       consignmentId,
       Some(seriesId),
@@ -839,9 +839,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringbodytdrcode = Some("transferringBodyTdrCode")
     )
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
-    when(consignmentRepoMock.getConsignmentForMetadataReview(consignmentId)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignmentForTnaAccess(consignmentId)).thenReturn(mockResponse)
 
-    val response: Option[Consignment] = consignmentService.getConsignmentForMetadataReview(consignmentId).futureValue
+    val response: Option[Consignment] = consignmentService.getConsignmentForTnaAccess(consignmentId).futureValue
 
     val consignment: Consignment = response.get
     consignment.consignmentid should equal(consignmentId)
@@ -852,11 +852,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
   }
 
-  "getConsignmentForMetadataReview" should "not return any consignment if the consignment doesn't exist" in {
+  "getConsignmentForTnaAccess" should "not return any consignment if the consignment doesn't exist" in {
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
-    when(consignmentRepoMock.getConsignmentForMetadataReview(consignmentId)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignmentForTnaAccess(consignmentId)).thenReturn(mockResponse)
 
-    val response: Option[Consignment] = consignmentService.getConsignmentForMetadataReview(consignmentId).futureValue
+    val response: Option[Consignment] = consignmentService.getConsignmentForTnaAccess(consignmentId).futureValue
     response should equal(None)
   }
 

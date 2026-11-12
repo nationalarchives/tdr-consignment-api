@@ -99,9 +99,9 @@ case class ValidateUserHasAccessToConsignment[T](argument: Argument[T], updateCo
     }
     for {
       consignment <- ctx.ctx.consignmentService.getConsignment(consignmentId)
-      canReviewConsignment <- if (tnaUserAccess) ctx.ctx.consignmentService.getConsignmentForMetadataReview(consignmentId) else Future(None)
+      tnaAccessibleConsignment <- if (tnaUserAccess) ctx.ctx.consignmentService.getConsignmentForTnaAccess(consignmentId) else Future(None)
     } yield {
-      if (consignment.isDefined && (consignment.get.userid == userId || hasAccess || canReviewConsignment.isDefined)) {
+      if (consignment.isDefined && (consignment.get.userid == userId || hasAccess || tnaAccessibleConsignment.isDefined)) {
         continue
       } else {
         throw AuthorisationException(s"User '$userId' does not have access to consignment '$consignmentId'")

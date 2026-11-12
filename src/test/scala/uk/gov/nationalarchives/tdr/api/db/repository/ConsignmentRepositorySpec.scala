@@ -430,7 +430,7 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
     response.map(_.consignmentid).toSet should equal(Set(consignmentId, consignmentId2))
   }
 
-  "getConsignmentForMetadataReview" should "return the matching consignment when the `MetadataReview` status set to `InProgress`" in withContainers {
+  "getConsignmentForTnaAccess" should "return the matching consignment when the `MetadataReview` status set to `InProgress`" in withContainers {
     case container: PostgreSQLContainer =>
       val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
       val db = container.database
@@ -439,13 +439,13 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, MetadataReviewType.id, InProgressValue.value)
 
-      val response = consignmentRepository.getConsignmentForMetadataReview(consignmentId).futureValue
+      val response = consignmentRepository.getConsignmentForTnaAccess(consignmentId).futureValue
 
       response should have size 1
       response.headOption.get.consignmentid should equal(consignmentId)
   }
 
-  "getConsignmentForMetadataReview" should "return the matching consignment when the 'MetadataReview' status set to `CompletedWithIssues`" in withContainers {
+  "getConsignmentForTnaAccess" should "return the matching consignment when the 'MetadataReview' status set to `CompletedWithIssues`" in withContainers {
     case container: PostgreSQLContainer =>
       val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
       val db = container.database
@@ -454,13 +454,13 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, MetadataReviewType.id, CompletedWithIssuesValue.value)
 
-      val response = consignmentRepository.getConsignmentForMetadataReview(consignmentId).futureValue
+      val response = consignmentRepository.getConsignmentForTnaAccess(consignmentId).futureValue
 
       response should have size 1
       response.headOption.get.consignmentid should equal(consignmentId)
   }
 
-  "getConsignmentForMetadataReview" should "return the matching consignment when the 'MetadataReview' status set to `Completed`" in withContainers {
+  "getConsignmentForTnaAccess" should "return the matching consignment when the 'MetadataReview' status set to `Completed`" in withContainers {
     case container: PostgreSQLContainer =>
       val consignmentId = UUID.fromString("a3088f8a-59a3-4ab3-9e50-1677648e8186")
       val db = container.database
@@ -469,10 +469,38 @@ class ConsignmentRepositorySpec extends TestContainerUtils with ScalaFutures wit
       utils.createConsignment(consignmentId, userId)
       utils.createConsignmentStatus(consignmentId, MetadataReviewType.id, CompletedValue.value)
 
-      val response = consignmentRepository.getConsignmentForMetadataReview(consignmentId).futureValue
+      val response = consignmentRepository.getConsignmentForTnaAccess(consignmentId).futureValue
 
       response should have size 1
       response.headOption.get.consignmentid should equal(consignmentId)
+  }
+
+  "getConsignmentForTnaAccess" should "return standard consignments with failed file checks but not in-progress, completed or judgment checks" in withContainers {
+    case container: PostgreSQLContainer =>
+      val db = container.database
+      val consignmentRepository = new ConsignmentRepository(db, new CurrentTimeSource)
+      val utils = TestUtils(db)
+      val failedCheckTypes = Seq("ServerChecksum", "ServerFFID", "ServerAntivirus", "ServerRedaction", "ClientChecks")
+      val failedConsignmentIds = failedCheckTypes.map { checkType =>
+        val id = UUID.randomUUID()
+        utils.createConsignment(id, userId)
+        utils.createConsignmentStatus(id, checkType, "Failed")
+        id
+      }
+      val inProgressId = UUID.randomUUID()
+      utils.createConsignment(inProgressId, userId)
+      utils.createConsignmentStatus(inProgressId, "ClientChecks", InProgressValue.value)
+      val completedId = UUID.randomUUID()
+      utils.createConsignment(completedId, userId)
+      utils.createConsignmentStatus(completedId, "ClientChecks", CompletedValue.value)
+      val judgmentId = UUID.randomUUID()
+      utils.createConsignment(judgmentId, userId, consignmentType = "judgment")
+      utils.createConsignmentStatus(judgmentId, "ClientChecks", "Failed")
+
+      val response = (failedConsignmentIds :+ inProgressId :+ completedId :+ judgmentId)
+        .flatMap(consignmentRepository.getConsignmentForTnaAccess(_).futureValue.map(_.consignmentid))
+
+      response should contain theSameElementsAs failedConsignmentIds
   }
 
   "updateSeriesOfConsignment" should "update id and name of the consignment" in withContainers { case container: PostgreSQLContainer =>
