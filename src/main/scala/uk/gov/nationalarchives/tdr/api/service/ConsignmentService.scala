@@ -135,6 +135,10 @@ class ConsignmentService(
     consignmentRepository.getConsignmentsForMetadataReview.map(rows => rows.map(row => convertRowToConsignment(row)))
   }
 
+  def getConsignmentFileCheckFailures(consignmentId: Option[UUID]): Future[Seq[Consignment]] = {
+    consignmentRepository.getConsignmentFileCheckFailures(consignmentId).map(rows => rows.map(row => convertRowToConsignment(row)))
+  }
+
   def getConsignmentReviewDetails(statusFilter: Option[String]): Future[Seq[ConsignmentReviewDetails]] = {
     for {
       consignmentRows <- consignmentRepository.getConsignmentsWithMetadataReviewStatus
@@ -148,8 +152,8 @@ class ConsignmentService(
     }
   }
 
-  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Option[Consignment]] = {
-    val consignment = consignmentRepository.getConsignmentForMetadataReview(consignmentId)
+  def getConsignmentForTnaAccess(consignmentId: UUID): Future[Option[Consignment]] = {
+    val consignment = consignmentRepository.getConsignmentForTnaAccess(consignmentId)
     consignment.map(rows => rows.map(row => convertRowToConsignment(row)).headOption)
   }
 

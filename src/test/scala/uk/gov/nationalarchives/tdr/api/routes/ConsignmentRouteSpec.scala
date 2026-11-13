@@ -13,7 +13,7 @@ import uk.gov.nationalarchives.tdr.api.service.FileMetadataService._
 import uk.gov.nationalarchives.tdr.api.service.ReferenceGeneratorService.Reference
 import uk.gov.nationalarchives.tdr.common.utils.statuses.MetadataReviewLogAction.{Approval, Submission}
 import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{MetadataReviewType, UploadType}
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, FailedValue, InProgressValue}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedValue, CompletedWithIssuesValue, FailedValue, InProgressValue}
 import uk.gov.nationalarchives.tdr.api.utils.TestAuthUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestContainerUtils._
 import uk.gov.nationalarchives.tdr.api.utils.TestUtils._
@@ -35,6 +35,7 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   private val updateClientSideDraftMetadataFileNamePrefix: String = "json/updateconsignment_draft_metadata_filename_"
   private val getConsignmentForMetadataReviewJsonFilePrefix: String = "json/getconsignmentsformetadatareview_"
   private val getConsignmentReviewDetailsJsonFilePrefix: String = "json/getconsignmentreviewdetails_"
+  private val getConsignmentFileCheckFailuresJsonFilePrefix: String = "json/getconsignmentfilecheckfailures_"
   private val updateParentFolderJsonFilePrefix: String = "json/updateparentfolder_"
 
   val defaultConsignmentId: UUID = UUID.fromString("b130e097-2edc-4e67-a7e9-5364a09ae9cb")
@@ -73,6 +74,19 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
   case class MetadataReviewDetailsResult(getConsignmentReviewDetails: List[MetadataReviewDetailsResponse])
 
   case class MetadataReviewDetailsResultData(data: Option[MetadataReviewDetailsResult], errors: List[GraphqlError] = Nil)
+
+  case class UploadFailureResponse(
+      consignmentid: UUID,
+      consignmentReference: String,
+      consignmentType: String,
+      seriesName: Option[String],
+      transferringBodyName: Option[String],
+      consignmentStatuses: List[ConsignmentStatus]
+  )
+
+  case class UploadFailuresResult(getConsignmentFileCheckFailures: List[UploadFailureResponse])
+
+  case class UploadFailuresResultData(data: Option[UploadFailuresResult], errors: List[GraphqlError] = Nil)
 
   case class GraphqlConsignmentsQueryData(data: Option[ConsignmentConnections], errors: List[GraphqlError] = Nil)
 
@@ -494,6 +508,19 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
     val response: GraphqlQueryData = runTestQuery("query_somedata", validTNAUserToken(userId = tnaUserId))
+    response.data should equal(expectedResponse.data)
+  }
+
+  "getConsignment" should "allow TNA users to view standard consignments with file checks completed with issues" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val consignmentId = UUID.fromString("6e3b76c4-1745-4467-8ac5-b4dd736e1b3e")
+    val tnaUserId = UUID.fromString("c59cd886-6b12-4288-bf64-80c59f6a566a")
+    utils.createConsignment(consignmentId, userId)
+    utils.createConsignmentStatus(consignmentId, "ServerChecksum", CompletedWithIssuesValue.value)
+
+    val expectedResponse: GraphqlQueryData = expectedQueryResponse("data_some")
+    val response: GraphqlQueryData = runTestQuery("query_somedata", validTNAUserToken(userId = tnaUserId))
+
     response.data should equal(expectedResponse.data)
   }
 
@@ -1001,6 +1028,107 @@ class ConsignmentRouteSpec extends TestContainerUtils with Matchers with TestReq
 
     response.errors should have size 1
     response.errors.head.extensions.get.code should equal("NOT_AUTHORISED")
+  }
+
+  "getConsignmentFileCheckFailures" should "return standard consignments with CompletedWithIssues upload checks and their statuses for TNA users" in withContainers {
+    case container: PostgreSQLContainer =>
+      val utils = TestUtils(container.database)
+      utils.createConsignment(defaultConsignmentId, userId, consignmentRef = "TEST-TDR-2024-AFK")
+      utils.createConsignmentStatus(defaultConsignmentId, "ServerChecksum", CompletedWithIssuesValue.value)
+      utils.createConsignmentStatus(defaultConsignmentId, "ServerFFID", InProgressValue.value)
+      utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", CompletedValue.value)
+      val completedId = UUID.randomUUID()
+      utils.createConsignment(completedId, userId)
+      utils.createConsignmentStatus(completedId, "ServerChecksum", CompletedValue.value)
+      val judgmentId = UUID.randomUUID()
+      utils.createConsignment(judgmentId, userId, consignmentType = "judgment")
+      utils.createConsignmentStatus(judgmentId, "ClientChecks", CompletedWithIssuesValue.value)
+      val unrelatedId = UUID.randomUUID()
+      utils.createConsignment(unrelatedId, userId)
+      utils.createConsignmentStatus(unrelatedId, UploadType.id, CompletedWithIssuesValue.value)
+      Seq("InProgress", FailedValue.value, "").foreach { value =>
+        val nonFailedId = UUID.randomUUID()
+        utils.createConsignment(nonFailedId, userId)
+        utils.createConsignmentStatus(nonFailedId, "ClientChecks", value)
+      }
+
+      val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_alldata", validTNAUserToken(body = defaultBodyCode))
+
+      response.errors should be(empty)
+      val consignments = response.data.get.getConsignmentFileCheckFailures
+      consignments should have size 1
+      val consignment = consignments.head
+      consignment.consignmentid should be(defaultConsignmentId)
+      consignment.consignmentReference should be("TEST-TDR-2024-AFK")
+      consignment.consignmentType should be("standard")
+      consignment.seriesName should be(Some("seriesName"))
+      consignment.transferringBodyName should be(Some("transferringBodyName"))
+      consignment.consignmentStatuses.map(status => (status.statusType, status.value)) should contain theSameElementsAs Seq(
+        ("ServerChecksum", CompletedWithIssuesValue.value),
+        ("ServerFFID", InProgressValue.value),
+        ("ClientChecks", CompletedValue.value)
+      )
+  }
+
+  "getConsignmentFileCheckFailures" should "return only the requested consignment when an ID is supplied" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.createConsignment(defaultConsignmentId, userId)
+    utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", CompletedWithIssuesValue.value)
+    val otherId = UUID.randomUUID()
+    utils.createConsignment(otherId, userId)
+    utils.createConsignmentStatus(otherId, "ServerChecksum", CompletedWithIssuesValue.value)
+
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
+
+    response.errors should be(empty)
+    response.data.get.getConsignmentFileCheckFailures.map(_.consignmentid) should be(List(defaultConsignmentId))
+
+    val nullResponse = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_nullid", validTNAUserToken(body = defaultBodyCode))
+
+    nullResponse.errors should be(empty)
+    nullResponse.data.get.getConsignmentFileCheckFailures.map(_.consignmentid) should contain theSameElementsAs List(defaultConsignmentId, otherId)
+  }
+
+  "getConsignmentFileCheckFailures" should "return an empty list when the requested ID does not match" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    val otherId = UUID.randomUUID()
+    utils.createConsignment(otherId, userId)
+    utils.createConsignmentStatus(otherId, "ClientChecks", CompletedWithIssuesValue.value)
+
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
+
+    response.errors should be(empty)
+    response.data.get.getConsignmentFileCheckFailures should be(empty)
+  }
+
+  "getConsignmentFileCheckFailures" should "return an empty list when there are no matching consignments" in withContainers { case _: PostgreSQLContainer =>
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_alldata", validTNAUserToken(body = defaultBodyCode))
+
+    response.errors should be(empty)
+    response.data.get.getConsignmentFileCheckFailures should be(empty)
+  }
+
+  "getConsignmentFileCheckFailures" should "exclude the requested consignment when its check is InProgress" in withContainers { case container: PostgreSQLContainer =>
+    val utils = TestUtils(container.database)
+    utils.createConsignment(defaultConsignmentId, userId)
+    utils.createConsignmentStatus(defaultConsignmentId, "ClientChecks", InProgressValue.value)
+
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validTNAUserToken(body = defaultBodyCode))
+
+    response.errors should be(empty)
+    response.data.get.getConsignmentFileCheckFailures should be(empty)
+  }
+
+  "getConsignmentFileCheckFailures" should "reject users who are not TNA users" in withContainers { case _: PostgreSQLContainer =>
+    val response = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_alldata", validUserToken(body = defaultBodyCode))
+
+    response.errors should have size 1
+    response.errors.head.extensions.get.code should be("NOT_AUTHORISED")
+
+    val filteredResponse = runTestRequest[UploadFailuresResultData](getConsignmentFileCheckFailuresJsonFilePrefix)("query_byid", validUserToken(body = defaultBodyCode))
+
+    filteredResponse.errors should have size 1
+    filteredResponse.errors.head.extensions.get.code should be("NOT_AUTHORISED")
   }
 
   "startUpload" should "add the upload status, update the parent folder and 'IncludeTopLevelFolder' fields" in withContainers { case container: PostgreSQLContainer =>

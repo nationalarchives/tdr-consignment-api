@@ -94,6 +94,34 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     ConfigFactory.load()
   )
 
+  "getConsignmentFileCheckFailures" should "convert matching rows to consignments" in {
+    when(consignmentRepoMock.getConsignmentFileCheckFailures(None)).thenReturn(Future.successful(Seq(mockConsignment)))
+
+    val response = consignmentService.getConsignmentFileCheckFailures(None).futureValue
+
+    response should have size 1
+    response.head.consignmentid should be(consignmentId)
+    response.head.consignmentReference should be(consignmentReference)
+    response.head.consignmentType should be("standard")
+    response.head.seriesName should be(Some(seriesName))
+    response.head.transferringBodyName should be(Some(bodyName))
+  }
+
+  "getConsignmentFileCheckFailures" should "return an empty list when there are no matching consignments" in {
+    when(consignmentRepoMock.getConsignmentFileCheckFailures(None)).thenReturn(Future.successful(Seq.empty))
+
+    consignmentService.getConsignmentFileCheckFailures(None).futureValue should be(empty)
+  }
+
+  "getConsignmentFileCheckFailures" should "pass the optional consignment ID to the repository" in {
+    when(consignmentRepoMock.getConsignmentFileCheckFailures(Some(consignmentId))).thenReturn(Future.successful(Seq(mockConsignment)))
+
+    val response = consignmentService.getConsignmentFileCheckFailures(Some(consignmentId)).futureValue
+
+    response.map(_.consignmentid) should be(Seq(consignmentId))
+    verify(consignmentRepoMock).getConsignmentFileCheckFailures(Some(consignmentId))
+  }
+
   "addConsignment" should "create a standard consignment given correct arguments and assign body from the series" in {
     val mockConsignmentSeq = 5L
     val mockToken = mock[Token]
@@ -794,7 +822,7 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     response.head.reviewStatus should equal(MetadataReviewStatus.Approved.value)
   }
 
-  "getConsignmentForMetadataReview" should "return a given consignment" in {
+  "getConsignmentForTnaAccess" should "return a given consignment" in {
     val consignmentRow: ConsignmentRow = ConsignmentRow(
       consignmentId,
       Some(seriesId),
@@ -811,9 +839,9 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
       transferringbodytdrcode = Some("transferringBodyTdrCode")
     )
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq(consignmentRow))
-    when(consignmentRepoMock.getConsignmentForMetadataReview(consignmentId)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignmentForTnaAccess(consignmentId)).thenReturn(mockResponse)
 
-    val response: Option[Consignment] = consignmentService.getConsignmentForMetadataReview(consignmentId).futureValue
+    val response: Option[Consignment] = consignmentService.getConsignmentForTnaAccess(consignmentId).futureValue
 
     val consignment: Consignment = response.get
     consignment.consignmentid should equal(consignmentId)
@@ -824,11 +852,11 @@ class ConsignmentServiceSpec extends AnyFlatSpec with MockitoSugar with ResetMoc
     consignment.transferringBodyTdrCode should equal(consignmentRow.transferringbodytdrcode)
   }
 
-  "getConsignmentForMetadataReview" should "not return any consignment if the consignment doesn't exist" in {
+  "getConsignmentForTnaAccess" should "not return any consignment if the consignment doesn't exist" in {
     val mockResponse: Future[Seq[ConsignmentRow]] = Future.successful(Seq())
-    when(consignmentRepoMock.getConsignmentForMetadataReview(consignmentId)).thenReturn(mockResponse)
+    when(consignmentRepoMock.getConsignmentForTnaAccess(consignmentId)).thenReturn(mockResponse)
 
-    val response: Option[Consignment] = consignmentService.getConsignmentForMetadataReview(consignmentId).futureValue
+    val response: Option[Consignment] = consignmentService.getConsignmentForTnaAccess(consignmentId).futureValue
     response should equal(None)
   }
 

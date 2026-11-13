@@ -18,14 +18,24 @@ import uk.gov.nationalarchives.tdr.api.graphql.fields.ConsignmentFields.{
 }
 import uk.gov.nationalarchives.tdr.api.service.{TimeSource, UpdateConsignmentBodyInput, UpdateConsignmentSeriesInput}
 import uk.gov.nationalarchives.tdr.api.utils.TimeUtils.ZonedDateTimeUtils
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.MetadataReviewType
-import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.InProgressValue
+import uk.gov.nationalarchives.tdr.api.model.consignment.ConsignmentType.standard
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusTypes.{
+  ClientChecksType,
+  MetadataReviewType,
+  ServerAntivirusType,
+  ServerChecksumType,
+  ServerFFIDType,
+  ServerRedactionType
+}
+import uk.gov.nationalarchives.tdr.common.utils.statuses.StatusValues.{CompletedWithIssuesValue, InProgressValue}
 
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
+
+  private val uploadCheckTypes = Set(ServerChecksumType.id, ServerFFIDType.id, ServerAntivirusType.id, ServerRedactionType.id, ClientChecksType.id)
 
   private val insertQuery = Consignment returning Consignment.map(_.consignmentid) into
     ((consignment, consignmentid) => consignment.copy(consignmentid = consignmentid))
@@ -92,13 +102,31 @@ class ConsignmentRepository(db: JdbcBackend#Database, timeSource: TimeSource) {
     db.run(query.result)
   }
 
-  def getConsignmentForMetadataReview(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
+  def getConsignmentFileCheckFailures(consignmentId: Option[UUID]): Future[Seq[ConsignmentRow]] = {
+    val query = Consignment
+      .filter(_.consignmenttype === standard)
+      .filterOpt(consignmentId)(_.consignmentid === _)
+      .filter(consignment =>
+        Consignmentstatus
+          .filter(_.consignmentid === consignment.consignmentid)
+          .filter(_.statustype.inSet(uploadCheckTypes))
+          .filter(_.value === CompletedWithIssuesValue.value)
+          .exists
+      )
+    db.run(query.result)
+  }
+
+  def getConsignmentForTnaAccess(consignmentId: UUID): Future[Seq[ConsignmentRow]] = {
     val query = Consignment
       .join(Consignmentstatus)
       .on(_.consignmentid === _.consignmentid)
       .filter(_._1.consignmentid === consignmentId)
-      .filter(_._2.statustype === MetadataReviewType.id)
+      .filter { case (_, status) =>
+        (status.statustype === MetadataReviewType.id) ||
+        (status.statustype.inSet(uploadCheckTypes) && status.value === CompletedWithIssuesValue.value)
+      }
       .map(_._1)
+      .distinct
     db.run(query.result)
   }
 
