@@ -72,6 +72,42 @@ class FileStatusRepositorySpec extends TestContainerUtils with ScalaFutures with
     response.head.fileid shouldBe fileOneId
   }
 
+  "countFileStatusByType" should "return a count per status type, scoped to the consignment" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileStatusRepository = new FileStatusRepository(db)
+    val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
+    val otherConsignmentId = UUID.fromString("9c2b1c18-9a6e-4a4e-8b0e-3c7a4b0c5d2f")
+    val fileThreeId = UUID.fromString("5a1f8d1a-9f2c-4f1e-93a3-7b0a2d6c4e88")
+    utils.createConsignment(consignmentId, userId, consignmentRef = "TDR-2024-COUNT1")
+    utils.createConsignment(otherConsignmentId, userId, consignmentRef = "TDR-2024-COUNT2")
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFile(fileTwoId, consignmentId)
+    utils.createFile(fileThreeId, otherConsignmentId)
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, FFID, "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), fileTwoId, FFID, "Failed")
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, ChecksumMatch, "Success")
+    utils.createFileStatusValues(UUID.randomUUID(), fileThreeId, FFID, "Success")
+
+    val response = fileStatusRepository.countFileStatusByType(consignmentId, Set(FFID, ChecksumMatch)).futureValue
+
+    response.toMap shouldBe Map(FFID -> 2, ChecksumMatch -> 1)
+  }
+
+  "countFileStatusByType" should "omit status types that have no rows" in withContainers { case container: PostgreSQLContainer =>
+    val db = container.database
+    val utils = TestUtils(db)
+    val fileStatusRepository = new FileStatusRepository(db)
+    val consignmentId = UUID.fromString("f25fc436-12f1-48e8-8e1a-3fada106940a")
+    utils.createConsignment(consignmentId, userId)
+    utils.createFile(fileOneId, consignmentId)
+    utils.createFileStatusValues(UUID.randomUUID(), fileOneId, FFID, "Success")
+
+    val response = fileStatusRepository.countFileStatusByType(consignmentId, Set(FFID, ChecksumMatch)).futureValue
+
+    response.toMap shouldBe Map(FFID -> 1)
+  }
+
   "getDistinctFileStatusValues" should "return the distinct status type and value combinations for the consignment" in withContainers { case container: PostgreSQLContainer =>
     val db = container.database
     val utils = TestUtils(db)

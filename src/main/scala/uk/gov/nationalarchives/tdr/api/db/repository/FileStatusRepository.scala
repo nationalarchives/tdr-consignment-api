@@ -39,6 +39,20 @@ class FileStatusRepository(db: JdbcBackend#Database)(implicit val executionConte
     db.run(query.result)
   }
 
+  /** Counts the file status rows of each given type without transferring them to the API. The file checks progress query is polled throughout an upload, so returning one row per
+    * status type rather than one row per file keeps its cost independent of the size of the consignment.
+    */
+  def countFileStatusByType(consignmentId: UUID, statusTypes: Set[String]): Future[Seq[(String, Int)]] = {
+    val query = Filestatus
+      .join(File)
+      .on(_.fileid === _.fileid)
+      .filter(_._2.consignmentid === consignmentId)
+      .filter(_._1.statustype inSetBind statusTypes)
+      .groupBy(_._1.statustype)
+      .map { case (statusType, rows) => statusType -> rows.length }
+    db.run(query.result)
+  }
+
   def getDistinctFileStatusValues(consignmentId: UUID, statusTypes: Set[String]): Future[Seq[(String, String)]] = {
     val query = Filestatus
       .join(File)
