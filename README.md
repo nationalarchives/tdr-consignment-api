@@ -54,6 +54,53 @@ These can be found in "Settings > Branches" under the `master` branch.
 
 The branch status checks are run when a pull request is raised and will get stuck if it tries to run a check on a test that is no longer present. You can remove the test at this point and the checks will carry on to completion.   
 
+#### Manual file checks progress / health check investigation
+
+`src/test/scala/uk/gov/nationalarchives/tdr/api/manual/FileChecksProgressHealthCheck.scala` is a manual harness for investigating the
+`healthcheck-full` timeouts seen on staging while a client polls the `fileChecks` progress of a consignment with a very large number of
+`FileStatus` rows.
+
+It runs the file checks progress query against a deployed environment and, at the same time, polls `/healthcheck` and `/healthcheck-full`
+every second, so you can see whether and for how long the health check endpoints stop responding while the query is in flight. It prints a
+baseline, a live timeline and a summary, then fails if any health check did not return a 200 while the query was running.
+
+A single query is cheap (around 200ms for a consignment with 8000 files), so to reproduce the outage you need **concurrency and duration**
+rather than a big consignment:
+
+```shell
+TDR_CONCURRENT_QUERIES=50 TDR_QUERY_REPEAT_SECONDS=120 sbt "testOnly *FileChecksProgressHealthCheck"
+```
+
+It is deliberately not named `*Spec` so the CI test matrix (one job per `*Spec.scala` file) does not pick it up, and it cancels itself
+unless `TDR_CONSIGNMENT_ID` is set.
+
+```shell
+# Credentials for the environment's AWS account, used to read the Keycloak client secret from Parameter Store
+export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_SESSION_TOKEN=...
+export TDR_CONSIGNMENT_ID=<a staging consignment with a lot of file statuses>
+sbt "testOnly *FileChecksProgressHealthCheck"
+```
+
+Optional environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `TDR_ENVIRONMENT` | `staging` | Environment to point at. Used to derive the API, auth and SSM parameter paths |
+| `TDR_API_URL` | `https://api.tdr-$TDR_ENVIRONMENT.nationalarchives.gov.uk` | API base URL |
+| `TDR_AUTH_URL` | `https://auth.tdr-$TDR_ENVIRONMENT.nationalarchives.gov.uk` | Keycloak base URL |
+| `TDR_QUERY` | `summary` | `summary` is the query the file checks page polls. `full` also loads every file and its statuses |
+| `TDR_CONCURRENT_QUERIES` | `1` | How many clients send the query at the same time |
+| `TDR_QUERY_REPEAT_SECONDS` | `0` | How long each client keeps re-sending the query. `0` sends it once |
+| `TDR_ACCESS_TOKEN` | | Use an existing bearer token instead of fetching a service account one |
+| `TDR_CLIENT_ID` | `tdr-backend-checks` | Keycloak client to authenticate as. It needs the `export` role to read any consignment |
+| `TDR_CLIENT_SECRET` | | The client secret. If not set it is read from Parameter Store |
+| `TDR_CLIENT_SECRET_PATH` | `/$TDR_ENVIRONMENT/keycloak/backend_checks_client/secret` | Parameter Store path for the client secret |
+| `TDR_HEALTHCHECK_INTERVAL_SECONDS` | `1` | How often to poll the health check endpoints |
+| `TDR_HEALTHCHECK_TIMEOUT_SECONDS` | `10` | Read timeout for a health check request |
+| `TDR_QUERY_TIMEOUT_SECONDS` | `300` | Read timeout for the file checks progress query |
+| `TDR_SLOW_QUERY_MILLIS` | `1000` | Queries slower than this are logged live. Other successful queries are only counted |
+| `TDR_COOL_DOWN_SECONDS` | `15` | How long to carry on polling after the load has finished |
+
 ### Graphql Schema
 
 We are now storing the current Graphql schema in the `schema.graphql` file in the root of the project. If you make changes to the API which cause a schema change, you will need to update this file with the contents of the newly generated schema, otherwise the test build will fail.
