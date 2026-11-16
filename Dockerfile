@@ -11,8 +11,10 @@ RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
 COPY target/scala-2.13/consignmentapi.jar /api
 
 USER apiuser
+# The JVM defaults to a maximum heap of 25% of the container memory limit, which leaves most of the
+# task's memory unused. The three -D arguments that used to follow -jar were passed to the application
+# rather than the JVM, and ApiServer ignores its arguments, so they had no effect and have been removed.
 CMD java -Dconfig.resource=application.$ENVIRONMENT.conf \
-            -jar /api/consignmentapi.jar \
-            -Dconsignmentapi.db.user=$DB_USER \
-            -Dconsignmentapi.db.url=jdbc:mysql://$DB_URL:3306/consignmentapi \
-            -Dauth.url=$AUTH_URL
+            -XX:MaxRAMPercentage=75.0 \
+            -XX:+ExitOnOutOfMemoryError \
+            -jar /api/consignmentapi.jar
