@@ -11,8 +11,8 @@ RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
 COPY target/scala-2.13/consignmentapi.jar /api
 
 USER apiuser
+# Override the JVM's default maximum heap of 25% of container memory.
 CMD java -Dconfig.resource=application.$ENVIRONMENT.conf \
-            -jar /api/consignmentapi.jar \
-            -Dconsignmentapi.db.user=$DB_USER \
-            -Dconsignmentapi.db.url=jdbc:mysql://$DB_URL:3306/consignmentapi \
-            -Dauth.url=$AUTH_URL
+            -XX:MaxRAMPercentage=75.0 \
+            -XX:+ExitOnOutOfMemoryError \
+            -jar /api/consignmentapi.jar
