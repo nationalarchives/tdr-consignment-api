@@ -11,8 +11,10 @@ RUN addgroup --system apigroup && adduser --system apiuser -G apigroup && \
 COPY target/scala-2.13/consignmentapi.jar /api
 
 USER apiuser
-CMD java -Dconfig.resource=application.$ENVIRONMENT.conf \
+# Mitigate CVE-2026-114938 until the Java 17 package includes the fix.
+CMD ["sh", "-c", "exec java -XX:-UseBASE64Intrinsics \
+            \"-Dconfig.resource=application.$ENVIRONMENT.conf\" \
             -jar /api/consignmentapi.jar \
-            -Dconsignmentapi.db.user=$DB_USER \
-            -Dconsignmentapi.db.url=jdbc:mysql://$DB_URL:3306/consignmentapi \
-            -Dauth.url=$AUTH_URL
+            \"-Dconsignmentapi.db.user=$DB_USER\" \
+            \"-Dconsignmentapi.db.url=jdbc:mysql://$DB_URL:3306/consignmentapi\" \
+            \"-Dauth.url=$AUTH_URL\""]
