@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.tdr.api.service
 
 import cats.implicits.catsSyntaxOptionId
 import com.typesafe.config.{Config, ConfigFactory}
+import nl.altindag.log.LogCaptor
 import org.mockito.ArgumentMatchers._
 import org.mockito.{ArgumentCaptor, ArgumentMatchers, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
@@ -31,7 +32,7 @@ import java.sql.Timestamp
 import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with ScalaFutures with TableDrivenPropertyChecks {
@@ -629,6 +630,131 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       }
     }
     verify(consignmentStatusRepositoryMock, times(0)).updateConsignmentStatus(any[UUID], any[String], any[String], any[Timestamp])
+  }
+
+  "addFile" should "return file matches after the first batch and continue sequential inserts in the background" in {
+    val repository = mock[FileRepository]
+    val firstBatch = Promise[Unit]()
+    val secondBatch = Promise[Unit]()
+    val finalBatch = Promise[Unit]()
+    when(repository.addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]()))
+      .thenReturn(firstBatch.future, secondBatch.future, finalBatch.future)
+    when(consignmentServiceMock.getConsignment(consignmentId1)).thenReturn(Future.successful(mockConsignment.some))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
+    val config = ConfigFactory.parseString("fileUpload { batchSize = 2, maxConcurrency = 1 }").withFallback(ConfigFactory.load())
+    val service = setupFileService(config = config, fileRepository = repository, serviceExecutionContext = ExecutionContext.parasitic)
+
+    val response = service.addFile(setupMetadataInput(consignmentId1), userId)
+
+    verify(repository, times(1)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    response.isCompleted shouldBe false
+
+    firstBatch.success(())
+    verify(repository, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    response.futureValue.map(_.matchId).toSet shouldBe Set("1", "2")
+    secondBatch.isCompleted shouldBe false
+
+    secondBatch.success(())
+    verify(repository, times(3)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    finalBatch.isCompleted shouldBe false
+
+    finalBatch.success(())
+    response.futureValue.map(_.matchId).toSet shouldBe Set("1", "2")
+    val fileRowCaptor: ArgumentCaptor[List[FileRow]] = ArgumentCaptor.forClass(classOf[List[FileRow]])
+    verify(repository, times(3)).addFiles(fileRowCaptor.capture(), any[List[FilemetadataRow]]())
+    fileRowCaptor.getAllValues.asScala.map(_.size).toList shouldBe List(2, 2, 1)
+  }
+
+  "addFile" should "log a background batch failure and stop subsequent batches after returning file matches" in {
+    val repository = mock[FileRepository]
+    val firstBatch = Promise[Unit]()
+    val secondBatch = Promise[Unit]()
+    val failure = new RuntimeException("Batch insert failed")
+    when(repository.addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]()))
+      .thenReturn(firstBatch.future, secondBatch.future, Future.successful(()))
+    when(consignmentServiceMock.getConsignment(consignmentId1)).thenReturn(Future.successful(mockConsignment.some))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
+    val config = ConfigFactory.parseString("fileUpload { batchSize = 2, maxConcurrency = 1 }").withFallback(ConfigFactory.load())
+    val service = setupFileService(config = config, fileRepository = repository, serviceExecutionContext = ExecutionContext.parasitic)
+
+    val logCaptor = LogCaptor.forClass(classOf[FileService])
+    try {
+      val response = service.addFile(setupMetadataInput(consignmentId1), userId)
+      firstBatch.success(())
+      response.futureValue.map(_.matchId).toSet shouldBe Set("1", "2")
+      secondBatch.failure(failure)
+
+      response.futureValue.map(_.matchId).toSet shouldBe Set("1", "2")
+      verify(repository, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+      logCaptor.getErrorLogs.asScala.toList should contain(s"File upload batch insertion failed for consignment $consignmentId1")
+    } finally logCaptor.close()
+  }
+
+  "addFile" should "return after the first parallel batches and keep background inserts within the configured concurrency" in {
+    val repository = mock[FileRepository]
+    val batches = List.fill(5)(Promise[Unit]())
+    when(repository.addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]()))
+      .thenReturn(batches.head.future, batches.tail.map(_.future): _*)
+    when(consignmentServiceMock.getConsignment(consignmentId1)).thenReturn(Future.successful(mockConsignment.some))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
+    val config = ConfigFactory.parseString("fileUpload { batchSize = 1, maxConcurrency = 2 }").withFallback(ConfigFactory.load())
+    val service = setupFileService(config = config, fileRepository = repository, serviceExecutionContext = ExecutionContext.parasitic)
+
+    val response = service.addFile(setupMetadataInput(consignmentId1), userId)
+
+    verify(repository, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    response.isCompleted shouldBe false
+
+    batches(1).success(())
+    verify(repository, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    response.isCompleted shouldBe false
+
+    batches.head.success(())
+    verify(repository, times(4)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    response.futureValue.map(_.matchId).toSet shouldBe Set("1", "2")
+    batches(2).isCompleted shouldBe false
+    batches(3).isCompleted shouldBe false
+
+    batches(2).success(())
+    verify(repository, times(4)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+
+    batches(3).success(())
+    verify(repository, times(5)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+    batches(4).isCompleted shouldBe false
+
+    batches(4).success(())
+    response.futureValue.map(_.matchId).toSet shouldBe Set("1", "2")
+  }
+
+  "addFile" should "fail the response and not start further batches when an initial parallel batch fails" in {
+    val repository = mock[FileRepository]
+    val firstBatch = Promise[Unit]()
+    val secondBatch = Promise[Unit]()
+    val failure = new RuntimeException("Parallel batch insert failed")
+    when(repository.addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]()))
+      .thenReturn(firstBatch.future, secondBatch.future, Future.successful(()))
+    when(consignmentServiceMock.getConsignment(consignmentId1)).thenReturn(Future.successful(mockConsignment.some))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(List("ref1", "ref2", "ref3", "ref4", "ref5"))
+    val config = ConfigFactory.parseString("fileUpload { batchSize = 1, maxConcurrency = 2 }").withFallback(ConfigFactory.load())
+    val service = setupFileService(config = config, fileRepository = repository, serviceExecutionContext = ExecutionContext.parasitic)
+
+    val response = service.addFile(setupMetadataInput(consignmentId1), userId)
+    secondBatch.failure(failure)
+    firstBatch.success(())
+
+    response.failed.futureValue shouldBe failure
+    verify(repository, times(2)).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
+  }
+
+  "addFile" should "return no file matches without inserting a batch when the input is empty" in {
+    val repository = mock[FileRepository]
+    when(consignmentServiceMock.getConsignment(consignmentId1)).thenReturn(Future.successful(mockConsignment.some))
+    when(referenceGeneratorServiceMock.getReferences(any[Int])).thenReturn(Nil)
+    val service = setupFileService(fileRepository = repository, serviceExecutionContext = ExecutionContext.parasitic)
+
+    service.addFile(AddFileAndMetadataInput(consignmentId1, Nil), userId).futureValue shouldBe Nil
+
+    verify(repository, never).addFiles(any[List[FileRow]](), any[List[FilemetadataRow]]())
   }
 
   "addFile" should "assign file references to all files, directories and add all files, directories, client and static metadata when total number of files and folders are greater than batch size" in {
@@ -1319,7 +1445,12 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     file1Result.rankOverFilePath should not equal file3Result.rankOverFilePath
   }
 
-  private def setupFileService(fileStatusServiceMock: Option[FileStatusService] = None, config: Config = ConfigFactory.load()): FileService = {
+  private def setupFileService(
+      fileStatusServiceMock: Option[FileStatusService] = None,
+      config: Config = ConfigFactory.load(),
+      fileRepository: FileRepository = fileRepositoryMock,
+      serviceExecutionContext: ExecutionContext = executionContext
+  ): FileService = {
     val antivirusMetadataService = new AntivirusMetadataService(antivirusMetadataRepositoryMock, uuidSource, FixedTimeSource)
     val fileMetadataService = new FileMetadataService(fileMetadataRepositoryMock)
     val fileStatusService = fileStatusServiceMock.getOrElse(new FileStatusService(fileStatusRepositoryMock))
@@ -1329,7 +1460,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
     when(consignmentMetadataRepositoryMock.getConsignmentMetadata(any[UUID], any[Option[ConsignmentMetadataFilter]])).thenReturn(Future.successful(Seq(consignmentMetadataRow)))
 
     new FileService(
-      fileRepositoryMock,
+      fileRepository,
       ffidMetadataService,
       antivirusMetadataService,
       fileStatusService,
@@ -1340,7 +1471,7 @@ class FileServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers with S
       FixedTimeSource,
       uuidSource,
       config
-    )
+    )(serviceExecutionContext)
   }
 
   private def setupMetadataInput(consignmentId: UUID, userId: Option[UUID] = None): AddFileAndMetadataInput = {

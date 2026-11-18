@@ -1,6 +1,7 @@
 package uk.gov.nationalarchives.tdr.api.service
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.Logger
 import sangria.relay.{Connection, Edge, PageInfo}
 import uk.gov.nationalarchives.Tables.{AvmetadataRow, ConsignmentRow, FfidmetadataRow, FfidmetadatamatchesRow, FileRow, FilemetadataRow, FilestatusRow}
 import uk.gov.nationalarchives.tdr.api.db.repository.FileRepository.FileRepositoryMetadata
@@ -44,8 +45,11 @@ class FileService(
 )(implicit val executionContext: ExecutionContext) {
 
   private val treeNodesUtils: TreeNodesUtils = TreeNodesUtils(uuidSource, referenceGeneratorService, config)
+  private val logger = Logger(classOf[FileService])
 
   private val fileUploadBatchSize: Int = config.getInt("fileUpload.batchSize")
+  private val fileUploadMaxConcurrency: Int = config.getInt("fileUpload.maxConcurrency")
+  require(fileUploadMaxConcurrency > 0, "fileUpload.maxConcurrency must be greater than zero")
   private val filePageMaxLimit: Int = config.getInt("pagination.filesMaxLimit")
 
   def addFile(addFileAndMetadataInput: AddFileAndMetadataInput, tokenUserId: UUID): Future[List[FileMatches]] = {
@@ -77,16 +81,28 @@ class FileService(
         val metadataProperties = defaultPropertyValues ++ consignmentLevelMetadata
         createFileRows(addFileAndMetadataInput, row, metadataProperties, path, treeNode, parentFileReference, fileId, fileRow, assetId)
       }).toList)
-      matchedFileRows <- generateMatchedRows(rows)
+      matchedFileRows <- generateMatchedRows(rows, consignmentId)
     } yield matchedFileRows
   }
 
-  private def generateMatchedRows(rowsWithMatchId: List[Rows]): Future[List[FileMatches]] = {
-    for {
-      _ <- rowsWithMatchId.grouped(fileUploadBatchSize).map(row => fileRepository.addFiles(row.map(_.fileRow), row.flatMap(_.metadataRows))).toList.head
-    } yield rowsWithMatchId.flatMap {
-      case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
-      case _                                    => Nil
+  private def generateMatchedRows(rowsWithMatchId: List[Rows], consignmentId: UUID): Future[List[FileMatches]] = {
+    val batchGroups = rowsWithMatchId.grouped(fileUploadBatchSize).grouped(fileUploadMaxConcurrency)
+
+    def insertBatches(batches: Seq[List[Rows]]): Future[Unit] =
+      Future.traverse(batches)(rows => fileRepository.addFiles(rows.map(_.fileRow), rows.flatMap(_.metadataRows))).map(_ => ())
+
+    val firstBatches = if (batchGroups.hasNext) insertBatches(batchGroups.next()) else Future.successful(())
+    val allBatches = batchGroups.foldLeft(firstBatches) { (previousBatches, batches) =>
+      previousBatches.flatMap(_ => insertBatches(batches))
+    }
+    allBatches.failed.foreach(error => logger.error(s"File upload batch insertion failed for consignment $consignmentId", error))
+
+    // Preserve early acknowledgement; remaining bounded batches continue in-process.
+    firstBatches.map { _ =>
+      rowsWithMatchId.flatMap {
+        case MatchedFileRows(fileRow, _, matchId) => FileMatches(fileRow.fileid, matchId) :: Nil
+        case _                                    => Nil
+      }
     }
   }
 
