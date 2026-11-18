@@ -23,13 +23,13 @@ class FileStatusService(fileStatusRepository: FileStatusRepository)(implicit
 
   def getConsignmentFileProgress(consignmentId: UUID): Future[FileChecks] = {
     fileStatusRepository
-      .getFileStatus(consignmentId, Set(FFID, ChecksumMatch, Antivirus))
-      .map(rows => {
-        val statusMap = rows.groupBy(_.statustype)
+      .countFileStatusByType(consignmentId, Set(FFID, ChecksumMatch, Antivirus))
+      .map(counts => {
+        val countByStatusType = counts.toMap
         FileChecks(
-          AntivirusProgress(statusMap.getOrElse(Antivirus, Nil).size),
-          ChecksumProgress(statusMap.getOrElse(ChecksumMatch, Nil).size),
-          FFIDProgress(statusMap.getOrElse(FFID, Nil).size)
+          AntivirusProgress(countByStatusType.getOrElse(Antivirus, 0)),
+          ChecksumProgress(countByStatusType.getOrElse(ChecksumMatch, 0)),
+          FFIDProgress(countByStatusType.getOrElse(FFID, 0))
         )
       })
   }

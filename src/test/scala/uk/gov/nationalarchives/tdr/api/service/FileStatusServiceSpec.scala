@@ -38,6 +38,10 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   def mockDistinctResponse(statusTypes: Set[String], rows: Seq[FilestatusRow]): ScalaOngoingStubbing[Future[Seq[(String, String)]]] =
     when(fileStatusRepositoryMock.getDistinctFileStatusValues(consignmentId, statusTypes)).thenReturn(Future(rows.map(r => (r.statustype, r.value)).distinct))
 
+  def mockCountResponse(statusTypes: Set[String], rows: Seq[FilestatusRow]): ScalaOngoingStubbing[Future[Seq[(String, Int)]]] =
+    when(fileStatusRepositoryMock.countFileStatusByType(consignmentId, statusTypes))
+      .thenReturn(Future(rows.groupBy(_.statustype).map { case (statusType, statusRows) => statusType -> statusRows.size }.toSeq))
+
   def fileStatusRow(statusType: String, value: String): FilestatusRow =
     FilestatusRow(UUID.randomUUID(), UUID.randomUUID(), statusType, value, Timestamp.from(Instant.now))
 
@@ -297,7 +301,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   "getConsignmentFileProgress" should "return total processed files if all checks are successful" in {
     val rows = (1 to 5)
       .flatMap(_ => Seq(fileStatusRow(FFID, Success), fileStatusRow(ChecksumMatch, Success), fileStatusRow(Antivirus, Success)))
-    mockResponse(Set(FFID, ChecksumMatch, Antivirus), rows)
+    mockCountResponse(Set(FFID, ChecksumMatch, Antivirus), rows)
 
     val service = createFileStatusService()
     val result = service.getConsignmentFileProgress(consignmentId).futureValue
@@ -312,7 +316,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
       .flatMap(_ => Seq(fileStatusRow(FFID, Success), fileStatusRow(ChecksumMatch, Success), fileStatusRow(Antivirus, Success)))
     val failedRows = Seq(fileStatusRow(FFID, Failed), fileStatusRow(ChecksumMatch, Failed), fileStatusRow(Antivirus, Failed))
 
-    mockResponse(Set(FFID, ChecksumMatch, Antivirus), successfulRows ++ failedRows)
+    mockCountResponse(Set(FFID, ChecksumMatch, Antivirus), successfulRows ++ failedRows)
 
     val service = createFileStatusService()
     val result = service.getConsignmentFileProgress(consignmentId).futureValue
@@ -323,7 +327,7 @@ class FileStatusServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "getConsignmentFileProgress" should "return zero processed files if there are no file status rows" in {
-    mockResponse(Set(FFID, ChecksumMatch, Antivirus), Nil)
+    mockCountResponse(Set(FFID, ChecksumMatch, Antivirus), Nil)
 
     val service = createFileStatusService()
     val result = service.getConsignmentFileProgress(consignmentId).futureValue
