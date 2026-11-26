@@ -37,7 +37,7 @@ class PekkoHttpServer {
   val port = 8080
   val logger: Logger = Logger("PekkoHttpServer")
 
-  val httpsContext = PekkoHttpServer.httpsContext(Paths.get("/api/certs/this.p12"))
+  val httpsContext: HttpsConnectionContext = PekkoHttpServer.httpsContext(Paths.get("/api/certs/this.p12"))
 
   implicit val actorSystem: ActorSystem = ActorSystem("graphql-server")
   implicit val materializer: Materializer = Materializer(actorSystem)
